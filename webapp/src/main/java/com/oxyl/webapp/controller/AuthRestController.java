@@ -38,7 +38,7 @@ public class AuthRestController {
         this.userService = userService;
     }
 
-    @PostMapping("/login")
+    @PostMapping("/login/email")
     public ResponseEntity<?> login(@RequestBody LoginWithEmailDto loginDto) {
         Authentication authenticate = authManager
                 .authenticate(new UsernamePasswordAuthenticationToken(loginDto.email(), loginDto.password()));
@@ -63,6 +63,30 @@ public class AuthRestController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+    @PostMapping("/login/username")
+    public ResponseEntity<?> login(@RequestBody LoginWithUsernameDto loginDto) {
+        Authentication authenticate = authManager
+                .authenticate(new UsernamePasswordAuthenticationToken(loginDto.username(), loginDto.password()));
+        UserDetails user = (UserDetails) authenticate.getPrincipal();
+
+        // Checking if the account is active
+        User actualUser = userService.findByEmail(loginDto.email());
+        if (!actualUser.isActive()) {
+            logger.error("Should be active : {}", actualUser.isActive());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Email not verified. Please check your inbox for a verification link.");
+        }
+
+        String role = user.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .findFirst()
+                .orElse("USER");  // Mettez une valeur par défaut si besoin
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("jwt", jwtUtils.generateJwtResponseEntity(user).getBody());
+        response.put("role", role);
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 
     @PostMapping("/register")
     public ResponseEntity<Object> register(@Valid @RequestBody RegisterFormDto user)  {

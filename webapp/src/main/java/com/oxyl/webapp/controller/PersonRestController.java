@@ -14,7 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/auth/persons")
+@RequestMapping("/api/persons")
 public class PersonRestController {
 
     private final PersonService personService;
