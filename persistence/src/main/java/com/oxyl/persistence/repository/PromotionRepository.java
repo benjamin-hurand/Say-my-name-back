@@ -10,6 +10,4 @@ import java.util.List;
 public interface PromotionRepository extends JpaRepository<PromotionEntity, Long> {
     
     List<PromotionEntity> findByYear(int year);
-    
-    List<PromotionEntity> findByMonth(Integer month);
 }

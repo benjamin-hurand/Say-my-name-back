@@ -15,16 +15,12 @@ import java.util.Optional;
 
 @Repository
 public class PersonDao {
-    private final EntityManager entityManager;
     private final PersonRepository personRepository;
     private final PersonEntityMapper personEntityMapper;
-    private final PromotionEntityMapper promotionEntityMapper;
 
-    public PersonDao(EntityManager entityManager, PersonRepository personRepository, PersonEntityMapper personEntityMapper, PromotionEntityMapper promotionEntityMapper) {
-        this.entityManager = entityManager;
+    public PersonDao(PersonRepository personRepository, PersonEntityMapper personEntityMapper) {
         this.personRepository = personRepository;
         this.personEntityMapper = personEntityMapper;
-        this.promotionEntityMapper = promotionEntityMapper;
     }
 
     @Transactional
@@ -34,10 +30,6 @@ public class PersonDao {
 
     @Transactional
     public Optional<Person> findById(Long id) {
-//        PersonEntity personEntity = entityManager.createQuery(
-//                        "SELECT p FROM PersonEntity p LEFT JOIN FETCH p.promotions WHERE p.id = :id", PersonEntity.class)
-//                .setParameter("id", id)
-//                .getSingleResult();
         Optional<PersonEntity> personEntity = personRepository.findById(id);
         return personEntity.map(personEntityMapper::toModel);
     }
