@@ -34,4 +34,9 @@ public class PersonDao {
         return personEntity.map(personEntityMapper::toModel);
     }
 
+    @Transactional
+    public List<Person> findByPromotionYear(Integer year) {
+        return personEntityMapper.toModelList(personRepository.findByPromotionYear(year));
+    }
+
 }

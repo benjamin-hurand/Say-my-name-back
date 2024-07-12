@@ -25,6 +25,10 @@ public class PersonService {
         return personDao.findById(id);
     }
 
+    public List<Person> findByPromotionYear(Integer year) {
+        return personDao.findByPromotionYear(year);
+    }
+
 //    public List<Person> findAllPersons() {
 //        return personDao.findAllPersons();
 //    }

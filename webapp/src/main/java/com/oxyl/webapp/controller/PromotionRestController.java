@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/promotions")
+@RequestMapping("/api/promotions")
 public class PromotionRestController {
     private final PromotionService promotionService;
 

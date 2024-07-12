@@ -1,5 +1,7 @@
 package com.oxyl.core.model;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 public class User {
@@ -7,7 +9,8 @@ public class User {
     private String username;
     private String email;
     private String password;
-    private String validationToken;
+    private String roles;
+    private Boolean active;       // Correct the data type if needed, Boolean is used if it could be null
 
     public User() {}
 
@@ -16,7 +19,8 @@ public class User {
         this.username = builder.username;
         this.email = builder.email;
         this.password = builder.password;
-        this.validationToken = builder.validationToken;
+        this.roles = builder.roles;
+        this.active = builder.active; // Initialize isActive from the builder
     }
 
     public long getId() {
@@ -35,8 +39,12 @@ public class User {
         return password;
     }
 
-    public String getValidationToken() {
-        return validationToken;
+    public String getRoles() {
+        return roles;
+    }
+
+    public Boolean isActive() { // Getter for isActive
+        return active;
     }
 
     public void setId(long id) {
@@ -51,12 +59,26 @@ public class User {
         this.email = email;
     }
 
+    public void setRoles(String roles) {
+        this.roles = roles;
+    }
+
     public void setPassword(String password) {
         this.password = password;
     }
 
-    public void setValidationToken(String validationToken) {
-        this.validationToken = validationToken;
+    public void setActive(Boolean active) { // Setter for isActive
+        this.active = active;
+    }
+
+    // Method to get roles as a list
+    public List<String> getRolesList() {
+        return Arrays.stream(roles.split(",")).toList();
+    }
+
+    // Method to set roles from a list
+    public void setRolesList(List<String> rolesList) {
+        this.roles = String.join(",", rolesList);
     }
 
     public static class Builder {
@@ -64,7 +86,8 @@ public class User {
         private String username;
         private String email;
         private String password;
-        private String validationToken;
+        private String roles;
+        private Boolean active; // Include this to allow setting the active state via the builder
 
         public Builder withId(long id) {
             this.id = id;
@@ -86,8 +109,13 @@ public class User {
             return this;
         }
 
-        public Builder withValidationToken(String validationToken) {
-            this.validationToken = validationToken;
+        public Builder withRoles(String roles) {
+            this.roles = roles;
+            return this;
+        }
+
+        public Builder withActive(Boolean active) { // Builder method for isActive
+            this.active = active;
             return this;
         }
 
@@ -99,28 +127,24 @@ public class User {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof User)) return false;
-        User user = (User) o;
-        return Objects.equals(id, user.id) &&
-                Objects.equals(username, user.username) &&
-                Objects.equals(email, user.email) &&
-                Objects.equals(password, user.password) &&
-                Objects.equals(validationToken, user.validationToken);
+        if (!(o instanceof User user)) return false;
+        return getId() == user.getId() && Objects.equals(getUsername(), user.getUsername()) && Objects.equals(getEmail(), user.getEmail()) && Objects.equals(getPassword(), user.getPassword()) && Objects.equals(getRoles(), user.getRoles()) && Objects.equals(active, user.active);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, username, email, password, validationToken);
+        return Objects.hash(getId(), getUsername(), getEmail(), getPassword(), getRoles(), active);
     }
 
     @Override
     public String toString() {
         return "User{" +
-                "id='" + id + '\'' +
+                "id=" + id +
                 ", username='" + username + '\'' +
                 ", email='" + email + '\'' +
                 ", password='" + password + '\'' +
-                ", validationToken='" + validationToken + '\'' +
+                ", roles='" + roles + '\'' +
+                ", active=" + active +
                 '}';
     }
 }

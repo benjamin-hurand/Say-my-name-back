@@ -2,6 +2,8 @@ package com.oxyl.persistence.entity;
 
 import jakarta.persistence.*;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -20,37 +22,40 @@ public class UserEntity {
     @Column(nullable = false, length = 100)
     private String email;
 
-    @Column(name = "password_hash", nullable = false, length = 255)
-    private String passwordHash;
+    @Column(name = "password", nullable = false, length = 255)
+    private String password;
 
-    @Column(name = "validation_token", length = 255)
-    private String validationToken;
+    @Column(name= "roles" , nullable = false)
+    private String roles; // Comma-separated roles
+
+    @Column(name = "active", nullable = false)
+    private Boolean active;
 
     @OneToOne(mappedBy="user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = true)
     private PersonEntity person;
 
-    public UserEntity(Long id, String username, String email, String passwordHash, String validationToken) {
+    public UserEntity(Long id, String username, String email, String password, String roles, Boolean active, PersonEntity person) {
         this.id = id;
         this.username = username;
         this.email = email;
-        this.passwordHash = passwordHash;
-        this.validationToken = validationToken;
+        this.password = password;
+        this.roles = roles;
+        this.active = active;
+        this.person = person;
     }
 
-    public UserEntity(Long id, String username, String email, String passwordHash, String validationToken, PersonEntity person) {
+    public UserEntity(Long id, String username, String email, String password, String roles, Boolean active) {
         this.id = id;
         this.username = username;
         this.email = email;
-        this.passwordHash = passwordHash;
-        this.validationToken = validationToken;
-        this.person = person;
+        this.password = password;
+        this.roles = roles;
+        this.active = active;
     }
 
     public UserEntity() {
 
     }
-
-    // Getters and Setters
 
     public Long getId() {
         return id;
@@ -76,20 +81,28 @@ public class UserEntity {
         this.email = email;
     }
 
-    public String getPasswordHash() {
-        return passwordHash;
+    public String getPassword() {
+        return password;
     }
 
-    public void setPasswordHash(String passwordHash) {
-        this.passwordHash = passwordHash;
+    public void setPassword(String password) {
+        this.password = password;
     }
 
-    public String getValidationToken() {
-        return validationToken;
+    public String getRoles() {
+        return roles;
     }
 
-    public void setValidationToken(String validationToken) {
-        this.validationToken = validationToken;
+    public void setRoles(String roles) {
+        this.roles = roles;
+    }
+
+    public Boolean isActive() {
+        return active;
+    }
+
+    public void setActive(Boolean active) {
+        this.active = active;
     }
 
     public PersonEntity getPerson() {
@@ -100,16 +113,26 @@ public class UserEntity {
         this.person = person;
     }
 
+    // Method to get roles as a list
+    public List<String> getRolesList() {
+        return Arrays.stream(roles.split(",")).toList();
+    }
+
+    // Method to set roles from a list
+    public void setRolesList(List<String> rolesList) {
+        this.roles = String.join(",", rolesList);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof UserEntity that)) return false;
-        return Objects.equals(getId(), that.getId()) && Objects.equals(getUsername(), that.getUsername()) && Objects.equals(getEmail(), that.getEmail()) && Objects.equals(getPasswordHash(), that.getPasswordHash()) && Objects.equals(getValidationToken(), that.getValidationToken()) && Objects.equals(getPerson(), that.getPerson());
+        return Objects.equals(getId(), that.getId()) && Objects.equals(getUsername(), that.getUsername()) && Objects.equals(getEmail(), that.getEmail()) && Objects.equals(getPassword(), that.getPassword()) && Objects.equals(getRoles(), that.getRoles()) && Objects.equals(isActive(), that.isActive()) && Objects.equals(getPerson(), that.getPerson());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getId(), getUsername(), getEmail(), getPasswordHash(), getValidationToken(), getPerson());
+        return Objects.hash(getId(), getUsername(), getEmail(), getPassword(), getRoles(), isActive(), getPerson());
     }
 
     @Override
@@ -118,8 +141,9 @@ public class UserEntity {
                 "id=" + id +
                 ", username='" + username + '\'' +
                 ", email='" + email + '\'' +
-                ", passwordHash='" + passwordHash + '\'' +
-                ", validationToken='" + validationToken + '\'' +
+                ", password='" + password + '\'' +
+                ", roles='" + roles + '\'' +
+                ", active=" + active +
                 ", person=" + person +
                 '}';
     }
