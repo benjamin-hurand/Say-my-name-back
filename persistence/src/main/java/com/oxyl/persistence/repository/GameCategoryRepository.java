@@ -1,0 +1,13 @@
+package com.oxyl.persistence.repository;
+
+import com.oxyl.persistence.entity.GameCategoryEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface GameCategoryRepository extends JpaRepository<GameCategoryEntity, Long> {
+    
+    List<GameCategoryEntity> findByTheme_Id(Long themeId);
+}

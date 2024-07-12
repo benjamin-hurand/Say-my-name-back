@@ -1,10 +1,10 @@
-package com.oxyl.persistence;
+package com.oxyl.service;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class PersistenceApplicationTests {
+class ServiceApplicationTests {
 
     @Test
     void contextLoads() {
