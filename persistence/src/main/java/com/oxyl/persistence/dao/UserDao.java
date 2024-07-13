@@ -54,11 +54,11 @@ public class UserDao {
         userRepository.deleteById(id);
     }
 
-    public User findByEmail(String email) {
-        return userEntityMapper.toModel(userRepository.findByEmail(email).orElseThrow(() -> new EntityNotFoundException("Entity user not found with email " + email)));
+    public User findByEmailOrUsername(String identifier) {
+        return userEntityMapper.toModel(findEntityByEmailOrUsername(identifier));
     }
 
-    public UserEntity findEntityByEmail(String email) {
-        return userRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException("Entity user not found with email " + email));
+    public UserEntity findEntityByEmailOrUsername(String identifier) {
+        return userRepository.findByEmailOrUsername(identifier).orElseThrow(() -> new UsernameNotFoundException("Entity user not found with email or username " + identifier));
     }
 }

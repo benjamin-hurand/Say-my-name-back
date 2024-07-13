@@ -3,8 +3,8 @@ package com.oxyl.webapp.controller;
 import com.oxyl.core.model.User;
 import com.oxyl.service.UserService;
 import com.oxyl.webapp.config.JWTUtils;
+import com.oxyl.webapp.dto.LoginDto;
 import com.oxyl.webapp.dto.RegisterFormDto;
-import com.oxyl.webapp.dto.LoginWithEmailDto;
 import com.oxyl.webapp.dto.LoginWithUsernameDto;
 import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
@@ -38,39 +38,14 @@ public class AuthRestController {
         this.userService = userService;
     }
 
-    @PostMapping("/login/email")
-    public ResponseEntity<?> login(@RequestBody LoginWithEmailDto loginDto) {
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody LoginDto loginDto) {
         Authentication authenticate = authManager
-                .authenticate(new UsernamePasswordAuthenticationToken(loginDto.email(), loginDto.password()));
+                .authenticate(new UsernamePasswordAuthenticationToken(loginDto.identifier(), loginDto.password()));
         UserDetails user = (UserDetails) authenticate.getPrincipal();
 
         // Checking if the account is active
-        User actualUser = userService.findByEmail(loginDto.email());
-        if (!actualUser.isActive()) {
-            logger.error("Should be active : {}", actualUser.isActive());
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Email not verified. Please check your inbox for a verification link.");
-        }
-
-        String role = user.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .findFirst()
-                .orElse("USER");  // Mettez une valeur par défaut si besoin
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("jwt", jwtUtils.generateJwtResponseEntity(user).getBody());
-        response.put("role", role);
-
-        return new ResponseEntity<>(response, HttpStatus.OK);
-    }
-
-    @PostMapping("/login/username")
-    public ResponseEntity<?> login(@RequestBody LoginWithUsernameDto loginDto) {
-        Authentication authenticate = authManager
-                .authenticate(new UsernamePasswordAuthenticationToken(loginDto.username(), loginDto.password()));
-        UserDetails user = (UserDetails) authenticate.getPrincipal();
-
-        // Checking if the account is active
-        User actualUser = userService.findByEmail(loginDto.email());
+        User actualUser = userService.findByEmailOrUsername(loginDto.identifier());
         if (!actualUser.isActive()) {
             logger.error("Should be active : {}", actualUser.isActive());
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Email not verified. Please check your inbox for a verification link.");

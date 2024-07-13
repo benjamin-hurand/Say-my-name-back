@@ -1,7 +1,7 @@
 package com.oxyl.webapp.dto;
 
-public record LoginWithEmailDto(
-        String email,
+public record LoginDto(
+        String identifier,
         String password
 ) {
 }

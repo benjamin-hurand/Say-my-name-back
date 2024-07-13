@@ -38,7 +38,7 @@ public class UserService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) {
-        UserEntity user = userDao.findEntityByEmail(username);
+        UserEntity user = userDao.findEntityByEmailOrUsername(username);
         return new CustomUserDetails(user);
     }
 
@@ -46,7 +46,7 @@ public class UserService implements UserDetailsService {
         return userDao.findById(id);
     }
 
-    public User findByEmail(String email) {
-        return userDao.findByEmail(email);
+    public User findByEmailOrUsername(String email) {
+        return userDao.findByEmailOrUsername(email);
     }
 }
