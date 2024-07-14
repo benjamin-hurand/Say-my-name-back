@@ -1,9 +1,9 @@
 package com.oxyl.webapp.controller;
 
 import com.oxyl.core.model.Person;
-import com.oxyl.persistence.mapper.PersonEntityMapper;
 import com.oxyl.service.PersonService;
-import jakarta.persistence.EntityNotFoundException;
+import com.oxyl.webapp.dto.PersonDto;
+import com.oxyl.webapp.mapper.PersonDtoMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
@@ -18,16 +18,24 @@ import java.util.List;
 public class PersonRestController {
 
     private final PersonService personService;
+    private final PersonDtoMapper personDtoMapper;
     private static final Logger logger = LogManager.getLogger(PersonRestController.class);
 
 
-    public PersonRestController(PersonService personService) {
+    public PersonRestController(PersonService personService, PersonDtoMapper personDtoMapper) {
         this.personService = personService;
+        this.personDtoMapper = personDtoMapper;
     }
 
     @GetMapping
     public ResponseEntity<List<Person>> findAll() {
         List<Person> persons = personService.findAll();
+        return new ResponseEntity<>(persons, HttpStatus.OK);
+    }
+
+    @GetMapping("/withoutaccount")
+    public ResponseEntity<List<PersonDto>> findAllWithoutAcccount() {
+        List<PersonDto> persons = personService.findAllWithoutUser().stream().map(personDtoMapper::toDto).toList();
         return new ResponseEntity<>(persons, HttpStatus.OK);
     }
 

@@ -5,6 +5,7 @@ import com.oxyl.service.UserService;
 import com.oxyl.webapp.config.JWTUtils;
 import com.oxyl.webapp.dto.LoginDto;
 import com.oxyl.webapp.dto.RegisterFormDto;
+import com.oxyl.service.GoogleAuthService;
 import com.oxyl.webapp.dto.LoginWithUsernameDto;
 import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
@@ -25,20 +26,22 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api")
 public class AuthRestController {
     private final AuthenticationManager authManager;
     private final JWTUtils jwtUtils;
     private final UserService userService;
     private static final Logger logger = LogManager.getLogger(AuthRestController.class);
+    private final GoogleAuthService googleAuthService;
 
-    public AuthRestController(AuthenticationManager authManager, JWTUtils jwtUtils, UserService userService) {
+    public AuthRestController(AuthenticationManager authManager, JWTUtils jwtUtils, UserService userService, GoogleAuthService googleAuthService) {
         this.authManager = authManager;
         this.jwtUtils = jwtUtils;
         this.userService = userService;
+        this.googleAuthService = googleAuthService;
     }
 
-    @PostMapping("/login")
+    @PostMapping("/auth/login")
     public ResponseEntity<?> login(@RequestBody LoginDto loginDto) {
         Authentication authenticate = authManager
                 .authenticate(new UsernamePasswordAuthenticationToken(loginDto.identifier(), loginDto.password()));
@@ -63,7 +66,7 @@ public class AuthRestController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @PostMapping("/register")
+    @PostMapping("/auth/register")
     public ResponseEntity<Object> register(@Valid @RequestBody RegisterFormDto user)  {
         if(userService.checkIfEmailExists(user.email())) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already exists");
@@ -87,5 +90,25 @@ public class AuthRestController {
         return ResponseEntity.status(HttpStatus.CREATED).body("Registration successful.");
     }
 
+
+    @PostMapping("/auth/google/token")
+    public ResponseEntity<?> verifyToken(@RequestBody Map<String, String> tokenMap) {
+        String token = tokenMap.get("token");
+        try {
+            // Assuming the service returns the user's ID or some other identifier after verification
+            //String userId = googleAuthService.verifyToken(token);
+            return ResponseEntity.ok().body("User authenticated successfully with ID: " + "userId");
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body("Invalid token: " + ex.getMessage());
+        } catch (Exception ex) {
+            return ResponseEntity.internalServerError().body("An error occurred while processing the token");
+        }
+    }
+
+    @GetMapping("/usernames/generate/{lang}")
+    public ResponseEntity<String> generateUsername(@PathVariable(name="lang") String lang) {
+        String username = userService.generateUniqueUsername(lang);
+        return ResponseEntity.ok(username);
+    }
 
 }

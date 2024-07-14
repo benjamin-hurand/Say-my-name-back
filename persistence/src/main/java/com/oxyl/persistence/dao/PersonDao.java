@@ -2,6 +2,7 @@ package com.oxyl.persistence.dao;
 
 import com.oxyl.core.model.Person;
 import com.oxyl.persistence.entity.PersonEntity;
+import com.oxyl.persistence.mapper.PersonBasicDtoMapper;
 import com.oxyl.persistence.mapper.PersonEntityMapper;
 import com.oxyl.persistence.mapper.PromotionEntityMapper;
 import com.oxyl.persistence.repository.PersonRepository;
@@ -17,15 +18,22 @@ import java.util.Optional;
 public class PersonDao {
     private final PersonRepository personRepository;
     private final PersonEntityMapper personEntityMapper;
+    private final PersonBasicDtoMapper personBasicDtoMapper;
 
-    public PersonDao(PersonRepository personRepository, PersonEntityMapper personEntityMapper) {
+    public PersonDao(PersonRepository personRepository, PersonEntityMapper personEntityMapper, PersonBasicDtoMapper personBasicDtoMapper) {
         this.personRepository = personRepository;
         this.personEntityMapper = personEntityMapper;
+        this.personBasicDtoMapper = personBasicDtoMapper;
     }
 
     @Transactional
     public List<Person> findAll() {
         return personEntityMapper.toModelList(personRepository.findAll());
+    }
+
+    @Transactional(readOnly = true)
+    public List<Person> findAllWithoutUser() {
+        return personBasicDtoMapper.toModelList(personRepository.findPersonsBasicInfoWithoutUser());
     }
 
     @Transactional

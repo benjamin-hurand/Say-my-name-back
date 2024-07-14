@@ -38,6 +38,8 @@ public class UserDao {
         return userEntityMapper.toModel(userRepository.save(userEntityMapper.toEntity(user)));
     }
 
+
+
     public User update(User user) {
         return userEntityMapper.toModel(userRepository.save(userEntityMapper.toEntity(user)));
     }
@@ -48,6 +50,10 @@ public class UserDao {
 
     public boolean checkIfEmailExists(String email) {
         return userRepository.existsByEmail(email);
+    }
+
+    public boolean checkIfUsernameExists(String username) {
+        return userRepository.existsByUsername(username);
     }
 
     public void deleteById(Long id) {

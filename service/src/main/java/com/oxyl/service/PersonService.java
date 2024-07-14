@@ -21,6 +21,10 @@ public class PersonService {
         return personDao.findAll();
     }
 
+    public List<Person> findAllWithoutUser() {
+        return personDao.findAllWithoutUser();
+    }
+
     public Optional<Person> findById(Long id) {
         return personDao.findById(id);
     }

@@ -48,7 +48,7 @@ public class SecurityConfig {
                 .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .sessionManagement(configurer -> configurer.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/api/usernames/generate/**").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(customizer -> customizer.authenticationEntryPoint(authenticationEntryPoint));
         return http.build();

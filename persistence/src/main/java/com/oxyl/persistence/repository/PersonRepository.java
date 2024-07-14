@@ -1,5 +1,6 @@
 package com.oxyl.persistence.repository;
 
+import com.oxyl.persistence.dto.PersonBasicDto;
 import com.oxyl.persistence.entity.PersonEntity;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,4 +15,9 @@ import java.util.Optional;
 public interface PersonRepository extends JpaRepository<PersonEntity, Long> {
     @Query("SELECT p FROM PersonEntity p JOIN p.promotions pp JOIN pp.promotion promo WHERE promo.year = :year")
     List<PersonEntity> findByPromotionYear(@Param("year")Integer year);
+
+    List<PersonEntity> findByUserIsNull();
+
+    @Query("SELECT new com.oxyl.persistence.dto.PersonBasicDto(p.id, p.firstName, p.lastName) FROM PersonEntity p WHERE p.user IS NULL")
+    List<PersonBasicDto> findPersonsBasicInfoWithoutUser();
 }
