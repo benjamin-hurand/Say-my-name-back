@@ -140,6 +140,10 @@ public class UserService implements UserDetailsService {
         return userDao.checkIfEmailExists(email);
     }
 
+    public Boolean checkIfAccountExistsWithUsername(String username) {
+        return userDao.checkIfUsernameExists(username);
+    }
+
     @Override
     public UserDetails loadUserByUsername(String username) {
         UserEntity user = userDao.findEntityByEmailOrUsername(username);

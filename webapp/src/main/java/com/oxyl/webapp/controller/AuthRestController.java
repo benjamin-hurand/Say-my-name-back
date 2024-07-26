@@ -116,6 +116,14 @@ public class AuthRestController {
         return ResponseEntity.ok(username);
     }
 
+    @GetMapping("/usernames/isavailable/{username}")
+    public ResponseEntity<String> isUsernameAvailable(@PathVariable(name="username") String username) {
+        if(userService.checkIfAccountExistsWithUsername(username)) {
+           return new ResponseEntity<>("Username already exists.", HttpStatus.CONFLICT);
+        }
+        return new ResponseEntity<>("Username is available.",HttpStatus.OK);
+    }
+
     // LOGIN -----------------------------------------------------------------------------
     @PostMapping("/auth/login")
     public ResponseEntity<?> login(@RequestBody LoginDto loginDto) {
