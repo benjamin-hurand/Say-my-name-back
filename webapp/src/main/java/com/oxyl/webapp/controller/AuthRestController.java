@@ -4,14 +4,13 @@ import com.oxyl.core.model.User;
 import com.oxyl.service.UserService;
 import com.oxyl.webapp.config.JWTUtils;
 import com.oxyl.webapp.dto.LoginDto;
+import com.oxyl.webapp.dto.LoginGoogleDto;
 import com.oxyl.webapp.dto.RegisterFormDto;
 import com.oxyl.service.GoogleAuthService;
-import com.oxyl.webapp.dto.LoginWithUsernameDto;
-import jakarta.mail.MessagingException;
+import com.oxyl.webapp.dto.RegisterGoogleDto;
 import jakarta.validation.Valid;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -21,9 +20,10 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api")
@@ -41,34 +41,10 @@ public class AuthRestController {
         this.googleAuthService = googleAuthService;
     }
 
-    @PostMapping("/auth/login")
-    public ResponseEntity<?> login(@RequestBody LoginDto loginDto) {
-        Authentication authenticate = authManager
-                .authenticate(new UsernamePasswordAuthenticationToken(loginDto.identifier(), loginDto.password()));
-        UserDetails user = (UserDetails) authenticate.getPrincipal();
-
-        // Checking if the account is active
-        User actualUser = userService.findByEmailOrUsername(loginDto.identifier());
-        if (!actualUser.isActive()) {
-            logger.error("Should be active : {}", actualUser.isActive());
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Email not verified. Please check your inbox for a verification link.");
-        }
-
-        String role = user.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .findFirst()
-                .orElse("USER");  // Mettez une valeur par défaut si besoin
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("jwt", jwtUtils.generateJwtResponseEntity(user).getBody());
-        response.put("role", role);
-
-        return new ResponseEntity<>(response, HttpStatus.OK);
-    }
-
+    // REGISTER ---------------------------------------------------------------------------
     @PostMapping("/auth/register")
     public ResponseEntity<Object> register(@Valid @RequestBody RegisterFormDto user)  {
-        if(userService.checkIfEmailExists(user.email())) {
+        if(userService.checkIfAccountExistsWithEmail(user.email())) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already exists");
         }
 
@@ -90,25 +66,108 @@ public class AuthRestController {
         return ResponseEntity.status(HttpStatus.CREATED).body("Registration successful.");
     }
 
+    @PostMapping("/auth/google/register")
+    public ResponseEntity<Object> registerWithGoogle(@Valid @RequestBody RegisterGoogleDto user) {
+        logger.info("RECU : credential: {}, clientId: {}, select_by: {}", user.credential(), user.clientId(), user.select_by());
 
-    @PostMapping("/auth/google/token")
-    public ResponseEntity<?> verifyToken(@RequestBody Map<String, String> tokenMap) {
-        String token = tokenMap.get("token");
+        String credential = user.credential();
+        String clientId = user.clientId();
+        String selectBy = user.select_by();
         try {
-            // Assuming the service returns the user's ID or some other identifier after verification
-            //String userId = googleAuthService.verifyToken(token);
-            return ResponseEntity.ok().body("User authenticated successfully with ID: " + "userId");
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.badRequest().body("Invalid token: " + ex.getMessage());
-        } catch (Exception ex) {
-            return ResponseEntity.internalServerError().body("An error occurred while processing the token");
+            String email = googleAuthService.getEmail(credential, clientId); // todo: Exception to handle !!
+            logger.info("REGISTER GOOGLE : credential: {}, clientId: {}, selectBy: {}, email: {}", credential, clientId, selectBy, email);
+
+            if(userService.checkIfAccountExistsWithEmail(email)) {
+                // Then login !
+                User actualUser = userService.findByEmailOrUsername(email);
+                if (isNotActive(email)) {
+                    userService.setActive(actualUser);
+                }
+                return new ResponseEntity<>(getMessage(actualUser), HttpStatus.OK);
+            }
+
+            // Create and save the user with set verified status to false
+            User newUser = new User.Builder()
+                    .withEmail(email)
+                    .withUsername(userService.generateUniqueUsername("french")) // todo: Can be "english" also !!
+                    .withPassword(googleAuthService.generatePassword())
+                    .withRoles("ROLE_USER")
+                    .withActive(true)
+                    .build();
+            userService.save(newUser);
+
+
+        } catch (GeneralSecurityException | IOException e) {
+            throw new RuntimeException(e);
         }
+
+
+        // Generate jwt token
+        // String verificationToken = jwtUtils.generateTokenFromUsername(newUser.getUsername());
+        //
+        // Send email with url with jwt inside for front reception then back management
+        //
+        return ResponseEntity.status(HttpStatus.CREATED).body("Registration successful.");
     }
 
     @GetMapping("/usernames/generate/{lang}")
     public ResponseEntity<String> generateUsername(@PathVariable(name="lang") String lang) {
         String username = userService.generateUniqueUsername(lang);
         return ResponseEntity.ok(username);
+    }
+
+    // LOGIN -----------------------------------------------------------------------------
+    @PostMapping("/auth/login")
+    public ResponseEntity<?> login(@RequestBody LoginDto loginDto) {
+        // Get userDetails with identifier and password
+        Authentication authenticate = authManager
+                .authenticate(new UsernamePasswordAuthenticationToken(loginDto.identifier(), loginDto.password()));
+        UserDetails userDetails = (UserDetails) authenticate.getPrincipal();
+        User actualUser = userService.findByEmailOrUsername(loginDto.identifier());
+        // Checking if the account is active
+        if (isNotActive(loginDto.identifier())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Email not verified. Please check your inbox for a verification link.");
+        }
+        return new ResponseEntity<>(getMessage(actualUser), HttpStatus.OK);
+    }
+
+    @PostMapping("/auth/google/login")
+    public ResponseEntity<?> loginWithGoogle(@RequestBody LoginGoogleDto loginDto) throws Exception {
+        logger.info("RECU : credential: {}, clientId: {}, select_by: {}", loginDto.credential(), loginDto.clientId(), loginDto.select_by());
+
+        String credential = loginDto.credential();
+        String clientId = loginDto.clientId();
+        String email = googleAuthService.getEmail(credential, clientId);
+        String selectBy = loginDto.select_by();
+        logger.info("CONNEXION GOOGLE : credential: {}, clientId: {}, selectBy: {}, email: {}", credential, clientId, selectBy, email);
+
+        User actualUser = userService.findByEmailOrUsername(email);
+
+        if (isNotActive(email)) {
+            userService.setActive(actualUser);
+        }
+
+        return new ResponseEntity<>(getMessage(actualUser), HttpStatus.OK);
+    }
+
+    private Map<String, Object> getMessage(User userDetails) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("jwt", jwtUtils.generateJwtResponseEntity(userDetails).getBody());
+        response.put("roles", getRoles(userDetails));
+        response.put("username", userDetails.getUsername());
+        response.put("email", userDetails.getEmail());
+        return response;
+    }
+
+    private String getRoles(UserDetails userDetails) {
+        return userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .findFirst()
+                .orElse("USER");  // Mettez une valeur par défaut si besoin
+    }
+
+    private boolean isNotActive(String identifier) {
+        return userService.findByEmailOrUsername(identifier).isActive();
     }
 
 }

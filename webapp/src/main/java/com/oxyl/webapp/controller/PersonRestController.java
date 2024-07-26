@@ -30,6 +30,7 @@ public class PersonRestController {
     @GetMapping
     public ResponseEntity<List<Person>> findAll() {
         List<Person> persons = personService.findAll();
+        logger.info("find all persons ? => " + persons);
         return new ResponseEntity<>(persons, HttpStatus.OK);
     }
 

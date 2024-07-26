@@ -1,5 +1,9 @@
 package com.oxyl.webapp.config;
 
+import com.google.auth.oauth2.TokenVerifier;
+import com.google.auth.oauth2.TokenVerifier.VerificationException;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -25,10 +29,6 @@ public class JWTUtils {
 
     private final String AUTHORIZATION_HEADER_PREFIX = "Bearer ";
 
-//    private String getJwtSecret() {
-//        return System.getenv("JWT_SECRET");  // Fetching the secret from an environment variable
-//    }
-
     String jwtSecret = "AU2TDyj2dGQSrHaYRZcMDqwKiCzAivmVo3MzE9c+EMCnur871chN/5PRF0HtzNrK++t2a0xXOs4ApSp+CkJzhg==";
 
     public String getJwtFromAuthorizationHeader(HttpServletRequest request) {
@@ -43,9 +43,9 @@ public class JWTUtils {
     public String generateTokenFromUsername(String username) {
         return Jwts
                 .builder()
-                .subject(username)
-                .issuedAt(new Date())
-                .expiration(new Date((new Date()).getTime() + jwtExpiration))
+                .setSubject(username)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date((new Date()).getTime() + jwtExpiration))
                 .signWith(getSigningKey())
                 .compact();
     }
@@ -67,8 +67,6 @@ public class JWTUtils {
 
         return ResponseEntity
                 .ok(responseMap);
-        //.header(HttpHeaders.AUTHORIZATION, AUTHORIZATION_HEADER_PREFIX + jwt.getValue())
-        //.build();
     }
 
     public String getUserNameFromJwtToken(String token) {
@@ -85,8 +83,7 @@ public class JWTUtils {
     }
 
     private SecretKey getSigningKey() {
-        SecretKey secret = Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
-        return secret;
+        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
     }
 
 }

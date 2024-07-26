@@ -344,6 +344,11 @@
                 <version>1.24.0</version>
             </dependency>
             <dependency>
+                <groupId>com.google.oauth-client</groupId>
+                <artifactId>google-oauth-client-jetty</artifactId>
+                <version>1.36.0</version>
+            </dependency>
+            <dependency>
                 <groupId>com.google.api-client</groupId>
                 <artifactId>google-api-client</artifactId>
                 <version>2.6.0</version>
@@ -417,6 +422,10 @@
             <artifactId>google-auth-library-oauth2-http</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.google.oauth-client</groupId>
+            <artifactId>google-oauth-client-jetty</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.google.api-client</groupId>
             <artifactId>google-api-client</artifactId>
         </dependency>
@@ -424,5 +433,6 @@
             <groupId>com.google.oauth-client</groupId>
             <artifactId>google-oauth-client</artifactId>
         </dependency>
+
     </dependencies>
 </project>

@@ -136,7 +136,7 @@ public class UserService implements UserDetailsService {
         return userDao.save(user);
     }
 
-    public Boolean checkIfEmailExists(String email) {
+    public Boolean checkIfAccountExistsWithEmail(String email) {
         return userDao.checkIfEmailExists(email);
     }
 
