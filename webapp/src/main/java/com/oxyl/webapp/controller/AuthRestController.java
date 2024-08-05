@@ -133,8 +133,8 @@ public class AuthRestController {
         UserDetails userDetails = (UserDetails) authenticate.getPrincipal();
         User actualUser = userService.findByEmailOrUsername(loginDto.identifier());
         // Checking if the account is active
-        if (isNotActive(loginDto.identifier())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Email not verified. Please check your inbox for a verification link.");
+        if (!actualUser.isActive()) {
+            return ResponseEntity.status(HttpStatus.I_AM_A_TEAPOT).body("Email not verified. Please check your inbox for a verification link.");
         }
         return new ResponseEntity<>(getMessage(actualUser), HttpStatus.OK);
     }
@@ -151,7 +151,7 @@ public class AuthRestController {
 
         User actualUser = userService.findByEmailOrUsername(email);
 
-        if (isNotActive(email)) {
+        if (!actualUser.isActive()) {
             userService.setActive(actualUser);
         }
 
@@ -175,6 +175,7 @@ public class AuthRestController {
     }
 
     private boolean isNotActive(String identifier) {
+        logger.info("isNotActive in controller : ");
         return userService.findByEmailOrUsername(identifier).isActive();
     }
 

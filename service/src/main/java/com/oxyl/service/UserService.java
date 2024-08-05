@@ -4,6 +4,8 @@ import com.oxyl.core.model.User;
 import com.oxyl.persistence.dao.UserDao;
 import com.oxyl.persistence.entity.CustomUserDetails;
 import com.oxyl.persistence.entity.UserEntity;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -16,6 +18,7 @@ public class UserService implements UserDetailsService {
 
     private final UserDao userDao;
     private final PasswordEncoder passwordEncoder;
+    private static final Logger logger = LogManager.getLogger(UserService.class);
 
     private static final String[] FRENCH_ADJECTIVES = {
             "Intrépide", "Joyeux", "Brillant", "Astucieux", "Mystérieux", "Agile", "Vif",
@@ -155,6 +158,7 @@ public class UserService implements UserDetailsService {
     }
 
     public User findByEmailOrUsername(String email) {
+        logger.info("found in userservice:" + userDao.findByEmailOrUsername(email));
         return userDao.findByEmailOrUsername(email);
     }
 }
