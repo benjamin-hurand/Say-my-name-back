@@ -14,6 +14,6 @@ public class PhotoDtoMapper {
     }
 
     public PhotoDto toDto(Photo photo) {
-        return new PhotoDto(photo.getId(), photo.getUrl(), photo.getCreatedAt().toString(), photo.getPerson().getId());
+        return new PhotoDto(photo.getId(), photo.getUrl(), photo.getCreatedAt().toString());
     }
 }

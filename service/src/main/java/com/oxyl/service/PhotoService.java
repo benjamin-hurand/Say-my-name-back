@@ -1,5 +1,6 @@
 package com.oxyl.service;
 
+import com.oxyl.core.model.Person;
 import com.oxyl.core.model.Photo;
 import com.oxyl.persistence.dao.PhotoDao;
 import org.springframework.stereotype.Service;
@@ -21,5 +22,9 @@ public class PhotoService {
         if (ids.isEmpty()) return null;  // Return null if no photos are available
         Long randomId = ids.get(new Random().nextInt(ids.size()));  // Pick a random ID
         return photoDao.findById(randomId).orElse(null);
+    }
+
+    public Person findPersonByPhotoId(Long id) {
+        return photoDao.findPersonByPhotoId(id);
     }
 }

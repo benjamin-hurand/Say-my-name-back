@@ -158,7 +158,6 @@ public class UserService implements UserDetailsService {
     }
 
     public User findByEmailOrUsername(String email) {
-        logger.info("found in userservice:" + userDao.findByEmailOrUsername(email));
         return userDao.findByEmailOrUsername(email);
     }
 }

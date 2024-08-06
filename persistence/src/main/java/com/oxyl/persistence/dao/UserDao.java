@@ -65,7 +65,6 @@ public class UserDao {
     }
 
     public UserEntity findEntityByEmailOrUsername(String identifier) {
-        logger.info("found in userdao: {}", userRepository.findByEmailOrUsername(identifier));
         return userRepository.findByEmailOrUsername(identifier).orElseThrow(() -> new UsernameNotFoundException("Entity user not found with email or username " + identifier));
     }
 
