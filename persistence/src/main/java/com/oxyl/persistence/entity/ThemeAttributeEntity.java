@@ -5,11 +5,14 @@ import java.util.Objects;
 
 @Entity
 @Table(name = "themes_attributes")
-public class ThemeAttributesEntity {
+public class ThemeAttributeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
+
+    @Column(name = "operator")
+    private String operator;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "theme_id")
@@ -21,9 +24,22 @@ public class ThemeAttributesEntity {
 
     // Constructors, getters, setters, equals, hashCode, and toString methods
 
-    public ThemeAttributesEntity() {}
+    public ThemeAttributeEntity() {}
 
-    public ThemeAttributesEntity(ThemeEntity theme, AttributeEntity attribute) {
+    public ThemeAttributeEntity(ThemeEntity theme, AttributeEntity attribute) {
+        this.theme = theme;
+        this.attribute = attribute;
+    }
+
+    public ThemeAttributeEntity(long id, String operator, AttributeEntity attribute) {
+        this.id = id;
+        this.operator = operator;
+        this.attribute = attribute;
+    }
+
+    public ThemeAttributeEntity(long id, String operator, ThemeEntity theme, AttributeEntity attribute) {
+        this.id = id;
+        this.operator = operator;
         this.theme = theme;
         this.attribute = attribute;
     }
@@ -34,6 +50,14 @@ public class ThemeAttributesEntity {
 
     public void setId(long id) {
         this.id = id;
+    }
+
+    public String getOperator() {
+        return operator;
+    }
+
+    public void setOperator(String operator) {
+        this.operator = operator;
     }
 
     public ThemeEntity getTheme() {
@@ -55,8 +79,8 @@ public class ThemeAttributesEntity {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof ThemeAttributesEntity)) return false;
-        ThemeAttributesEntity that = (ThemeAttributesEntity) o;
+        if (!(o instanceof ThemeAttributeEntity)) return false;
+        ThemeAttributeEntity that = (ThemeAttributeEntity) o;
         return id == that.id &&
                 Objects.equals(theme, that.theme) &&
                 Objects.equals(attribute, that.attribute);

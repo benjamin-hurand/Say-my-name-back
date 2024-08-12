@@ -1,0 +1,21 @@
+package com.oxyl.service;
+
+import com.oxyl.core.model.Attribute;
+import com.oxyl.persistence.dao.AttributeDao;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class AttributeService {
+
+    private final AttributeDao attributeDao;
+
+    public AttributeService(AttributeDao attributeDao) {
+        this.attributeDao = attributeDao;
+    }
+
+    public List<Attribute> findAllAttributes() {
+        return attributeDao.findAll();
+    }
+}

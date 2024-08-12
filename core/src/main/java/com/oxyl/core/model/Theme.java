@@ -7,7 +7,7 @@ public class Theme {
     private long id;
     private String title;
     private String description;
-    private List<Attribute> attributes;
+    private List<ThemeAttribute> themeAttributes;
 
     public Theme() {}
 
@@ -15,7 +15,7 @@ public class Theme {
         this.id = builder.id;
         this.title = builder.title;
         this.description = builder.description;
-        this.attributes = builder.attributes;
+        this.themeAttributes = builder.themeAttributes;
     }
 
     public long getId() {
@@ -30,8 +30,8 @@ public class Theme {
         return description;
     }
 
-    public List<Attribute> getAttributes() {
-        return attributes;
+    public List<ThemeAttribute> getThemeAttributes() {
+        return themeAttributes;
     }
 
     public void setId(long id) {
@@ -46,15 +46,15 @@ public class Theme {
         this.description = description;
     }
 
-    public void setAttributes(List<Attribute> attributes) {
-        this.attributes = attributes;
+    public void setThemeAttributes(List<ThemeAttribute> themeAttributes) {
+        this.themeAttributes = themeAttributes;
     }
 
     public static class Builder {
         private long id;
         private String title;
         private String description;
-        private List<Attribute> attributes;
+        private List<ThemeAttribute> themeAttributes;
 
         public Builder withId(long id) {
             this.id = id;
@@ -71,8 +71,8 @@ public class Theme {
             return this;
         }
 
-        public Builder withAttributes(List<Attribute> attributes) {
-            this.attributes = attributes;
+        public Builder withThemeAttributes(List<ThemeAttribute> themeAttributes) {
+            this.themeAttributes = themeAttributes;
             return this;
         }
 
@@ -89,12 +89,12 @@ public class Theme {
         return id == theme.id &&
                 Objects.equals(title, theme.title) &&
                 Objects.equals(description, theme.description) &&
-                Objects.equals(attributes, theme.attributes);
+                Objects.equals(themeAttributes, theme.themeAttributes);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, title, description, attributes);
+        return Objects.hash(id, title, description, themeAttributes);
     }
 
     @Override
@@ -103,7 +103,7 @@ public class Theme {
                 "id=" + id +
                 ", title='" + title + '\'' +
                 ", description='" + description + '\'' +
-                ", attributes=" + attributes +
+                ", themeAttributes=" + themeAttributes +
                 '}';
     }
 }

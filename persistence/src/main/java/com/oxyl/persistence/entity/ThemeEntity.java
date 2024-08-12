@@ -18,13 +18,8 @@ public class ThemeEntity {
     @Column(name = "theme_description", columnDefinition = "TEXT")
     private String themeDescription;
 
-    @ManyToMany
-    @JoinTable(
-            name = "themes_attributes",
-            joinColumns = @JoinColumn(name = "theme_id"),
-            inverseJoinColumns = @JoinColumn(name = "attribute_id")
-    )
-    private List<AttributeEntity> attributes;
+    @OneToMany(mappedBy = "theme")
+    private List<ThemeAttributeEntity> themeAttributes;
 
     // Constructors, getters, setters, equals, hashCode, and toString methods
 
@@ -33,6 +28,13 @@ public class ThemeEntity {
     public ThemeEntity(String themeTitle, String themeDescription) {
         this.themeTitle = themeTitle;
         this.themeDescription = themeDescription;
+    }
+
+    public ThemeEntity(long id, String themeTitle, String themeDescription, List<ThemeAttributeEntity> themeAttributes) {
+        this.id = id;
+        this.themeTitle = themeTitle;
+        this.themeDescription = themeDescription;
+        this.themeAttributes = themeAttributes;
     }
 
     public long getId() {
@@ -59,12 +61,12 @@ public class ThemeEntity {
         this.themeDescription = themeDescription;
     }
 
-    public List<AttributeEntity> getAttributes() {
-        return attributes;
+    public List<ThemeAttributeEntity> getThemeAttributes() {
+        return themeAttributes;
     }
 
-    public void setAttributes(List<AttributeEntity> attributes) {
-        this.attributes = attributes;
+    public void setThemeAttributes(List<ThemeAttributeEntity> themeAttributes) {
+        this.themeAttributes = themeAttributes;
     }
 
     @Override
@@ -75,12 +77,12 @@ public class ThemeEntity {
         return id == that.id &&
                 Objects.equals(themeTitle, that.themeTitle) &&
                 Objects.equals(themeDescription, that.themeDescription) &&
-                Objects.equals(attributes, that.attributes);
+                Objects.equals(themeAttributes, that.themeAttributes);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, themeTitle, themeDescription, attributes);
+        return Objects.hash(id, themeTitle, themeDescription, themeAttributes);
     }
 
     @Override
@@ -89,7 +91,7 @@ public class ThemeEntity {
                 "id=" + id +
                 ", themeTitle='" + themeTitle + '\'' +
                 ", themeDescription='" + themeDescription + '\'' +
-                ", attributes=" + attributes +
+                ", themeAttributes=" + themeAttributes +
                 '}';
     }
 }
