@@ -21,4 +21,8 @@ public class AttributeDao {
     public List<Attribute> findAll() {
         return attributeRepository.findAll().stream().map(attributeEntityMapper::toModel).toList();
     }
+
+    public List<Attribute> findAllFilters() {
+        return attributeRepository.findByFilterTrue().stream().map(attributeEntityMapper::toModel).toList();
+    }
 }

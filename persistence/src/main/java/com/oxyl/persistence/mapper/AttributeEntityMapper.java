@@ -13,6 +13,7 @@ public class AttributeEntityMapper {
             attributeEntity.setId(attribute.getId());
             attributeEntity.setAttributeName(attribute.getName());
             attributeEntity.setUnique(attribute.isUnique());
+            attributeEntity.setFilter(attribute.isFilter());
         return attributeEntity;
     }
 
@@ -22,6 +23,7 @@ public class AttributeEntityMapper {
                 .withId(attributeEntity.getId())
                 .withName(attributeEntity.getAttributeName())
                 .withUnique(attributeEntity.isUnique())
+                .withFilter(attributeEntity.isFilter())
                 .build();
     }
 }

@@ -6,6 +6,7 @@ public class Attribute {
     private long id;
     private String name;
     private boolean unique;
+    private boolean filter;
 
     public Attribute() {}
 
@@ -13,6 +14,7 @@ public class Attribute {
         this.id = builder.id;
         this.name = builder.name;
         this.unique = builder.unique;
+        this.filter = builder.filter;
     }
 
     public long getId() {
@@ -27,6 +29,10 @@ public class Attribute {
         return unique;
     }
 
+    public boolean isFilter() {
+        return filter;
+    }
+
     public void setId(long id) {
         this.id = id;
     }
@@ -39,10 +45,15 @@ public class Attribute {
         this.unique = unique;
     }
 
+    public void setFilter(boolean filter) {
+        this.filter = filter;
+    }
+
     public static class Builder {
         private long id;
         private String name;
         private boolean unique;
+        private boolean filter;
 
         public Builder withId(long id) {
             this.id = id;
@@ -59,6 +70,11 @@ public class Attribute {
             return this;
         }
 
+        public Builder withFilter(boolean filter) {
+            this.filter = filter;
+            return this;
+        }
+
         public Attribute build() {
             return new Attribute(this);
         }
@@ -69,12 +85,12 @@ public class Attribute {
         if (this == o) return true;
         if (!(o instanceof Attribute)) return false;
         Attribute attribute = (Attribute) o;
-        return id == attribute.id && unique == attribute.unique && Objects.equals(name, attribute.name);
+        return id == attribute.id && unique == attribute.unique && filter == attribute.filter && Objects.equals(name, attribute.name);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, unique);
+        return Objects.hash(id, name, unique, filter);
     }
 
     @Override
@@ -83,6 +99,7 @@ public class Attribute {
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", unique=" + unique +
+                ", filter=" + filter +
                 '}';
     }
 }

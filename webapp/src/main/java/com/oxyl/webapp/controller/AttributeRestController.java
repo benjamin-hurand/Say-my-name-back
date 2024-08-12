@@ -25,4 +25,10 @@ public class AttributeRestController {
         List<AttributeDto> attributes = attributeService.findAllAttributes().stream().map(attributeDtoMapper::toDto).toList();
         return ResponseEntity.ok(attributes);
     }
+
+    @GetMapping("/api/quiz/filters")
+    public ResponseEntity<List<AttributeDto>> getAllFilters() {
+        List<AttributeDto> attributes = attributeService.findAllFilters().stream().map(attributeDtoMapper::toDto).toList();
+        return ResponseEntity.ok(attributes);
+    }
 }
