@@ -1,7 +1,8 @@
 package com.oxyl.service;
 
-import com.oxyl.core.model.Person;
-import com.oxyl.core.model.Photo;
+import com.oxyl.core.model.game.options.GameOptions;
+import com.oxyl.core.model.people.Person;
+import com.oxyl.core.model.people.Photo;
 import com.oxyl.persistence.dao.PhotoDao;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +19,13 @@ public class PhotoService {
     }
 
     public Photo getRandomPhoto() {
+        List<Long> ids = photoDao.findAllPhotoIds();
+        if (ids.isEmpty()) return null;  // Return null if no photos are available
+        Long randomId = ids.get(new Random().nextInt(ids.size()));  // Pick a random ID
+        return photoDao.findById(randomId).orElse(null);
+    }
+
+    public Photo getRandomPhotoWithCriteria(GameOptions gameOptions) {
         List<Long> ids = photoDao.findAllPhotoIds();
         if (ids.isEmpty()) return null;  // Return null if no photos are available
         Long randomId = ids.get(new Random().nextInt(ids.size()));  // Pick a random ID

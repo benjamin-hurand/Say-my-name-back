@@ -14,8 +14,8 @@ public class GameCategoryEntity {
     private long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "theme_id")
-    private ThemeEntity theme;
+    @JoinColumn(name = "game_mode_id")
+    private GameModeEntity gameMode;
 
     @Column(name = "total_questions")
     private Long totalQuestions;
@@ -27,8 +27,8 @@ public class GameCategoryEntity {
 
     public GameCategoryEntity() {}
 
-    public GameCategoryEntity(ThemeEntity theme, Long totalQuestions, LocalTime timeTaken) {
-        this.theme = theme;
+    public GameCategoryEntity(GameModeEntity gameMode, Long totalQuestions, LocalTime timeTaken) {
+        this.gameMode = gameMode;
         this.totalQuestions = totalQuestions;
         this.timeTaken = timeTaken;
     }
@@ -41,12 +41,12 @@ public class GameCategoryEntity {
         this.id = id;
     }
 
-    public ThemeEntity getTheme() {
-        return theme;
+    public GameModeEntity getGameMode() {
+        return gameMode;
     }
 
-    public void setTheme(ThemeEntity theme) {
-        this.theme = theme;
+    public void setGameMode(GameModeEntity gameMode) {
+        this.gameMode = gameMode;
     }
 
     public Long getTotalQuestions() {
@@ -71,21 +71,21 @@ public class GameCategoryEntity {
         if (!(o instanceof GameCategoryEntity)) return false;
         GameCategoryEntity that = (GameCategoryEntity) o;
         return id == that.id &&
-                Objects.equals(theme, that.theme) &&
+                Objects.equals(gameMode, that.gameMode) &&
                 Objects.equals(totalQuestions, that.totalQuestions) &&
                 Objects.equals(timeTaken, that.timeTaken);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, theme, totalQuestions, timeTaken);
+        return Objects.hash(id, gameMode, totalQuestions, timeTaken);
     }
 
     @Override
     public String toString() {
         return "GameCategoryEntity{" +
                 "id=" + id +
-                ", theme=" + theme +
+                ", gameMode=" + gameMode +
                 ", totalQuestions=" + totalQuestions +
                 ", timeTaken=" + timeTaken +
                 '}';

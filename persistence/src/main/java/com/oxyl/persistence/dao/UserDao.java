@@ -1,6 +1,6 @@
 package com.oxyl.persistence.dao;
 
-import com.oxyl.core.model.User;
+import com.oxyl.core.model.common.User;
 import com.oxyl.persistence.mapper.UserEntityMapper;
 import com.oxyl.persistence.entity.UserEntity;
 import com.oxyl.persistence.repository.UserRepository;
@@ -26,22 +26,22 @@ public class UserDao {
 
     public List<User> findAll() {
         return userRepository.findAll().stream()
-                .map(userEntityMapper::toModel)
+                .map(userEntityMapper::toGameModel)
                 .toList();
     }
 
     public User findById(Long id) {
-        return userRepository.findById(id).map(userEntityMapper::toModel).orElseThrow(() -> new EntityNotFoundException("Entity user not found with id " + id));
+        return userRepository.findById(id).map(userEntityMapper::toGameModel).orElseThrow(() -> new EntityNotFoundException("Entity user not found with id " + id));
     }
 
     public User save(User user) {
-        return userEntityMapper.toModel(userRepository.save(userEntityMapper.toEntity(user)));
+        return userEntityMapper.toGameModel(userRepository.save(userEntityMapper.toEntity(user)));
     }
 
 
 
     public User update(User user) {
-        return userEntityMapper.toModel(userRepository.save(userEntityMapper.toEntity(user)));
+        return userEntityMapper.toGameModel(userRepository.save(userEntityMapper.toEntity(user)));
     }
 
     public void delete(User user) {
@@ -61,7 +61,7 @@ public class UserDao {
     }
 
     public User findByEmailOrUsername(String identifier) {
-        return userEntityMapper.toModel(findEntityByEmailOrUsername(identifier));
+        return userEntityMapper.toGameModel(findEntityByEmailOrUsername(identifier));
     }
 
     public UserEntity findEntityByEmailOrUsername(String identifier) {

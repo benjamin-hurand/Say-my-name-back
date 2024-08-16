@@ -1,7 +1,6 @@
 package com.oxyl.persistence.entity;
 
 import jakarta.persistence.*;
-import java.util.List;
 import java.util.Objects;
 
 @Entity
@@ -21,6 +20,9 @@ public class AttributeEntity {
     @Column(name = "filter", nullable = false)
     private boolean filter;
 
+    @Column(name = "sort", nullable = false)
+    private boolean sort;
+
     // Constructors, getters, setters, equals, hashCode, and toString methods
 
     public AttributeEntity() {}
@@ -35,6 +37,14 @@ public class AttributeEntity {
         this.attributeName = attributeName;
         this.unique = unique;
         this.filter = filter;
+    }
+
+    public AttributeEntity(long id, String attributeName, boolean unique, boolean filter, boolean sort) {
+        this.id = id;
+        this.attributeName = attributeName;
+        this.unique = unique;
+        this.filter = filter;
+        this.sort = sort;
     }
 
     public long getId() {
@@ -69,20 +79,24 @@ public class AttributeEntity {
         this.filter = filter;
     }
 
+    public boolean isSort() {
+        return sort;
+    }
+
+    public void setSort(boolean sort) {
+        this.sort = sort;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof AttributeEntity)) return false;
-        AttributeEntity that = (AttributeEntity) o;
-        return id == that.id &&
-                unique == that.unique &&
-                filter == that.filter &&
-                Objects.equals(attributeName, that.attributeName);
+        if (!(o instanceof AttributeEntity that)) return false;
+        return getId() == that.getId() && isUnique() == that.isUnique() && isFilter() == that.isFilter() && isSort() == that.isSort() && Objects.equals(getAttributeName(), that.getAttributeName());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, attributeName, unique, filter);
+        return Objects.hash(getId(), getAttributeName(), isUnique(), isFilter(), isSort());
     }
 
     @Override
@@ -92,6 +106,7 @@ public class AttributeEntity {
                 ", attributeName='" + attributeName + '\'' +
                 ", unique=" + unique +
                 ", filter=" + filter +
+                ", sort=" + sort +
                 '}';
     }
 }

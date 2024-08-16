@@ -1,6 +1,6 @@
 package com.oxyl.persistence.mapper;
 
-import com.oxyl.core.model.Photo;
+import com.oxyl.core.model.people.Photo;
 import com.oxyl.persistence.entity.PhotoEntity;
 import org.springframework.stereotype.Component;
 
@@ -13,7 +13,7 @@ public class PhotoEntityMapper {
         return new PhotoEntity(photo.getId(), photo.getUrl(), photo.getCreatedAt());
     }
 
-    public Photo toModel(PhotoEntity photoEntity) {
+    public Photo toGameModel(PhotoEntity photoEntity) {
         if (photoEntity == null) return null;
         return new Photo.Builder()
                 .withId(photoEntity.getId())

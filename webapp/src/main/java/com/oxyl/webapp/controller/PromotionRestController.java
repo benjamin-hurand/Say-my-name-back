@@ -1,6 +1,6 @@
 package com.oxyl.webapp.controller;
 
-import com.oxyl.core.model.Promotion;
+import com.oxyl.core.model.people.Promotion;
 import com.oxyl.service.PromotionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

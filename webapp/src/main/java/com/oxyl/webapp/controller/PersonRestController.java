@@ -1,6 +1,6 @@
 package com.oxyl.webapp.controller;
 
-import com.oxyl.core.model.Person;
+import com.oxyl.core.model.people.Person;
 import com.oxyl.service.PersonService;
 import com.oxyl.webapp.dto.PersonDto;
 import com.oxyl.webapp.mapper.PersonDtoMapper;

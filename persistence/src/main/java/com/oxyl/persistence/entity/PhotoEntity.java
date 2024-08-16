@@ -1,6 +1,5 @@
 package com.oxyl.persistence.entity;
 
-import com.oxyl.core.model.Person;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;

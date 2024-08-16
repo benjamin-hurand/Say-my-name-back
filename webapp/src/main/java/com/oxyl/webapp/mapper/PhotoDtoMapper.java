@@ -1,6 +1,6 @@
 package com.oxyl.webapp.mapper;
 
-import com.oxyl.core.model.Photo;
+import com.oxyl.core.model.people.Photo;
 import com.oxyl.persistence.repository.PhotoRepository;
 import com.oxyl.webapp.dto.PhotoDto;
 import org.springframework.stereotype.Component;

@@ -1,6 +1,6 @@
 package com.oxyl.persistence.mapper;
 
-import com.oxyl.core.model.Attribute;
+import com.oxyl.core.model.people.Attribute;
 import com.oxyl.persistence.entity.AttributeEntity;
 import org.springframework.stereotype.Component;
 
@@ -14,6 +14,7 @@ public class AttributeEntityMapper {
             attributeEntity.setAttributeName(attribute.getName());
             attributeEntity.setUnique(attribute.isUnique());
             attributeEntity.setFilter(attribute.isFilter());
+            attributeEntity.setSort(attribute.isSort());
         return attributeEntity;
     }
 
@@ -24,6 +25,7 @@ public class AttributeEntityMapper {
                 .withName(attributeEntity.getAttributeName())
                 .withUnique(attributeEntity.isUnique())
                 .withFilter(attributeEntity.isFilter())
+                .withSort(attributeEntity.isSort())
                 .build();
     }
 }

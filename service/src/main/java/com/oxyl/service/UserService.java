@@ -1,6 +1,6 @@
 package com.oxyl.service;
 
-import com.oxyl.core.model.User;
+import com.oxyl.core.model.common.User;
 import com.oxyl.persistence.dao.UserDao;
 import com.oxyl.persistence.entity.CustomUserDetails;
 import com.oxyl.persistence.entity.UserEntity;

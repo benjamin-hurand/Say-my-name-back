@@ -9,5 +9,5 @@ import java.util.List;
 @Repository
 public interface GameCategoryRepository extends JpaRepository<GameCategoryEntity, Long> {
     
-    List<GameCategoryEntity> findByTheme_Id(Long themeId);
+    List<GameCategoryEntity> findByGameMode_Id(Long gameModeId);
 }

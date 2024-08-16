@@ -1,12 +1,12 @@
 package com.oxyl.persistence.mapper;
 
-import com.oxyl.core.model.User;
+import com.oxyl.core.model.common.User;
 import com.oxyl.persistence.entity.UserEntity;
 import org.springframework.stereotype.Component;
 
 @Component
 public class UserEntityMapper {
-    public User toModel(UserEntity userEntity) {
+    public User toGameModel(UserEntity userEntity) {
         if (userEntity == null) return null;
         return new User.Builder()
                 .withId(userEntity.getId())

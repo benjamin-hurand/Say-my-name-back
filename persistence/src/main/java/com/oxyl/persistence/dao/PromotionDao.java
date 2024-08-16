@@ -1,6 +1,6 @@
 package com.oxyl.persistence.dao;
 
-import com.oxyl.core.model.Promotion;
+import com.oxyl.core.model.people.Promotion;
 import com.oxyl.persistence.mapper.PromotionEntityMapper;
 import com.oxyl.persistence.repository.PromotionRepository;
 import org.springframework.stereotype.Repository;
@@ -21,6 +21,6 @@ public class PromotionDao {
 
     @Transactional
     public List<Promotion> findAll() {
-        return promotionRepository.findAll().stream().map(promotionEntityMapper::toModel).toList();
+        return promotionRepository.findAll().stream().map(promotionEntityMapper::toGameModel).toList();
     }
 }

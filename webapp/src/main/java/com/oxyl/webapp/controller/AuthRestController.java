@@ -1,6 +1,6 @@
 package com.oxyl.webapp.controller;
 
-import com.oxyl.core.model.User;
+import com.oxyl.core.model.common.User;
 import com.oxyl.service.UserService;
 import com.oxyl.webapp.config.JWTUtils;
 import com.oxyl.webapp.dto.LoginDto;

@@ -1,6 +1,6 @@
 package com.oxyl.service;
 
-import com.oxyl.core.model.Attribute;
+import com.oxyl.core.model.people.Attribute;
 import com.oxyl.persistence.dao.AttributeDao;
 import org.springframework.stereotype.Service;
 
@@ -21,5 +21,9 @@ public class AttributeService {
 
     public List<Attribute> findAllFilters() {
         return attributeDao.findAllFilters();
+    }
+
+    public List<Attribute> findAllSorts() {
+        return attributeDao.findAllSorts();
     }
 }

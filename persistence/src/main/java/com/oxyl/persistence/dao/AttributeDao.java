@@ -1,6 +1,6 @@
 package com.oxyl.persistence.dao;
 
-import com.oxyl.core.model.Attribute;
+import com.oxyl.core.model.people.Attribute;
 import com.oxyl.persistence.mapper.AttributeEntityMapper;
 import com.oxyl.persistence.repository.AttributeRepository;
 import org.springframework.stereotype.Repository;
@@ -24,5 +24,9 @@ public class AttributeDao {
 
     public List<Attribute> findAllFilters() {
         return attributeRepository.findByFilterTrue().stream().map(attributeEntityMapper::toModel).toList();
+    }
+
+    public List<Attribute> findAllSorts() {
+        return attributeRepository.findBySortTrue().stream().map(attributeEntityMapper::toModel).toList();
     }
 }

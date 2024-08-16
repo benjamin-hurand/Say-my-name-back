@@ -1,8 +1,7 @@
 package com.oxyl.persistence.mapper;
 
-import com.oxyl.core.model.Person;
+import com.oxyl.core.model.people.Person;
 import com.oxyl.persistence.dto.PersonBasicDto;
-import com.oxyl.persistence.entity.PersonEntity;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -14,7 +13,7 @@ public class PersonBasicDtoMapper {
         return new PersonBasicDto(person.getId(), person.getFirstName(), person.getLastName());
     }
 
-    public Person toModel(PersonBasicDto personBasicDto) {
+    public Person toGameModel(PersonBasicDto personBasicDto) {
         return new Person.Builder()
                 .withId(personBasicDto.getId())
                 .withFirstName(personBasicDto.getFirstName())
@@ -22,7 +21,7 @@ public class PersonBasicDtoMapper {
                 .build();
     }
 
-    public List<Person> toModelList(List<PersonBasicDto> personBasicDto) {
-        return personBasicDto.stream().map(this::toModel).collect(Collectors.toList());
+    public List<Person> toGameModelList(List<PersonBasicDto> personBasicDto) {
+        return personBasicDto.stream().map(this::toGameModel).collect(Collectors.toList());
     }
 }

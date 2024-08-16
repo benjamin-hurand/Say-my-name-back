@@ -1,8 +1,7 @@
 package com.oxyl.persistence.mapper;
 
-import com.oxyl.core.model.PersonPromotion;
+import com.oxyl.core.model.people.PersonPromotion;
 import com.oxyl.persistence.entity.PersonPromotionEntity;
-import com.oxyl.persistence.entity.PromotionEntity;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -20,10 +19,10 @@ public class PersonPromotionEntityMapper {
                 personPromotion.getType());
     }
 
-    public PersonPromotion toModel(PersonPromotionEntity personPromotionEntity) {
+    public PersonPromotion toGameModel(PersonPromotionEntity personPromotionEntity) {
         return new PersonPromotion.Builder()
                 .id(personPromotionEntity.getId())
-                .promotion(promotionEntityMapper.toModel(personPromotionEntity.getPromotion()))
+                .promotion(promotionEntityMapper.toGameModel(personPromotionEntity.getPromotion()))
                 .type(personPromotionEntity.getType())
                 .build();
     }

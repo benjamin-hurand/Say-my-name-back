@@ -1,6 +1,6 @@
 package com.oxyl.persistence.mapper;
 
-import com.oxyl.core.model.Person;
+import com.oxyl.core.model.people.Person;
 import com.oxyl.persistence.entity.PersonEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -43,22 +43,22 @@ public class PersonEntityMapper {
         return personEntity;
     }
 
-    public Person toModel(PersonEntity personEntity) {
+    public Person toGameModel(PersonEntity personEntity) {
         if (personEntity == null) return null;
-        logger.info("Promotions de toModel : {}",personEntity.getPromotions().stream().map(personPromotionEntityMapper::toModel).collect(Collectors.toList()));
+        logger.info("Promotions de toGameModel : {}",personEntity.getPromotions().stream().map(personPromotionEntityMapper::toGameModel).collect(Collectors.toList()));
         return new Person.Builder()
                 .withId(personEntity.getId())
                 .withFirstName(personEntity.getFirstName())
                 .withLastName(personEntity.getLastName())
-                .withPhotos(personEntity.getPhotos().stream().map(photoEntityMapper::toModel).collect(Collectors.toList()))
-                .withUser(userEntityMapper.toModel(personEntity.getUser()))
-                .withAttributes(personEntity.getAttributes().stream().map(personAttributeEntityMapper::toModel).collect(Collectors.toList()))
-                .withPromotions(personEntity.getPromotions().stream().map(personPromotionEntityMapper::toModel).collect(Collectors.toList()))
+                .withPhotos(personEntity.getPhotos().stream().map(photoEntityMapper::toGameModel).collect(Collectors.toList()))
+                .withUser(userEntityMapper.toGameModel(personEntity.getUser()))
+                .withAttributes(personEntity.getAttributes().stream().map(personAttributeEntityMapper::toGameModel).collect(Collectors.toList()))
+                .withPromotions(personEntity.getPromotions().stream().map(personPromotionEntityMapper::toGameModel).collect(Collectors.toList()))
                 .build();
     }
 
-    public List<Person> toModelList(List<PersonEntity> personEntities) {
-        return personEntities.stream().map(this::toModel).collect(Collectors.toList());
+    public List<Person> toGameModelList(List<PersonEntity> personEntities) {
+        return personEntities.stream().map(this::toGameModel).collect(Collectors.toList());
     }
 
     public List<PersonEntity> toEntityList(List<Person> persons) {

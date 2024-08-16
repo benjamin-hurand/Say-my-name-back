@@ -1,6 +1,6 @@
 package com.oxyl.service;
 
-import com.oxyl.core.model.Person;
+import com.oxyl.core.model.people.Person;
 import com.oxyl.persistence.dao.PersonDao;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

@@ -12,4 +12,6 @@ public interface AttributeRepository extends JpaRepository<AttributeEntity, Long
     AttributeEntity findByAttributeName(String attributeName);
 
     List<AttributeEntity> findByFilterTrue();
+
+    List<AttributeEntity> findBySortTrue();
 }

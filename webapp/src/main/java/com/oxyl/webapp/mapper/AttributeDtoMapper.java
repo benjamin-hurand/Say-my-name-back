@@ -1,13 +1,13 @@
 package com.oxyl.webapp.mapper;
 
-import com.oxyl.core.model.Attribute;
+import com.oxyl.core.model.people.Attribute;
 import com.oxyl.webapp.dto.AttributeDto;
 import org.springframework.stereotype.Component;
 
 @Component
 public class AttributeDtoMapper {
     public AttributeDto toDto(Attribute attribute) {
-        return new AttributeDto(attribute.getId(), attribute.getName(), attribute.isUnique());
+        return new AttributeDto(attribute.getId(), attribute.getName(), attribute.isUnique(), attribute.isFilter(), attribute.isSort());
     }
 
     public Attribute toModel(AttributeDto attributeDto) {
@@ -15,6 +15,8 @@ public class AttributeDtoMapper {
                 .withId(attributeDto.id())
                 .withName(attributeDto.name())
                 .withUnique(attributeDto.unique())
+                .withFilter(attributeDto.filter())
+                .withSort(attributeDto.sort())
                 .build();
     }
 }

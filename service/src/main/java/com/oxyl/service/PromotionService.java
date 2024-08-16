@@ -1,6 +1,6 @@
 package com.oxyl.service;
 
-import com.oxyl.core.model.Promotion;
+import com.oxyl.core.model.people.Promotion;
 import com.oxyl.persistence.dao.PromotionDao;
 import org.springframework.stereotype.Service;
 

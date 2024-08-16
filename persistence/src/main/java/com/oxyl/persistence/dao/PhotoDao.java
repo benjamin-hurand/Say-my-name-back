@@ -1,7 +1,7 @@
 package com.oxyl.persistence.dao;
 
-import com.oxyl.core.model.Person;
-import com.oxyl.core.model.Photo;
+import com.oxyl.core.model.people.Person;
+import com.oxyl.core.model.people.Photo;
 import com.oxyl.persistence.entity.PersonEntity;
 import com.oxyl.persistence.entity.PhotoEntity;
 import com.oxyl.persistence.mapper.PersonEntityMapper;
@@ -34,7 +34,7 @@ public class PhotoDao {
     public Optional<Photo> findById(Long id) {
         logger.info("findById: {} , {}", id, photoRepository.findById(id));
         Optional<PhotoEntity> photoEntityOptional = photoRepository.findById(id);
-        return photoEntityOptional.map(photoEntityMapper::toModel);
+        return photoEntityOptional.map(photoEntityMapper::toGameModel);
     }
 
     public List<Long> findAllPhotoIds() {
@@ -47,7 +47,7 @@ public class PhotoDao {
         Optional<PersonEntity> personEntityOptional = photoRepository.findPersonByPhotoId(photoId);
         if (personEntityOptional.isPresent()) {
             PersonEntity personEntity = personEntityOptional.get();
-            return personEntityMapper.toModel(personEntity);
+            return personEntityMapper.toGameModel(personEntity);
         }
         throw new EntityNotFoundException("Person not found with photoId: " + photoId);
     }
