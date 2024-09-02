@@ -1,5 +1,6 @@
 package com.oxyl.persistence.dao;
 
+import com.oxyl.core.model.game.options.GameOptions;
 import com.oxyl.core.model.people.Person;
 import com.oxyl.core.model.people.Photo;
 import com.oxyl.persistence.entity.PersonEntity;
@@ -10,6 +11,7 @@ import com.oxyl.persistence.repository.PhotoRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,7 +34,6 @@ public class PhotoDao {
     }
 
     public Optional<Photo> findById(Long id) {
-        logger.info("findById: {} , {}", id, photoRepository.findById(id));
         Optional<PhotoEntity> photoEntityOptional = photoRepository.findById(id);
         return photoEntityOptional.map(photoEntityMapper::toGameModel);
     }
@@ -40,6 +41,11 @@ public class PhotoDao {
     public List<Long> findAllPhotoIds() {
         logger.info("findAllPhotoIds: {}", photoRepository.findAllPhotoIds());
         return photoRepository.findAllPhotoIds();
+    }
+
+    public List<Long> findAllPhotoIdsWithCriteria(GameOptions gameOptions) {
+        logger.info("findAllPhotoIdsWithCriteria: {}", photoRepository.findPhotoIdsByDynamicFilters(gameOptions));
+        return photoRepository.findPhotoIdsByDynamicFilters(gameOptions);
     }
 
     public Person findPersonByPhotoId(Long photoId) {

@@ -66,6 +66,7 @@ public class PhotoRestController {
         GameOptions options = gameOptionsDtoMapper.toModel(gameOptionsDto);
         logger.info("Fetching - Quiz options : {} ", gameOptionsDto);
         Photo photo = photoService.getRandomPhotoWithCriteria(options);
+        logger.info("Fetched photo - Quiz with options : {}", photo);
         PhotoDto photoDto = photoDtoMapper.toDto(photo);
         return new ResponseEntity<>(photoDto, HttpStatus.OK);
     }

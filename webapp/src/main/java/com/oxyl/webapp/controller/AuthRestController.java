@@ -157,7 +157,6 @@ public class AuthRestController {
 
         return new ResponseEntity<>(getMessage(actualUser), HttpStatus.OK);
     }
-
     private Map<String, Object> getMessage(User userDetails) {
         Map<String, Object> response = new HashMap<>();
         response.put("jwt", jwtUtils.generateJwtResponseEntity(userDetails).getBody());

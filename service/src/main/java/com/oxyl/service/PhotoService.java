@@ -26,7 +26,7 @@ public class PhotoService {
     }
 
     public Photo getRandomPhotoWithCriteria(GameOptions gameOptions) {
-        List<Long> ids = photoDao.findAllPhotoIds();
+        List<Long> ids = photoDao.findAllPhotoIdsWithCriteria(gameOptions);
         if (ids.isEmpty()) return null;  // Return null if no photos are available
         Long randomId = ids.get(new Random().nextInt(ids.size()));  // Pick a random ID
         return photoDao.findById(randomId).orElse(null);
