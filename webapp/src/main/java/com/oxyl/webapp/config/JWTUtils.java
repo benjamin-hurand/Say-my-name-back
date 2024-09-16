@@ -25,7 +25,7 @@ public class JWTUtils {
     private final int oneMinute = 60 * oneSecond;
     private final int oneHour = 60 * oneMinute;
     private final int oneDay = 24 * oneHour;
-    private final int jwtExpiration = oneDay;
+    private final int jwtExpiration = 7*oneDay;
 
     private final String AUTHORIZATION_HEADER_PREFIX = "Bearer ";
 

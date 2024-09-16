@@ -52,8 +52,15 @@ public class PersonEntityMapper {
                 .withLastName(personEntity.getLastName())
                 .withPhotos(personEntity.getPhotos().stream().map(photoEntityMapper::toGameModel).collect(Collectors.toList()))
                 .withUser(userEntityMapper.toGameModel(personEntity.getUser()))
-                .withAttributes(personEntity.getAttributes().stream().map(personAttributeEntityMapper::toGameModel).collect(Collectors.toList()))
+                .withAttributes(personEntity.getAttributes().stream().map(personAttributeEntityMapper::toModel).collect(Collectors.toList()))
                 .withPromotions(personEntity.getPromotions().stream().map(personPromotionEntityMapper::toGameModel).collect(Collectors.toList()))
+                .build();
+    }
+
+    public Person toShortModel(PersonEntity personEntity) {
+        if (personEntity == null) return null;
+        return new Person.Builder()
+                .withId(personEntity.getId())
                 .build();
     }
 

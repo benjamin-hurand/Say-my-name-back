@@ -1,17 +1,19 @@
 package com.oxyl.persistence.repository;
 
 import com.oxyl.persistence.entity.PersonAttributeEntity;
+import jakarta.persistence.Tuple;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 @Repository
 public interface PersonAttributeRepository extends JpaRepository<PersonAttributeEntity, Long> {
-    
-    List<PersonAttributeEntity> findByAttribute_Id(Long attributeId);
-    
-    List<PersonAttributeEntity> findByPerson_Id(Long personId);
-    
-    List<PersonAttributeEntity> findByValue(String value);
+
+    @Query("SELECT pa FROM PersonAttributeEntity pa JOIN pa.attribute a WHERE pa.person.id = (SELECT p.person.id FROM PhotoEntity p WHERE p.id = :photoId)")
+    List<PersonAttributeEntity> findAttributesByPhotoId(@Param("photoId") Long photoId);
+
 }
+

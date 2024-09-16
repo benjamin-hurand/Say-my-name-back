@@ -1,16 +1,12 @@
 package com.oxyl.webapp.controller;
 
-import com.oxyl.core.model.game.options.GameAttributeFilter;
 import com.oxyl.core.model.game.options.GameOptions;
-import com.oxyl.core.model.people.Person;
 import com.oxyl.core.model.people.Photo;
-import com.oxyl.core.model.game.options.GameMode;
+import com.oxyl.service.PersonAttributeService;
 import com.oxyl.service.PhotoService;
-import com.oxyl.webapp.dto.PersonDto;
-import com.oxyl.webapp.dto.PhotoDto;
-import com.oxyl.webapp.dto.GameOptionsDto;
+import com.oxyl.webapp.dto.*;
 import com.oxyl.webapp.mapper.GameOptionsDtoMapper;
-import com.oxyl.webapp.mapper.PersonDtoMapper;
+import com.oxyl.webapp.mapper.PersonAttributeDtoMapper;
 import com.oxyl.webapp.mapper.PhotoDtoMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,18 +22,21 @@ public class PhotoRestController {
     private static final Logger logger = LogManager.getLogger(PhotoRestController.class);
     private final PhotoService photoService;
     private final PhotoDtoMapper photoDtoMapper;
-    private final PersonDtoMapper personDtoMapper;
     private final GameOptionsDtoMapper gameOptionsDtoMapper;
+    private final PersonAttributeService personAttributeService;
+    private final PersonAttributeDtoMapper personAttributeDtoMapper;
 
     public PhotoRestController(
             PhotoService photoService,
             PhotoDtoMapper photoDtoMapper,
-            PersonDtoMapper personDtoMapper,
-            GameOptionsDtoMapper gameOptionsDtoMapper) {
+            GameOptionsDtoMapper gameOptionsDtoMapper,
+            PersonAttributeService personAttributeService,
+            PersonAttributeDtoMapper personAttributeDtoMapper) {
         this.photoService = photoService;
         this.photoDtoMapper = photoDtoMapper;
-        this.personDtoMapper = personDtoMapper;
         this.gameOptionsDtoMapper = gameOptionsDtoMapper;
+        this.personAttributeService = personAttributeService;
+        this.personAttributeDtoMapper = personAttributeDtoMapper;
     }
 
     // Fetch a random photo
@@ -50,22 +49,26 @@ public class PhotoRestController {
     }
 
     // Fetch the person associated with a photo by photo ID
-    @GetMapping("/{id}/person")
-    public ResponseEntity<PersonDto> getPersonByPhotoId(@PathVariable Long id) {
-        Person person = photoService.findPersonByPhotoId(id);
-        PersonDto personDto = personDtoMapper.toDto(person);
-        logger.info("Fetching person for photo ID {}: {}", id, person);
-        return new ResponseEntity<>(personDto, HttpStatus.OK);
+    @GetMapping("/{id}/person/attributes")
+    public ResponseEntity<List<PersonAttributeDto>> getPersonAttributesByPhotoId(@PathVariable("id") Long id) {
+        List<PersonAttributeDto> personAttributeDtoList = personAttributeService
+                .getAttributesByPhotoId(id)
+                .stream()
+                .map(personAttributeDtoMapper::toDto)
+                .toList();
+        logger.info("Fetching attributes for photo ID {}: {}", id, personAttributeDtoList);
+        return new ResponseEntity<>(personAttributeDtoList, HttpStatus.OK);
     }
 
     // Fetch a photo based on criteria: gameMode, filters, and sorting
     @PostMapping("/random/with-criteria")
     public ResponseEntity<PhotoDto> getRandomPhotoWithCriteria(
-            @RequestBody(required = false) GameOptionsDto gameOptionsDto) {
-        logger.info("Fetching - Quiz options DTO : {} ", gameOptionsDto);
-        GameOptions options = gameOptionsDtoMapper.toModel(gameOptionsDto);
-        logger.info("Fetching - Quiz options : {} ", gameOptionsDto);
-        Photo photo = photoService.getRandomPhotoWithCriteria(options);
+            @RequestBody(required = false) FetchPhotoCriteriaDto fetchPhotoCriteriaDto
+    ) {
+        logger.info("Fetching - Quiz options DTO : {} , and person ids historic: {}", fetchPhotoCriteriaDto.gameOptionsDto(), fetchPhotoCriteriaDto.personIdsHistoric());
+        GameOptions options = gameOptionsDtoMapper.toModel(fetchPhotoCriteriaDto.gameOptionsDto());
+        logger.info("Fetching - Quiz options : {} ", fetchPhotoCriteriaDto.gameOptionsDto());
+        Photo photo = photoService.getNextPhotoWithCriteria(options, fetchPhotoCriteriaDto.personIdsHistoric());
         logger.info("Fetched photo - Quiz with options : {}", photo);
         PhotoDto photoDto = photoDtoMapper.toDto(photo);
         return new ResponseEntity<>(photoDto, HttpStatus.OK);
