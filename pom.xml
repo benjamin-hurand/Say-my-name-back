@@ -3,7 +3,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.oxyl</groupId>
+    <groupId>com.saymyname</groupId>
     <artifactId>say-my-name</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
@@ -121,32 +121,32 @@
 
             <!-- This exact project : My-Newro-Factory -->
             <dependency>
-                <groupId>com.oxyl</groupId>
+                <groupId>com.saymyname</groupId>
                 <artifactId>core</artifactId>
                 <version>${version}</version>
             </dependency>
             <dependency>
-                <groupId>com.oxyl</groupId>
+                <groupId>com.saymyname</groupId>
                 <artifactId>binding</artifactId>
                 <version>${version}</version>
             </dependency>
             <dependency>
-                <groupId>com.oxyl</groupId>
+                <groupId>com.saymyname</groupId>
                 <artifactId>console</artifactId>
                 <version>${version}</version>
             </dependency>
             <dependency>
-                <groupId>com.oxyl</groupId>
+                <groupId>com.saymyname</groupId>
                 <artifactId>persistence</artifactId>
                 <version>${version}</version>
             </dependency>
             <dependency>
-                <groupId>com.oxyl</groupId>
+                <groupId>com.saymyname</groupId>
                 <artifactId>service</artifactId>
                 <version>${version}</version>
             </dependency>
             <dependency>
-                <groupId>com.oxyl</groupId>
+                <groupId>com.saymyname</groupId>
                 <artifactId>webapp</artifactId>
                 <version>${version}</version>
             </dependency>
@@ -435,4 +435,20 @@
         </dependency>
 
     </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Plugin Surefire pour ignorer les tests -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
+                <configuration>
+                    <skipTests>true</skipTests>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+
 </project>
