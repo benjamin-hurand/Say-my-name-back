@@ -69,11 +69,6 @@ public class QuizService {
 
 
     private String computeInitials(Person person, GameOptions options) {
-        // Si l'option indique de ne pas donner d'initiales, retourner une chaîne vide
-        if (!options.isInitialGiven()) {
-            return "";
-        }
-    
         // Récupérer la liste des attributs associés à la personne
         List<PersonAttribute> attributes = person.getAttributes();
     

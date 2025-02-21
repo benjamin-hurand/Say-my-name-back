@@ -35,9 +35,6 @@
         <junit.jupiter.version>5.10.1</junit.jupiter.version>
         <mockito.version>5.12.0</mockito.version>
 
-        <!-- Logging Versions -->
-        <log4j.version>2.23.1</log4j.version>
-
         <!-- Web Application Versions -->
         <servlet.api.version>6.1.0</servlet.api.version>
         <jsp.api.version>3.0.0</jsp.api.version>
@@ -79,20 +76,7 @@
     <dependencyManagement>
         <dependencies>
             <!-- Global dependencies -->
-            <!-- Logging -->
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-api</artifactId>
-                <version>${log4j.version}</version>
-                <scope>compile</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-core</artifactId>
-                <version>${log4j.version}</version>
-                <scope>compile</scope>
-            </dependency>
-
+    
             <!-- Testing -->
             <dependency>
                 <groupId>com.h2database</groupId>
@@ -363,15 +347,6 @@
 
     <dependencies>
         <!-- Global dependencies -->
-        <!-- Logging -->
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-        </dependency>
 
         <!-- Testing -->
         <dependency>

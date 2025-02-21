@@ -2,8 +2,8 @@ package com.saymyname.webapp.config;
 
 import com.saymyname.service.UserService;
 import jakarta.servlet.http.HttpServletResponse;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -32,7 +32,7 @@ import java.util.Arrays;
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
-    private static final Logger logger = LogManager.getLogger(SecurityConfig.class);
+    private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
     private final PasswordEncoder passwordEncoder;
 
     public SecurityConfig(PasswordEncoder passwordEncoder) {
@@ -60,7 +60,7 @@ public class SecurityConfig {
         authenticationProvider.setUserDetailsService(userService);
         authenticationProvider.setPasswordEncoder(passwordEncoder);
 
-        logger.info("Authentication manager configured with user details service");
+        // logger.info("Authentication manager configured with user details service");
         return new ProviderManager(authenticationProvider);
     }
 

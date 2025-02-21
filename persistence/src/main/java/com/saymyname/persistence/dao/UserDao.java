@@ -5,8 +5,8 @@ import com.saymyname.persistence.mapper.UserEntityMapper;
 import com.saymyname.persistence.entity.UserEntity;
 import com.saymyname.persistence.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Repository;
 
@@ -16,7 +16,7 @@ import java.util.List;
 public class UserDao {
     private final UserRepository userRepository;
     private final UserEntityMapper userEntityMapper;
-    private static final Logger logger = LogManager.getLogger(UserDao.class);
+    private static final Logger logger = LoggerFactory.getLogger(UserDao.class);
 
 
     public UserDao(UserRepository userRepository, UserEntityMapper userEntityMapper) {

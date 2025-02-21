@@ -2,8 +2,8 @@ package com.saymyname.persistence.config;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,7 +13,7 @@ import javax.sql.DataSource;
 
 @Configuration
 public class DataSourceConfig {
-    private static final Logger logger = LogManager.getLogger(DataSourceConfig.class);
+    private static final Logger logger = LoggerFactory.getLogger(DataSourceConfig.class);
 
     @Value("${db.driver}")
     private String driverClassName;
@@ -36,7 +36,7 @@ public class DataSourceConfig {
             hikariConfig.setUsername(username);
             hikariConfig.setPassword(password);
         }
-        logger.info("Driver Class: {},\n Url: {},\n Username: {},\n password: {}", driverClassName, jdbcUrl, username, password);
+        // logger.info("Driver Class: {},\n Url: {},\n Username: {},\n password: {}", driverClassName, jdbcUrl, username, password);
         hikariConfig.setMaximumPoolSize(10);
         hikariConfig.setAutoCommit(false);
         hikariConfig.addDataSourceProperty("cachePrepStmts", "true");

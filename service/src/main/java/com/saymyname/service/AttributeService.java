@@ -15,12 +15,8 @@ public class AttributeService {
         this.attributeDao = attributeDao;
     }
 
-    public List<Attribute> findAllAttributes() {
-        return attributeDao.findAll();
-    }
-
-    public List<Attribute> findAllFilters() {
-        return attributeDao.findAllFilters();
+    public List<Attribute> getFilterableAttributesWithMinMax() {
+        return attributeDao.getFilterableAttributesWithMinMax();
     }
 
     public List<Attribute> findAllSorts() {

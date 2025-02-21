@@ -2,6 +2,8 @@ package com.saymyname.core.model.people;
 
 import java.util.Objects;
 
+import org.checkerframework.checker.units.qual.min;
+
 public class Attribute {
     private long id;
     private String name;
@@ -9,6 +11,9 @@ public class Attribute {
     private boolean filter;
     private boolean sort;
     private boolean initializable;
+    private AttributeType type;
+    private String minValue;
+    private String maxValue;
 
     // Constructeur par défaut
     public Attribute() {}
@@ -21,6 +26,9 @@ public class Attribute {
         this.filter = builder.filter;
         this.sort = builder.sort;
         this.initializable = builder.initializable;
+        this.type = builder.type;
+        this.minValue = builder.minValue;
+        this.maxValue = builder.maxValue;
     }
 
     // Getters
@@ -48,6 +56,18 @@ public class Attribute {
         return initializable;
     }
 
+    public AttributeType getType() {
+        return type;
+    }
+
+    public String getMinValue() { 
+        return minValue; 
+    }
+
+    public String getMaxValue() { 
+        return maxValue; 
+    }
+
     // Setters
     public void setId(long id) {
         this.id = id;
@@ -73,6 +93,18 @@ public class Attribute {
         this.initializable = initializable;
     }
 
+    public void setType(AttributeType type) {
+        this.type = type;
+    }
+
+    public void setMinValue(String minValue) { 
+        this.minValue = minValue; 
+    }
+    
+    public void setMaxValue(String maxValue) { 
+        this.maxValue = maxValue; 
+    }
+
     // Builder Pattern
     public static class Builder {
         private long id;
@@ -81,6 +113,9 @@ public class Attribute {
         private boolean filter;
         private boolean sort;
         private boolean initializable; // Nouveau champ
+        private AttributeType type;
+        private String minValue;
+        private String maxValue;
 
         public Builder withId(long id) {
             this.id = id;
@@ -112,6 +147,21 @@ public class Attribute {
             return this;
         }
 
+        public Builder withType(AttributeType type) {
+            this.type = type;
+            return this;
+        }
+
+        public Builder withMinValue(String minValue) {
+            this.minValue = minValue;
+            return this;
+        }
+
+        public Builder withMaxValue(String maxValue) {
+            this.maxValue = maxValue;
+            return this;
+        }
+
         public Attribute build() {
             return new Attribute(this);
         }
@@ -121,18 +171,21 @@ public class Attribute {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Attribute)) return false;
-        Attribute attribute = (Attribute) o;
-        return id == attribute.id &&
-               unique == attribute.unique &&
-               filter == attribute.filter &&
-               sort == attribute.sort &&
-               initializable == attribute.initializable &&
-               Objects.equals(name, attribute.name);
+        Attribute that = (Attribute) o;
+        return id == that.id &&
+               unique == that.unique &&
+               filter == that.filter &&
+               sort == that.sort &&
+               initializable == that.initializable &&
+               Objects.equals(name, that.name) &&
+               Objects.equals(type, that.type) &&
+               Objects.equals(minValue, that.minValue) &&
+               Objects.equals(maxValue, that.maxValue);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, unique, filter, sort, initializable);
+        return Objects.hash(id, name, unique, filter, sort, initializable, type, minValue, maxValue);
     }
 
     @Override
@@ -144,6 +197,9 @@ public class Attribute {
                 ", filter=" + filter +
                 ", sort=" + sort +
                 ", initializable=" + initializable +
+                ", type='" + type + '\'' +
+                ", minValue='" + minValue + '\'' +
+                ", maxValue='" + maxValue + '\'' +
                 '}';
     }
 }

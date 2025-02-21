@@ -26,10 +26,14 @@ public class AttributeEntity {
     @Column(name = "initializable", nullable = false)
     private boolean initializable;
 
-    // Constructeur par défaut
+    // New column for type (using ENUM or VARCHAR, depending on your DB setup)
+    @Column(name = "type", nullable = false, length = 50)
+    private String type;
+
+    // Constructors, getters, setters, builder, equals, hashCode, and toString
+
     public AttributeEntity() {}
 
-    // Constructeur avec tous les attributs (utilisé par le Builder)
     private AttributeEntity(Builder builder) {
         this.id = builder.id;
         this.attributeName = builder.attributeName;
@@ -37,9 +41,9 @@ public class AttributeEntity {
         this.filter = builder.filter;
         this.sort = builder.sort;
         this.initializable = builder.initializable;
+        this.type = builder.type;
     }
 
-    // Getters et Setters
     public long getId() {
         return id;
     }
@@ -79,7 +83,7 @@ public class AttributeEntity {
     public void setSort(boolean sort) {
         this.sort = sort;
     }
-    
+
     public boolean isInitializable() {
         return initializable;
     }
@@ -88,7 +92,15 @@ public class AttributeEntity {
         this.initializable = initializable;
     }
 
-    // Pattern Builder
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+    
+    // Builder Pattern
     public static class Builder {
         private long id;
         private String attributeName;
@@ -96,6 +108,7 @@ public class AttributeEntity {
         private boolean filter;
         private boolean sort;
         private boolean initializable;
+        private String type; // Store enum name as string
 
         public Builder withId(long id) {
             this.id = id;
@@ -126,13 +139,17 @@ public class AttributeEntity {
             this.initializable = initializable;
             return this;
         }
+        
+        public Builder withType(String type) {
+            this.type = type;
+            return this;
+        }
 
         public AttributeEntity build() {
             return new AttributeEntity(this);
         }
     }
 
-    // equals, hashCode et toString
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -143,12 +160,13 @@ public class AttributeEntity {
                filter == that.filter &&
                sort == that.sort &&
                initializable == that.initializable &&
-               Objects.equals(attributeName, that.attributeName);
+               Objects.equals(attributeName, that.attributeName) &&
+               Objects.equals(type, that.type);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, attributeName, unique, filter, sort, initializable);
+        return Objects.hash(id, attributeName, unique, filter, sort, initializable, type);
     }
 
     @Override
@@ -160,6 +178,7 @@ public class AttributeEntity {
                 ", filter=" + filter +
                 ", sort=" + sort +
                 ", initializable=" + initializable +
+                ", type='" + type + '\'' +
                 '}';
     }
 }

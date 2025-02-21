@@ -22,15 +22,9 @@ public class AttributeRestController {
         this.attributeDtoMapper = attributeDtoMapper;
     }
 
-    @GetMapping
-    public ResponseEntity<List<AttributeDto>> getAllAttributes() {
-        List<AttributeDto> attributes = attributeService.findAllAttributes().stream().map(attributeDtoMapper::toDto).toList();
-        return ResponseEntity.ok(attributes);
-    }
-
     @GetMapping("/filters")
-    public ResponseEntity<List<AttributeDto>> getAllFilters() {
-        List<AttributeDto> attributes = attributeService.findAllFilters().stream().map(attributeDtoMapper::toDto).toList();
+    public ResponseEntity<List<AttributeDto>> getFilterableAttributesWithMinMax() {
+        List<AttributeDto> attributes = attributeService.getFilterableAttributesWithMinMax().stream().map(attributeDtoMapper::toDto).toList();
         return ResponseEntity.ok(attributes);
     }
 

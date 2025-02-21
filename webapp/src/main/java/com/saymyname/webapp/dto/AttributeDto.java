@@ -6,6 +6,9 @@ public record AttributeDto(
         Boolean unique,
         Boolean filter,
         Boolean sort,
-        Boolean initializable
+        Boolean initializable,
+        String type,
+        String minValue,
+        String maxValue
 ) {
 }

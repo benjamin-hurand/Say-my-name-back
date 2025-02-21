@@ -3,7 +3,6 @@ package com.saymyname.persistence.dao;
 import com.saymyname.core.model.game.options.GameOptions;
 import com.saymyname.core.model.people.Person;
 import com.saymyname.persistence.entity.PersonEntity;
-import com.saymyname.persistence.mapper.PersonBasicDtoMapper;
 import com.saymyname.persistence.mapper.PersonEntityMapper;
 import com.saymyname.persistence.repository.PersonRepository;
 import org.springframework.stereotype.Repository;
@@ -16,22 +15,15 @@ import java.util.Optional;
 public class PersonDao {
     private final PersonRepository personRepository;
     private final PersonEntityMapper personEntityMapper;
-    private final PersonBasicDtoMapper personBasicDtoMapper;
 
-    public PersonDao(PersonRepository personRepository, PersonEntityMapper personEntityMapper, PersonBasicDtoMapper personBasicDtoMapper) {
+    public PersonDao(PersonRepository personRepository, PersonEntityMapper personEntityMapper) {
         this.personRepository = personRepository;
         this.personEntityMapper = personEntityMapper;
-        this.personBasicDtoMapper = personBasicDtoMapper;
     }
 
     @Transactional
     public List<Person> findAll() {
         return personEntityMapper.toModelList(personRepository.findAll());
-    }
-
-    @Transactional(readOnly = true)
-    public List<Person> findAllWithoutUser() {
-        return personBasicDtoMapper.toModelList(personRepository.findPersonsBasicInfoWithoutUser());
     }
 
     @Transactional

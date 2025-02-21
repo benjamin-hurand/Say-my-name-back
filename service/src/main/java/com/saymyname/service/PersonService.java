@@ -21,21 +21,7 @@ public class PersonService {
         return personDao.findAll();
     }
 
-    public List<Person> findAllWithoutUser() {
-        return personDao.findAllWithoutUser();
-    }
-
     public Optional<Person> findById(Long id) {
         return personDao.findById(id);
     }
-
-//    public List<Person> findAllPersons() {
-//        return personDao.findAllPersons();
-//    }
-//
-//    public Person create(Person person) {
-//        return personDao.create(person);
-//    }
-
-    // Add other methods as needed (e.g., findById, update, delete)
 }

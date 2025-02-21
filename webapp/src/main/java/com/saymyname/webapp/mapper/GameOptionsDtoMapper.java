@@ -2,13 +2,13 @@ package com.saymyname.webapp.mapper;
 
 import com.saymyname.core.model.game.options.GameOptions;
 import com.saymyname.webapp.dto.GameOptionsDto;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 @Component
 public class GameOptionsDtoMapper {
-    private static final Logger logger = LogManager.getLogger(GameOptionsDtoMapper.class);
+    private static final Logger logger = LoggerFactory.getLogger(GameOptionsDtoMapper.class);
 
     private final GameAttributeFilterDtoMapper gameAttributeFilterDtoMapper;
     private final GameAttributeSortDtoMapper gameAttributeSortDtoMapper;
@@ -24,21 +24,21 @@ public class GameOptionsDtoMapper {
     }
 
     public GameOptions toModel(GameOptionsDto gameOptionsDto) {
-        logger.info("Mapping GameOptionsDto to GameOptions - Start");
+        // logger.info("Mapping GameOptionsDto to GameOptions - Start");
         GameOptions.Builder builder = new GameOptions.Builder();
-        logger.info("Mapping GameOptionsDto to GameOptions - Setting id");
-        builder.withId(gameOptionsDto.id());
-        logger.info("Mapping GameOptionsDto to GameOptions - Setting filters");
+        // logger.info("Mapping GameOptionsDto to GameOptions - Setting id");
+        builder.withId(gameOptionsDto.id().longValue());
+        // logger.info("Mapping GameOptionsDto to GameOptions - Setting filters");
         builder.withFilters(gameOptionsDto.filters().stream().map(gameAttributeFilterDtoMapper::toModel).toList());
-        logger.info("Mapping GameOptionsDto to GameOptions - Setting sortBy");
+        // logger.info("Mapping GameOptionsDto to GameOptions - Setting sortBy");
         builder.withSortBy(gameOptionsDto.sortBy().stream().map(gameAttributeSortDtoMapper::toModel).toList());
-        logger.info("Mapping GameOptionsDto to GameOptions - Setting gameMode");
+        // logger.info("Mapping GameOptionsDto to GameOptions - Setting gameMode");
         builder.withGameMode(gameModeDtoMapper.toModel(gameOptionsDto.gameMode()));
-        logger.info("Mapping GameOptionsDto to GameOptions - Setting initialGiven");
+        // logger.info("Mapping GameOptionsDto to GameOptions - Setting initialGiven");
         builder.withInitialGiven(gameOptionsDto.initialGiven());
-        logger.info("Mapping GameOptionsDto to GameOptions - Building GameOptions");
+        // logger.info("Mapping GameOptionsDto to GameOptions - Building GameOptions");
         GameOptions gameOptions = builder.build();
-        logger.info("Mapping GameOptionsDto to GameOptions - End");
+        // logger.info("Mapping GameOptionsDto to GameOptions - End");
         return gameOptions;
     }
 

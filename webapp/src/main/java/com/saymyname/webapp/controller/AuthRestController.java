@@ -9,8 +9,8 @@ import com.saymyname.webapp.dto.RegisterFormDto;
 import com.saymyname.service.GoogleAuthService;
 import com.saymyname.webapp.dto.RegisterGoogleDto;
 import jakarta.validation.Valid;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -31,7 +31,7 @@ public class AuthRestController {
     private final AuthenticationManager authManager;
     private final JWTUtils jwtUtils;
     private final UserService userService;
-    private static final Logger logger = LogManager.getLogger(AuthRestController.class);
+    private static final Logger logger = LoggerFactory.getLogger(AuthRestController.class);
     private final GoogleAuthService googleAuthService;
 
     public AuthRestController(AuthenticationManager authManager, JWTUtils jwtUtils, UserService userService, GoogleAuthService googleAuthService) {
@@ -68,14 +68,14 @@ public class AuthRestController {
 
     @PostMapping("/auth/google/register")
     public ResponseEntity<Object> registerWithGoogle(@Valid @RequestBody RegisterGoogleDto user) {
-        logger.info("RECU : credential: {}, clientId: {}, select_by: {}", user.credential(), user.clientId(), user.select_by());
+        // logger.info("RECU : credential: {}, clientId: {}, select_by: {}", user.credential(), user.clientId(), user.select_by());
 
         String credential = user.credential();
         String clientId = user.clientId();
         String selectBy = user.select_by();
         try {
             String email = googleAuthService.getEmail(credential, clientId); // todo: Exception to handle !!
-            logger.info("REGISTER GOOGLE : credential: {}, clientId: {}, selectBy: {}, email: {}", credential, clientId, selectBy, email);
+            // logger.info("REGISTER GOOGLE : credential: {}, clientId: {}, selectBy: {}, email: {}", credential, clientId, selectBy, email);
 
             if(userService.checkIfAccountExistsWithEmail(email)) {
                 // Then login !
@@ -141,13 +141,13 @@ public class AuthRestController {
 
     @PostMapping("/auth/google/login")
     public ResponseEntity<?> loginWithGoogle(@RequestBody LoginGoogleDto loginDto) throws Exception {
-        logger.info("RECU : credential: {}, clientId: {}, select_by: {}", loginDto.credential(), loginDto.clientId(), loginDto.select_by());
+        // logger.info("RECU : credential: {}, clientId: {}, select_by: {}", loginDto.credential(), loginDto.clientId(), loginDto.select_by());
 
         String credential = loginDto.credential();
         String clientId = loginDto.clientId();
         String email = googleAuthService.getEmail(credential, clientId);
         String selectBy = loginDto.select_by();
-        logger.info("CONNEXION GOOGLE : credential: {}, clientId: {}, selectBy: {}, email: {}", credential, clientId, selectBy, email);
+        // logger.info("CONNEXION GOOGLE : credential: {}, clientId: {}, selectBy: {}, email: {}", credential, clientId, selectBy, email);
 
         User actualUser = userService.findByEmailOrUsername(email);
 
@@ -174,7 +174,7 @@ public class AuthRestController {
     }
 
     private boolean isNotActive(String identifier) {
-        logger.info("isNotActive in controller : ");
+        // logger.info("isNotActive in controller : ");
         return userService.findByEmailOrUsername(identifier).isActive();
     }
 
