@@ -27,33 +27,62 @@ public class PersonRepositoryCustomImpl implements PersonRepositoryCustom {
         CriteriaQuery<PersonEntity> cq = cb.createQuery(PersonEntity.class);
         Root<PersonEntity> person = cq.from(PersonEntity.class);
 
-        // Préparer la liste des prédicats pour le filtrage
+        // Liste des prédicats de filtrage
         List<Predicate> filterPredicates = new ArrayList<>();
         if (options.getFilters() != null) {
             for (GameAttributeFilter filter : options.getFilters()) {
-                // Créer un join INNER pour s'assurer que la personne possède bien cet attribut
+                // Créer un join INNER sur les attributs
                 Join<PersonEntity, PersonAttributeEntity> filterJoin = person.join("attributes", JoinType.INNER);
-                // Condition : l'attribut doit correspondre (par son ID)
+
+                // Vérifier que l'attribut correspond (par son ID)
                 Predicate attributeMatch = cb.equal(
                         filterJoin.get("attribute").get("id"),
                         filter.getAttribute().getId()
                 );
-                // Condition : la valeur est comprise entre minValue et maxValue (comparaison lexicographique)
-                Predicate valueBetween = cb.between(
-                        filterJoin.get("value"),
-                        filter.getMinValue(),
-                        filter.getMaxValue()
-                );
-                filterPredicates.add(cb.and(attributeMatch, valueBetween));
+
+                // Condition sur la valeur : comprise entre minValue (incluse) et nextValue(maxValue) (exclusive)
+                String minValue = filter.getMinValue();
+                String maxValue = filter.getMaxValue();
+                Predicate lowerBound = cb.greaterThanOrEqualTo(filterJoin.get("value"), minValue);
+                Predicate upperBound = cb.lessThan(filterJoin.get("value"), nextValue(maxValue));
+                Predicate valueBetween = cb.and(lowerBound, upperBound);
+
+                // Ajouter les conditions de validité sur l'attribut
+                Predicate validFromPredicate = cb.lessThanOrEqualTo(filterJoin.get("validFrom"), cb.currentTimestamp());
+                Predicate validToPredicate = cb.or(cb.isNull(filterJoin.get("validTo")), 
+                                                cb.greaterThanOrEqualTo(filterJoin.get("validTo"), cb.currentTimestamp()));
+                Predicate validPredicate = cb.and(validFromPredicate, validToPredicate);
+
+                // Combiner toutes les conditions pour ce filtre
+                filterPredicates.add(cb.and(attributeMatch, valueBetween, validPredicate));
             }
         }
         if (!filterPredicates.isEmpty()) {
             cq.where(cb.and(filterPredicates.toArray(new Predicate[0])));
         }
 
-        // On utilise DISTINCT pour éviter les doublons dus aux joins multiples
+        // Utiliser DISTINCT pour éviter les doublons dus aux joins multiples
         cq.select(person).distinct(true);
 
         return entityManager.createQuery(cq).getResultList();
     }
+
+    private String nextValue(String value) {
+        if (value == null || value.isEmpty()) {
+            return value;
+        }
+        if (value.length() == 1) {
+            char c = value.charAt(0);
+            // Si c'est 'Z' ou 'z', renvoyer une borne supérieure qui capture tous les cas
+            if (c == 'Z' || c == 'z') {
+                return value.equals("Z") ? "Z\uffff" : "z\uffff";
+            } else {
+                return String.valueOf((char) (c + 1));
+            }
+        }
+        // Pour des chaînes plus longues, ajouter un caractère de fin (ici, un caractère maximum)
+        return value + "\uffff";
+    }
+
+    
 }

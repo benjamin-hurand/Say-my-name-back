@@ -1,5 +1,6 @@
 package com.saymyname.core.model.people;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 public class PersonAttribute {
@@ -7,16 +8,19 @@ public class PersonAttribute {
     private Attribute attribute;
     private String value;
     private Person person;
+    private LocalDateTime validFrom;
+    private LocalDateTime validTo;
 
     public PersonAttribute() {
-
     }
 
     private PersonAttribute(Builder builder) {
         this.id = builder.id;
         this.attribute = builder.attribute;
         this.value = builder.value;
-        this.person = builder.person;  // Ajout de la personne
+        this.person = builder.person;
+        this.validFrom = builder.validFrom;
+        this.validTo = builder.validTo;
     }
 
     public long getId() {
@@ -32,7 +36,15 @@ public class PersonAttribute {
     }
 
     public Person getPerson() {
-        return person;  // Getter pour la personne
+        return person;
+    }
+
+    public LocalDateTime getValidFrom() {
+        return validFrom;
+    }
+
+    public LocalDateTime getValidTo() {
+        return validTo;
     }
 
     public void setId(long id) {
@@ -48,14 +60,24 @@ public class PersonAttribute {
     }
 
     public void setPerson(Person person) {
-        this.person = person;  // Setter pour la personne
+        this.person = person;
+    }
+
+    public void setValidFrom(LocalDateTime validFrom) {
+        this.validFrom = validFrom;
+    }
+
+    public void setValidTo(LocalDateTime validTo) {
+        this.validTo = validTo;
     }
 
     public static class Builder {
         private long id;
         private Attribute attribute;
         private String value;
-        private Person person;  // Ajout de la personne
+        private Person person;
+        private LocalDateTime validFrom;
+        private LocalDateTime validTo;
 
         public Builder withId(long id) {
             this.id = id;
@@ -77,6 +99,16 @@ public class PersonAttribute {
             return this;
         }
 
+        public Builder withValidFrom(LocalDateTime validFrom) {
+            this.validFrom = validFrom;
+            return this;
+        }
+
+        public Builder withValidTo(LocalDateTime validTo) {
+            this.validTo = validTo;
+            return this;
+        }
+
         public PersonAttribute build() {
             return new PersonAttribute(this);
         }
@@ -90,12 +122,14 @@ public class PersonAttribute {
         return id == that.id &&
                 Objects.equals(attribute, that.attribute) &&
                 Objects.equals(value, that.value) &&
-                Objects.equals(person, that.person);  // Inclure la personne dans equals
+                Objects.equals(person, that.person) &&
+                Objects.equals(validFrom, that.validFrom) &&
+                Objects.equals(validTo, that.validTo);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, attribute, value, person);  // Inclure la personne dans hashCode
+        return Objects.hash(id, attribute, value, person, validFrom, validTo);
     }
 
     @Override
@@ -104,7 +138,9 @@ public class PersonAttribute {
                 "id=" + id +
                 ", attribute=" + attribute +
                 ", value='" + value + '\'' +
-                ", person=" + person +  // Inclure la personne dans toString
+                ", person=" + person +
+                ", validFrom=" + validFrom +
+                ", validTo=" + validTo +
                 '}';
     }
 }

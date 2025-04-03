@@ -17,27 +17,42 @@ public class PersonAttributeEntityMapper {
     }
 
     public PersonAttributeEntity toEntity(PersonAttribute personAttribute) {
-        if (personAttribute == null) return null;
-        return new PersonAttributeEntity(personAttribute.getId(), attributeEntityMapper.toEntity(personAttribute.getAttribute()), personAttribute.getValue());
+        if (personAttribute == null) {
+            return null;
+        }
+        return new PersonAttributeEntity(
+                personAttribute.getId(),
+                attributeEntityMapper.toEntity(personAttribute.getAttribute()),
+                personAttribute.getValue(),
+                personAttribute.getValidFrom(),
+                personAttribute.getValidTo()
+        );
     }
 
     public PersonAttribute toModel(PersonAttributeEntity personAttributeEntity) {
-        if (personAttributeEntity == null) return null;
+        if (personAttributeEntity == null) {
+            return null;
+        }
         return new PersonAttribute.Builder()
                 .withId(personAttributeEntity.getId())
                 .withAttribute(attributeEntityMapper.toModel(personAttributeEntity.getAttribute()))
                 .withValue(personAttributeEntity.getValue())
+                .withValidFrom(personAttributeEntity.getValidFrom())
+                .withValidTo(personAttributeEntity.getValidTo())
                 .build();
     }
 
     public PersonAttribute toFullModel(PersonAttributeEntity personAttributeEntity) {
-        if (personAttributeEntity == null) return null;
+        if (personAttributeEntity == null) {
+            return null;
+        }
         return new PersonAttribute.Builder()
                 .withId(personAttributeEntity.getId())
                 .withAttribute(attributeEntityMapper.toModel(personAttributeEntity.getAttribute()))
                 .withValue(personAttributeEntity.getValue())
+                .withValidFrom(personAttributeEntity.getValidFrom())
+                .withValidTo(personAttributeEntity.getValidTo())
                 .withPerson(new Person.Builder().withId(personAttributeEntity.getPerson().getId()).build())
                 .build();
     }
-
 }

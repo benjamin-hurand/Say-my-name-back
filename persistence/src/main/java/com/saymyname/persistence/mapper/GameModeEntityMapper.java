@@ -1,7 +1,13 @@
 package com.saymyname.persistence.mapper;
 
 import com.saymyname.core.model.game.options.GameMode;
+import com.saymyname.persistence.entity.GameModeAttributeEntity;
 import com.saymyname.persistence.entity.GameModeEntity;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.stereotype.Component;
 
 @Component
@@ -16,8 +22,20 @@ public class GameModeEntityMapper {
     }
 
     public GameModeEntity toEntity(GameMode gameMode) {
-        return new GameModeEntity(gameMode.getId(), gameMode.getTitle(), gameMode.getDescription(), gameMode.getOperator(), gameMode.getGameModeAttributes().stream().map(gameModeAttributeEntityMapper::toEntity).toList());
+        List<GameModeAttributeEntity> attributes = (gameMode.getGameModeAttributes() == null)
+            ? Collections.emptyList()
+            : gameMode.getGameModeAttributes().stream()
+                .map(gameModeAttributeEntityMapper::toEntity)
+                .collect(Collectors.toList());
+        return new GameModeEntity(
+                gameMode.getId(),
+                gameMode.getTitle(),
+                gameMode.getDescription(),
+                gameMode.getOperator(),
+                attributes
+        );
     }
+
 
     public GameMode toModel(GameModeEntity gameModeEntity) {
         return new GameMode.Builder()

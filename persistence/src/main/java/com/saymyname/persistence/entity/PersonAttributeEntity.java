@@ -1,6 +1,7 @@
 package com.saymyname.persistence.entity;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
@@ -22,14 +23,20 @@ public class PersonAttributeEntity {
     @Column(name = "value", length = 255)
     private String value;
 
-    // Constructors, getters, setters, equals, hashCode, and toString methods
+    @Column(name = "valid_from", nullable = false)
+    private LocalDateTime validFrom;
+
+    @Column(name = "valid_to")
+    private LocalDateTime validTo;
 
     public PersonAttributeEntity() {}
 
-    public PersonAttributeEntity(long id, AttributeEntity attribute, String value) {
+    public PersonAttributeEntity(long id, AttributeEntity attribute, String value, LocalDateTime validFrom, LocalDateTime validTo) {
         this.id = id;
         this.attribute = attribute;
         this.value = value;
+        this.validFrom = validFrom;
+        this.validTo = validTo;
     }
 
     public long getId() {
@@ -64,20 +71,38 @@ public class PersonAttributeEntity {
         this.value = value;
     }
 
+    public LocalDateTime getValidFrom() {
+        return validFrom;
+    }
+
+    public void setValidFrom(LocalDateTime validFrom) {
+        this.validFrom = validFrom;
+    }
+
+    public LocalDateTime getValidTo() {
+        return validTo;
+    }
+
+    public void setValidTo(LocalDateTime validTo) {
+        this.validTo = validTo;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof PersonAttributeEntity)) return false;
+        if (o == null || getClass() != o.getClass()) return false;
         PersonAttributeEntity that = (PersonAttributeEntity) o;
         return id == that.id &&
                 Objects.equals(attribute, that.attribute) &&
                 Objects.equals(person, that.person) &&
-                Objects.equals(value, that.value);
+                Objects.equals(value, that.value) &&
+                Objects.equals(validFrom, that.validFrom) &&
+                Objects.equals(validTo, that.validTo);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, attribute, person, value);
+        return Objects.hash(id, attribute, person, value, validFrom, validTo);
     }
 
     @Override
@@ -87,6 +112,8 @@ public class PersonAttributeEntity {
                 ", attribute=" + attribute +
                 ", person=" + person +
                 ", value='" + value + '\'' +
+                ", validFrom=" + validFrom +
+                ", validTo=" + validTo +
                 '}';
     }
 }

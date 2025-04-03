@@ -17,12 +17,19 @@ public class AttributeEntityMapper {
         attributeEntity.setFilter(attribute.isFilter());
         attributeEntity.setSort(attribute.isSort());
         attributeEntity.setInitializable(attribute.isInitializable());
-        attributeEntity.setType(attribute.getType().name().toLowerCase());
+        // Vérification si attribute.getType() est null
+        String typeValue = (attribute.getType() != null) ? attribute.getType().name().toLowerCase() : null;
+        attributeEntity.setType(typeValue);
         return attributeEntity;
     }
+    
 
     public Attribute toModel(AttributeEntity attributeEntity) {
         if (attributeEntity == null) return null;
+        // Si le type est null, on choisit par défaut "TEXT"
+        String typeValue = (attributeEntity.getType() != null) 
+                ? attributeEntity.getType().toUpperCase() 
+                : "TEXT";
         return new Attribute.Builder()
                 .withId(attributeEntity.getId())
                 .withName(attributeEntity.getAttributeName())
@@ -30,7 +37,7 @@ public class AttributeEntityMapper {
                 .withFilter(attributeEntity.isFilter())
                 .withSort(attributeEntity.isSort())
                 .withInitializable(attributeEntity.isInitializable())
-                .withType(AttributeType.valueOf(attributeEntity.getType().toUpperCase()))
+                .withType(AttributeType.valueOf(typeValue))
                 .build();
     }
 }
