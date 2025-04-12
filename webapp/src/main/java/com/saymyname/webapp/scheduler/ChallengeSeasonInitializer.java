@@ -16,6 +16,6 @@ public class ChallengeSeasonInitializer {
     @PostConstruct
     public void init() {
         System.out.println("Initialisation : vérification des saisons de challenge au démarrage.");
-        challengeSeasonService.createSeasonIfMissing();
+        challengeSeasonService.createSeasonsIfMissing();
     }
 }

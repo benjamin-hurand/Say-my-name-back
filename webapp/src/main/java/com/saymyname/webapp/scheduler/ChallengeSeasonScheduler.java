@@ -13,10 +13,10 @@ public class ChallengeSeasonScheduler {
         this.challengeSeasonService = challengeSeasonService;
     }
 
-    // Planifié tous les lundis à 00:00
+    // Par exemple, planifié tous les lundis à 00:00 pour vérifier la création des saisons
     @Scheduled(cron = "0 0 0 * * MON")
-    public void scheduleCreateNextSeason() {
-        System.out.println("Scheduler déclenché : création de la prochaine saison.");
-        challengeSeasonService.createNextSeason();
+    public void scheduleCreateSeasons() {
+        System.out.println("Scheduler déclenché : vérification des saisons (courante et suivante).");
+        challengeSeasonService.createSeasonsIfMissing();
     }
 }

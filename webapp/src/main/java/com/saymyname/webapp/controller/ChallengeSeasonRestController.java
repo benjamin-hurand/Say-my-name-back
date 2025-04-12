@@ -7,6 +7,7 @@ import com.saymyname.webapp.mapper.ChallengeSeasonDtoMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @RestController
@@ -24,7 +25,8 @@ public class ChallengeSeasonRestController {
 
     @GetMapping("/current-season")
     public ResponseEntity<ChallengeSeasonDto> getCurrentSeason() {
-        Optional<ChallengeSeason> seasonOpt = challengeSeasonService.getCurrentSeason();
+        // Utiliser LocalDateTime.now() pour la recherche
+        Optional<ChallengeSeason> seasonOpt = challengeSeasonService.getCurrentSeason(LocalDateTime.now());
         return seasonOpt
                 .map(season -> ResponseEntity.ok(challengeSeasonDtoMapper.toDto(season)))
                 .orElseGet(() -> ResponseEntity.notFound().build());

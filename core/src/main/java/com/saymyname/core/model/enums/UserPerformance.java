@@ -3,7 +3,7 @@ package com.saymyname.core.model.enums;
 public enum UserPerformance {
     PAS_COMMENCE("Pas commencé"),
     ACHEVE("Achevé"),
-    PAS_PARFAIT("Pas parfait"),
+    PAS_PARFAIT("Imparfait"),
     REUSSI("Réussi"),
     PODIUM("Podium");
 

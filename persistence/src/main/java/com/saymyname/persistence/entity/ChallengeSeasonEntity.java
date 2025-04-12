@@ -1,7 +1,7 @@
 package com.saymyname.persistence.entity;
 
 import jakarta.persistence.*;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
@@ -18,14 +18,14 @@ public class ChallengeSeasonEntity {
     private int seasonNumber;
 
     @Column(name = "start_date", nullable = false)
-    private LocalDate startDate;
+    private LocalDateTime startDate;
 
     @Column(name = "end_date", nullable = false)
-    private LocalDate endDate;
+    private LocalDateTime endDate;
 
     public ChallengeSeasonEntity() {}
 
-    public ChallengeSeasonEntity(long id, int seasonNumber, LocalDate startDate, LocalDate endDate) {
+    public ChallengeSeasonEntity(long id, int seasonNumber, LocalDateTime startDate, LocalDateTime endDate) {
         this.id = id;
         this.seasonNumber = seasonNumber;
         this.startDate = startDate;
@@ -37,22 +37,22 @@ public class ChallengeSeasonEntity {
     public void setId(long id) { this.id = id; }
     public int getSeasonNumber() { return seasonNumber; }
     public void setSeasonNumber(int seasonNumber) { this.seasonNumber = seasonNumber; }
-    public LocalDate getStartDate() { return startDate; }
-    public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
-    public LocalDate getEndDate() { return endDate; }
-    public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
+    public LocalDateTime getStartDate() { return startDate; }
+    public void setStartDate(LocalDateTime startDate) { this.startDate = startDate; }
+    public LocalDateTime getEndDate() { return endDate; }
+    public void setEndDate(LocalDateTime endDate) { this.endDate = endDate; }
 
     // Builder
     public static class Builder {
         private long id;
         private int seasonNumber;
-        private LocalDate startDate;
-        private LocalDate endDate;
+        private LocalDateTime startDate;
+        private LocalDateTime endDate;
 
         public Builder withId(long id) { this.id = id; return this; }
         public Builder withSeasonNumber(int seasonNumber) { this.seasonNumber = seasonNumber; return this; }
-        public Builder withStartDate(LocalDate startDate) { this.startDate = startDate; return this; }
-        public Builder withEndDate(LocalDate endDate) { this.endDate = endDate; return this; }
+        public Builder withStartDate(LocalDateTime startDate) { this.startDate = startDate; return this; }
+        public Builder withEndDate(LocalDateTime endDate) { this.endDate = endDate; return this; }
         public ChallengeSeasonEntity build() {
             return new ChallengeSeasonEntity(id, seasonNumber, startDate, endDate);
         }

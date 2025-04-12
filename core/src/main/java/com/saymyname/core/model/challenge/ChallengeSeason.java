@@ -1,6 +1,6 @@
 package com.saymyname.core.model.challenge;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
@@ -9,8 +9,8 @@ import java.util.Objects;
 public class ChallengeSeason {
     private long id;
     private int seasonNumber;
-    private LocalDate startDate;
-    private LocalDate endDate;
+    private LocalDateTime startDate;
+    private LocalDateTime endDate;
 
     // Constructeur par défaut
     public ChallengeSeason() {}
@@ -31,11 +31,11 @@ public class ChallengeSeason {
         return seasonNumber;
     }
 
-    public LocalDate getStartDate() {
+    public LocalDateTime getStartDate() {
         return startDate;
     }
 
-    public LocalDate getEndDate() {
+    public LocalDateTime getEndDate() {
         return endDate;
     }
 
@@ -48,11 +48,11 @@ public class ChallengeSeason {
         this.seasonNumber = seasonNumber;
     }
 
-    public void setStartDate(LocalDate startDate) {
+    public void setStartDate(LocalDateTime startDate) {
         this.startDate = startDate;
     }
 
-    public void setEndDate(LocalDate endDate) {
+    public void setEndDate(LocalDateTime endDate) {
         this.endDate = endDate;
     }
 
@@ -60,8 +60,8 @@ public class ChallengeSeason {
     public static class Builder {
         private long id;
         private int seasonNumber;
-        private LocalDate startDate;
-        private LocalDate endDate;
+        private LocalDateTime startDate;
+        private LocalDateTime endDate;
 
         public Builder withId(long id) {
             this.id = id;
@@ -73,12 +73,12 @@ public class ChallengeSeason {
             return this;
         }
 
-        public Builder withStartDate(LocalDate startDate) {
+        public Builder withStartDate(LocalDateTime startDate) {
             this.startDate = startDate;
             return this;
         }
 
-        public Builder withEndDate(LocalDate endDate) {
+        public Builder withEndDate(LocalDateTime endDate) {
             this.endDate = endDate;
             return this;
         }

@@ -8,6 +8,7 @@ import jakarta.persistence.Tuple;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -28,5 +29,9 @@ public class PersonAttributeDao {
                 .stream()
                 .map(personAttributeEntityMapper::toFullModel)
                 .toList();
+    }
+
+    public Long countPersonsMatchingFilter(String minValue, String nextValue, LocalDateTime seasonStart, Long attributeId) {
+        return personAttributeRepository.countPersonsMatchingFilter(minValue, nextValue, seasonStart, attributeId);
     }
 }

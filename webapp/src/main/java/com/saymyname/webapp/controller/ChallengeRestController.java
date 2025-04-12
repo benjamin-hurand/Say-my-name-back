@@ -11,16 +11,17 @@ import org.springframework.web.bind.annotation.*;
 
 import com.saymyname.core.exception.ChallengeAlreadyExistsException;
 import com.saymyname.core.model.challenge.Challenge;
-import com.saymyname.core.model.challenge.ChallengeCard;
-import com.saymyname.core.model.challenge.ChallengeMenu;
+import com.saymyname.core.model.challenge.ChallengeVersion;
 import com.saymyname.service.ChallengeService;
 import com.saymyname.webapp.dto.AddChallengeDto;
 import com.saymyname.webapp.dto.ChallengeCardDto;
 import com.saymyname.webapp.dto.ChallengeDto;
 import com.saymyname.webapp.dto.ChallengeMenuDto;
+import com.saymyname.webapp.dto.CreatedChallengeVersionDto;
 import com.saymyname.webapp.mapper.ChallengeCardDtoMapper;
-import com.saymyname.webapp.mapper.ChallengeDtoMapper;
 import com.saymyname.webapp.mapper.ChallengeMenuDtoMapper;
+import com.saymyname.webapp.mapper.CreatedChallengeVersionDtoMapper;
+import com.saymyname.webapp.mapper.ChallengeDtoMapper;
 
 @RestController
 @RequestMapping("/api/challenges")
@@ -30,22 +31,25 @@ public class ChallengeRestController {
     private final ChallengeCardDtoMapper challengeCardDtoMapper;
     private final ChallengeMenuDtoMapper challengeMenuDtoMapper;
     private final ChallengeDtoMapper challengeDtoMapper;
+    private final CreatedChallengeVersionDtoMapper createdChallengeVersionDtoMapper;
     private static final Logger logger = LoggerFactory.getLogger(ChallengeRestController.class);
 
     public ChallengeRestController(ChallengeService challengeService,
                                    ChallengeCardDtoMapper challengeCardDtoMapper,
                                    ChallengeMenuDtoMapper challengeMenuDtoMapper,
-                                   ChallengeDtoMapper challengeDtoMapper) {
+                                   ChallengeDtoMapper challengeDtoMapper,
+                                   CreatedChallengeVersionDtoMapper createdChallengeVersionDtoMapper) {
         this.challengeService = challengeService;
         this.challengeCardDtoMapper = challengeCardDtoMapper;
         this.challengeMenuDtoMapper = challengeMenuDtoMapper;
         this.challengeDtoMapper = challengeDtoMapper;
+        this.createdChallengeVersionDtoMapper = createdChallengeVersionDtoMapper;
     }
 
     @PostMapping("/list")
     public ResponseEntity<List<ChallengeCardDto>> getChallengesList(@RequestBody ChallengeMenuDto challengeMenuDto) {
         // Mapper le DTO en modèle de domaine
-        ChallengeMenu challengeMenu = challengeMenuDtoMapper.toModel(challengeMenuDto);
+        var challengeMenu = challengeMenuDtoMapper.toModel(challengeMenuDto);
         // Récupération des projections via le service
         List<ChallengeCardDto> dtos = challengeService.getChallengesList(challengeMenu)
                 .stream()
@@ -57,14 +61,16 @@ public class ChallengeRestController {
     @PostMapping("/create")
     public ResponseEntity<?> createChallenge(@RequestBody AddChallengeDto challengeDto) {
         try {
+            // Mapper le DTO en modèle de domaine
             Challenge challenge = challengeDtoMapper.toModel(challengeDto);
-            logger.debug("challenge: ", challenge);
-            Challenge createdChallenge = challengeService.saveChallenge(challenge);
-            ChallengeDto createdChallengeDto = challengeDtoMapper.toDto(createdChallenge);
+            // Appeler la méthode qui crée le challenge complet (challenge, version et questions)
+            ChallengeVersion createdChallenge = challengeService.createNewChallenge(challenge);
+            CreatedChallengeVersionDto createdChallengeDto = createdChallengeVersionDtoMapper.toDto(createdChallenge);
             return ResponseEntity.ok(createdChallengeDto);
         } catch (ChallengeAlreadyExistsException ex) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
         }
     }
-
 }
