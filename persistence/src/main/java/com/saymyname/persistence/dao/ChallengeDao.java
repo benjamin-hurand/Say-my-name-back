@@ -35,13 +35,12 @@ public class ChallengeDao {
     private final ChallengeVersionEntityMapper challengeVersionEntityMapper;
     private static final Logger logger = LoggerFactory.getLogger(ChallengeDao.class);
 
-
     public ChallengeDao(ChallengeRepository challengeRepository,
-                        ChallengeEntityMapper challengeEntityMapper,
-                        ChallengeVersionRepository challengeVersionRepository,
-                        ChallengeSeasonEntityMapper challengeSeasonEntityMapper,
-                        ChallengeQuestionRepository challengeQuestionRepository,
-                        ChallengeVersionEntityMapper challengeVersionEntityMapper) {
+            ChallengeEntityMapper challengeEntityMapper,
+            ChallengeVersionRepository challengeVersionRepository,
+            ChallengeSeasonEntityMapper challengeSeasonEntityMapper,
+            ChallengeQuestionRepository challengeQuestionRepository,
+            ChallengeVersionEntityMapper challengeVersionEntityMapper) {
         this.challengeRepository = challengeRepository;
         this.challengeEntityMapper = challengeEntityMapper;
         this.challengeVersionRepository = challengeVersionRepository;
@@ -57,62 +56,18 @@ public class ChallengeDao {
 
     public boolean challengeExists(Long modeId, Long filterId, String minFilterValue, String maxFilterValue) {
         return challengeRepository
-                .findByGameMode_IdAndFilterAttribute_IdAndMinFilterValueAndMaxFilterValue(modeId, filterId, minFilterValue, maxFilterValue)
+                .findByGameMode_IdAndFilterAttribute_IdAndMinFilterValueAndMaxFilterValue(modeId, filterId,
+                        minFilterValue, maxFilterValue)
                 .isPresent();
     }
 
-    @Transactional
-public ChallengeVersion createChallengeWithVersionAndQuestions(
-        Challenge challenge,
-        ChallengeSeason nextSeason,
-        long questionCount
-) {
-    // 1. Sauvegarder le challenge
-    ChallengeEntity challengeEntity = challengeEntityMapper.toEntity(challenge);
-    if (challengeEntity.getCreationDate() == null) {
+    public Challenge saveChallenge(Challenge challenge) {
+        ChallengeEntity challengeEntity = challengeEntityMapper.toEntity(challenge);
+        if (challengeEntity.getCreationDate() == null) {
             challengeEntity.setCreationDate(LocalDateTime.now());
         }
         ChallengeEntity savedChallenge = challengeRepository.save(challengeEntity);
-
-        // 2. Créer la première version
-        LocalDateTime versionStart = nextSeason.getStartDate();
-        ChallengeVersionEntity initialVersion = new ChallengeVersionEntity.Builder()
-                .withVersionNumber(1)
-                .withStartDate(versionStart)
-                .withEndDate(null)
-                .withFirstSeason(challengeSeasonEntityMapper.toEntity(nextSeason))
-                .withChallenge(savedChallenge)
-                .withQuestionCount((int) questionCount)
-                .build();
-        ChallengeVersionEntity savedVersion = challengeVersionRepository.save(initialVersion);
-
-        // 3. Insérer les questions
-        String filterMax = challenge.getFilterAttribute().getMaxValue();
-        String nextFilterMax = nextValue(filterMax);
-        challengeQuestionRepository.insertChallengeQuestions(
-                savedChallenge.getId(),
-                nextFilterMax,
-                nextSeason.getStartDate(),
-                savedVersion.getId()
-        );
-
-        // 4. Convertir l'entité ChallengeVersionEntity vers votre modèle métier ChallengeVersion
-        ChallengeVersion modelVersion = challengeVersionEntityMapper.toModel(savedVersion);
-
-        // 5. Retourner la version nouvellement créée
-        return modelVersion;
+        return challengeEntityMapper.toModel(savedChallenge);
     }
 
-    private String nextValue(String value) {
-        if (value == null || value.isEmpty()) {
-            return value;
-        }
-        if (value.length() == 1) {
-            char c = value.charAt(0);
-            // Si c'est 'Z' ou 'z', retourner une borne supérieure large
-            return (c == 'Z' || c == 'z') ? (value.equals("Z") ? "Z\uffff" : "z\uffff") : String.valueOf((char) (c + 1));
-        }
-        // Pour une chaîne plus longue, on peut ajouter un caractère maximum à la fin
-        return value + "\uffff";
-    }
 }

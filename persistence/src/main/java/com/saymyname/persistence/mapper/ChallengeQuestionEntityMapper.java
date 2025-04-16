@@ -7,12 +7,9 @@ import com.saymyname.persistence.entity.ChallengeQuestionEntity;
 @Component
 public class ChallengeQuestionEntityMapper {
 
-    private final ChallengeVersionEntityMapper challengeVersionEntityMapper;
     private final PersonEntityMapper personEntityMapper;
 
-    public ChallengeQuestionEntityMapper(ChallengeVersionEntityMapper challengeVersionEntityMapper,
-                                           PersonEntityMapper personEntityMapper) {
-        this.challengeVersionEntityMapper = challengeVersionEntityMapper;
+    public ChallengeQuestionEntityMapper(PersonEntityMapper personEntityMapper) {
         this.personEntityMapper = personEntityMapper;
     }
 
@@ -22,7 +19,6 @@ public class ChallengeQuestionEntityMapper {
         }
         ChallengeQuestionEntity entity = new ChallengeQuestionEntity();
         entity.setId(model.getId());
-        entity.setVersion(challengeVersionEntityMapper.toEntity(model.getVersion()));
         // Mapping vers la personne (et non plus un PersonAttribute)
         entity.setPerson(personEntityMapper.toEntity(model.getPerson()));
         return entity;
@@ -34,7 +30,6 @@ public class ChallengeQuestionEntityMapper {
         }
         return new ChallengeQuestion.Builder()
                 .withId(entity.getId())
-                .withVersion(challengeVersionEntityMapper.toModel(entity.getVersion()))
                 // Mapping de la personne via le mapper dédié
                 .withPerson(personEntityMapper.toModel(entity.getPerson()))
                 .build();

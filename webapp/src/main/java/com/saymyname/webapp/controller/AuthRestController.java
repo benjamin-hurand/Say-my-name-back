@@ -157,9 +157,11 @@ public class AuthRestController {
 
         return new ResponseEntity<>(getMessage(actualUser), HttpStatus.OK);
     }
+
     private Map<String, Object> getMessage(User userDetails) {
         Map<String, Object> response = new HashMap<>();
         response.put("jwt", jwtUtils.generateJwtResponseEntity(userDetails).getBody());
+        response.put("userId", userDetails.getId());
         response.put("roles", getRoles(userDetails));
         response.put("username", userDetails.getUsername());
         response.put("email", userDetails.getEmail());
@@ -177,5 +179,31 @@ public class AuthRestController {
         // logger.info("isNotActive in controller : ");
         return userService.findByEmailOrUsername(identifier).isActive();
     }
+
+
+    // ------------------- Verification of JWT token -------------------
+    @GetMapping("/auth/verify-token")
+    public ResponseEntity<Boolean> verifyToken(
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        // Vérifier que l'en-tête Authorization est présent et qu'il commence par "Bearer "
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            // Optionnel : vous pouvez renvoyer un BAD_REQUEST ou simplement false
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
+        }
+        
+        // Extraction du token sans le préfixe "Bearer "
+        String token = authHeader.substring(7);
+        
+        try {
+            // Valider le token via JWTUtils (supposé posséder la méthode validateJwtToken)
+            boolean isValid = jwtUtils.validateJwtToken(token);
+            return ResponseEntity.ok(isValid);
+        } catch (Exception e) {
+            // En cas d'exception (token invalide, expiré, etc.), renvoyer false
+            return ResponseEntity.ok(false);
+        }
+    }
+
+
 
 }

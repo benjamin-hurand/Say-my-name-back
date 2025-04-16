@@ -18,12 +18,13 @@ public class PersonAttributeDao {
     private final PersonAttributeRepository personAttributeRepository;
     private final PersonAttributeEntityMapper personAttributeEntityMapper;
 
-    public PersonAttributeDao(PersonAttributeRepository personAttributeRepository, PersonAttributeEntityMapper personAttributeEntityMapper) {
+    public PersonAttributeDao(PersonAttributeRepository personAttributeRepository,
+            PersonAttributeEntityMapper personAttributeEntityMapper) {
         this.personAttributeRepository = personAttributeRepository;
         this.personAttributeEntityMapper = personAttributeEntityMapper;
     }
 
-    public List<PersonAttribute> findAttributesByPhotoId (Long photoId) {
+    public List<PersonAttribute> findAttributesByPhotoId(Long photoId) {
         return personAttributeRepository
                 .findAttributesByPhotoId(photoId)
                 .stream()
@@ -31,7 +32,9 @@ public class PersonAttributeDao {
                 .toList();
     }
 
-    public Long countPersonsMatchingFilter(String minValue, String nextValue, LocalDateTime seasonStart, Long attributeId) {
+    public Long countPersonsMatchingFilter(String minValue, String nextValue, LocalDateTime seasonStart,
+            Long attributeId) {
         return personAttributeRepository.countPersonsMatchingFilter(minValue, nextValue, seasonStart, attributeId);
     }
+
 }

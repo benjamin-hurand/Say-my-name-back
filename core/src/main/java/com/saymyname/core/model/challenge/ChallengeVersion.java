@@ -1,6 +1,7 @@
 package com.saymyname.core.model.challenge;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -12,11 +13,15 @@ public class ChallengeVersion {
     private LocalDateTime startDate;
     private LocalDateTime endDate;
     private ChallengeSeason firstSeason; // Première saison à partir de laquelle la snapshot est active
-    private Challenge challenge;         // Le challenge auquel cette version appartient
-    private int questionCount;           // Nombre total de questions pour cette version
+    private Challenge challenge; // Le challenge auquel cette version appartient
+    private int questionCount; // Nombre total de questions pour cette version
+
+    // Nouveau champ : liste des questions associées
+    private List<ChallengeQuestion> questions;
 
     // Constructeur par défaut
-    public ChallengeVersion() {}
+    public ChallengeVersion() {
+    }
 
     private ChallengeVersion(Builder builder) {
         this.id = builder.id;
@@ -26,6 +31,7 @@ public class ChallengeVersion {
         this.firstSeason = builder.firstSeason;
         this.challenge = builder.challenge;
         this.questionCount = builder.questionCount;
+        this.questions = builder.questions;
     }
 
     // Getters
@@ -57,6 +63,10 @@ public class ChallengeVersion {
         return questionCount;
     }
 
+    public List<ChallengeQuestion> getQuestions() {
+        return questions;
+    }
+
     // Setters
     public void setId(long id) {
         this.id = id;
@@ -86,6 +96,10 @@ public class ChallengeVersion {
         this.questionCount = questionCount;
     }
 
+    public void setQuestions(List<ChallengeQuestion> questions) {
+        this.questions = questions;
+    }
+
     // Builder
     public static class Builder {
         private long id;
@@ -95,6 +109,7 @@ public class ChallengeVersion {
         private ChallengeSeason firstSeason;
         private Challenge challenge;
         private int questionCount;
+        private List<ChallengeQuestion> questions;
 
         public Builder withId(long id) {
             this.id = id;
@@ -131,40 +146,56 @@ public class ChallengeVersion {
             return this;
         }
 
+        // Ajout de la méthode pour définir la liste des questions
+        public Builder withQuestions(List<ChallengeQuestion> questions) {
+            this.questions = questions;
+            return this;
+        }
+
         public ChallengeVersion build() {
             return new ChallengeVersion(this);
         }
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    // Les méthodes equals, hashCode et toString peuvent être mises à jour pour
+    // inclure le champ "questions" si nécessaire.
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (!(o instanceof ChallengeVersion))
+            return false;
         ChallengeVersion that = (ChallengeVersion) o;
         return id == that.id &&
-               versionNumber == that.versionNumber &&
-               questionCount == that.questionCount &&
-               Objects.equals(startDate, that.startDate) &&
-               Objects.equals(endDate, that.endDate) &&
-               Objects.equals(firstSeason, that.firstSeason) &&
-               Objects.equals(challenge, that.challenge);
+                versionNumber == that.versionNumber &&
+                questionCount == that.questionCount &&
+                Objects.equals(startDate, that.startDate) &&
+                Objects.equals(endDate, that.endDate) &&
+                Objects.equals(firstSeason, that.firstSeason) &&
+                Objects.equals(challenge, that.challenge) &&
+                Objects.equals(questions, that.questions);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, versionNumber, startDate, endDate, firstSeason, challenge, questionCount);
+        return Objects.hash(id, versionNumber, startDate, endDate, firstSeason, challenge, questionCount, questions);
     }
 
     @Override
     public String toString() {
         return "ChallengeVersion{" +
-               "id=" + id +
-               ", versionNumber=" + versionNumber +
-               ", startDate=" + startDate +
-               ", endDate=" + endDate +
-               ", firstSeason=" + firstSeason +
-               ", challenge=" + challenge +
-               ", questionCount=" + questionCount +
-               '}';
+                "id=" + id +
+                ", versionNumber=" + versionNumber +
+                ", startDate=" + startDate +
+                ", endDate=" + endDate +
+                ", firstSeason=" + firstSeason +
+                ", challenge=" + challenge +
+                ", questionCount=" + questionCount +
+                ", questions=" + questions +
+                '}';
     }
 }
