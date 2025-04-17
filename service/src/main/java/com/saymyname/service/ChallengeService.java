@@ -66,9 +66,11 @@ public class ChallengeService {
 
         // 3. Vérifier qu'il existe suffisamment de questions (>=10) pour le challenge
         // dans la saison suivante
+        String filterMinValue = challenge.getFilterAttribute().getMinValue();
+        String filterMaxValue = nextValue(challenge.getFilterAttribute().getMaxValue());
         long questionCount = personAttributeDao.countPersonsMatchingFilter(
-                challenge.getFilterAttribute().getMinValue(),
-                challenge.getFilterAttribute().getMaxValue(),
+                filterMinValue,
+                filterMaxValue,
                 nextSeason.getStartDate(),
                 challenge.getFilterAttribute().getAttribute().getId());
         if (questionCount < 10) {
@@ -91,11 +93,9 @@ public class ChallengeService {
                 .withChallenge(savedChallenge)
                 .withQuestionCount((int) questionCount)
                 .build();
-        // 4.2.2 Déduire la valeur du filtre max pour faciliter la requête SQL.
-        String nextFilterMax = nextValue(challenge.getFilterAttribute().getMaxValue());
-        // 4.2.3 Créer la version et les questions associées
+        // 4.2.2 Créer la version et les questions associées
         ChallengeVersion savedChallengeVersionAndQuestions = challengeVersionService
-                .createChallengeVersionAndQuestions(initialVersion, nextFilterMax, nextSeason.getStartDate());
+                .createChallengeVersionAndQuestions(initialVersion, filterMaxValue, nextSeason.getStartDate());
         return savedChallengeVersionAndQuestions;
     }
 

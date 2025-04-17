@@ -37,4 +37,12 @@ public class PersonAttributeDao {
         return personAttributeRepository.countPersonsMatchingFilter(minValue, nextValue, seasonStart, attributeId);
     }
 
+    public List<PersonAttribute> findAttributesByPersonId(Long personId) {
+        return personAttributeRepository
+                .findAttributesByPersonId(personId)
+                .stream()
+                .map(personAttributeEntityMapper::toFullModel)
+                .toList();
+    }
+
 }

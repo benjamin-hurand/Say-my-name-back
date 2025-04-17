@@ -11,4 +11,5 @@ import com.saymyname.persistence.entity.ChallengeAttemptEntity;
 
 @Repository
 public interface ChallengeAttemptRepository extends JpaRepository<ChallengeAttemptEntity, Long> {
+
 }
