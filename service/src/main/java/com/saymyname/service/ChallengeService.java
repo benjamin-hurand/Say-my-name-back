@@ -68,6 +68,7 @@ public class ChallengeService {
         // dans la saison suivante
         String filterMinValue = challenge.getFilterAttribute().getMinValue();
         String filterMaxValue = nextValue(challenge.getFilterAttribute().getMaxValue());
+        logger.info("Filtre min: {}, Filtre max: {}", filterMinValue, filterMaxValue);
         long questionCount = personAttributeDao.countPersonsMatchingFilter(
                 filterMinValue,
                 filterMaxValue,

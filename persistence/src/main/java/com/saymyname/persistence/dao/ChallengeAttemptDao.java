@@ -1,16 +1,26 @@
 package com.saymyname.persistence.dao;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.hibernate.Hibernate;
 import org.springframework.stereotype.Repository;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 
+import com.saymyname.core.exception.ChallengeAttemptAlreadyEndedException;
+import com.saymyname.core.exception.ChallengeAttemptAlreadyStartedException;
 import com.saymyname.core.exception.ChallengeAttemptException;
+import com.saymyname.core.exception.ChallengeAttemptNotFoundException;
 import com.saymyname.core.model.challenge.ChallengeAttempt;
+import com.saymyname.core.model.common.User;
+import com.saymyname.core.model.enums.AttemptStatus;
 import com.saymyname.persistence.entity.ChallengeAttemptEntity;
+import com.saymyname.persistence.entity.ChallengeQuestionEntity;
+import com.saymyname.persistence.entity.UserEntity;
 import com.saymyname.persistence.mapper.ChallengeAttemptEntityMapper;
+import com.saymyname.persistence.mapper.UserEntityMapper;
 import com.saymyname.persistence.repository.ChallengeAttemptRepository;
 
 import jakarta.transaction.Transactional;
@@ -22,11 +32,14 @@ public class ChallengeAttemptDao {
 
     private ChallengeAttemptRepository challengeAttemptRepository;
     private ChallengeAttemptEntityMapper challengeAttemptEntityMapper;
+    private UserEntityMapper userEntityMapper;
 
     public ChallengeAttemptDao(ChallengeAttemptRepository challengeAttemptRepository,
-            ChallengeAttemptEntityMapper challengeAttemptEntityMapper) {
+            ChallengeAttemptEntityMapper challengeAttemptEntityMapper,
+            UserEntityMapper userEntityMapper) {
         this.challengeAttemptEntityMapper = challengeAttemptEntityMapper;
         this.challengeAttemptRepository = challengeAttemptRepository;
+        this.userEntityMapper = userEntityMapper;
     }
 
     /**
@@ -68,24 +81,65 @@ public class ChallengeAttemptDao {
         if (challengeAttemptEntity != null) {
             Hibernate.initialize(challengeAttemptEntity.getChallengeVersion());
             Hibernate.initialize(challengeAttemptEntity.getChallengeVersion().getQuestions());
+            Hibernate.initialize(challengeAttemptEntity.getChallengeVersion().getChallenge());
+            challengeAttemptEntity.getChallengeVersion().getQuestions()
+                    .forEach(q -> {
+                        Hibernate.initialize(q.getPerson());
+                        Hibernate.initialize(q.getPerson().getAttributes());
+                    });
         }
         return challengeAttemptEntityMapper.toModel(challengeAttemptEntity);
     }
 
+    public ChallengeAttempt findByIdWithAll(Long id) {
+        ChallengeAttemptEntity entity = challengeAttemptRepository
+                .findByIdWithAll(id)
+                .orElseThrow(() -> new IllegalArgumentException("Tentative introuvable pour id=" + id));
+        entity.getChallengeVersion().getQuestions()
+                .stream()
+                .map(ChallengeQuestionEntity::getPerson)
+                .forEach(p -> Hibernate.initialize(p.getAttributes()));
+        return challengeAttemptEntityMapper.toModel(entity);
+    }
+
     @Transactional
-    public void startAttempt(Long id) throws ChallengeAttemptException {
+    public void startAttempt(Long id) {
         ChallengeAttemptEntity entity = challengeAttemptRepository.findById(id)
-                .orElseThrow(() -> new ChallengeAttemptException("Attempt not found: " + id));
+                .orElseThrow(() -> new ChallengeAttemptNotFoundException(id));
+
+        if (entity.getAttemptStart() != null) {
+            throw new ChallengeAttemptAlreadyStartedException(id);
+        }
+
         entity.setAttemptStart(LocalDateTime.now());
         challengeAttemptRepository.save(entity);
     }
 
     @Transactional
-    public void stopAttempt(Long id) throws ChallengeAttemptException {
+    public void stopAttempt(Long id) {
         ChallengeAttemptEntity entity = challengeAttemptRepository.findById(id)
-                .orElseThrow(() -> new ChallengeAttemptException("Attempt not found: " + id));
+                .orElseThrow(() -> new ChallengeAttemptNotFoundException(id));
+
+        if (entity.getAttemptEnd() != null) {
+            throw new ChallengeAttemptAlreadyEndedException(id);
+        }
+
         entity.setAttemptEnd(LocalDateTime.now());
         challengeAttemptRepository.save(entity);
+    }
+
+    // Une methode avec commentaire pour supprimer les tentatives de challenge d'un
+    // utilisateur si elles n'ont pas de startDate ou de endDate
+    @Transactional
+    public void deleteAttemptsWithoutStartOrEndDate(User user) {
+        if (user == null) {
+            throw new IllegalArgumentException("User cannot be null");
+        }
+        UserEntity userEntity = userEntityMapper.toEntity(user);
+        if (userEntity == null) {
+            throw new IllegalArgumentException("UserEntity cannot be null");
+        }
+        challengeAttemptRepository.deleteIncompleteAttemptsByUserId(userEntity.getId());
     }
 
     /**
@@ -106,5 +160,25 @@ public class ChallengeAttemptDao {
 
         // 3. Persister (=> INSERT si id null, UPDATE sinon)
         challengeAttemptRepository.save(entity);
+    }
+
+    public boolean verifyUserCanAttempt(Long userId, Long attemptId) {
+        var bool = challengeAttemptRepository.existsByIdAndUserIdAndAttemptStartIsNullAndAttemptEndIsNull(attemptId,
+                userId);
+        logger.info("Tentative existante pour userId={} et attemptId={}: {}", userId, attemptId, bool);
+        return bool;
+    }
+
+    public void markAbandoned(Long id) {
+        challengeAttemptRepository.markAbandoned(id);
+    }
+
+    public List<ChallengeAttemptEntity> findStaleAttempts(Duration maxAge) {
+        LocalDateTime cutoff = LocalDateTime.now().minus(maxAge);
+        return challengeAttemptRepository.findByStatusAndAttemptStartBefore(AttemptStatus.IN_PROGRESS, cutoff);
+    }
+
+    public void saveAll(List<ChallengeAttemptEntity> attempts) {
+        challengeAttemptRepository.saveAll(attempts);
     }
 }

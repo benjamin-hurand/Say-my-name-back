@@ -11,7 +11,7 @@ public class ChallengeAttemptEntityMapper {
     private final ChallengeVersionEntityMapper challengeVersionEntityMapper;
 
     public ChallengeAttemptEntityMapper(UserEntityMapper userEntityMapper,
-                                          ChallengeVersionEntityMapper challengeVersionEntityMapper) {
+            ChallengeVersionEntityMapper challengeVersionEntityMapper) {
         this.userEntityMapper = userEntityMapper;
         this.challengeVersionEntityMapper = challengeVersionEntityMapper;
     }
@@ -24,6 +24,7 @@ public class ChallengeAttemptEntityMapper {
         entity.setId(model.getId());
         entity.setUser(userEntityMapper.toEntity(model.getUser()));
         entity.setChallengeVersion(challengeVersionEntityMapper.toEntity(model.getChallengeVersion()));
+        entity.setStatus(model.getStatus());
         entity.setAttemptStart(model.getAttemptStart());
         entity.setAttemptEnd(model.getAttemptEnd());
         entity.setCorrectAnswers(model.getCorrectAnswers());
@@ -38,6 +39,7 @@ public class ChallengeAttemptEntityMapper {
                 .withId(entity.getId())
                 .withUser(userEntityMapper.toModel(entity.getUser()))
                 .withChallengeVersion(challengeVersionEntityMapper.toModel(entity.getChallengeVersion()))
+                .withStatus(entity.getStatus())
                 .withAttemptStart(entity.getAttemptStart())
                 .withAttemptEnd(entity.getAttemptEnd())
                 .withCorrectAnswers(entity.getCorrectAnswers())

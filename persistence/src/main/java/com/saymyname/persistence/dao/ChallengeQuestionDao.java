@@ -34,6 +34,16 @@ public class ChallengeQuestionDao {
                 .toList();
     }
 
+    public List<ChallengeQuestion> findByVersionWithAll(Long versionId) {
+        List<ChallengeQuestionEntity> entities = challengeQuestionRepository.findByVersionWithAll(versionId);
+        if (entities == null) {
+            return Collections.emptyList();
+        }
+        return entities.stream()
+                .map(challengeQuestionEntityMapper::toModel)
+                .toList();
+    }
+
     public void saveQuestionsOfVersion(Long challengeId, String nextFilterMax, LocalDateTime nextSeasonStartDate,
             Long versionId) {
         challengeQuestionRepository.insertChallengeQuestions(

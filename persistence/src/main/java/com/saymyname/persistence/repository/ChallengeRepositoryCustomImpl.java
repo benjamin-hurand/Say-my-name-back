@@ -48,7 +48,6 @@ public class ChallengeRepositoryCustomImpl implements ChallengeRepositoryCustom 
         // de début de saison
         if (challengeMenu.getSeasonStart() != null) {
             LocalDateTime seasonStart = challengeMenu.getSeasonStart();
-            predicates.add(cb.lessThanOrEqualTo(cvJoin.get("startDate"), seasonStart));
             predicates.add(cb.or(cb.isNull(cvJoin.get("endDate")),
                     cb.greaterThanOrEqualTo(cvJoin.get("endDate"), seasonStart)));
             // A quoi peuvent servir les predicates sur la validité des valeurs d'attributs
@@ -101,7 +100,6 @@ public class ChallengeRepositoryCustomImpl implements ChallengeRepositoryCustom 
         latestVersionSubquery.select(cb.max(cv2.get("versionNumber")))
                 .where(
                         cb.equal(cv2.get("challenge").get("id"), challenge.get("id")),
-                        cb.lessThanOrEqualTo(cv2.get("startDate"), challengeMenu.getSeasonStart()),
                         cb.or(cb.isNull(cv2.get("endDate")),
                                 cb.greaterThanOrEqualTo(cv2.get("endDate"), challengeMenu.getSeasonStart())));
         predicates.add(cb.equal(cvJoin.get("versionNumber"), latestVersionSubquery));
@@ -308,6 +306,7 @@ public class ChallengeRepositoryCustomImpl implements ChallengeRepositoryCustom 
                 attrJoin.get("id").alias("filter_attribute_id"),
                 attrJoin.get("attributeName").alias("attribute_name"),
                 attrJoin.get("type").alias("filter_type"),
+                gmJoin.get("id").alias("game_mode_id"),
                 gmJoin.get("gameModeTitle").alias("game_mode_title"),
                 gmJoin.get("gameModeDescription").alias("game_mode_description"),
                 challenge.get("creator").get("id").alias("creator_id"),
@@ -396,6 +395,11 @@ public class ChallengeRepositoryCustomImpl implements ChallengeRepositoryCustom 
                 @Override
                 public String getFilterType() {
                     return tuple.get("filter_type", String.class);
+                }
+
+                @Override
+                public Long getGameModeId() {
+                    return tuple.get("game_mode_id", Long.class);
                 }
 
                 @Override

@@ -34,4 +34,14 @@ public interface ChallengeQuestionRepository extends JpaRepository<ChallengeQues
     @Query("SELECT q FROM ChallengeQuestionEntity q WHERE q.version.id = :versionId")
     List<ChallengeQuestionEntity> findByVersionId(@Param("versionId") Long versionId);
 
+    @Query("""
+            SELECT q
+            FROM ChallengeQuestionEntity q
+            JOIN FETCH q.version v
+            JOIN FETCH v.challenge c
+            JOIN FETCH q.person p
+            JOIN FETCH p.attributes a
+            WHERE v.id = :versionId
+            """)
+    List<ChallengeQuestionEntity> findByVersionWithAll(@Param("versionId") Long versionId);
 }

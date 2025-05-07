@@ -1,27 +1,33 @@
 package com.saymyname.core.model.challenge;
 
 import com.saymyname.core.model.common.User;
+import com.saymyname.core.model.enums.AttemptStatus;
+
 import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
- * Représente une tentative de participation à une version de challenge par un utilisateur.
+ * Représente une tentative de participation à une version de challenge par un
+ * utilisateur.
  */
 public class ChallengeAttempt {
     private long id;
-    private User user;                      // Utilisateur participant
+    private User user; // Utilisateur participant
     private ChallengeVersion challengeVersion; // Version du challenge tentée
-    private LocalDateTime attemptStart;     // Heure de début (DATETIME(3))
-    private LocalDateTime attemptEnd;       // Heure de fin (DATETIME(3))
-    private int correctAnswers;             // Nombre de réponses correctes obtenues
+    private AttemptStatus status; // Statut de la tentative (en cours, terminée, abandonnée)
+    private LocalDateTime attemptStart; // Heure de début (DATETIME(3))
+    private LocalDateTime attemptEnd; // Heure de fin (DATETIME(3))
+    private int correctAnswers; // Nombre de réponses correctes obtenues
 
     // Constructeur par défaut
-    public ChallengeAttempt() {}
+    public ChallengeAttempt() {
+    }
 
     private ChallengeAttempt(Builder builder) {
         this.id = builder.id;
         this.user = builder.user;
         this.challengeVersion = builder.challengeVersion;
+        this.status = builder.status;
         this.attemptStart = builder.attemptStart;
         this.attemptEnd = builder.attemptEnd;
         this.correctAnswers = builder.correctAnswers;
@@ -38,6 +44,10 @@ public class ChallengeAttempt {
 
     public ChallengeVersion getChallengeVersion() {
         return challengeVersion;
+    }
+
+    public AttemptStatus getStatus() {
+        return status;
     }
 
     public LocalDateTime getAttemptStart() {
@@ -65,6 +75,10 @@ public class ChallengeAttempt {
         this.challengeVersion = challengeVersion;
     }
 
+    public void setStatus(AttemptStatus status) {
+        this.status = status;
+    }
+
     public void setAttemptStart(LocalDateTime attemptStart) {
         this.attemptStart = attemptStart;
     }
@@ -82,6 +96,7 @@ public class ChallengeAttempt {
         private long id;
         private User user;
         private ChallengeVersion challengeVersion;
+        private AttemptStatus status;
         private LocalDateTime attemptStart;
         private LocalDateTime attemptEnd;
         private int correctAnswers;
@@ -98,6 +113,11 @@ public class ChallengeAttempt {
 
         public Builder withChallengeVersion(ChallengeVersion challengeVersion) {
             this.challengeVersion = challengeVersion;
+            return this;
+        }
+
+        public Builder withStatus(AttemptStatus status) {
+            this.status = status;
             return this;
         }
 
@@ -123,31 +143,35 @@ public class ChallengeAttempt {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         ChallengeAttempt that = (ChallengeAttempt) o;
         return id == that.id &&
-               correctAnswers == that.correctAnswers &&
-               Objects.equals(user, that.user) &&
-               Objects.equals(challengeVersion, that.challengeVersion) &&
-               Objects.equals(attemptStart, that.attemptStart) &&
-               Objects.equals(attemptEnd, that.attemptEnd);
+                correctAnswers == that.correctAnswers &&
+                Objects.equals(user, that.user) &&
+                Objects.equals(challengeVersion, that.challengeVersion) &&
+                Objects.equals(status, that.status) &&
+                Objects.equals(attemptStart, that.attemptStart) &&
+                Objects.equals(attemptEnd, that.attemptEnd);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, user, challengeVersion, attemptStart, attemptEnd, correctAnswers);
+        return Objects.hash(id, user, challengeVersion, status, attemptStart, attemptEnd, correctAnswers);
     }
 
     @Override
     public String toString() {
         return "ChallengeAttempt{" +
-               "id=" + id +
-               ", user=" + user +
-               ", challengeVersion=" + challengeVersion +
-               ", attemptStart=" + attemptStart +
-               ", attemptEnd=" + attemptEnd +
-               ", correctAnswers=" + correctAnswers +
-               '}';
+                "id=" + id +
+                ", user=" + user +
+                ", challengeVersion=" + challengeVersion +
+                ", status=" + status +
+                ", attemptStart=" + attemptStart +
+                ", attemptEnd=" + attemptEnd +
+                ", correctAnswers=" + correctAnswers +
+                '}';
     }
 }
