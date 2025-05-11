@@ -14,12 +14,6 @@ public class PersonEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @Column(name = "first_name", nullable = false, length = 255)
-    private String firstName;
-
-    @Column(name = "last_name", nullable = false, length = 255)
-    private String lastName;
-
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "photo_id")
     private PhotoEntity photo;
@@ -33,20 +27,18 @@ public class PersonEntity {
 
     // Constructors, getters, setters, equals, hashCode, and toString methods
 
-    public PersonEntity() {}
+    public PersonEntity() {
+    }
 
-    public PersonEntity(long id, String firstName, String lastName, PhotoEntity photo, UserEntity user, List<PersonAttributeEntity> attributes) {
+    public PersonEntity(long id, String firstName, String lastName, PhotoEntity photo, UserEntity user,
+            List<PersonAttributeEntity> attributes) {
         this.id = id;
-        this.firstName = firstName;
-        this.lastName = lastName;
         this.photo = photo;
         this.user = user;
         this.attributes = attributes;
     }
 
-    public PersonEntity(String firstName, String lastName, PhotoEntity photo, UserEntity user, List<PersonAttributeEntity> attributes) {
-        this.firstName = firstName;
-        this.lastName = lastName;
+    public PersonEntity(PhotoEntity photo, UserEntity user, List<PersonAttributeEntity> attributes) {
         this.photo = photo;
         this.user = user;
         this.attributes = attributes;
@@ -58,22 +50,6 @@ public class PersonEntity {
 
     public void setId(long id) {
         this.id = id;
-    }
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
     }
 
     public PhotoEntity getphoto() {
@@ -102,12 +78,12 @@ public class PersonEntity {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof PersonEntity)) return false;
+        if (this == o)
+            return true;
+        if (!(o instanceof PersonEntity))
+            return false;
         PersonEntity that = (PersonEntity) o;
         return id == that.id &&
-                Objects.equals(firstName, that.firstName) &&
-                Objects.equals(lastName, that.lastName) &&
                 Objects.equals(photo, that.photo) &&
                 Objects.equals(user, that.user) &&
                 Objects.equals(attributes, that.attributes);
@@ -115,15 +91,13 @@ public class PersonEntity {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, firstName, lastName, photo, user, attributes);
+        return Objects.hash(id, photo, user, attributes);
     }
 
     @Override
     public String toString() {
         return "PersonEntity{" +
                 "id=" + id +
-                ", firstName='" + firstName + '\'' +
-                ", lastName='" + lastName + '\'' +
                 ", photo=" + photo +
                 ", user=" + user +
                 ", attributes=" + attributes +

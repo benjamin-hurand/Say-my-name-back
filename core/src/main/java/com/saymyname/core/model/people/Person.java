@@ -7,19 +7,16 @@ import java.util.Objects;
 
 public class Person {
     private long id;
-    private String firstName;
-    private String lastName;
     private User user;
     private Photo photo;
     private List<PersonAttribute> attributes;
 
     // Default constructor
-    public Person() {}
+    public Person() {
+    }
 
     private Person(Builder builder) {
         this.id = builder.id;
-        this.firstName = builder.firstName;
-        this.lastName = builder.lastName;
         this.photo = builder.photo;
         this.user = builder.user;
         this.attributes = builder.attributes;
@@ -27,14 +24,6 @@ public class Person {
 
     public long getId() {
         return id;
-    }
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
     }
 
     public Photo getPhoto() {
@@ -53,14 +42,6 @@ public class Person {
         this.id = id;
     }
 
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
-
     public void setPhoto(Photo photo) {
         this.photo = photo;
     }
@@ -75,24 +56,12 @@ public class Person {
 
     public static class Builder {
         private long id;
-        private String firstName;
-        private String lastName;
         private Photo photo;
         private User user;
         private List<PersonAttribute> attributes;
 
         public Builder withId(long id) {
             this.id = id;
-            return this;
-        }
-
-        public Builder withFirstName(String firstName) {
-            this.firstName = firstName;
-            return this;
-        }
-
-        public Builder withLastName(String lastName) {
-            this.lastName = lastName;
             return this;
         }
 
@@ -118,12 +87,12 @@ public class Person {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Person)) return false;
+        if (this == o)
+            return true;
+        if (!(o instanceof Person))
+            return false;
         Person person = (Person) o;
         return id == person.id &&
-                Objects.equals(firstName, person.firstName) &&
-                Objects.equals(lastName, person.lastName) &&
                 Objects.equals(photo, person.photo) &&
                 Objects.equals(user, person.user) &&
                 Objects.equals(attributes, person.attributes);
@@ -131,15 +100,13 @@ public class Person {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, firstName, lastName, photo, user, attributes);
+        return Objects.hash(id, photo, user, attributes);
     }
 
     @Override
     public String toString() {
         return "Person{" +
                 "id=" + id +
-                ", firstName='" + firstName + '\'' +
-                ", lastName='" + lastName + '\'' +
                 ", photo=" + photo +
                 ", user=" + user +
                 ", attributes=" + attributes +
