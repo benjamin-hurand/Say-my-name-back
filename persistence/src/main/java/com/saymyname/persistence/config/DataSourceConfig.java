@@ -1,20 +1,16 @@
 package com.saymyname.persistence.config;
 
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import javax.sql.DataSource;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.PropertySource;
 
-import javax.sql.DataSource;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 @Configuration
 public class DataSourceConfig {
-    private static final Logger logger = LoggerFactory.getLogger(DataSourceConfig.class);
-
     @Value("${db.driver}")
     private String driverClassName;
 
@@ -32,11 +28,12 @@ public class DataSourceConfig {
         HikariConfig hikariConfig = new HikariConfig();
         hikariConfig.setDriverClassName(driverClassName);
         hikariConfig.setJdbcUrl(jdbcUrl);
-        if((username != null && !username.isEmpty()) || (password != null && !password.isEmpty())) {
+        if ((username != null && !username.isEmpty()) || (password != null && !password.isEmpty())) {
             hikariConfig.setUsername(username);
             hikariConfig.setPassword(password);
         }
-        // logger.info("Driver Class: {},\n Url: {},\n Username: {},\n password: {}", driverClassName, jdbcUrl, username, password);
+        // logger.info("Driver Class: {},\n Url: {},\n Username: {},\n password: {}",
+        // driverClassName, jdbcUrl, username, password);
         hikariConfig.setMaximumPoolSize(10);
         hikariConfig.setAutoCommit(false);
         hikariConfig.addDataSourceProperty("cachePrepStmts", "true");

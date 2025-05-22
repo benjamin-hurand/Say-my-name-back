@@ -10,20 +10,25 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import com.saymyname.core.model.enums.ReviewAlgorithm;
+
 public class User implements UserDetails {
     private long id;
     private String username;
     private String email;
+    private ReviewAlgorithm srsAlgorithm;
     private String password;
     private String roles;
-    private Boolean active;       // Correct the data type if needed, Boolean is used if it could be null
+    private Boolean active; // Correct the data type if needed, Boolean is used if it could be null
 
-    public User() {}
+    public User() {
+    }
 
     private User(Builder builder) {
         this.id = builder.id;
         this.username = builder.username;
         this.email = builder.email;
+        this.srsAlgorithm = builder.srsAlgorithm;
         this.password = builder.password;
         this.roles = builder.roles;
         this.active = builder.active; // Initialize isActive from the builder
@@ -61,6 +66,10 @@ public class User implements UserDetails {
         return email;
     }
 
+    public ReviewAlgorithm getSrsAlgorithm() {
+        return srsAlgorithm;
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return getRolesList().stream()
@@ -92,6 +101,10 @@ public class User implements UserDetails {
         this.email = email;
     }
 
+    public void setSrsAlgorithm(ReviewAlgorithm srsAlgorithm) {
+        this.srsAlgorithm = srsAlgorithm;
+    }
+
     public void setRoles(String roles) {
         this.roles = roles;
     }
@@ -118,6 +131,7 @@ public class User implements UserDetails {
         private long id;
         private String username;
         private String email;
+        private ReviewAlgorithm srsAlgorithm;
         private String password;
         private String roles;
         private Boolean active; // Include this to allow setting the active state via the builder
@@ -134,6 +148,11 @@ public class User implements UserDetails {
 
         public Builder withEmail(String email) {
             this.email = email;
+            return this;
+        }
+
+        public Builder withSrsAlgorithm(ReviewAlgorithm srsAlgorithm) {
+            this.srsAlgorithm = srsAlgorithm;
             return this;
         }
 
@@ -159,14 +178,19 @@ public class User implements UserDetails {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof User user)) return false;
-        return getId() == user.getId() && Objects.equals(getUsername(), user.getUsername()) && Objects.equals(getEmail(), user.getEmail()) && Objects.equals(getPassword(), user.getPassword()) && Objects.equals(getRoles(), user.getRoles()) && Objects.equals(active, user.active);
+        if (this == o)
+            return true;
+        if (!(o instanceof User user))
+            return false;
+        return getId() == user.getId() && Objects.equals(getUsername(), user.getUsername())
+                && Objects.equals(getEmail(), user.getEmail()) && (getSrsAlgorithm() == user.getSrsAlgorithm())
+                && Objects.equals(getPassword(), user.getPassword())
+                && Objects.equals(getRoles(), user.getRoles()) && Objects.equals(active, user.active);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getId(), getUsername(), getEmail(), getPassword(), getRoles(), active);
+        return Objects.hash(getId(), getUsername(), getEmail(), getSrsAlgorithm(), getPassword(), getRoles(), active);
     }
 
     @Override
@@ -175,6 +199,7 @@ public class User implements UserDetails {
                 "id=" + id +
                 ", username='" + username + '\'' +
                 ", email='" + email + '\'' +
+                ", srsAlgorithm='" + srsAlgorithm + '\'' +
                 ", password='" + password + '\'' +
                 ", roles='" + roles + '\'' +
                 ", active=" + active +

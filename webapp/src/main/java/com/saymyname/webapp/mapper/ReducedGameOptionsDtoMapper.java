@@ -1,24 +1,19 @@
 package com.saymyname.webapp.mapper;
 
-import java.util.List;
-
 import org.springframework.stereotype.Component;
 
-import com.saymyname.core.model.game.options.GameAttributeFilter;
-import com.saymyname.core.model.game.options.GameAttributeSort;
-import com.saymyname.core.model.game.options.GameMode;
 import com.saymyname.core.model.game.options.GameOptions;
 import com.saymyname.webapp.dto.ReducedGameOptionsDto;
 
 @Component
-public class ReducedGameOptionsDtoMapper  {
+public class ReducedGameOptionsDtoMapper {
     ReducedGameModeDtoMapper reducedGameModeDtoMapper;
     ReducedGameAttributeFilterDtoMapper reducedGameAttributeFilterDtoMapper;
     ReducedGameAttributeSortDtoMapper reducedGameAttributeSortDtoMapper;
 
     public ReducedGameOptionsDtoMapper(ReducedGameModeDtoMapper reducedGameModeDtoMapper,
-                ReducedGameAttributeFilterDtoMapper reducedGameAttributeFilterDtoMapper,
-                ReducedGameAttributeSortDtoMapper reducedGameAttributeSortDtoMapper) {
+            ReducedGameAttributeFilterDtoMapper reducedGameAttributeFilterDtoMapper,
+            ReducedGameAttributeSortDtoMapper reducedGameAttributeSortDtoMapper) {
         this.reducedGameModeDtoMapper = reducedGameModeDtoMapper;
         this.reducedGameAttributeFilterDtoMapper = reducedGameAttributeFilterDtoMapper;
         this.reducedGameAttributeSortDtoMapper = reducedGameAttributeSortDtoMapper;
@@ -26,10 +21,10 @@ public class ReducedGameOptionsDtoMapper  {
 
     public GameOptions toModel(ReducedGameOptionsDto dto) {
         return new GameOptions.Builder()
-            .withId(dto.id())
-            .withGameMode(reducedGameModeDtoMapper.toModel(dto.gameMode()))
-            .withFilters(dto.filters().stream().map(reducedGameAttributeFilterDtoMapper::toModel).toList())
-            .withSortBy(dto.sortBy().stream().map(reducedGameAttributeSortDtoMapper::toModel).toList())
-            .build();
+                .withId(dto.id())
+                .withGameMode(reducedGameModeDtoMapper.toModel(dto.gameMode()))
+                .withFilters(dto.filters().stream().map(reducedGameAttributeFilterDtoMapper::toModel).toList())
+                .withSortBy(dto.sortBy().stream().map(reducedGameAttributeSortDtoMapper::toModel).toList())
+                .build();
     }
 }

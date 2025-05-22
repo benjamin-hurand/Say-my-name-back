@@ -19,8 +19,17 @@ public class PersonAttributeService {
         return personAttributeDao.findAttributesByPhotoId(photoId);
     }
 
-    public Long countPersonsMatchingFilter(String minValue, String maxValue, LocalDateTime seasonStart, Long attributeId) {
-        return personAttributeDao.countPersonsMatchingFilter(minValue, nextValue(maxValue), seasonStart, attributeId);
+    public List<PersonAttribute> getAttributesByPersonId(Long personId) {
+        return personAttributeDao.findAttributesByPersonId(personId);
+    }
+
+    public Long countPersonsMatchingFilter(String minValue, String maxValue, LocalDateTime validFor,
+            Long attributeId) {
+        return personAttributeDao.countPersonsMatchingFilter(
+                minValue,
+                nextValue(maxValue),
+                validFor,
+                attributeId);
     }
 
     private String nextValue(String value) {
@@ -30,7 +39,8 @@ public class PersonAttributeService {
         if (value.length() == 1) {
             char c = value.charAt(0);
             // Si c'est 'Z' ou 'z', retourner une borne supérieure large
-            return (c == 'Z' || c == 'z') ? (value.equals("Z") ? "Z\uffff" : "z\uffff") : String.valueOf((char) (c + 1));
+            return (c == 'Z' || c == 'z') ? (value.equals("Z") ? "Z\uffff" : "z\uffff")
+                    : String.valueOf((char) (c + 1));
         }
         // Pour une chaîne plus longue, on peut ajouter un caractère maximum à la fin
         return value + "\uffff";

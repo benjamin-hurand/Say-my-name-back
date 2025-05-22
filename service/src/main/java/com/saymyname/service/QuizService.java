@@ -1,21 +1,14 @@
 package com.saymyname.service;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
 import com.saymyname.core.model.game.QuizEntry;
-import com.saymyname.core.model.game.options.GameMode;
 import com.saymyname.core.model.game.options.GameOptions;
 import com.saymyname.core.model.people.Person;
-import com.saymyname.core.model.people.PersonAttribute;
-import com.saymyname.core.model.people.Photo;
 import com.saymyname.core.util.InitialCrafter;
 import com.saymyname.persistence.dao.PersonDao;
-import com.saymyname.persistence.dao.PhotoDao;
 
 @Service
 public class QuizService {

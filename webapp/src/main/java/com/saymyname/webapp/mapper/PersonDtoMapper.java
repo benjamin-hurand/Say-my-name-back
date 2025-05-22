@@ -15,4 +15,10 @@ public class PersonDtoMapper {
                 .withId(personDto.id())
                 .build();
     }
+
+    public Person toModel(Long personId) {
+        return new Person.Builder()
+                .withId(personId)
+                .build();
+    }
 }

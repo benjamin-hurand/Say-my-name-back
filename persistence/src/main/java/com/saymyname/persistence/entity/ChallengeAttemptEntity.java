@@ -4,8 +4,6 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-import org.checkerframework.checker.units.qual.A;
-
 import com.saymyname.core.model.enums.AttemptStatus;
 
 @Entity

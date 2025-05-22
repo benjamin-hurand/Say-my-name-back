@@ -25,12 +25,14 @@ public interface PersonAttributeRepository extends JpaRepository<PersonAttribute
                      "  AND pa.valid_from <= ?3 " +
                      "  AND (pa.valid_to IS NULL OR pa.valid_to >= ?3) " +
                      "  AND pa.attribute_id = ?4", nativeQuery = true)
-       long countPersonsMatchingFilter(String minValue, String nextValue, LocalDateTime seasonStart, Long attributeId);
+       long countPersonsMatchingFilter(String minValue, String nextValue, LocalDateTime validFor, Long attributeId);
 
        @Query("SELECT pa FROM PersonAttributeEntity pa JOIN pa.attribute a " +
                      "WHERE pa.person.id = :personId " +
                      "AND pa.validFrom <= CURRENT_TIMESTAMP " +
                      "AND (pa.validTo IS NULL OR pa.validTo >= CURRENT_TIMESTAMP)")
        List<PersonAttributeEntity> findAttributesByPersonId(@Param("personId") Long personId);
+
+       long countDistinctByAttribute_IdAndValueBetween(long attributeId, String min, String max);
 
 }

@@ -1,39 +1,34 @@
 package com.saymyname.webapp.controller;
 
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+
 import com.saymyname.core.model.people.Person;
 import com.saymyname.service.PersonAttributeService;
 import com.saymyname.service.PersonService;
 import com.saymyname.webapp.dto.PersonAttributeDto;
-import com.saymyname.webapp.dto.PersonDto;
 import com.saymyname.webapp.mapper.PersonAttributeDtoMapper;
-import com.saymyname.webapp.mapper.PersonDtoMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/persons")
 public class PersonRestController {
 
     private final PersonService personService;
-    private final PersonDtoMapper personDtoMapper;
     private final PersonAttributeService personAttributeService;
     private final PersonAttributeDtoMapper personAttributeDtoMapper;
-    private static final Logger logger = LoggerFactory.getLogger(PersonRestController.class);
-
 
     public PersonRestController(
             PersonService personService,
-            PersonDtoMapper personDtoMapper,
             PersonAttributeService personAttributeService,
             PersonAttributeDtoMapper personAttributeDtoMapper) {
         this.personService = personService;
-        this.personDtoMapper = personDtoMapper;
         this.personAttributeService = personAttributeService;
         this.personAttributeDtoMapper = personAttributeDtoMapper;
     }
@@ -46,20 +41,20 @@ public class PersonRestController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Person> getById(@PathVariable(name="id") Long id) {
+    public ResponseEntity<Person> getById(@PathVariable(name = "id") Long id) {
         Person person = personService.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No person found with ID: " + id));
         return ResponseEntity.ok(person);
     }
 
     @GetMapping("/{id}/attributes")
-    public ResponseEntity<List<PersonAttributeDto>> getAttributesById(@PathVariable(name="id") Long id) {
+    public ResponseEntity<List<PersonAttributeDto>> getAttributesById(@PathVariable(name = "id") Long id) {
         List<PersonAttributeDto> personAttributeDtoList = personAttributeService
-                .getAttributesByPhotoId(id)
+                .getAttributesByPersonId(id)
                 .stream()
                 .map(personAttributeDtoMapper::toDto)
                 .toList();
-        // logger.info("Fetching attributes for photo ID {}: {}", id, personAttributeDtoList);
+        // personAttributeDtoList);
         return new ResponseEntity<>(personAttributeDtoList, HttpStatus.OK);
     }
 

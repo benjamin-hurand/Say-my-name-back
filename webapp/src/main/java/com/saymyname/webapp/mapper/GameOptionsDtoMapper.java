@@ -1,15 +1,12 @@
 package com.saymyname.webapp.mapper;
 
+import org.springframework.stereotype.Component;
+
 import com.saymyname.core.model.game.options.GameOptions;
 import com.saymyname.webapp.dto.GameOptionsDto;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 @Component
 public class GameOptionsDtoMapper {
-    private static final Logger logger = LoggerFactory.getLogger(GameOptionsDtoMapper.class);
-
     private final GameAttributeFilterDtoMapper gameAttributeFilterDtoMapper;
     private final GameAttributeSortDtoMapper gameAttributeSortDtoMapper;
     private final GameModeDtoMapper gameModeDtoMapper;
@@ -42,15 +39,13 @@ public class GameOptionsDtoMapper {
         return gameOptions;
     }
 
-
     public GameOptionsDto toDto(GameOptions gameOptions) {
         return new GameOptionsDto(
                 gameOptions.getId(),
                 gameModeDtoMapper.toDto(gameOptions.getGameMode()),
                 gameOptions.getFilters().stream().map(gameAttributeFilterDtoMapper::toDto).toList(),
                 gameOptions.getSortBy().stream().map(gameAttributeSortDtoMapper::toDto).toList(),
-                gameOptions.isInitialGiven()
-        );
+                gameOptions.isInitialGiven());
     }
 
 }

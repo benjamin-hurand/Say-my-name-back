@@ -1,15 +1,4 @@
 package com.saymyname.service;
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
-import com.google.api.client.json.gson.GsonFactory;
-import com.google.api.client.http.javanet.NetHttpTransport;
-
-import com.saymyname.persistence.dao.UserDao;
-import org.springframework.stereotype.Service;
-
-import com.fasterxml.jackson.core.JsonFactory;
-import jakarta.validation.Payload;
-import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -17,10 +6,19 @@ import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Collections;
 
+import org.springframework.stereotype.Service;
+
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
+import com.saymyname.persistence.dao.UserDao;
+
 @Service
 public class GoogleAuthService {
     private static final String CLIENT_ID = "965222065184-13h52gp9a7ermhst2obegk2a74e5vk1o.apps.googleusercontent.com";
-    private static final String CLIENT_SECRET = "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"; // That's actually the "Code secret du client"
+    private static final String CLIENT_SECRET = "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"; // That's actually the "Code
+                                                                                       // secret du client"
     private final UserDao userDao;
 
     public GoogleAuthService(UserDao userDao) {
@@ -53,6 +51,5 @@ public class GoogleAuthService {
         secureRandom.nextBytes(randomBytes);
         return base64Encoder.encodeToString(randomBytes);
     }
-
 
 }

@@ -1,21 +1,19 @@
 package com.saymyname.webapp.config;
 
-import com.google.auth.oauth2.TokenVerifier;
-import com.google.auth.oauth2.TokenVerifier.VerificationException;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jws;
+import java.util.Date;
+import java.util.HashMap;
+
+import javax.crypto.SecretKey;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Component;
+
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Component;
-
-import javax.crypto.SecretKey;
-import java.util.Date;
-import java.util.HashMap;
 
 @Component
 public class JWTUtils {
@@ -25,7 +23,7 @@ public class JWTUtils {
     private final int oneMinute = 60 * oneSecond;
     private final int oneHour = 60 * oneMinute;
     private final int oneDay = 24 * oneHour;
-    private final int jwtExpiration = 7*oneDay;
+    private final int jwtExpiration = 7 * oneDay;
 
     private final String AUTHORIZATION_HEADER_PREFIX = "Bearer ";
 

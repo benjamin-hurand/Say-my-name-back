@@ -1,24 +1,22 @@
 package com.saymyname.service;
 
-import com.saymyname.core.model.common.User;
-import com.saymyname.persistence.dao.UserDao;
-import com.saymyname.persistence.entity.CustomUserDetails;
-import com.saymyname.persistence.entity.UserEntity;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.Random;
+
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Random;
+import com.saymyname.core.model.common.User;
+import com.saymyname.persistence.dao.UserDao;
+import com.saymyname.persistence.entity.CustomUserDetails;
+import com.saymyname.persistence.entity.UserEntity;
 
 @Service
 public class UserService implements UserDetailsService {
 
     private final UserDao userDao;
     private final PasswordEncoder passwordEncoder;
-    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
     private static final String[] FRENCH_ADJECTIVES = {
             "Intrépide", "Joyeux", "Brillant", "Astucieux", "Mystérieux", "Agile", "Vif",
@@ -118,14 +116,12 @@ public class UserService implements UserDetailsService {
         String adjective = adjectives[random.nextInt(adjectives.length)];
         String noun = nouns[random.nextInt(nouns.length)];
 
-
         if (adjectiveFirst) {
             return adjective + '-' + noun;
         } else {
             return noun + '-' + adjective;
         }
     }
-
 
     public User save(User user) {
         // Encode le mot de passe avant de sauvegarder l'user

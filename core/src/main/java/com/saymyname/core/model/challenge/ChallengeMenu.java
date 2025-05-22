@@ -1,6 +1,5 @@
 package com.saymyname.core.model.challenge;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -12,9 +11,11 @@ public class ChallengeMenu {
     private ChallengeFilters filters;
     private List<ChallengeSortCriterion> sorts;
 
-    public ChallengeMenu() {}
+    public ChallengeMenu() {
+    }
 
-    public ChallengeMenu(Long userId, LocalDateTime seasonStart, String search, ChallengeFilters filters, List<ChallengeSortCriterion> sorts) {
+    public ChallengeMenu(Long userId, LocalDateTime seasonStart, String search, ChallengeFilters filters,
+            List<ChallengeSortCriterion> sorts) {
         this.userId = userId;
         this.seasonStart = seasonStart;
         this.search = search;
@@ -64,14 +65,16 @@ public class ChallengeMenu {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof ChallengeMenu)) return false;
+        if (this == o)
+            return true;
+        if (!(o instanceof ChallengeMenu))
+            return false;
         ChallengeMenu that = (ChallengeMenu) o;
         return Objects.equals(userId, that.userId) &&
-               Objects.equals(seasonStart, that.seasonStart) &&
-               Objects.equals(search, that.search) &&
-               Objects.equals(filters, that.filters) &&
-               Objects.equals(sorts, that.sorts);
+                Objects.equals(seasonStart, that.seasonStart) &&
+                Objects.equals(search, that.search) &&
+                Objects.equals(filters, that.filters) &&
+                Objects.equals(sorts, that.sorts);
     }
 
     @Override
@@ -82,11 +85,11 @@ public class ChallengeMenu {
     @Override
     public String toString() {
         return "ChallengeMenu{" +
-               "userId=" + userId +
-               ", seasonStart=" + seasonStart +
-               ", search='" + search + '\'' +
-               ", filters=" + filters +
-               ", sorts=" + sorts +
-               '}';
+                "userId=" + userId +
+                ", seasonStart=" + seasonStart +
+                ", search='" + search + '\'' +
+                ", filters=" + filters +
+                ", sorts=" + sorts +
+                '}';
     }
 }

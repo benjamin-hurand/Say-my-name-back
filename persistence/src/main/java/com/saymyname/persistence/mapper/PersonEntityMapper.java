@@ -1,21 +1,19 @@
 package com.saymyname.persistence.mapper;
 
-import com.saymyname.core.model.people.Person;
-import com.saymyname.persistence.entity.PersonEntity;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import com.saymyname.core.model.people.Person;
+import com.saymyname.persistence.entity.PersonEntity;
 
 @Component
 public class PersonEntityMapper {
     private final PhotoEntityMapper photoEntityMapper;
     private final UserEntityMapper userEntityMapper;
     private final PersonAttributeEntityMapper personAttributeEntityMapper;
-    private static final Logger logger = LoggerFactory.getLogger(PersonEntityMapper.class);
 
     @Autowired
     public PersonEntityMapper(PhotoEntityMapper photoEntityMapper,

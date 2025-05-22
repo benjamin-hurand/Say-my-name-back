@@ -7,27 +7,22 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.antlr.v4.runtime.atn.SemanticContext.Operator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.saymyname.core.exception.ChallengeAttemptException;
-import com.saymyname.core.model.challenge.Challenge;
 import com.saymyname.core.model.challenge.ChallengeAttempt;
 import com.saymyname.core.model.challenge.ChallengeEvaluation;
 import com.saymyname.core.model.challenge.ChallengeEvaluationRequest;
 import com.saymyname.core.model.challenge.ChallengeHistoryEntry;
 import com.saymyname.core.model.challenge.ChallengeQuestion;
-import com.saymyname.core.model.challenge.ChallengeVersion;
 import com.saymyname.core.model.challenge.CorrectionEntry;
 import com.saymyname.core.model.common.User;
 import com.saymyname.core.model.enums.AttemptStatus;
 import com.saymyname.core.model.game.options.GameMode;
-import com.saymyname.core.model.game.options.GameModeAttribute;
 import com.saymyname.core.model.people.PersonAttribute;
 import com.saymyname.core.util.AnswerValidator;
 import com.saymyname.persistence.dao.ChallengeAttemptDao;
-import com.saymyname.persistence.dao.ChallengeQuestionDao;
 import com.saymyname.persistence.dao.PersonAttributeDao;
 import com.saymyname.persistence.entity.ChallengeAttemptEntity;
 
@@ -35,14 +30,11 @@ import com.saymyname.persistence.entity.ChallengeAttemptEntity;
 public class ChallengeAttemptService {
 
     private final ChallengeAttemptDao challengeAttemptDao;
-    private final ChallengeQuestionDao challengeQuestionDao;
     private final PersonAttributeDao personAttributeDao;
 
-    public ChallengeAttemptService(ChallengeAttemptDao challengeAttemptDao, ChallengeQuestionDao challengeQuestionDao,
-            PersonAttributeDao personAttributeDao) {
+    public ChallengeAttemptService(ChallengeAttemptDao challengeAttemptDao, PersonAttributeDao personAttributeDao) {
         this.personAttributeDao = personAttributeDao;
         this.challengeAttemptDao = challengeAttemptDao;
-        this.challengeQuestionDao = challengeQuestionDao;
     }
 
     @Transactional

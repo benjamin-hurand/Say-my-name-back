@@ -2,7 +2,6 @@ package com.saymyname.persistence.dao;
 
 import org.springframework.stereotype.Repository;
 
-import com.saymyname.core.model.challenge.Challenge;
 import com.saymyname.core.model.challenge.ChallengeVersion;
 import com.saymyname.persistence.entity.ChallengeVersionEntity;
 import com.saymyname.persistence.mapper.ChallengeVersionEntityMapper;

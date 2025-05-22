@@ -1,41 +1,38 @@
 package com.saymyname.service;
 
-import com.saymyname.core.exception.ChallengeAlreadyExistsException;
-import com.saymyname.core.model.challenge.Challenge;
-import com.saymyname.core.model.challenge.ChallengeMenu;
-import com.saymyname.core.model.challenge.ChallengeSeason;
-import com.saymyname.core.model.challenge.ChallengeVersion;
-import com.saymyname.persistence.dao.ChallengeDao;
-import com.saymyname.persistence.dao.PersonAttributeDao;
-import com.saymyname.persistence.entity.ChallengeVersionEntity;
-import com.saymyname.persistence.projection.ChallengeCardProjection;
-import com.saymyname.persistence.repository.PersonAttributeRepository;
-import com.saymyname.service.ChallengeSeasonService;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
+import com.saymyname.core.exception.ChallengeAlreadyExistsException;
+import com.saymyname.core.model.challenge.Challenge;
+import com.saymyname.core.model.challenge.ChallengeMenu;
+import com.saymyname.core.model.challenge.ChallengeSeason;
+import com.saymyname.core.model.challenge.ChallengeVersion;
+import com.saymyname.persistence.dao.ChallengeDao;
+import com.saymyname.persistence.projection.ChallengeCardProjection;
 
 @Service
 public class ChallengeService {
 
     private final ChallengeDao challengeDao;
     private final ChallengeSeasonService challengeSeasonService;
-    private final PersonAttributeDao personAttributeDao;
     private final ChallengeVersionService challengeVersionService;
+    private final PersonAttributeService personAttributeService;
     private static final Logger logger = LoggerFactory.getLogger(ChallengeService.class);
 
     public ChallengeService(ChallengeDao challengeDao, ChallengeSeasonService challengeSeasonService,
-            PersonAttributeDao personAttributeDao, ChallengeVersionService challengeVersionService) {
+            ChallengeVersionService challengeVersionService,
+            PersonAttributeService personAttributeService) {
         this.challengeDao = challengeDao;
         this.challengeSeasonService = challengeSeasonService;
-        this.personAttributeDao = personAttributeDao;
         this.challengeVersionService = challengeVersionService;
+        this.personAttributeService = personAttributeService;
     }
 
     // Récupère la liste des challenges existants
@@ -67,9 +64,9 @@ public class ChallengeService {
         // 3. Vérifier qu'il existe suffisamment de questions (>=10) pour le challenge
         // dans la saison suivante
         String filterMinValue = challenge.getFilterAttribute().getMinValue();
-        String filterMaxValue = nextValue(challenge.getFilterAttribute().getMaxValue());
+        String filterMaxValue = challenge.getFilterAttribute().getMaxValue();
         logger.info("Filtre min: {}, Filtre max: {}", filterMinValue, filterMaxValue);
-        long questionCount = personAttributeDao.countPersonsMatchingFilter(
+        long questionCount = personAttributeService.countPersonsMatchingFilter(
                 filterMinValue,
                 filterMaxValue,
                 nextSeason.getStartDate(),
@@ -112,20 +109,6 @@ public class ChallengeService {
                 challenge.getFilterAttribute().getAttribute().getId(),
                 min,
                 max);
-    }
-
-    private String nextValue(String value) {
-        if (value == null || value.isEmpty()) {
-            return value;
-        }
-        if (value.length() == 1) {
-            char c = value.charAt(0);
-            // Si c'est 'Z' ou 'z', retourner une borne supérieure large
-            return (c == 'Z' || c == 'z') ? (value.equals("Z") ? "Z\uffff" : "z\uffff")
-                    : String.valueOf((char) (c + 1));
-        }
-        // Pour une chaîne plus longue, on peut ajouter un caractère maximum à la fin
-        return value + "\uffff";
     }
 
 }

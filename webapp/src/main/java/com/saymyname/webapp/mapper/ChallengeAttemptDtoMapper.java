@@ -1,8 +1,8 @@
 package com.saymyname.webapp.mapper;
 
 import org.springframework.stereotype.Component;
+
 import com.saymyname.core.model.challenge.ChallengeAttempt;
-import com.saymyname.core.model.challenge.ChallengeQuestion;
 import com.saymyname.core.model.challenge.ChallengeVersion;
 import com.saymyname.core.model.common.User;
 import com.saymyname.core.model.enums.AttemptStatus;

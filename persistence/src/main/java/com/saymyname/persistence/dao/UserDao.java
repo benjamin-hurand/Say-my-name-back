@@ -1,23 +1,21 @@
 package com.saymyname.persistence.dao;
 
-import com.saymyname.core.model.common.User;
-import com.saymyname.persistence.mapper.UserEntityMapper;
-import com.saymyname.persistence.entity.UserEntity;
-import com.saymyname.persistence.repository.UserRepository;
-import jakarta.persistence.EntityNotFoundException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.List;
+
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
+import com.saymyname.core.model.common.User;
+import com.saymyname.persistence.entity.UserEntity;
+import com.saymyname.persistence.mapper.UserEntityMapper;
+import com.saymyname.persistence.repository.UserRepository;
+
+import jakarta.persistence.EntityNotFoundException;
 
 @Repository
 public class UserDao {
     private final UserRepository userRepository;
     private final UserEntityMapper userEntityMapper;
-    private static final Logger logger = LoggerFactory.getLogger(UserDao.class);
-
 
     public UserDao(UserRepository userRepository, UserEntityMapper userEntityMapper) {
         this.userRepository = userRepository;
@@ -31,14 +29,13 @@ public class UserDao {
     }
 
     public User findById(Long id) {
-        return userRepository.findById(id).map(userEntityMapper::toModel).orElseThrow(() -> new EntityNotFoundException("Entity user not found with id " + id));
+        return userRepository.findById(id).map(userEntityMapper::toModel)
+                .orElseThrow(() -> new EntityNotFoundException("Entity user not found with id " + id));
     }
 
     public User save(User user) {
         return userEntityMapper.toModel(userRepository.save(userEntityMapper.toEntity(user)));
     }
-
-
 
     public User update(User user) {
         return userEntityMapper.toModel(userRepository.save(userEntityMapper.toEntity(user)));
@@ -65,7 +62,8 @@ public class UserDao {
     }
 
     public UserEntity findEntityByEmailOrUsername(String identifier) {
-        return userRepository.findByEmailOrUsername(identifier).orElseThrow(() -> new UsernameNotFoundException("Entity user not found with email or username " + identifier));
+        return userRepository.findByEmailOrUsername(identifier).orElseThrow(
+                () -> new UsernameNotFoundException("Entity user not found with email or username " + identifier));
     }
 
     public User findByToken(String token) {

@@ -1,16 +1,10 @@
 package com.saymyname.webapp.controller;
 
-import com.saymyname.core.model.common.User;
-import com.saymyname.service.UserService;
-import com.saymyname.webapp.config.JWTUtils;
-import com.saymyname.webapp.dto.LoginDto;
-import com.saymyname.webapp.dto.LoginGoogleDto;
-import com.saymyname.webapp.dto.RegisterFormDto;
-import com.saymyname.service.GoogleAuthService;
-import com.saymyname.webapp.dto.RegisterGoogleDto;
-import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -18,12 +12,24 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.util.HashMap;
-import java.util.Map;
+import com.saymyname.core.model.common.User;
+import com.saymyname.service.GoogleAuthService;
+import com.saymyname.service.UserService;
+import com.saymyname.webapp.config.JWTUtils;
+import com.saymyname.webapp.dto.LoginDto;
+import com.saymyname.webapp.dto.LoginGoogleDto;
+import com.saymyname.webapp.dto.RegisterFormDto;
+import com.saymyname.webapp.dto.RegisterGoogleDto;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api")
@@ -31,20 +37,21 @@ public class AuthRestController {
     private final AuthenticationManager authManager;
     private final JWTUtils jwtUtils;
     private final UserService userService;
-    private static final Logger logger = LoggerFactory.getLogger(AuthRestController.class);
     private final GoogleAuthService googleAuthService;
 
-    public AuthRestController(AuthenticationManager authManager, JWTUtils jwtUtils, UserService userService, GoogleAuthService googleAuthService) {
+    public AuthRestController(AuthenticationManager authManager, JWTUtils jwtUtils, UserService userService,
+            GoogleAuthService googleAuthService) {
         this.authManager = authManager;
         this.jwtUtils = jwtUtils;
         this.userService = userService;
         this.googleAuthService = googleAuthService;
     }
 
-    // REGISTER ---------------------------------------------------------------------------
+    // REGISTER
+    // ---------------------------------------------------------------------------
     @PostMapping("/auth/register")
-    public ResponseEntity<Object> register(@Valid @RequestBody RegisterFormDto user)  {
-        if(userService.checkIfAccountExistsWithEmail(user.email())) {
+    public ResponseEntity<Object> register(@Valid @RequestBody RegisterFormDto user) {
+        if (userService.checkIfAccountExistsWithEmail(user.email())) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already exists");
         }
 
@@ -59,7 +66,8 @@ public class AuthRestController {
         userService.save(newUser);
 
         // Generate jwt token
-        // String verificationToken = jwtUtils.generateTokenFromUsername(newUser.getUsername());
+        // String verificationToken =
+        // jwtUtils.generateTokenFromUsername(newUser.getUsername());
         //
         // Send email with url with jwt inside for front reception then back management
         //
@@ -68,16 +76,18 @@ public class AuthRestController {
 
     @PostMapping("/auth/google/register")
     public ResponseEntity<Object> registerWithGoogle(@Valid @RequestBody RegisterGoogleDto user) {
-        // logger.info("RECU : credential: {}, clientId: {}, select_by: {}", user.credential(), user.clientId(), user.select_by());
+        // logger.info("RECU : credential: {}, clientId: {}, select_by: {}",
+        // user.credential(), user.clientId(), user.select_by());
 
         String credential = user.credential();
         String clientId = user.clientId();
         String selectBy = user.select_by();
         try {
             String email = googleAuthService.getEmail(credential, clientId); // todo: Exception to handle !!
-            // logger.info("REGISTER GOOGLE : credential: {}, clientId: {}, selectBy: {}, email: {}", credential, clientId, selectBy, email);
+            // logger.info("REGISTER GOOGLE : credential: {}, clientId: {}, selectBy: {},
+            // email: {}", credential, clientId, selectBy, email);
 
-            if(userService.checkIfAccountExistsWithEmail(email)) {
+            if (userService.checkIfAccountExistsWithEmail(email)) {
                 // Then login !
                 User actualUser = userService.findByEmailOrUsername(email);
                 if (isNotActive(email)) {
@@ -96,14 +106,13 @@ public class AuthRestController {
                     .build();
             userService.save(newUser);
 
-
         } catch (GeneralSecurityException | IOException e) {
             throw new RuntimeException(e);
         }
 
-
         // Generate jwt token
-        // String verificationToken = jwtUtils.generateTokenFromUsername(newUser.getUsername());
+        // String verificationToken =
+        // jwtUtils.generateTokenFromUsername(newUser.getUsername());
         //
         // Send email with url with jwt inside for front reception then back management
         //
@@ -111,20 +120,21 @@ public class AuthRestController {
     }
 
     @GetMapping("/usernames/generate/{lang}")
-    public ResponseEntity<String> generateUsername(@PathVariable(name="lang") String lang) {
+    public ResponseEntity<String> generateUsername(@PathVariable(name = "lang") String lang) {
         String username = userService.generateUniqueUsername(lang);
         return ResponseEntity.ok(username);
     }
 
     @GetMapping("/usernames/isavailable/{username}")
-    public ResponseEntity<Boolean> isUsernameAvailable(@PathVariable(name="username") String username) {
-        if(userService.checkIfAccountExistsWithUsername(username)) {
-           return new ResponseEntity<>(false, HttpStatus.CONFLICT);
+    public ResponseEntity<Boolean> isUsernameAvailable(@PathVariable(name = "username") String username) {
+        if (userService.checkIfAccountExistsWithUsername(username)) {
+            return new ResponseEntity<>(false, HttpStatus.CONFLICT);
         }
-        return new ResponseEntity<>(true,HttpStatus.OK);
+        return new ResponseEntity<>(true, HttpStatus.OK);
     }
 
-    // LOGIN -----------------------------------------------------------------------------
+    // LOGIN
+    // -----------------------------------------------------------------------------
     @PostMapping("/auth/login")
     public ResponseEntity<?> login(@RequestBody LoginDto loginDto) {
         // Get userDetails with identifier and password
@@ -134,20 +144,23 @@ public class AuthRestController {
         User actualUser = userService.findByEmailOrUsername(loginDto.identifier());
         // Checking if the account is active
         if (!actualUser.isActive()) {
-            return ResponseEntity.status(HttpStatus.I_AM_A_TEAPOT).body("Email not verified. Please check your inbox for a verification link.");
+            return ResponseEntity.status(HttpStatus.I_AM_A_TEAPOT)
+                    .body("Email not verified. Please check your inbox for a verification link.");
         }
         return new ResponseEntity<>(getMessage(actualUser), HttpStatus.OK);
     }
 
     @PostMapping("/auth/google/login")
     public ResponseEntity<?> loginWithGoogle(@RequestBody LoginGoogleDto loginDto) throws Exception {
-        // logger.info("RECU : credential: {}, clientId: {}, select_by: {}", loginDto.credential(), loginDto.clientId(), loginDto.select_by());
+        // logger.info("RECU : credential: {}, clientId: {}, select_by: {}",
+        // loginDto.credential(), loginDto.clientId(), loginDto.select_by());
 
         String credential = loginDto.credential();
         String clientId = loginDto.clientId();
         String email = googleAuthService.getEmail(credential, clientId);
         String selectBy = loginDto.select_by();
-        // logger.info("CONNEXION GOOGLE : credential: {}, clientId: {}, selectBy: {}, email: {}", credential, clientId, selectBy, email);
+        // logger.info("CONNEXION GOOGLE : credential: {}, clientId: {}, selectBy: {},
+        // email: {}", credential, clientId, selectBy, email);
 
         User actualUser = userService.findByEmailOrUsername(email);
 
@@ -172,7 +185,7 @@ public class AuthRestController {
         return userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .findFirst()
-                .orElse("USER");  // Mettez une valeur par défaut si besoin
+                .orElse("USER"); // Mettez une valeur par défaut si besoin
     }
 
     private boolean isNotActive(String identifier) {
@@ -180,20 +193,20 @@ public class AuthRestController {
         return userService.findByEmailOrUsername(identifier).isActive();
     }
 
-
     // ------------------- Verification of JWT token -------------------
     @GetMapping("/auth/verify-token")
     public ResponseEntity<Boolean> verifyToken(
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
-        // Vérifier que l'en-tête Authorization est présent et qu'il commence par "Bearer "
+        // Vérifier que l'en-tête Authorization est présent et qu'il commence par
+        // "Bearer "
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             // Optionnel : vous pouvez renvoyer un BAD_REQUEST ou simplement false
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
         }
-        
+
         // Extraction du token sans le préfixe "Bearer "
         String token = authHeader.substring(7);
-        
+
         try {
             // Valider le token via JWTUtils (supposé posséder la méthode validateJwtToken)
             boolean isValid = jwtUtils.validateJwtToken(token);
@@ -203,7 +216,5 @@ public class AuthRestController {
             return ResponseEntity.ok(false);
         }
     }
-
-
 
 }

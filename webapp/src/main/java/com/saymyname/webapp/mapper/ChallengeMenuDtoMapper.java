@@ -1,13 +1,12 @@
 package com.saymyname.webapp.mapper;
 
-import org.springframework.stereotype.Component;
-import com.saymyname.core.model.challenge.ChallengeMenu;
-import com.saymyname.webapp.dto.ChallengeMenuDto;
-import com.saymyname.webapp.dto.ChallengeFiltersDto;
-import com.saymyname.webapp.dto.ChallengeSortCriterionDto;
-
 import java.util.List;
 import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Component;
+
+import com.saymyname.core.model.challenge.ChallengeMenu;
+import com.saymyname.webapp.dto.ChallengeMenuDto;
 
 @Component
 public class ChallengeMenuDtoMapper {
@@ -16,7 +15,7 @@ public class ChallengeMenuDtoMapper {
     private final ChallengeSortCriterionDtoMapper challengeSortCriterionDtoMapper;
 
     public ChallengeMenuDtoMapper(ChallengeFiltersDtoMapper challengeFiltersDtoMapper,
-                                  ChallengeSortCriterionDtoMapper challengeSortCriterionDtoMapper) {
+            ChallengeSortCriterionDtoMapper challengeSortCriterionDtoMapper) {
         this.challengeFiltersDtoMapper = challengeFiltersDtoMapper;
         this.challengeSortCriterionDtoMapper = challengeSortCriterionDtoMapper;
     }
@@ -36,7 +35,6 @@ public class ChallengeMenuDtoMapper {
                 dto.seasonStart(), // Utilise directement la date
                 dto.search(),
                 challengeFiltersDtoMapper.toModel(dto.filters()),
-                sorts
-        );
+                sorts);
     }
 }

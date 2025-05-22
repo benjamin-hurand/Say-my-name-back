@@ -12,7 +12,6 @@ import org.springframework.stereotype.Repository;
 
 import com.saymyname.core.model.enums.AttemptStatus;
 import com.saymyname.persistence.entity.ChallengeAttemptEntity;
-import com.saymyname.persistence.entity.UserEntity;
 
 @Repository
 public interface ChallengeAttemptRepository extends JpaRepository<ChallengeAttemptEntity, Long> {

@@ -14,4 +14,8 @@ public class UserDtoMapper {
     public User toModel(UserDto dto) {
         return new User.Builder().withId(dto.id()).withUsername(dto.username()).build();
     }
+
+    public User toModel(Long userId) {
+        return new User.Builder().withId(userId).build();
+    }
 }

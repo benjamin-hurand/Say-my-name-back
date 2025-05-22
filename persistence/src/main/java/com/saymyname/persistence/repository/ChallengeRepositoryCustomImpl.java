@@ -1,8 +1,14 @@
 package com.saymyname.persistence.repository;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.saymyname.core.model.challenge.ChallengeMenu;
 import com.saymyname.core.model.challenge.ChallengeSortCriterion;
-import com.saymyname.core.model.enums.ChallengeSortCriterionType;
 import com.saymyname.core.model.enums.OrderDirection;
 import com.saymyname.core.model.enums.UserPerformance;
 import com.saymyname.persistence.entity.AttributeEntity;
@@ -11,15 +17,19 @@ import com.saymyname.persistence.entity.ChallengeEntity;
 import com.saymyname.persistence.entity.ChallengeVersionEntity;
 import com.saymyname.persistence.entity.GameModeEntity;
 import com.saymyname.persistence.projection.ChallengeCardProjection;
+
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Tuple;
-import jakarta.persistence.criteria.*;
-import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Order;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 
 @Repository
 @Transactional(readOnly = true)
@@ -28,6 +38,7 @@ public class ChallengeRepositoryCustomImpl implements ChallengeRepositoryCustom 
     @PersistenceContext
     private EntityManager entityManager;
 
+    @SuppressWarnings("unchecked")
     @Override
     public List<ChallengeCardProjection> findChallengeCards(ChallengeMenu challengeMenu) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();

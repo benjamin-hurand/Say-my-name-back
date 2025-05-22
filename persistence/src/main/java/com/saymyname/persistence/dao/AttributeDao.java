@@ -1,25 +1,21 @@
 package com.saymyname.persistence.dao;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Repository;
+
 import com.saymyname.core.model.people.Attribute;
 import com.saymyname.core.model.people.AttributeType;
 import com.saymyname.persistence.mapper.AttributeEntityMapper;
 import com.saymyname.persistence.projection.AttributeMinMaxProjection;
 import com.saymyname.persistence.repository.AttributeRepository;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Repository;
-
-import java.util.List;
-import java.util.stream.Collectors;
-
 @Repository
 public class AttributeDao {
 
     private final AttributeRepository attributeRepository;
     private final AttributeEntityMapper attributeEntityMapper;
-
-    private static final Logger logger = LoggerFactory.getLogger(AttributeDao.class);
 
     public AttributeDao(AttributeRepository attributeRepository, AttributeEntityMapper attributeEntityMapper) {
         this.attributeRepository = attributeRepository;

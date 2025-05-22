@@ -4,10 +4,8 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.saymyname.core.model.challenge.Challenge;
 import com.saymyname.core.model.challenge.ChallengeQuestion;
 import com.saymyname.persistence.entity.ChallengeQuestionEntity;
 import com.saymyname.persistence.mapper.ChallengeQuestionEntityMapper;

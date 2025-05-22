@@ -1,15 +1,14 @@
 package com.saymyname.persistence.dao;
 
-import com.saymyname.core.model.people.PersonAttribute;
-import com.saymyname.persistence.entity.PersonAttributeEntity;
-import com.saymyname.persistence.mapper.PersonAttributeEntityMapper;
-import com.saymyname.persistence.repository.PersonAttributeRepository;
-import jakarta.persistence.Tuple;
+import java.time.LocalDateTime;
+import java.util.List;
+
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import com.saymyname.core.model.people.PersonAttribute;
+import com.saymyname.persistence.mapper.PersonAttributeEntityMapper;
+import com.saymyname.persistence.repository.PersonAttributeRepository;
 
 @Repository
 @Transactional
@@ -32,9 +31,9 @@ public class PersonAttributeDao {
                 .toList();
     }
 
-    public Long countPersonsMatchingFilter(String minValue, String nextValue, LocalDateTime seasonStart,
+    public Long countPersonsMatchingFilter(String minValue, String nextValue, LocalDateTime validFor,
             Long attributeId) {
-        return personAttributeRepository.countPersonsMatchingFilter(minValue, nextValue, seasonStart, attributeId);
+        return personAttributeRepository.countPersonsMatchingFilter(minValue, nextValue, validFor, attributeId);
     }
 
     public List<PersonAttribute> findAttributesByPersonId(Long personId) {

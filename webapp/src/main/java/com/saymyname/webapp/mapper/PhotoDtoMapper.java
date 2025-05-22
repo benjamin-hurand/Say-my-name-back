@@ -1,16 +1,13 @@
 package com.saymyname.webapp.mapper;
 
-import com.saymyname.core.model.people.Photo;
-import com.saymyname.persistence.repository.PhotoRepository;
-import com.saymyname.webapp.dto.PhotoDto;
 import org.springframework.stereotype.Component;
+
+import com.saymyname.core.model.people.Photo;
+import com.saymyname.webapp.dto.PhotoDto;
 
 @Component
 public class PhotoDtoMapper {
-    private final PhotoRepository photoRepository;
-
-    public PhotoDtoMapper(PhotoRepository photoRepository) {
-        this.photoRepository = photoRepository;
+    public PhotoDtoMapper() {
     }
 
     public PhotoDto toDto(Photo photo) {

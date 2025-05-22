@@ -1,18 +1,24 @@
 package com.saymyname.persistence.repository;
 
-import com.saymyname.core.model.game.options.GameAttributeFilter;
-import com.saymyname.core.model.game.options.GameAttributeSort;
-import com.saymyname.core.model.game.options.GameOptions;
-import com.saymyname.persistence.entity.PersonEntity;
-import com.saymyname.persistence.entity.PersonAttributeEntity;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.criteria.*;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.saymyname.core.model.game.options.GameAttributeFilter;
+import com.saymyname.core.model.game.options.GameOptions;
+import com.saymyname.persistence.entity.PersonAttributeEntity;
+import com.saymyname.persistence.entity.PersonEntity;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 
 @Repository
 @Transactional(readOnly = true)
@@ -37,10 +43,10 @@ public class PersonRepositoryCustomImpl implements PersonRepositoryCustom {
                 // Vérifier que l'attribut correspond (par son ID)
                 Predicate attributeMatch = cb.equal(
                         filterJoin.get("attribute").get("id"),
-                        filter.getAttribute().getId()
-                );
+                        filter.getAttribute().getId());
 
-                // Condition sur la valeur : comprise entre minValue (incluse) et nextValue(maxValue) (exclusive)
+                // Condition sur la valeur : comprise entre minValue (incluse) et
+                // nextValue(maxValue) (exclusive)
                 String minValue = filter.getMinValue();
                 String maxValue = filter.getMaxValue();
                 Predicate lowerBound = cb.greaterThanOrEqualTo(filterJoin.get("value"), minValue);
@@ -49,8 +55,8 @@ public class PersonRepositoryCustomImpl implements PersonRepositoryCustom {
 
                 // Ajouter les conditions de validité sur l'attribut
                 Predicate validFromPredicate = cb.lessThanOrEqualTo(filterJoin.get("validFrom"), cb.currentTimestamp());
-                Predicate validToPredicate = cb.or(cb.isNull(filterJoin.get("validTo")), 
-                                                cb.greaterThanOrEqualTo(filterJoin.get("validTo"), cb.currentTimestamp()));
+                Predicate validToPredicate = cb.or(cb.isNull(filterJoin.get("validTo")),
+                        cb.greaterThanOrEqualTo(filterJoin.get("validTo"), cb.currentTimestamp()));
                 Predicate validPredicate = cb.and(validFromPredicate, validToPredicate);
 
                 // Combiner toutes les conditions pour ce filtre
@@ -80,9 +86,9 @@ public class PersonRepositoryCustomImpl implements PersonRepositoryCustom {
                 return String.valueOf((char) (c + 1));
             }
         }
-        // Pour des chaînes plus longues, ajouter un caractère de fin (ici, un caractère maximum)
+        // Pour des chaînes plus longues, ajouter un caractère de fin (ici, un caractère
+        // maximum)
         return value + "\uffff";
     }
 
-    
 }

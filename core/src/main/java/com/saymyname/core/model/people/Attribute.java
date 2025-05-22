@@ -2,8 +2,6 @@ package com.saymyname.core.model.people;
 
 import java.util.Objects;
 
-import org.checkerframework.checker.units.qual.min;
-
 public class Attribute {
     private long id;
     private String name;
@@ -16,7 +14,8 @@ public class Attribute {
     private String maxValue;
 
     // Constructeur par défaut
-    public Attribute() {}
+    public Attribute() {
+    }
 
     // Constructeur privé utilisé par le Builder
     private Attribute(Builder builder) {
@@ -60,12 +59,12 @@ public class Attribute {
         return type;
     }
 
-    public String getMinValue() { 
-        return minValue; 
+    public String getMinValue() {
+        return minValue;
     }
 
-    public String getMaxValue() { 
-        return maxValue; 
+    public String getMaxValue() {
+        return maxValue;
     }
 
     // Setters
@@ -97,12 +96,12 @@ public class Attribute {
         this.type = type;
     }
 
-    public void setMinValue(String minValue) { 
-        this.minValue = minValue; 
+    public void setMinValue(String minValue) {
+        this.minValue = minValue;
     }
-    
-    public void setMaxValue(String maxValue) { 
-        this.maxValue = maxValue; 
+
+    public void setMaxValue(String maxValue) {
+        this.maxValue = maxValue;
     }
 
     // Builder Pattern
@@ -169,18 +168,20 @@ public class Attribute {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Attribute)) return false;
+        if (this == o)
+            return true;
+        if (!(o instanceof Attribute))
+            return false;
         Attribute that = (Attribute) o;
         return id == that.id &&
-               unique == that.unique &&
-               filter == that.filter &&
-               sort == that.sort &&
-               initializable == that.initializable &&
-               Objects.equals(name, that.name) &&
-               Objects.equals(type, that.type) &&
-               Objects.equals(minValue, that.minValue) &&
-               Objects.equals(maxValue, that.maxValue);
+                unique == that.unique &&
+                filter == that.filter &&
+                sort == that.sort &&
+                initializable == that.initializable &&
+                Objects.equals(name, that.name) &&
+                Objects.equals(type, that.type) &&
+                Objects.equals(minValue, that.minValue) &&
+                Objects.equals(maxValue, that.maxValue);
     }
 
     @Override
