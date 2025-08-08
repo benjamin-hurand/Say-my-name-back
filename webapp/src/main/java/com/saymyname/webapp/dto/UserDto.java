@@ -1,8 +1,12 @@
 package com.saymyname.webapp.dto;
 
-public record UserDto (
-    Long id,
-    String username
-) {
-    
+import com.saymyname.core.model.enums.SrsAlgorithm;
+
+public record UserDto(
+        Long id,
+        String username,
+        String email,
+        SrsAlgorithm srsAlgorithm,
+        String roles) {
+
 }

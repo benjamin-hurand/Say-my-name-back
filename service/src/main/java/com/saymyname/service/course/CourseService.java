@@ -33,8 +33,8 @@ public class CourseService {
     // Poids à ajuster
     private static final double WEIGHT_ERROR = 5;
     private static final double WEIGHT_SRS = 4;
-    private static final double WEIGHT_NOT_SO_NEW = 4;
-    private static final double WEIGHT_NEW = 6;
+    private static final double WEIGHT_NOT_SO_NEW = 6;
+    private static final double WEIGHT_NEW = 3;
     private static final double WEIGHT_REVISION = 0;
 
     public CourseService(CourseDao courseDao, KnowledgeService knowledgeService,
@@ -183,12 +183,15 @@ public class CourseService {
             Knowledge k;
             switch (selected) {
                 case ERROR_RECENT ->
-                    k = knowledgeService.findFirstRecentError(userId, gameModeId, lastPersonId, allowRepeat);
-                case SRS_DUE -> k = knowledgeService.findFirstSRS(userId, gameModeId, lastPersonId, allowRepeat);
+                    k = knowledgeService.findFirstRecentError(course.getId(), userId, gameModeId, lastPersonId,
+                            allowRepeat);
+                case SRS_DUE ->
+                    k = knowledgeService.findFirstSRS(course.getId(), userId, gameModeId, lastPersonId, allowRepeat);
                 case DISCOVERED ->
-                    k = knowledgeService.findFirstDiscovered(userId, gameModeId, lastPersonId, allowRepeat);
+                    k = knowledgeService.findFirstDiscovered(course.getId(), userId, gameModeId, lastPersonId,
+                            allowRepeat);
                 case NEW ->
-                    k = knowledgeService.findFirstNew(userId, gameModeId, lastPersonId, allowRepeat);
+                    k = knowledgeService.findFirstNew(course.getId(), userId, gameModeId, lastPersonId, allowRepeat);
                 default -> k = null;
             }
 

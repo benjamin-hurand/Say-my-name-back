@@ -1,5 +1,6 @@
 package com.saymyname.service;
 
+import com.saymyname.core.model.common.User;
 import com.saymyname.core.model.people.Person;
 import com.saymyname.persistence.dao.PersonDao;
 import org.springframework.stereotype.Service;
@@ -23,5 +24,9 @@ public class PersonService {
 
     public Optional<Person> findById(Long id) {
         return personDao.findById(id);
+    }
+
+    public Optional<Person> getPersonByUser(User user) {
+        return personDao.findByUser(user);
     }
 }

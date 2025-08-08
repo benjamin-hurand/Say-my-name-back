@@ -1,5 +1,6 @@
 package com.saymyname.persistence.dao;
 
+import com.saymyname.core.model.common.User;
 import com.saymyname.core.model.game.options.GameOptions;
 import com.saymyname.core.model.people.Person;
 import com.saymyname.persistence.entity.PersonEntity;
@@ -35,6 +36,12 @@ public class PersonDao {
     @Transactional
     public List<Person> findByOptions(GameOptions options) {
         return personEntityMapper.toModelList(personRepository.findByOptions(options));
+    }
+
+    @Transactional
+    public Optional<Person> findByUser(User user) {
+        Optional<PersonEntity> entityOpt = personRepository.findByUserId(user.getId());
+        return entityOpt.map(personEntityMapper::toModel);
     }
 
 }

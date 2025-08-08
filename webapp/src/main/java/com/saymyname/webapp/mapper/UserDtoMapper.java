@@ -3,19 +3,29 @@ package com.saymyname.webapp.mapper;
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.common.User;
+import com.saymyname.webapp.dto.ReducedUserDto;
 import com.saymyname.webapp.dto.UserDto;
 
 @Component
 public class UserDtoMapper {
-    public UserDto toDto(User model) {
-        return new UserDto(model.getId(), model.getUsername());
+    public ReducedUserDto toReducedDto(User model) {
+        return new ReducedUserDto(model.getId(), model.getUsername());
     }
 
-    public User toModel(UserDto dto) {
+    public User toModel(ReducedUserDto dto) {
         return new User.Builder().withId(dto.id()).withUsername(dto.username()).build();
     }
 
     public User toModel(Long userId) {
         return new User.Builder().withId(userId).build();
+    }
+
+    public UserDto toDto(User user) {
+        return new UserDto(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getSrsAlgorithm(),
+                user.getRoles() != null ? String.join(",", user.getRoles()) : null);
     }
 }

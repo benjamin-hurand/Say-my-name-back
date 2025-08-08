@@ -1,8 +1,8 @@
 package com.saymyname.webapp.dto;
 
-public record PersonAttributeDto(
+public record ReducedPersonAttributeDto(
         long id,
         AttributeDto attribute,
-        String value,
-        long personId) {
+        String value) {
+
 }

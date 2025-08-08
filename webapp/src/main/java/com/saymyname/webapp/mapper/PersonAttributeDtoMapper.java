@@ -2,17 +2,17 @@ package com.saymyname.webapp.mapper;
 
 import com.saymyname.core.model.people.PersonAttribute;
 import com.saymyname.webapp.dto.PersonAttributeDto;
+import com.saymyname.webapp.dto.ReducedPersonAttributeDto;
+
 import org.springframework.stereotype.Component;
 
 @Component
 public class PersonAttributeDtoMapper {
 
     private final AttributeDtoMapper attributeDtoMapper;
-    private final PersonDtoMapper personDtoMapper;
 
-    public PersonAttributeDtoMapper(AttributeDtoMapper attributeDtoMapper, PersonDtoMapper personDtoMapper) {
+    public PersonAttributeDtoMapper(AttributeDtoMapper attributeDtoMapper) {
         this.attributeDtoMapper = attributeDtoMapper;
-        this.personDtoMapper = personDtoMapper;
     }
 
     public PersonAttributeDto toDto(PersonAttribute personAttribute) {
@@ -20,7 +20,13 @@ public class PersonAttributeDtoMapper {
                 personAttribute.getId(),
                 attributeDtoMapper.toDto(personAttribute.getAttribute()),
                 personAttribute.getValue(),
-                personDtoMapper.toDto(personAttribute.getPerson())
-        );
+                personAttribute.getPerson().getId());
+    }
+
+    public ReducedPersonAttributeDto toReducedDto(PersonAttribute personAttribute) {
+        return new ReducedPersonAttributeDto(
+                personAttribute.getId(),
+                attributeDtoMapper.toDto(personAttribute.getAttribute()),
+                personAttribute.getValue());
     }
 }

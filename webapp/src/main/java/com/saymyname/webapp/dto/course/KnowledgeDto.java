@@ -5,14 +5,14 @@ import java.time.LocalDateTime;
 
 import com.saymyname.core.model.enums.KnowledgeStatus;
 import com.saymyname.webapp.dto.GameModeDto;
-import com.saymyname.webapp.dto.PersonDto;
-import com.saymyname.webapp.dto.UserDto;
+import com.saymyname.webapp.dto.ReducedPersonDto;
+import com.saymyname.webapp.dto.ReducedUserDto;
 
 public record KnowledgeDto(
         Long id,
-        UserDto user,
+        ReducedUserDto user,
         GameModeDto gameMode,
-        PersonDto person,
+        ReducedPersonDto person,
         KnowledgeStatus status,
         LocalDateTime nextReviewDate,
         LocalDateTime lastReviewDate,

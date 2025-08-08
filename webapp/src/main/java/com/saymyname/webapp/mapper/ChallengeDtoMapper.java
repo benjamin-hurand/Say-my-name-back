@@ -19,8 +19,7 @@ public class ChallengeDtoMapper {
             GameModeDtoMapper gameModeDtoMapper,
             GameAttributeFilterDtoMapper gameAttributeFilterDtoMapper,
             UserDtoMapper userDtoMapper,
-            ReducedGameAttributeFilterDtoMapper reducedGameAttributeFilterDtoMapper
-        ) {
+            ReducedGameAttributeFilterDtoMapper reducedGameAttributeFilterDtoMapper) {
         this.gameModeDtoMapper = gameModeDtoMapper;
         this.gameAttributeFilterDtoMapper = gameAttributeFilterDtoMapper;
         this.userDtoMapper = userDtoMapper;
@@ -29,13 +28,12 @@ public class ChallengeDtoMapper {
 
     public ChallengeDto toDto(Challenge model) {
         return new ChallengeDto(
-                    model.getId(),
-                    model.getDescription(),
-                    gameModeDtoMapper.toDto(model.getGameMode()),
-                    gameAttributeFilterDtoMapper.toDto(model.getFilterAttribute()),
-                    model.getCreationDate(),
-                    userDtoMapper.toDto(model.getCreator())
-                );
+                model.getId(),
+                model.getDescription(),
+                gameModeDtoMapper.toDto(model.getGameMode()),
+                gameAttributeFilterDtoMapper.toDto(model.getFilterAttribute()),
+                model.getCreationDate(),
+                userDtoMapper.toReducedDto(model.getCreator()));
     }
 
     public Challenge toModel(ChallengeDto dto) {

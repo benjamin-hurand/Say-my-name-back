@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import com.saymyname.core.model.enums.ReviewAlgorithm;
+import com.saymyname.core.model.enums.SrsAlgorithm;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -35,7 +35,7 @@ public class UserEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "srs_algorithm", nullable = false, length = 16)
-    private ReviewAlgorithm srsAlgorithm = ReviewAlgorithm.SM2;
+    private SrsAlgorithm srsAlgorithm = SrsAlgorithm.SM2;
 
     @Column(name = "password", nullable = false, length = 255)
     private String password;
@@ -49,7 +49,7 @@ public class UserEntity {
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = true)
     private PersonEntity person;
 
-    public UserEntity(Long id, String username, String email, ReviewAlgorithm srsAlgorithm, String password,
+    public UserEntity(Long id, String username, String email, SrsAlgorithm srsAlgorithm, String password,
             String roles, Boolean active,
             PersonEntity person) {
         this.id = id;
@@ -62,7 +62,7 @@ public class UserEntity {
         this.person = person;
     }
 
-    public UserEntity(Long id, String username, String email, ReviewAlgorithm srsAlgorithm, String password,
+    public UserEntity(Long id, String username, String email, SrsAlgorithm srsAlgorithm, String password,
             String roles, Boolean active) {
         this.id = id;
         this.username = username;
@@ -101,11 +101,11 @@ public class UserEntity {
         this.email = email;
     }
 
-    public ReviewAlgorithm getSrsAlgorithm() {
+    public SrsAlgorithm getSrsAlgorithm() {
         return srsAlgorithm;
     }
 
-    public void setSrsAlgorithm(ReviewAlgorithm srsAlgorithm) {
+    public void setSrsAlgorithm(SrsAlgorithm srsAlgorithm) {
         this.srsAlgorithm = srsAlgorithm;
     }
 

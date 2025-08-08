@@ -14,7 +14,9 @@ public class GameModeDtoMapper {
     }
 
     public GameModeDto toDto(GameMode gameMode) {
-        return new GameModeDto(gameMode.getId(), gameMode.getTitle(), gameMode.getDescription(), gameMode.getGameModeAttributes().stream().map(gameModeAttributeDtoMapper::toDto).toList(), gameMode.getOperator());
+        return new GameModeDto(gameMode.getId(), gameMode.getTitle(), gameMode.getDescription(),
+                gameMode.getGameModeAttributes().stream().map(gameModeAttributeDtoMapper::toDto).toList(),
+                gameMode.getOperator());
     }
 
     public GameMode toModel(GameModeDto gameModeDto) {
@@ -22,8 +24,13 @@ public class GameModeDtoMapper {
                 .withId(gameModeDto.id())
                 .withTitle(gameModeDto.title())
                 .withDescription(gameModeDto.description())
-                .withGameModeAttributes(gameModeDto.attributes().stream().map(gameModeAttributeDtoMapper::toModel).toList())
+                .withGameModeAttributes(
+                        gameModeDto.attributes().stream().map(gameModeAttributeDtoMapper::toModel).toList())
                 .withOperator(gameModeDto.operator())
                 .build();
+    }
+
+    public GameMode toModel(Long id) {
+        return new GameMode.Builder().withId(id).build();
     }
 }

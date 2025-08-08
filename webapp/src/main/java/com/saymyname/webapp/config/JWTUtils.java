@@ -9,6 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
+import com.saymyname.webapp.dto.JwtResponseDto;
+
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -57,14 +59,13 @@ public class JWTUtils {
         return cookie;
     }
 
-    public ResponseEntity<?> generateJwtResponseEntity(UserDetails user) {
+    public ResponseEntity<JwtResponseDto> generateJwtResponseEntity(UserDetails user) {
         Cookie jwt = generateJwtCookie(user);
 
-        HashMap<String, String> responseMap = new HashMap<>();
-        responseMap.put("bearer", jwt.getValue());
+        JwtResponseDto body = new JwtResponseDto(jwt.getValue());
 
         return ResponseEntity
-                .ok(responseMap);
+                .ok(body);
     }
 
     public String getUserNameFromJwtToken(String token) {

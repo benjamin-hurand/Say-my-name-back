@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -88,7 +89,7 @@ public interface KnowledgeRepository extends JpaRepository<KnowledgeEntity, Long
         0              AS global_streak,
         :initialEf     AS ease_factor,
         :initialDiff   AS difficulty,
-        :initialEf     AS stability
+        :initialStab   AS stability
       FROM course_populations cp
       JOIN populations p
         ON cp.population_id = p.id
@@ -123,6 +124,7 @@ public interface KnowledgeRepository extends JpaRepository<KnowledgeEntity, Long
       @Param("sortingOrder") String sortingOrder,
       @Param("initialEf") double initialEaseFactor,
       @Param("initialDiff") double initialDifficuly,
+      @Param("initialStab") double initialStability,
       @Param("limit") int limit);
 
   // --- COMPTAGE ----------------------------------------------------
@@ -135,38 +137,69 @@ public interface KnowledgeRepository extends JpaRepository<KnowledgeEntity, Long
   // --- FALLBACK / SINGLE ------------------------------------------------
 
   /** Récupérer la connaissance précise pour upsertAnswer */
-  KnowledgeEntity findByUserIdAndGameModeIdAndPersonId(
+  Optional<KnowledgeEntity> findByUserIdAndGameModeIdAndPersonId(
       Long userId, Long gameModeId, Long personId);
 
   // --- POOLS SPÉCIFIQUES (LIMIT 1) ---------------------------------------
 
   /** 1) Nouveaux (status = UNKNOWN) */
   @Query(value = """
-      SELECT * FROM knowledges k
-       WHERE k.user_id      = :userId
-         AND k.game_mode_id = :gameModeId
-         AND k.status       = 'UNKNOWN'
+      SELECT k.*
+        FROM knowledges k
+       WHERE k.user_id       = :userId
+         AND k.game_mode_id  = :gameModeId
+         AND k.status        = 'UNKNOWN'
+         -- on n’autorise que les person_id du course
+         AND k.person_id IN (
+           SELECT pa.person_id
+             FROM course_populations cp
+             JOIN populations p
+               ON cp.population_id = p.id
+             JOIN persons_attributes pa
+               ON pa.attribute_id = p.attribute_filter_id
+              AND pa.value BETWEEN p.min_value AND p.max_value
+              AND pa.valid_from <= CURRENT_TIMESTAMP
+              AND (pa.valid_to IS NULL OR pa.valid_to >= CURRENT_TIMESTAMP)
+            WHERE cp.course_id = :courseId
+           GROUP BY pa.person_id
+         )
          AND ( :allowRepeat = true OR k.person_id <> :lastPersonId )
-      ORDER BY k.id ASC
-      LIMIT 1
+       ORDER BY k.id ASC
+       LIMIT 1
       """, nativeQuery = true)
   KnowledgeEntity findFirstNewItem(
+      @Param("courseId") Long courseId,
       @Param("userId") Long userId,
       @Param("gameModeId") Long gameModeId,
       @Param("lastPersonId") Long lastPersonId,
       @Param("allowRepeat") boolean allowRepeat);
 
-  /** 2) Decouvertes (status = DISCOVERED) */
+  /** 2) Découvertes (status = DISCOVERED) dans le scope du course */
   @Query(value = """
-      SELECT * FROM knowledges k
-       WHERE k.user_id      = :userId
-         AND k.game_mode_id = :gameModeId
-         AND k.status       = 'DISCOVERED'
+      SELECT k.*
+        FROM knowledges k
+       WHERE k.user_id       = :userId
+         AND k.game_mode_id  = :gameModeId
+         AND k.status        = 'DISCOVERED'
+         AND k.person_id IN (
+           SELECT pa.person_id
+             FROM course_populations cp
+             JOIN populations p
+               ON cp.population_id = p.id
+             JOIN persons_attributes pa
+               ON pa.attribute_id = p.attribute_filter_id
+              AND pa.value BETWEEN p.min_value AND p.max_value
+              AND pa.valid_from <= CURRENT_TIMESTAMP
+              AND (pa.valid_to IS NULL OR pa.valid_to >= CURRENT_TIMESTAMP)
+            WHERE cp.course_id = :courseId
+           GROUP BY pa.person_id
+         )
          AND ( :allowRepeat = true OR k.person_id <> :lastPersonId )
-      ORDER BY k.id ASC
-      LIMIT 1
+       ORDER BY k.id ASC
+       LIMIT 1
       """, nativeQuery = true)
   KnowledgeEntity findFirstNotSoNewItem(
+      @Param("courseId") Long courseId,
       @Param("userId") Long userId,
       @Param("gameModeId") Long gameModeId,
       @Param("lastPersonId") Long lastPersonId,
@@ -174,87 +207,150 @@ public interface KnowledgeRepository extends JpaRepository<KnowledgeEntity, Long
 
   // POOLS LEARNED
   /**
-   * 3) a. Échecs récents (toutes les erreurs non corrigées depuis moins de 24 h)
+   * 3a) Échecs récents (status = LEARNED & erreurs < 24h) dans le scope du course
    */
   @Query(value = """
-      SELECT * FROM knowledges k
-       WHERE k.user_id                  = :userId
-         AND k.game_mode_id             = :gameModeId
-         AND k.status                   = 'LEARNED'
+      SELECT k.*
+        FROM knowledges k
+       WHERE k.user_id          = :userId
+         AND k.game_mode_id     = :gameModeId
+         AND k.status           = 'LEARNED'
          AND k.global_streak <= 0
-         AND k.last_review_date        >= CURRENT_TIMESTAMP - INTERVAL 1 DAY
+         AND k.last_review_date >= CURRENT_TIMESTAMP - INTERVAL 1 DAY
+         AND k.person_id IN (
+           SELECT pa.person_id
+             FROM course_populations cp
+             JOIN populations p
+               ON cp.population_id = p.id
+             JOIN persons_attributes pa
+               ON pa.attribute_id = p.attribute_filter_id
+              AND pa.value BETWEEN p.min_value AND p.max_value
+              AND pa.valid_from <= CURRENT_TIMESTAMP
+              AND (pa.valid_to IS NULL OR pa.valid_to >= CURRENT_TIMESTAMP)
+            WHERE cp.course_id = :courseId
+           GROUP BY pa.person_id
+         )
          AND ( :allowRepeat = true OR k.person_id <> :lastPersonId )
-      ORDER BY k.last_review_date ASC
-      LIMIT 1
+       ORDER BY k.last_review_date ASC
+       LIMIT 1
       """, nativeQuery = true)
   KnowledgeEntity findFirstRecentError(
+      @Param("courseId") Long courseId,
       @Param("userId") Long userId,
       @Param("gameModeId") Long gameModeId,
       @Param("lastPersonId") Long lastPersonId,
       @Param("allowRepeat") boolean allowRepeat);
 
-  /** 3) b. SRS dues (next_review_date ≤ now) */
+  /** 3b) SRS dues (next_review_date ≤ now) dans le scope du course */
   @Query(value = """
-      SELECT * FROM knowledges k
-       WHERE k.user_id         = :userId
-         AND k.game_mode_id    = :gameModeId
-         AND k.status          = 'LEARNED'
+      SELECT k.*
+        FROM knowledges k
+       WHERE k.user_id           = :userId
+         AND k.game_mode_id      = :gameModeId
+         AND k.status            = 'LEARNED'
          AND k.next_review_date <= CURRENT_TIMESTAMP
+         AND k.person_id IN (
+           SELECT pa.person_id
+             FROM course_populations cp
+             JOIN populations p
+               ON cp.population_id = p.id
+             JOIN persons_attributes pa
+               ON pa.attribute_id = p.attribute_filter_id
+              AND pa.value BETWEEN p.min_value AND p.max_value
+              AND pa.valid_from <= CURRENT_TIMESTAMP
+              AND (pa.valid_to IS NULL OR pa.valid_to >= CURRENT_TIMESTAMP)
+            WHERE cp.course_id = :courseId
+           GROUP BY pa.person_id
+         )
          AND ( :allowRepeat = true OR k.person_id <> :lastPersonId )
-      ORDER BY k.next_review_date ASC
-      LIMIT 1
+       ORDER BY k.next_review_date ASC
+       LIMIT 1
       """, nativeQuery = true)
   KnowledgeEntity findFirstSrsDue(
+      @Param("courseId") Long courseId,
       @Param("userId") Long userId,
       @Param("gameModeId") Long gameModeId,
       @Param("lastPersonId") Long lastPersonId,
       @Param("allowRepeat") boolean allowRepeat);
 
-  /** [BONUS] 3) c. Future SRS dues (next_review_date > now) */
+  /** 3c) Future SRS dues (next_review_date > now) dans le scope du course */
   @Query(value = """
-      SELECT * FROM knowledges k
-       WHERE k.user_id         = :userId
-         AND k.game_mode_id    = :gameModeId
-         AND k.status          = 'LEARNED'
+      SELECT k.*
+        FROM knowledges k
+       WHERE k.user_id           = :userId
+         AND k.game_mode_id      = :gameModeId
+         AND k.status            = 'LEARNED'
          AND k.next_review_date > CURRENT_TIMESTAMP
          AND NOT (
-          k.global_streak <= 0
-          AND k.last_review_date >= CURRENT_TIMESTAMP - INTERVAL 1 DAY
-        )
+           k.global_streak <= 0
+           AND k.last_review_date >= CURRENT_TIMESTAMP - INTERVAL 1 DAY
+         )
+         AND k.person_id IN (
+           SELECT pa.person_id
+             FROM course_populations cp
+             JOIN populations p
+               ON cp.population_id = p.id
+             JOIN persons_attributes pa
+               ON pa.attribute_id = p.attribute_filter_id
+              AND pa.value BETWEEN p.min_value AND p.max_value
+              AND pa.valid_from <= CURRENT_TIMESTAMP
+              AND (pa.valid_to IS NULL OR pa.valid_to >= CURRENT_TIMESTAMP)
+            WHERE cp.course_id = :courseId
+           GROUP BY pa.person_id
+         )
          AND ( :allowRepeat = true OR k.person_id <> :lastPersonId )
-      ORDER BY RAND()
-      LIMIT 1
+       ORDER BY RAND()
+       LIMIT 1
       """, nativeQuery = true)
   KnowledgeEntity findRandomFutureSrsDue(
+      @Param("courseId") Long courseId,
       @Param("userId") Long userId,
       @Param("gameModeId") Long gameModeId,
       @Param("lastPersonId") Long lastPersonId,
       @Param("allowRepeat") boolean allowRepeat);
 
-  /** [BONUS] - 4) Révision Random Mastered (status = MASTERED) */
+  /** 4) Random Mastered (status = MASTERED) dans le scope du course */
   @Query(value = """
-      SELECT * FROM knowledges k
-       WHERE k.user_id      = :userId
-         AND k.game_mode_id = :gameModeId
-         AND k.status       = 'MASTERED'
+      SELECT k.*
+        FROM knowledges k
+       WHERE k.user_id       = :userId
+         AND k.game_mode_id  = :gameModeId
+         AND k.status        = 'MASTERED'
+         AND k.person_id IN (
+           SELECT pa.person_id
+             FROM course_populations cp
+             JOIN populations p
+               ON cp.population_id = p.id
+             JOIN persons_attributes pa
+               ON pa.attribute_id = p.attribute_filter_id
+              AND pa.value BETWEEN p.min_value AND p.max_value
+              AND pa.valid_from <= CURRENT_TIMESTAMP
+              AND (pa.valid_to IS NULL OR pa.valid_to >= CURRENT_TIMESTAMP)
+            WHERE cp.course_id = :courseId
+           GROUP BY pa.person_id
+         )
          AND ( :allowRepeat = true OR k.person_id <> :lastPersonId )
-      ORDER BY RAND()
-      LIMIT 1
+       ORDER BY RAND()
+       LIMIT 1
       """, nativeQuery = true)
   KnowledgeEntity findRandomMastered(
+      @Param("courseId") Long courseId,
       @Param("userId") Long userId,
       @Param("gameModeId") Long gameModeId,
       @Param("lastPersonId") Long lastPersonId,
       @Param("allowRepeat") boolean allowRepeat);
 
-  /** [BONUS] - 3c & 4) Random review: MASTERED or eligible LEARNED items */
+  /**
+   * 3c & 4) Random review: MASTERED ou LEARNED éligible dans le scope du course
+   */
   @Query(value = """
-      SELECT * FROM knowledges k
-       WHERE k.user_id      = :userId
-         AND k.game_mode_id = :gameModeId
+      SELECT k.*
+        FROM knowledges k
+       WHERE k.user_id       = :userId
+         AND k.game_mode_id  = :gameModeId
          AND (
               k.status = 'MASTERED'
-              OR (
+           OR (
                   k.status = 'LEARNED'
                   AND k.next_review_date > CURRENT_TIMESTAMP
                   AND NOT (
@@ -263,11 +359,25 @@ public interface KnowledgeRepository extends JpaRepository<KnowledgeEntity, Long
                   )
               )
          )
+         AND k.person_id IN (
+           SELECT pa.person_id
+             FROM course_populations cp
+             JOIN populations p
+               ON cp.population_id = p.id
+             JOIN persons_attributes pa
+               ON pa.attribute_id = p.attribute_filter_id
+              AND pa.value BETWEEN p.min_value AND p.max_value
+              AND pa.valid_from <= CURRENT_TIMESTAMP
+              AND (pa.valid_to IS NULL OR pa.valid_to >= CURRENT_TIMESTAMP)
+            WHERE cp.course_id = :courseId
+           GROUP BY pa.person_id
+         )
          AND ( :allowRepeat = true OR k.person_id <> :lastPersonId )
-      ORDER BY RAND()
-      LIMIT 1
+       ORDER BY RAND()
+       LIMIT 1
       """, nativeQuery = true)
   KnowledgeEntity findRevision(
+      @Param("courseId") Long courseId,
       @Param("userId") Long userId,
       @Param("gameModeId") Long gameModeId,
       @Param("lastPersonId") Long lastPersonId,

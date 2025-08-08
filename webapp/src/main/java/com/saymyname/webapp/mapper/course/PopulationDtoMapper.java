@@ -26,7 +26,7 @@ public class PopulationDtoMapper {
                 attributeDtoMapper.toDto(population.getAttributeFilter()),
                 population.getMinValue(),
                 population.getMaxValue(),
-                userDtoMapper.toDto(population.getCreatedBy()),
+                userDtoMapper.toReducedDto(population.getCreatedBy()),
                 population.getCount());
     }
 

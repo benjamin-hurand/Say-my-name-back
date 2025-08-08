@@ -23,6 +23,7 @@ public class AnswerValidator {
                     .replaceAll("h", "")
                     .replaceAll("pt", "t")
                     .replaceAll("sz", "s")
+                    .replaceAll("lt", "t")
                     .replaceAll("(.)\\1+", "$1")
                     .replaceAll("e+$", "")
                     .replaceAll("[^a-z]", "")

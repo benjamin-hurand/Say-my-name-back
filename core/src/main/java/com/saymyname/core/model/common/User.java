@@ -10,13 +10,13 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import com.saymyname.core.model.enums.ReviewAlgorithm;
+import com.saymyname.core.model.enums.SrsAlgorithm;
 
 public class User implements UserDetails {
     private long id;
     private String username;
     private String email;
-    private ReviewAlgorithm srsAlgorithm;
+    private SrsAlgorithm srsAlgorithm;
     private String password;
     private String roles;
     private Boolean active; // Correct the data type if needed, Boolean is used if it could be null
@@ -66,7 +66,7 @@ public class User implements UserDetails {
         return email;
     }
 
-    public ReviewAlgorithm getSrsAlgorithm() {
+    public SrsAlgorithm getSrsAlgorithm() {
         return srsAlgorithm;
     }
 
@@ -101,7 +101,7 @@ public class User implements UserDetails {
         this.email = email;
     }
 
-    public void setSrsAlgorithm(ReviewAlgorithm srsAlgorithm) {
+    public void setSrsAlgorithm(SrsAlgorithm srsAlgorithm) {
         this.srsAlgorithm = srsAlgorithm;
     }
 
@@ -131,7 +131,7 @@ public class User implements UserDetails {
         private long id;
         private String username;
         private String email;
-        private ReviewAlgorithm srsAlgorithm;
+        private SrsAlgorithm srsAlgorithm;
         private String password;
         private String roles;
         private Boolean active; // Include this to allow setting the active state via the builder
@@ -151,7 +151,7 @@ public class User implements UserDetails {
             return this;
         }
 
-        public Builder withSrsAlgorithm(ReviewAlgorithm srsAlgorithm) {
+        public Builder withSrsAlgorithm(SrsAlgorithm srsAlgorithm) {
             this.srsAlgorithm = srsAlgorithm;
             return this;
         }
