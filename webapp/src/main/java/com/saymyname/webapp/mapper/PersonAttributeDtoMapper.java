@@ -3,6 +3,7 @@ package com.saymyname.webapp.mapper;
 import com.saymyname.core.model.people.PersonAttribute;
 import com.saymyname.webapp.dto.PersonAttributeDto;
 import com.saymyname.webapp.dto.ReducedPersonAttributeDto;
+import com.saymyname.webapp.dto.profile.PersonAttributePatch;
 
 import org.springframework.stereotype.Component;
 
@@ -28,5 +29,12 @@ public class PersonAttributeDtoMapper {
                 personAttribute.getId(),
                 attributeDtoMapper.toDto(personAttribute.getAttribute()),
                 personAttribute.getValue());
+    }
+
+    public PersonAttribute patchDtoToModel(PersonAttributePatch dto) {
+        return new PersonAttribute.Builder()
+                .withId(dto.id())
+                .withValue(dto.value())
+                .build();
     }
 }

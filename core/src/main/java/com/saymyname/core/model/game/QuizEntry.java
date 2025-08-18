@@ -4,16 +4,17 @@ import java.util.Objects;
 
 public class QuizEntry {
     private Long personId;
-    private String photoUrl;
+    private String storageKey;
     private String initials;
 
     // Constructeur par défaut
-    public QuizEntry() {}
+    public QuizEntry() {
+    }
 
     // Constructeur privé utilisé par le Builder
     private QuizEntry(Builder builder) {
         this.personId = builder.personId;
-        this.photoUrl = builder.photoUrl;
+        this.storageKey = builder.storageKey;
         this.initials = builder.initials;
     }
 
@@ -22,8 +23,8 @@ public class QuizEntry {
         return personId;
     }
 
-    public String getPhotoUrl() {
-        return photoUrl;
+    public String getStorageKey() {
+        return storageKey;
     }
 
     public String getInitials() {
@@ -35,8 +36,8 @@ public class QuizEntry {
         this.personId = personId;
     }
 
-    public void setPhotoUrl(String photoUrl) {
-        this.photoUrl = photoUrl;
+    public void setStorageKey(String storageKey) {
+        this.storageKey = storageKey;
     }
 
     public void setInitials(String initials) {
@@ -46,7 +47,7 @@ public class QuizEntry {
     // Builder
     public static class Builder {
         private Long personId;
-        private String photoUrl;
+        private String storageKey;
         private String initials;
 
         public Builder withPersonId(Long personId) {
@@ -54,8 +55,8 @@ public class QuizEntry {
             return this;
         }
 
-        public Builder withPhotoUrl(String photoUrl) {
-            this.photoUrl = photoUrl;
+        public Builder withStorageKey(String storageKey) {
+            this.storageKey = storageKey;
             return this;
         }
 
@@ -71,24 +72,26 @@ public class QuizEntry {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof QuizEntry)) return false;
+        if (this == o)
+            return true;
+        if (!(o instanceof QuizEntry))
+            return false;
         QuizEntry that = (QuizEntry) o;
         return Objects.equals(personId, that.personId) &&
-               Objects.equals(photoUrl, that.photoUrl) &&
-               Objects.equals(initials, that.initials);
+                Objects.equals(storageKey, that.storageKey) &&
+                Objects.equals(initials, that.initials);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(personId, photoUrl, initials);
+        return Objects.hash(personId, storageKey, initials);
     }
 
     @Override
     public String toString() {
         return "QuizEntry{" +
                 "personId=" + personId +
-                ", photoUrl=" + photoUrl +
+                ", storageKey=" + storageKey +
                 ", initials='" + initials + '\'' +
                 '}';
     }

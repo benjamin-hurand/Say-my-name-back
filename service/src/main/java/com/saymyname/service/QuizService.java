@@ -47,7 +47,7 @@ public class QuizService {
             String initials = initialCrafter.computeInitials(person, options.getGameMode());
             return new QuizEntry.Builder()
                     .withPersonId(person.getId())
-                    .withPhotoUrl(person.getPhoto().getUrl())
+                    .withStorageKey(person.getPhoto().getStorageKey())
                     .withInitials(initials)
                     .build();
         }).toList();

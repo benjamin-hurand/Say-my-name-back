@@ -26,13 +26,17 @@ public class AttributeEntity {
     @Column(name = "initializable", nullable = false)
     private boolean initializable;
 
+    @Column(name = "required", nullable = false)
+    private boolean required;
+
     // New column for type (using ENUM or VARCHAR, depending on your DB setup)
     @Column(name = "type", nullable = false, length = 50)
     private String type;
 
     // Constructors, getters, setters, builder, equals, hashCode, and toString
 
-    public AttributeEntity() {}
+    public AttributeEntity() {
+    }
 
     private AttributeEntity(Builder builder) {
         this.id = builder.id;
@@ -41,6 +45,7 @@ public class AttributeEntity {
         this.filter = builder.filter;
         this.sort = builder.sort;
         this.initializable = builder.initializable;
+        this.required = builder.required;
         this.type = builder.type;
     }
 
@@ -92,6 +97,14 @@ public class AttributeEntity {
         this.initializable = initializable;
     }
 
+    public boolean isRequired() {
+        return required;
+    }
+
+    public void setRequired(boolean required) {
+        this.required = required;
+    }
+
     public String getType() {
         return type;
     }
@@ -99,7 +112,7 @@ public class AttributeEntity {
     public void setType(String type) {
         this.type = type;
     }
-    
+
     // Builder Pattern
     public static class Builder {
         private long id;
@@ -108,7 +121,8 @@ public class AttributeEntity {
         private boolean filter;
         private boolean sort;
         private boolean initializable;
-        private String type; // Store enum name as string
+        private boolean required;
+        private String type;
 
         public Builder withId(long id) {
             this.id = id;
@@ -134,12 +148,17 @@ public class AttributeEntity {
             this.sort = sort;
             return this;
         }
-        
+
         public Builder withInitializable(boolean initializable) {
             this.initializable = initializable;
             return this;
         }
-        
+
+        public Builder withRequired(boolean required) {
+            this.required = required;
+            return this;
+        }
+
         public Builder withType(String type) {
             this.type = type;
             return this;
@@ -152,21 +171,24 @@ public class AttributeEntity {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof AttributeEntity)) return false;
+        if (this == o)
+            return true;
+        if (!(o instanceof AttributeEntity))
+            return false;
         AttributeEntity that = (AttributeEntity) o;
         return id == that.id &&
-               unique == that.unique &&
-               filter == that.filter &&
-               sort == that.sort &&
-               initializable == that.initializable &&
-               Objects.equals(attributeName, that.attributeName) &&
-               Objects.equals(type, that.type);
+                unique == that.unique &&
+                filter == that.filter &&
+                sort == that.sort &&
+                initializable == that.initializable &&
+                required == that.required &&
+                Objects.equals(attributeName, that.attributeName) &&
+                Objects.equals(type, that.type);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, attributeName, unique, filter, sort, initializable, type);
+        return Objects.hash(id, attributeName, unique, filter, sort, initializable, required, type);
     }
 
     @Override
@@ -178,6 +200,7 @@ public class AttributeEntity {
                 ", filter=" + filter +
                 ", sort=" + sort +
                 ", initializable=" + initializable +
+                ", required=" + required +
                 ", type='" + type + '\'' +
                 '}';
     }

@@ -2,6 +2,7 @@ package com.saymyname.persistence.repository;
 
 import com.saymyname.persistence.entity.PersonAttributeEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -33,6 +34,52 @@ public interface PersonAttributeRepository extends JpaRepository<PersonAttribute
                      "AND (pa.validTo IS NULL OR pa.validTo >= CURRENT_TIMESTAMP)")
        List<PersonAttributeEntity> findAttributesByPersonId(@Param("personId") Long personId);
 
+       @Query("SELECT COUNT(pa) FROM PersonAttributeEntity pa " +
+                     "WHERE pa.person.id = :personId AND pa.attribute.id = :attributeId " +
+                     "AND pa.validFrom <= CURRENT_TIMESTAMP " +
+                     "AND (pa.validTo IS NULL OR pa.validTo >= CURRENT_TIMESTAMP)")
+       long countActiveByPersonAndAttribute(@Param("personId") Long personId,
+                     @Param("attributeId") Long attributeId);
+
+       @Query("SELECT CASE WHEN COUNT(pa) > 0 THEN true ELSE false END " +
+                     "FROM PersonAttributeEntity pa " +
+                     "WHERE pa.person.id = :personId AND pa.attribute.id = :attributeId " +
+                     "AND pa.value = :value " +
+                     "AND pa.validFrom <= CURRENT_TIMESTAMP " +
+                     "AND (pa.validTo IS NULL OR pa.validTo >= CURRENT_TIMESTAMP)")
+       boolean existsActiveDuplicateValue(@Param("personId") Long personId,
+                     @Param("attributeId") Long attributeId,
+                     @Param("value") String value);
+
        long countDistinctByAttribute_IdAndValueBetween(long attributeId, String min, String max);
 
+       @Modifying
+       @Query(value = """
+                     DELETE pa
+                     FROM persons_attributes pa
+                     JOIN attributes a ON a.id = pa.attribute_id
+                     LEFT JOIN (
+                     SELECT person_id, attribute_id, COUNT(*) AS cnt
+                     FROM persons_attributes
+                     GROUP BY person_id, attribute_id
+                     ) c ON c.person_id = pa.person_id AND c.attribute_id = pa.attribute_id
+                     WHERE pa.id = :id
+                     AND pa.person_id = :personId
+                     AND (
+                            a.required = 0
+                            OR (a.required = 1 AND a.`unique` = 0 AND c.cnt > 1)
+                     )
+                     """, nativeQuery = true)
+       int safeDeleteByIdAndPersonId(@Param("id") Long id, @Param("personId") Long personId);
+
+       @Modifying
+       @Query("""
+                     UPDATE PersonAttributeEntity pa
+                     SET pa.value = :value
+                     WHERE pa.id = :id
+                     AND pa.person.id = :personId
+                     """)
+       int updateValue(@Param("id") Long id,
+                     @Param("personId") Long personId,
+                     @Param("value") String value);
 }

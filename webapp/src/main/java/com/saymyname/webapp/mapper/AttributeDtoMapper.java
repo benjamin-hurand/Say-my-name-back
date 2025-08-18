@@ -17,6 +17,7 @@ public class AttributeDtoMapper {
                 attribute.isFilter(),
                 attribute.isSort(),
                 attribute.isInitializable(),
+                attribute.isRequired(),
                 attribute.getType().name().toLowerCase(),
                 attribute.getMinValue(),
                 attribute.getMaxValue());
@@ -30,6 +31,7 @@ public class AttributeDtoMapper {
                 .withFilter(attributeDto.filter())
                 .withSort(attributeDto.sort())
                 .withInitializable(attributeDto.initializable())
+                .withRequired(attributeDto.required())
                 .withType(AttributeType.valueOf(attributeDto.type().toUpperCase()))
                 .withMinValue(attributeDto.minValue())
                 .withMaxValue(attributeDto.maxValue())

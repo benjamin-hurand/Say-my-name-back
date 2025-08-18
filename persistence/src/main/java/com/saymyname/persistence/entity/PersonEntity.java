@@ -60,11 +60,11 @@ public class PersonEntity {
         this.id = id;
     }
 
-    public PhotoEntity getphoto() {
+    public PhotoEntity getPhoto() {
         return photo;
     }
 
-    public void setphoto(PhotoEntity photo) {
+    public void setPhoto(PhotoEntity photo) {
         this.photo = photo;
     }
 

@@ -29,7 +29,7 @@ public class PersonEntityMapper {
             return null;
         PersonEntity personEntity = new PersonEntity();
         personEntity.setId(person.getId());
-        personEntity.setphoto(photoEntityMapper.toEntity(person.getPhoto()));
+        personEntity.setPhoto(photoEntityMapper.toEntity(person.getPhoto()));
         personEntity.setUser(userEntityMapper.toEntity(person.getUser()));
         personEntity.setAttributes(person.getAttributes().stream().map(personAttributeEntityMapper::toEntity)
                 .collect(Collectors.toList()));
@@ -41,7 +41,7 @@ public class PersonEntityMapper {
             return null;
         return new Person.Builder()
                 .withId(personEntity.getId())
-                .withPhoto(photoEntityMapper.toModel((personEntity.getphoto())))
+                .withPhoto(photoEntityMapper.toModel((personEntity.getPhoto())))
                 .withUser(userEntityMapper.toModel(personEntity.getUser()))
                 .withAttributes(personEntity.getAttributes().stream().map(personAttributeEntityMapper::toModel)
                         .collect(Collectors.toList()))

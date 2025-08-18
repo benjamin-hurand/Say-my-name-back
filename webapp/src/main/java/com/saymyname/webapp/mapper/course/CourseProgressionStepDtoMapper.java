@@ -11,7 +11,7 @@
 // public CourseProgressionStepDto toDto(CourseProgressionStep step) {
 // return new CourseProgressionStepDto(
 // step.getPersonId(),
-// step.getPhotoUrl(),
+// step.getStorageKey(),
 // step.getDiscoveredCount(),
 // step.getMasteredCount(),
 // step.getCorrect(),
@@ -22,7 +22,7 @@
 // public CourseProgressionStep toModel(CourseProgressionStepDto dto) {
 // return new CourseProgressionStep.Builder()
 // .withPersonId(dto.personId())
-// .withPhotoUrl(dto.photoUrl())
+// .withStorageKey(dto.storageKey())
 // .withDiscoveredCount(dto.discoveredCount())
 // .withMasteredCount(dto.masteredCount())
 // .withCorrect(dto.correct())

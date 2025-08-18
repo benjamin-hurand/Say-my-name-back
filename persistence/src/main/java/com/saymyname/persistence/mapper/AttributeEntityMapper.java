@@ -9,7 +9,8 @@ import org.springframework.stereotype.Component;
 public class AttributeEntityMapper {
 
     public AttributeEntity toEntity(Attribute attribute) {
-        if (attribute == null) return null;
+        if (attribute == null)
+            return null;
         AttributeEntity attributeEntity = new AttributeEntity();
         attributeEntity.setId(attribute.getId());
         attributeEntity.setAttributeName(attribute.getName());
@@ -17,18 +18,19 @@ public class AttributeEntityMapper {
         attributeEntity.setFilter(attribute.isFilter());
         attributeEntity.setSort(attribute.isSort());
         attributeEntity.setInitializable(attribute.isInitializable());
+        attributeEntity.setRequired(attribute.isRequired());
         // Vérification si attribute.getType() est null
         String typeValue = (attribute.getType() != null) ? attribute.getType().name().toLowerCase() : null;
         attributeEntity.setType(typeValue);
         return attributeEntity;
     }
-    
 
     public Attribute toModel(AttributeEntity attributeEntity) {
-        if (attributeEntity == null) return null;
+        if (attributeEntity == null)
+            return null;
         // Si le type est null, on choisit par défaut "TEXT"
-        String typeValue = (attributeEntity.getType() != null) 
-                ? attributeEntity.getType().toUpperCase() 
+        String typeValue = (attributeEntity.getType() != null)
+                ? attributeEntity.getType().toUpperCase()
                 : "TEXT";
         return new Attribute.Builder()
                 .withId(attributeEntity.getId())
@@ -37,6 +39,7 @@ public class AttributeEntityMapper {
                 .withFilter(attributeEntity.isFilter())
                 .withSort(attributeEntity.isSort())
                 .withInitializable(attributeEntity.isInitializable())
+                .withRequired(attributeEntity.isRequired())
                 .withType(AttributeType.valueOf(typeValue))
                 .build();
     }

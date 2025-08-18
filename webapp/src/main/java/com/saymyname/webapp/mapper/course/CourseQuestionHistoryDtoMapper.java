@@ -1,11 +1,13 @@
 package com.saymyname.webapp.mapper.course;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.course.CourseQuestionHistory;
 import com.saymyname.core.model.course.Knowledge;
 import com.saymyname.core.model.enums.DifficultyLevel;
 import com.saymyname.core.model.enums.PoolType;
+import com.saymyname.core.model.people.Photo;
 import com.saymyname.webapp.dto.course.CourseQuestionHistoryDto;
 import com.saymyname.webapp.dto.course.CourseAnswerDto;
 import com.saymyname.webapp.dto.course.CourseQuestionDto;
@@ -15,6 +17,9 @@ public class CourseQuestionHistoryDtoMapper {
 
     private final CourseDtoMapper courseDtoMapper;
     private final KnowledgeDtoMapper knowledgeDtoMapper;
+
+    @Value("${photos.storage.public-base-url}")
+    private String photosBaseUrl;
 
     public CourseQuestionHistoryDtoMapper(CourseDtoMapper courseDtoMapper, KnowledgeDtoMapper knowledgeDtoMapper) {
         this.courseDtoMapper = courseDtoMapper;
@@ -61,24 +66,31 @@ public class CourseQuestionHistoryDtoMapper {
     }
 
     public CourseQuestionDto toReducedDto(CourseQuestionHistory courseQuestionHistory) {
+        Photo photo = courseQuestionHistory.getKnowledge().getPerson().getPhoto();
+        String fullUrl = (photo != null) ? toPublicUrl(photo.getStorageKey()) : null;
+
         return new CourseQuestionDto(
                 courseQuestionHistory.getId(),
                 courseQuestionHistory.getQuestionRound(),
                 courseQuestionHistory.getKnowledge().getPerson().getId(),
-                courseQuestionHistory.getKnowledge().getPerson().getPhoto().getUrl(),
+                fullUrl,
                 courseQuestionHistory.getPoolType(),
                 toDifficulty(courseQuestionHistory.getKnowledge(), courseQuestionHistory.getPoolType()));
     }
 
     private DifficultyLevel toDifficulty(Knowledge k, PoolType pool) {
-        // Exemple de règles simples :
         if (pool == PoolType.ERROR_RECENT)
             return DifficultyLevel.HARD;
         if (k.getEaseFactor().doubleValue() < 1.5)
             return DifficultyLevel.HARD;
         if (pool == PoolType.NEW)
             return DifficultyLevel.EASY;
-        // sinon intermédiaire
         return DifficultyLevel.MEDIUM;
+    }
+
+    private String toPublicUrl(String storageKey) {
+        if (storageKey == null || storageKey.isBlank())
+            return null;
+        return photosBaseUrl.endsWith("/") ? photosBaseUrl + storageKey : photosBaseUrl + "/" + storageKey;
     }
 }

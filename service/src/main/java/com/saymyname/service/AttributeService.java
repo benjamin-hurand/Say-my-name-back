@@ -22,4 +22,8 @@ public class AttributeService {
     public List<Attribute> findAllSorts() {
         return attributeDao.findAllSorts();
     }
+
+    public List<Attribute> findAll() {
+        return attributeDao.findAll();
+    }
 }

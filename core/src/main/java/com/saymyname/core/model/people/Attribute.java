@@ -9,6 +9,7 @@ public class Attribute {
     private boolean filter;
     private boolean sort;
     private boolean initializable;
+    private boolean required; // Nouveau champ
     private AttributeType type;
     private String minValue;
     private String maxValue;
@@ -25,6 +26,7 @@ public class Attribute {
         this.filter = builder.filter;
         this.sort = builder.sort;
         this.initializable = builder.initializable;
+        this.required = builder.required;
         this.type = builder.type;
         this.minValue = builder.minValue;
         this.maxValue = builder.maxValue;
@@ -53,6 +55,10 @@ public class Attribute {
 
     public boolean isInitializable() {
         return initializable;
+    }
+
+    public boolean isRequired() {
+        return required;
     }
 
     public AttributeType getType() {
@@ -92,6 +98,10 @@ public class Attribute {
         this.initializable = initializable;
     }
 
+    public void setRequired(boolean required) {
+        this.required = required;
+    }
+
     public void setType(AttributeType type) {
         this.type = type;
     }
@@ -111,7 +121,8 @@ public class Attribute {
         private boolean unique;
         private boolean filter;
         private boolean sort;
-        private boolean initializable; // Nouveau champ
+        private boolean initializable;
+        private boolean required; // Nouveau champ
         private AttributeType type;
         private String minValue;
         private String maxValue;
@@ -143,6 +154,11 @@ public class Attribute {
 
         public Builder withInitializable(boolean initializable) {
             this.initializable = initializable;
+            return this;
+        }
+
+        public Builder withRequired(boolean required) {
+            this.required = required;
             return this;
         }
 
@@ -178,6 +194,7 @@ public class Attribute {
                 filter == that.filter &&
                 sort == that.sort &&
                 initializable == that.initializable &&
+                required == that.required &&
                 Objects.equals(name, that.name) &&
                 Objects.equals(type, that.type) &&
                 Objects.equals(minValue, that.minValue) &&
@@ -186,7 +203,7 @@ public class Attribute {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, unique, filter, sort, initializable, type, minValue, maxValue);
+        return Objects.hash(id, name, unique, filter, sort, initializable, required, type, minValue, maxValue);
     }
 
     @Override
@@ -198,6 +215,7 @@ public class Attribute {
                 ", filter=" + filter +
                 ", sort=" + sort +
                 ", initializable=" + initializable +
+                ", required=" + required +
                 ", type='" + type + '\'' +
                 ", minValue='" + minValue + '\'' +
                 ", maxValue='" + maxValue + '\'' +
