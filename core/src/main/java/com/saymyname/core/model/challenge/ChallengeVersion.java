@@ -8,7 +8,7 @@ import java.util.Objects;
  * Représente une version (snapshot) d'un challenge pour une période donnée.
  */
 public class ChallengeVersion {
-    private long id;
+    private Long id;
     private int versionNumber;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
@@ -35,7 +35,7 @@ public class ChallengeVersion {
     }
 
     // Getters
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
@@ -68,7 +68,7 @@ public class ChallengeVersion {
     }
 
     // Setters
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -102,7 +102,7 @@ public class ChallengeVersion {
 
     // Builder
     public static class Builder {
-        private long id;
+        private Long id;
         private int versionNumber;
         private LocalDateTime startDate;
         private LocalDateTime endDate;
@@ -111,7 +111,7 @@ public class ChallengeVersion {
         private int questionCount;
         private List<ChallengeQuestion> questions;
 
-        public Builder withId(long id) {
+        public Builder withId(Long id) {
             this.id = id;
             return this;
         }

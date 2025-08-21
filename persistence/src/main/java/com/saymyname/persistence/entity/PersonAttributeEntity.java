@@ -10,8 +10,7 @@ public class PersonAttributeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
-
+    private Long id;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "attribute_id")
     private AttributeEntity attribute;
@@ -29,9 +28,11 @@ public class PersonAttributeEntity {
     @Column(name = "valid_to")
     private LocalDateTime validTo;
 
-    public PersonAttributeEntity() {}
+    public PersonAttributeEntity() {
+    }
 
-    public PersonAttributeEntity(long id, AttributeEntity attribute, String value, LocalDateTime validFrom, LocalDateTime validTo) {
+    public PersonAttributeEntity(Long id, AttributeEntity attribute, String value, LocalDateTime validFrom,
+            LocalDateTime validTo) {
         this.id = id;
         this.attribute = attribute;
         this.value = value;
@@ -39,11 +40,11 @@ public class PersonAttributeEntity {
         this.validTo = validTo;
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -89,8 +90,10 @@ public class PersonAttributeEntity {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         PersonAttributeEntity that = (PersonAttributeEntity) o;
         return id == that.id &&
                 Objects.equals(attribute, that.attribute) &&

@@ -258,30 +258,30 @@ public class KnowledgeService {
 
     // POOLS
     // UNKNOWN
-    public Knowledge findFirstNew(long courseId, long userId, long gameModeId, Long lastPersonId, boolean allowRepeat) {
+    public Knowledge findFirstNew(Long courseId, Long userId, Long gameModeId, Long lastPersonId, boolean allowRepeat) {
         return knowledgeDao.findFirstNew(courseId, userId, gameModeId, lastPersonId, allowRepeat);
     }
 
     // DISCOVERED
-    public Knowledge findFirstDiscovered(long courseId, long userId, long gameModeId, Long lastPersonId,
+    public Knowledge findFirstDiscovered(Long courseId, Long userId, Long gameModeId, Long lastPersonId,
             boolean allowRepeat) {
         return knowledgeDao.findFirstDiscovered(courseId, userId, gameModeId, lastPersonId, allowRepeat);
     }
 
     // LEARNED: recent errors
-    public Knowledge findFirstRecentError(long courseId, long userId, long gameModeId, Long lastPersonId,
+    public Knowledge findFirstRecentError(Long courseId, Long userId, Long gameModeId, Long lastPersonId,
             boolean allowRepeat) {
         return knowledgeDao.findFirstRecentError(courseId, userId, gameModeId, lastPersonId, allowRepeat);
     }
 
     // LEARNED: srs due
-    public Knowledge findFirstSRS(long courseId, long userId, long gameModeId, Long lastPersonId,
+    public Knowledge findFirstSRS(Long courseId, Long userId, Long gameModeId, Long lastPersonId,
             boolean allowRepeat) {
         return knowledgeDao.findFirstSRS(courseId, userId, gameModeId, lastPersonId, allowRepeat);
     }
 
     // [BONUS REVISION] MASTERED and LEARNED: future srs due
-    public Knowledge findRevision(long courseId, long userId, long gameModeId, Long lastPersonId, boolean allowRepeat) {
+    public Knowledge findRevision(Long courseId, Long userId, Long gameModeId, Long lastPersonId, boolean allowRepeat) {
         return knowledgeDao.findRevision(courseId, userId, gameModeId, lastPersonId, allowRepeat);
     }
 

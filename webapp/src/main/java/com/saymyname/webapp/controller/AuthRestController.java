@@ -5,16 +5,19 @@ import java.security.GeneralSecurityException;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.*;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import com.saymyname.core.model.common.User;
-import com.saymyname.core.model.enums.SrsAlgorithm;
-import com.saymyname.service.GoogleAuthService;
+import com.saymyname.security.CustomUserDetails;
+import com.saymyname.security.google.GoogleAuthService;
+import com.saymyname.security.jwt.JwtService;
+import com.saymyname.webapp.security.JwtHttpSupport;
 import com.saymyname.service.UserService;
-import com.saymyname.webapp.config.JWTUtils;
 import com.saymyname.webapp.dto.*;
+
 import jakarta.validation.Valid;
 
 @RestController
@@ -22,16 +25,19 @@ import jakarta.validation.Valid;
 public class AuthRestController {
 
     private final AuthenticationManager authManager;
-    private final JWTUtils jwtUtils;
+    private final JwtService jwtService;
+    private final JwtHttpSupport jwtHttpSupport;
     private final UserService userService;
     private final GoogleAuthService googleAuthService;
 
     public AuthRestController(AuthenticationManager authManager,
-            JWTUtils jwtUtils,
+            JwtService jwtService,
+            JwtHttpSupport jwtHttpSupport,
             UserService userService,
             GoogleAuthService googleAuthService) {
         this.authManager = authManager;
-        this.jwtUtils = jwtUtils;
+        this.jwtService = jwtService;
+        this.jwtHttpSupport = jwtHttpSupport;
         this.userService = userService;
         this.googleAuthService = googleAuthService;
     }
@@ -39,16 +45,16 @@ public class AuthRestController {
     // ——— LOGIN CLASSIQUE —————————————————————————————
     @PostMapping("/login")
     public ResponseEntity<AuthResponseDto> login(@Valid @RequestBody LoginDto dto) {
-        // 1️⃣ Spring Security
         Authentication authentication = authManager.authenticate(
                 new UsernamePasswordAuthenticationToken(dto.identifier(), dto.password()));
-        // 2️⃣ Récupérer l’entité User
-        User user = userService.findByEmailOrUsername(dto.identifier());
-        // 3️⃣ Vérifier activation
+
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        User user = userDetails.getUser();
+
         if (!user.isActive()) {
-            return ResponseEntity.status(HttpStatus.I_AM_A_TEAPOT).build();
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        // 4️⃣ Retourner le DTO
+
         return ResponseEntity.ok(buildAuthResponse(user));
     }
 
@@ -58,6 +64,7 @@ public class AuthRestController {
             throws GeneralSecurityException, IOException {
         String email = googleAuthService.getEmail(dto.credential(), dto.clientId());
         User user = userService.findByEmailOrUsername(email);
+
         if (!user.isActive()) {
             userService.setActive(user);
         }
@@ -66,21 +73,22 @@ public class AuthRestController {
 
     // ——— REGISTER CLASSIQUE ——————————————————————
     @PostMapping("/register")
-    public ResponseEntity<String> register(@Valid @RequestBody RegisterFormDto dto) {
+    public ResponseEntity<AuthResponseDto> register(@Valid @RequestBody RegisterFormDto dto) {
         if (userService.checkIfAccountExistsWithEmail(dto.email())) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body("Email already exists");
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
+
         User newUser = new User.Builder()
                 .withEmail(dto.email())
                 .withUsername(dto.username())
                 .withPassword(dto.password())
                 .withRoles("ROLE_USER")
-                .withActive(false) // en attente de vérification
+                .withActive(true)
                 .build();
-        userService.save(newUser);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body("Registration successful. Please verify your email.");
+
+        User saved = userService.save(newUser);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(buildAuthResponse(saved));
     }
 
     // ——— REGISTER GOOGLE ——————————————————————————
@@ -88,35 +96,37 @@ public class AuthRestController {
     public ResponseEntity<AuthResponseDto> registerWithGoogle(@Valid @RequestBody RegisterGoogleDto dto)
             throws GeneralSecurityException, IOException {
         String email = googleAuthService.getEmail(dto.credential(), dto.clientId());
+
         User user;
         boolean existed = userService.checkIfAccountExistsWithEmail(email);
+
         if (existed) {
             user = userService.findByEmailOrUsername(email);
             if (!user.isActive()) {
                 userService.setActive(user);
             }
         } else {
+            String randomPassword = googleAuthService.generateRandomPasswordForNewUser();
+
             user = new User.Builder()
                     .withEmail(email)
                     .withUsername(userService.generateUniqueUsername("french"))
-                    .withPassword(googleAuthService.generatePassword())
+                    .withPassword(randomPassword)
                     .withRoles("ROLE_USER")
                     .withActive(true)
                     .build();
             userService.save(user);
         }
-        // 201 si création, 200 si existant
-        return existed
-                ? ResponseEntity.ok(buildAuthResponse(user))
-                : ResponseEntity.status(HttpStatus.CREATED)
-                        .body(buildAuthResponse(user));
+
+        return ResponseEntity
+                .status(existed ? HttpStatus.OK : HttpStatus.CREATED)
+                .body(buildAuthResponse(user));
     }
 
-    // ——— GÉNÉRATION & DISPONIBILITÉ DES USERNAMES ——————
+    // ——— USERNAMES ————————————————————————————————
     @GetMapping("/usernames/generate/{lang}")
     public ResponseEntity<String> generateUsername(@PathVariable String lang) {
-        String username = userService.generateUniqueUsername(lang);
-        return ResponseEntity.ok(username);
+        return ResponseEntity.ok(userService.generateUniqueUsername(lang));
     }
 
     @GetMapping("/usernames/isavailable/{username}")
@@ -135,24 +145,20 @@ public class AuthRestController {
             return ResponseEntity.badRequest().body(false);
         }
         String token = authHeader.substring(7);
-        boolean valid = jwtUtils.validateJwtToken(token);
-        return ResponseEntity.ok(valid);
+        return ResponseEntity.ok(jwtService.isValid(token));
     }
 
-    // ——— Utilitaire de construction du DTO —————————————
+    // ——— UTILITAIRE ————————————————————————————————
     private AuthResponseDto buildAuthResponse(User user) {
-        // 1️⃣ On récupère le body, ici un JwtResponse (ou quel que soit son nom)
-        JwtResponseDto jwtBody = jwtUtils.generateJwtResponseEntity(user).getBody();
+        String jwt = jwtService.generateToken(user.getEmail());
+
+        JwtResponseDto jwtBody = jwtHttpSupport.toJwtResponse(jwt);
         if (jwtBody == null) {
             throw new IllegalStateException("JWT generation failed");
         }
 
-        // 2️⃣ On appelle le getter correct : ici getBearer()
-        String token = jwtBody.bearer();
-
-        // 3️⃣ On retourne enfin le AuthResponseDto
         return new AuthResponseDto(
-                token,
+                jwtBody.bearer(),
                 user.getId(),
                 user.getUsername(),
                 user.getEmail(),

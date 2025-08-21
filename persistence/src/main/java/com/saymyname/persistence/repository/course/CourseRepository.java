@@ -10,5 +10,5 @@ import java.util.Optional;
 
 @Repository
 public interface CourseRepository extends JpaRepository<CourseEntity, Long> {
-    Optional<CourseEntity> findFirstByUserIdAndStatus(long userId, CourseStatus status);
+    Optional<CourseEntity> findFirstByUserIdAndStatus(Long userId, CourseStatus status);
 }

@@ -9,14 +9,14 @@ import org.springframework.stereotype.Service;
 
 import com.saymyname.core.model.common.User;
 import com.saymyname.persistence.dao.UserDao;
-import com.saymyname.persistence.entity.CustomUserDetails;
-import com.saymyname.persistence.entity.UserEntity;
+import com.saymyname.security.CustomUserDetails;
 
 @Service
 public class UserService implements UserDetailsService {
 
     private final UserDao userDao;
     private final PasswordEncoder passwordEncoder;
+    private final Random random = new Random();
 
     private static final String[] FRENCH_ADJECTIVES = {
             "Intrépide", "Joyeux", "Brillant", "Astucieux", "Mystérieux", "Agile", "Vif",
@@ -36,13 +36,13 @@ public class UserService implements UserDetailsService {
             "Aventurier", "Baroudeur", "Corsaire", "Druide", "Émissaire", "Faune", "Gladiateur",
             "Héros", "Illusionniste", "Joueur", "Korrigan", "Loup", "Magicien", "Navigateur",
             "Oracle", "Paladin", "Quêteur", "Renard", "Souverain", "Triton", "Ursidé", "Voyageur",
-            "Yéti", "Zéphyr",
-            "Canard", "Hamster", "Potiron", "Cornichon", "Tambourin", "Escargot", "Chaussette",
-            "Haricot", "Cactus", "Bretzel", "Chameau", "Dinosaure", "Flamant", "Girafe", "Hippocampe",
-            "Iguane", "Jelly", "Kiwi", "Lama", "Muffin", "Nougat", "Omelette", "Pamplemousse",
-            "Quokka", "Ratatouille", "Sandwich", "Tofu", "Ukulélé", "Vélociraptor", "Wombat",
-            "Xérès", "Yak", "Zèbre"
+            "Yéti", "Zéphyr", "Canard", "Hamster", "Potiron", "Cornichon", "Tambourin", "Escargot",
+            "Chaussette", "Haricot", "Cactus", "Bretzel", "Chameau", "Dinosaure", "Flamant", "Girafe",
+            "Hippocampe", "Iguane", "Jelly", "Kiwi", "Lama", "Muffin", "Nougat", "Omelette",
+            "Pamplemousse", "Quokka", "Ratatouille", "Sandwich", "Tofu", "Ukulélé", "Vélociraptor",
+            "Wombat", "Xérès", "Yak", "Zèbre"
     };
+
     private static final String[] ENGLISH_ADJECTIVES = {
             "Wacky", "Silly", "Bouncy", "Zany", "Goofy", "Whimsical", "Gigantic", "Tiny", "Fluffy",
             "Grumpy", "Smelly", "Loud", "Quiet", "Bright", "Dull", "Cheerful", "Gloomy", "Sparkly",
@@ -57,6 +57,7 @@ public class UserService implements UserDetailsService {
             "Bewildering", "Ebullient", "Jaunty", "Jubilant", "Kooky", "Raucous", "Rowdy", "Snappy",
             "Sprightly", "Spry", "Twinkling", "Unruly", "Winsome", "Zany"
     };
+
     private static final String[] ENGLISH_NOUNS = {
             "Penguin", "Banana", "Taco", "Unicorn", "Pickle", "Bubble", "Robot", "Zombie", "Alien",
             "Ninja", "Pirate", "Wizard", "Dragon", "Monster", "Fairy", "Elf", "Gnome", "Dinosaur",
@@ -74,12 +75,12 @@ public class UserService implements UserDetailsService {
             "Rhinoceros", "Squirrel", "Tapir", "Vulture", "Walrus", "Xerus", "Yak", "Zebra"
     };
 
-    private Random random = new Random();
-
     public UserService(UserDao userDao, PasswordEncoder passwordEncoder) {
         this.userDao = userDao;
         this.passwordEncoder = passwordEncoder;
     }
+
+    // ============= Métier (inchangé) =================
 
     public String generateUniqueUsername(String language) {
         String username;
@@ -87,7 +88,7 @@ public class UserService implements UserDetailsService {
         do {
             username = generateRandomUsername(language);
             attempts++;
-            if (attempts > 50) { // Limit the attempts to prevent infinite loops
+            if (attempts > 50) {
                 throw new IllegalStateException("Too many attempts to generate a unique username");
             }
         } while (userDao.checkIfUsernameExists(username));
@@ -115,22 +116,15 @@ public class UserService implements UserDetailsService {
 
         String adjective = adjectives[random.nextInt(adjectives.length)];
         String noun = nouns[random.nextInt(nouns.length)];
-
-        if (adjectiveFirst) {
-            return adjective + '-' + noun;
-        } else {
-            return noun + '-' + adjective;
-        }
+        return adjectiveFirst ? adjective + '-' + noun : noun + '-' + adjective;
     }
 
     public User save(User user) {
-        // Encode le mot de passe avant de sauvegarder l'user
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         return userDao.save(user);
     }
 
     public User setActive(User user) {
-        // Encode le mot de passe avant de sauvegarder l'user
         user.setActive(true);
         return userDao.save(user);
     }
@@ -143,17 +137,23 @@ public class UserService implements UserDetailsService {
         return userDao.checkIfUsernameExists(username);
     }
 
-    @Override
-    public UserDetails loadUserByUsername(String username) {
-        UserEntity user = userDao.findEntityByEmailOrUsername(username);
-        return new CustomUserDetails(user);
-    }
-
     public User findById(Long id) {
         return userDao.findById(id);
     }
 
-    public User findByEmailOrUsername(String email) {
-        return userDao.findByEmailOrUsername(email);
+    public User findByEmailOrUsername(String identifier) {
+        return userDao.findByEmailOrUsername(identifier);
+    }
+
+    // ============= Sécurité ==========================
+
+    /**
+     * Utilisé par Spring Security pour l’authentification (username=email ou
+     * username)
+     */
+    @Override
+    public UserDetails loadUserByUsername(String identifier) {
+        User user = userDao.findByEmailOrUsername(identifier);
+        return new CustomUserDetails(user);
     }
 }

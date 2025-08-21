@@ -12,8 +12,7 @@ public class ChallengeVersionEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
-
+    private Long id;
     @Column(name = "version_number", nullable = false)
     private int versionNumber;
 
@@ -41,7 +40,7 @@ public class ChallengeVersionEntity {
     public ChallengeVersionEntity() {
     }
 
-    public ChallengeVersionEntity(long id, int versionNumber, LocalDateTime startDate, LocalDateTime endDate,
+    public ChallengeVersionEntity(Long id, int versionNumber, LocalDateTime startDate, LocalDateTime endDate,
             ChallengeSeasonEntity firstSeason, ChallengeEntity challenge, int questionCount,
             List<ChallengeQuestionEntity> questions) {
         this.id = id;
@@ -55,11 +54,11 @@ public class ChallengeVersionEntity {
     }
 
     // Getters et setters existants
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -121,7 +120,7 @@ public class ChallengeVersionEntity {
 
     // Builder pattern mis à jour avec le champ questions
     public static class Builder {
-        private long id;
+        private Long id;
         private int versionNumber;
         private LocalDateTime startDate;
         private LocalDateTime endDate;
@@ -130,7 +129,7 @@ public class ChallengeVersionEntity {
         private int questionCount;
         private List<ChallengeQuestionEntity> questions;
 
-        public Builder withId(long id) {
+        public Builder withId(Long id) {
             this.id = id;
             return this;
         }

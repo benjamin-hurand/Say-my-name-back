@@ -11,5 +11,5 @@ import java.util.Optional;
 public interface PersonRepository extends JpaRepository<PersonEntity, Long>, PersonRepositoryCustom {
     List<PersonEntity> findByUserIsNull();
 
-    Optional<PersonEntity> findByUserId(long userId);
+    Optional<PersonEntity> findByUserId(Long userId);
 }

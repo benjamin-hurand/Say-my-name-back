@@ -3,7 +3,7 @@ package com.saymyname.webapp.dto.profile;
 import com.saymyname.webapp.dto.PersonDto;
 
 public record ProfileResponseDto(
-                PersonDto person
+        PersonDto person
 // ProfileStatsDto stats
 ) {
 

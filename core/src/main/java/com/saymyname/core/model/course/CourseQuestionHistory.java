@@ -9,7 +9,7 @@ import java.util.Objects;
  * Contient uniquement les données d'interaction (asked/answered) et de pool.
  */
 public class CourseQuestionHistory {
-    private long id;
+    private Long id;
     private Course course;
     private Knowledge knowledge;
     private int questionRound;
@@ -39,11 +39,11 @@ public class CourseQuestionHistory {
     }
 
     // Getters and setters
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -129,7 +129,7 @@ public class CourseQuestionHistory {
 
     // Builder pattern
     public static class Builder {
-        private long id;
+        private Long id;
         private Course course;
         private Knowledge knowledge;
         private int questionRound;
@@ -141,7 +141,7 @@ public class CourseQuestionHistory {
         private PoolType poolType;
         private boolean helpUsed;
 
-        public Builder withId(long id) {
+        public Builder withId(Long id) {
             this.id = id;
             return this;
         }

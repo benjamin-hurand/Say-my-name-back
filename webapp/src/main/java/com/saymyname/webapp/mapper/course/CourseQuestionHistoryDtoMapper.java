@@ -7,10 +7,10 @@ import com.saymyname.core.model.course.CourseQuestionHistory;
 import com.saymyname.core.model.course.Knowledge;
 import com.saymyname.core.model.enums.DifficultyLevel;
 import com.saymyname.core.model.enums.PoolType;
-import com.saymyname.core.model.people.Photo;
-import com.saymyname.webapp.dto.course.CourseQuestionHistoryDto;
+import com.saymyname.core.model.people.Person;
 import com.saymyname.webapp.dto.course.CourseAnswerDto;
 import com.saymyname.webapp.dto.course.CourseQuestionDto;
+import com.saymyname.webapp.dto.course.CourseQuestionHistoryDto;
 
 @Component
 public class CourseQuestionHistoryDtoMapper {
@@ -66,13 +66,16 @@ public class CourseQuestionHistoryDtoMapper {
     }
 
     public CourseQuestionDto toReducedDto(CourseQuestionHistory courseQuestionHistory) {
-        Photo photo = courseQuestionHistory.getKnowledge().getPerson().getPhoto();
-        String fullUrl = (photo != null) ? toPublicUrl(photo.getStorageKey()) : null;
+        Person person = courseQuestionHistory.getKnowledge().getPerson();
+
+        String fullUrl = person.getApprovedPhoto()
+                .map(photo -> toPublicUrl(photo.getStorageKey()))
+                .orElse(null);
 
         return new CourseQuestionDto(
                 courseQuestionHistory.getId(),
                 courseQuestionHistory.getQuestionRound(),
-                courseQuestionHistory.getKnowledge().getPerson().getId(),
+                person.getId(),
                 fullUrl,
                 courseQuestionHistory.getPoolType(),
                 toDifficulty(courseQuestionHistory.getKnowledge(), courseQuestionHistory.getPoolType()));

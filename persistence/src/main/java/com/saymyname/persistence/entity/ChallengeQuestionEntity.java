@@ -9,8 +9,7 @@ public class ChallengeQuestionEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
-
+    private Long id;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "version_id", nullable = false)
     private ChallengeVersionEntity version;
@@ -19,19 +18,20 @@ public class ChallengeQuestionEntity {
     @JoinColumn(name = "person_id", nullable = false)
     private PersonEntity person;
 
-    public ChallengeQuestionEntity() {}
+    public ChallengeQuestionEntity() {
+    }
 
-    public ChallengeQuestionEntity(long id, ChallengeVersionEntity version, PersonEntity person) {
+    public ChallengeQuestionEntity(Long id, ChallengeVersionEntity version, PersonEntity person) {
         this.id = id;
         this.version = version;
         this.person = person;
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -52,11 +52,11 @@ public class ChallengeQuestionEntity {
     }
 
     public static class Builder {
-        private long id;
+        private Long id;
         private ChallengeVersionEntity version;
         private PersonEntity person;
 
-        public Builder withId(long id) {
+        public Builder withId(Long id) {
             this.id = id;
             return this;
         }
@@ -78,12 +78,14 @@ public class ChallengeQuestionEntity {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         ChallengeQuestionEntity that = (ChallengeQuestionEntity) o;
         return id == that.id &&
-               Objects.equals(version, that.version) &&
-               Objects.equals(person, that.person);
+                Objects.equals(version, that.version) &&
+                Objects.equals(person, that.person);
     }
 
     @Override
@@ -94,9 +96,9 @@ public class ChallengeQuestionEntity {
     @Override
     public String toString() {
         return "ChallengeQuestionEntity{" +
-               "id=" + id +
-               ", version=" + version +
-               ", person=" + person +
-               '}';
+                "id=" + id +
+                ", version=" + version +
+                ", person=" + person +
+                '}';
     }
 }

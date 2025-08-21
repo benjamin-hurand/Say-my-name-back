@@ -4,13 +4,14 @@ import java.util.List;
 import java.util.Objects;
 
 public class GameOptions {
-    private long id;
+    private Long id;
     private GameMode gameMode;
     private List<GameAttributeFilter> filters;
     private List<GameAttributeSort> sortBy;
     private Boolean initialGiven;
 
-    public GameOptions() {}
+    public GameOptions() {
+    }
 
     // Private constructor to enforce the use of the builder
     private GameOptions(Builder builder) {
@@ -22,7 +23,7 @@ public class GameOptions {
     }
 
     // Getters
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
@@ -44,14 +45,14 @@ public class GameOptions {
 
     // Builder class
     public static class Builder {
-        private long id;
+        private Long id;
         private GameMode gameMode;
         private List<GameAttributeFilter> filters;
         private List<GameAttributeSort> sortBy;
         private Boolean initialGiven;
 
         // Setters for each field that return the builder for chaining
-        public Builder withId(long id) {
+        public Builder withId(Long id) {
             this.id = id;
             return this;
         }
@@ -84,9 +85,13 @@ public class GameOptions {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof GameOptions that)) return false;
-        return getId() == that.getId() && Objects.equals(getGameMode(), that.getGameMode()) && Objects.equals(getFilters(), that.getFilters()) && Objects.equals(getSortBy(), that.getSortBy()) && Objects.equals(isInitialGiven(), that.isInitialGiven());
+        if (this == o)
+            return true;
+        if (!(o instanceof GameOptions that))
+            return false;
+        return getId() == that.getId() && Objects.equals(getGameMode(), that.getGameMode())
+                && Objects.equals(getFilters(), that.getFilters()) && Objects.equals(getSortBy(), that.getSortBy())
+                && Objects.equals(isInitialGiven(), that.isInitialGiven());
     }
 
     @Override

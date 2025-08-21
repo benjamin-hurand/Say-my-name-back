@@ -30,10 +30,10 @@ public class PersonDtoMapper {
         return new PersonDto(
                 person.getId(),
                 userDtoMapper.toDto(person.getUser()),
-                photoDtoMapper.toDto(person.getPhoto()),
-                person.getAttributes() != null ? person.getAttributes().stream()
-                        .map(personAttributeDtoMapper::toReducedDto)
-                        .toList() : null);
+                person.getAttributes() != null
+                        ? person.getAttributes().stream().map(personAttributeDtoMapper::toReducedDto).toList()
+                        : null,
+                person.getPhotos() != null ? person.getPhotos().stream().map(photoDtoMapper::toDto).toList() : null);
     }
 
     public ProfileResponseDto toProfileResponseDto(Person person) {

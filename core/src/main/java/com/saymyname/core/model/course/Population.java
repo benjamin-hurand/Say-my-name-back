@@ -6,7 +6,7 @@ import com.saymyname.core.model.people.Attribute;
 import java.util.Objects;
 
 public class Population {
-    private long id;
+    private Long id;
     private String title;
     private String description;
     private Attribute attributeFilter;
@@ -29,7 +29,7 @@ public class Population {
         this.count = b.count;
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
@@ -57,7 +57,7 @@ public class Population {
         return createdBy;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -94,7 +94,7 @@ public class Population {
     }
 
     public static class Builder {
-        private long id;
+        private Long id;
         private String title;
         private String description;
         private Attribute attributeFilter;
@@ -103,7 +103,7 @@ public class Population {
         private User createdBy;
         private int count;
 
-        public Builder withId(long id) {
+        public Builder withId(Long id) {
             this.id = id;
             return this;
         }

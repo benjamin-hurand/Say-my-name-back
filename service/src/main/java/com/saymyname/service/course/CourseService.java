@@ -44,7 +44,7 @@ public class CourseService {
         this.courseQuestionHistoryService = courseQuestionHistoryService;
     }
 
-    public Optional<Course> getCurrentCourse(long userId) {
+    public Optional<Course> getCurrentCourse(Long userId) {
         return courseDao.getCurrentCourse(userId);
     }
 
@@ -152,8 +152,8 @@ public class CourseService {
             String feedback,
             boolean allowRepeat) {
 
-        long userId = course.getUser().getId();
-        long gameModeId = course.getGameMode().getId();
+        Long userId = course.getUser().getId();
+        Long gameModeId = course.getGameMode().getId();
 
         // 1) Les pools et leurs poids
         Map<PoolType, Double> weights = new LinkedHashMap<>(Map.of(

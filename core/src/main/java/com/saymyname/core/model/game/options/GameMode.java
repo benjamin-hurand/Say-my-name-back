@@ -4,13 +4,14 @@ import java.util.List;
 import java.util.Objects;
 
 public class GameMode {
-    private long id;
+    private Long id;
     private String title;
     private String description;
     private List<GameModeAttribute> gameModeAttributes;
     private String operator;
 
-    public GameMode() {}
+    public GameMode() {
+    }
 
     private GameMode(Builder builder) {
         this.id = builder.id;
@@ -20,7 +21,7 @@ public class GameMode {
         this.operator = builder.operator;
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
@@ -40,7 +41,7 @@ public class GameMode {
         return operator;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -61,13 +62,13 @@ public class GameMode {
     }
 
     public static class Builder {
-        private long id;
+        private Long id;
         private String title;
         private String description;
         private List<GameModeAttribute> gameModeAttributes;
         private String operator;
 
-        public Builder withId(long id) {
+        public Builder withId(Long id) {
             this.id = id;
             return this;
         }
@@ -99,8 +100,10 @@ public class GameMode {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof GameMode)) return false;
+        if (this == o)
+            return true;
+        if (!(o instanceof GameMode))
+            return false;
         GameMode gameMode = (GameMode) o;
         return id == gameMode.id &&
                 Objects.equals(title, gameMode.title) &&

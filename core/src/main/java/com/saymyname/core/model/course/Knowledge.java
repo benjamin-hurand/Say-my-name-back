@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 import java.util.Objects;
 
 public class Knowledge {
-    private long id;
+    private Long id;
     private User user;
     private GameMode gameMode;
     private Person person;
@@ -46,11 +46,11 @@ public class Knowledge {
         this.stability = b.stability;
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -167,7 +167,7 @@ public class Knowledge {
     }
 
     public static class Builder {
-        private long id;
+        private Long id;
         private User user;
         private GameMode gameMode;
         private Person person;
@@ -183,7 +183,7 @@ public class Knowledge {
         private double difficulty;
         private double stability;
 
-        public Builder withId(long id) {
+        public Builder withId(Long id) {
             this.id = id;
             return this;
         }

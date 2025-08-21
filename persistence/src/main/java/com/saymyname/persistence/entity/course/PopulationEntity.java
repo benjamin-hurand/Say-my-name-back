@@ -15,8 +15,7 @@ public class PopulationEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
-
+    private Long id;
     @Column(nullable = false)
     private String title;
 
@@ -53,7 +52,7 @@ public class PopulationEntity {
     public PopulationEntity() {
     }
 
-    public PopulationEntity(long id, String title, String description,
+    public PopulationEntity(Long id, String title, String description,
             AttributeEntity attributeFilter, String minValue,
             String maxValue, UserEntity createdBy,
             LocalDateTime createdAt, int countPersons) {
@@ -69,11 +68,11 @@ public class PopulationEntity {
     }
 
     // getters & setters..
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 

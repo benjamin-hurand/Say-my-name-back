@@ -28,6 +28,10 @@
         </dependency>
         <dependency>
             <groupId>com.saymyname</groupId>
+            <artifactId>security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.saymyname</groupId>
             <artifactId>service</artifactId>
         </dependency>
 
@@ -125,9 +129,8 @@
             </execution>
         </executions>
         <configuration>
-            <!-- Forcer l'exécution dans un processus forké -->
             <fork>true</fork>
-            <!-- Spécifier explicitement la classe principale -->
+            <parameters>true</parameters>
             <mainClass>com.saymyname.webapp.WebappApplication</mainClass>
         </configuration>
         </plugin>

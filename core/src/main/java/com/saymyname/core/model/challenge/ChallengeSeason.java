@@ -7,13 +7,14 @@ import java.util.Objects;
  * Représente une saison compétitive.
  */
 public class ChallengeSeason {
-    private long id;
+    private Long id;
     private int seasonNumber;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
 
     // Constructeur par défaut
-    public ChallengeSeason() {}
+    public ChallengeSeason() {
+    }
 
     private ChallengeSeason(Builder builder) {
         this.id = builder.id;
@@ -23,7 +24,7 @@ public class ChallengeSeason {
     }
 
     // Getters
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
@@ -40,7 +41,7 @@ public class ChallengeSeason {
     }
 
     // Setters
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -58,12 +59,12 @@ public class ChallengeSeason {
 
     // Builder
     public static class Builder {
-        private long id;
+        private Long id;
         private int seasonNumber;
         private LocalDateTime startDate;
         private LocalDateTime endDate;
 
-        public Builder withId(long id) {
+        public Builder withId(Long id) {
             this.id = id;
             return this;
         }
@@ -90,13 +91,15 @@ public class ChallengeSeason {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         ChallengeSeason that = (ChallengeSeason) o;
         return id == that.id &&
-               seasonNumber == that.seasonNumber &&
-               Objects.equals(startDate, that.startDate) &&
-               Objects.equals(endDate, that.endDate);
+                seasonNumber == that.seasonNumber &&
+                Objects.equals(startDate, that.startDate) &&
+                Objects.equals(endDate, that.endDate);
     }
 
     @Override
@@ -107,10 +110,10 @@ public class ChallengeSeason {
     @Override
     public String toString() {
         return "ChallengeSeason{" +
-               "id=" + id +
-               ", seasonNumber=" + seasonNumber +
-               ", startDate=" + startDate +
-               ", endDate=" + endDate +
-               '}';
+                "id=" + id +
+                ", seasonNumber=" + seasonNumber +
+                ", startDate=" + startDate +
+                ", endDate=" + endDate +
+                '}';
     }
 }

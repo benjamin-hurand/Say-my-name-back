@@ -1,83 +1,115 @@
 package com.saymyname.service.profile;
 
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.saymyname.core.model.common.User;
+import com.saymyname.core.model.enums.PhotoStatus;
+import com.saymyname.core.model.people.Person;
 import com.saymyname.core.model.people.Photo;
 import com.saymyname.persistence.dao.PhotoDao;
 import com.saymyname.persistence.storage.PhotoStorage;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.server.ResponseStatusException;
+import com.saymyname.security.CustomUserDetails;
+import com.saymyname.security.Roles;
+import com.saymyname.service.PersonService;
+import com.saymyname.service.UserService;
 
-import java.util.Set;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Objects;
 
 @Service
 public class PhotoService {
 
     private final PhotoDao photoDao;
     private final PhotoStorage photoStorage;
+    private final UserService userService;
+    private final PersonService personService;
 
-    public PhotoService(PhotoDao photoDao, PhotoStorage photoStorage) {
+    // Règles de validation (constants)
+    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 Mo
+    private static final int MIN_WIDTH = 200; // px
+    private static final int MIN_HEIGHT = 200; // px
+
+    public PhotoService(PhotoDao photoDao, PhotoStorage photoStorage, UserService userService,
+            PersonService personService) {
         this.photoDao = photoDao;
         this.photoStorage = photoStorage;
+        this.userService = userService;
+        this.personService = personService;
     }
 
-    private static final long MIN_UPLOAD_SIZE = 1 * 1024L; // 1 KB
-    private static final long MAX_UPLOAD_SIZE = 5 * 1024 * 1024L; // 5 MB
-    private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of("image/jpeg", "image/png", "image/webp");
-
     @Transactional
-    public Photo replaceForPerson(Long personId, MultipartFile file) {
+    public Photo submitPhotoForApproval(Long personId, MultipartFile file, CustomUserDetails principal) {
         if (personId == null)
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "personId manquant");
+            throw new IllegalArgumentException("personId est requis");
+        if (principal == null)
+            throw new IllegalArgumentException("Utilisateur non authentifié");
         if (file == null || file.isEmpty())
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Aucun fichier reçu");
-        if (file.getSize() < MIN_UPLOAD_SIZE)
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Fichier trop petit (<50KB)");
-        if (file.getSize() > MAX_UPLOAD_SIZE)
-            throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "Fichier trop volumineux (>5MB)");
-        String ct = file.getContentType();
-        if (ct == null || !ALLOWED_CONTENT_TYPES.contains(ct))
-            throw new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Type de fichier non supporté");
+            throw new IllegalArgumentException("Fichier manquant");
 
-        // 1) écrire le fichier -> key
-        PhotoStorage.StoredFile stored = photoStorage.store(file);
+        // Vérification droits (via roles + ownership)
+        checkAuthorization(principal, personId);
 
-        // 2) rebind DB avec la nouvelle key (DAO pur DB)
-        PhotoDao.ReplaceResult result = photoDao.rebindForPerson(personId, stored.key());
-
-        // 3) supprimer l’ancienne clé APRES COMMIT pour éviter les incohérences en
-        // rollback
-        String oldKey = result.oldStorageKey();
-        if (oldKey != null) {
-            TransactionSynchronizationManager
-                    .registerSynchronization(new org.springframework.transaction.support.TransactionSynchronization() {
-                        @Override
-                        public void afterCommit() {
-                            photoStorage.deleteQuietly(oldKey);
-                        }
-                    });
+        // --- Validation de taille ---
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new IllegalArgumentException("La photo dépasse la taille maximale autorisée (5 Mo)");
         }
 
-        return result.newPhoto();
-    }
+        // --- Validation des dimensions et du format réel ---
+        try {
+            BufferedImage img = ImageIO.read(file.getInputStream());
+            if (img == null) {
+                throw new IllegalArgumentException("Le fichier n'est pas une image valide");
+            }
+            if (img.getWidth() < MIN_WIDTH || img.getHeight() < MIN_HEIGHT) {
+                throw new IllegalArgumentException(
+                        String.format("La photo est trop petite : minimum %dx%d requis", MIN_WIDTH, MIN_HEIGHT));
+            }
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Impossible de lire l'image téléchargée", e);
+        }
 
-    @Transactional
-    public void deleteForPerson(Long personId) {
-        if (personId == null)
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "personId manquant");
+        // 1) Stocker le fichier et obtenir la storageKey
+        var stored = photoStorage.store(file);
 
-        String oldKey = photoDao.unlinkForPerson(personId);
+        try {
+            // 2) Remplacer l’éventuelle PENDING existante
+            photoDao.deletePendingByPersonId(personId);
 
-        if (oldKey != null) {
-            TransactionSynchronizationManager
-                    .registerSynchronization(new org.springframework.transaction.support.TransactionSynchronization() {
-                        @Override
-                        public void afterCommit() {
-                            photoStorage.deleteQuietly(oldKey);
-                        }
-                    });
+            // 3) Créer la nouvelle PENDING
+            Photo toCreate = new Photo.Builder()
+                    .withPerson(new Person.Builder().withId(personId).build())
+                    .withStorageKey(stored.key())
+                    .withStatus(PhotoStatus.PENDING)
+                    .withSubmittedBy(new User.Builder().withId(principal.getId()).build())
+                    .build();
+
+            // 4) Sauvegarder et retourner le modèle persistant
+            return photoDao.save(toCreate);
+
+        } catch (RuntimeException ex) {
+            // Compensation si la persistance échoue après stockage
+            photoStorage.deleteQuietly(stored.key());
+            throw ex;
         }
     }
+
+    private void checkAuthorization(CustomUserDetails principal, Long personId) {
+        // 1) Vérifier si ADMIN
+        if (principal.hasRole(Roles.ADMIN)) {
+            return;
+        }
+
+        // 2) Vérifier propriétaire de la Person
+        Person person = personService.findById(personId)
+                .orElseThrow(() -> new IllegalArgumentException("Person introuvable"));
+        if (!Objects.equals(person.getUser().getId(), principal.getId())) {
+            throw new SecurityException("Vous n'avez pas le droit de soumettre une photo pour cette personne");
+        }
+    }
+
 }

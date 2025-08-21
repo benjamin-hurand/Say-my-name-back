@@ -1,19 +1,13 @@
 package com.saymyname.core.model.common;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
-
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 
 import com.saymyname.core.model.enums.SrsAlgorithm;
 
-public class User implements UserDetails {
-    private long id;
+public class User {
+    private Long id;
     private String username;
     private String email;
     private SrsAlgorithm srsAlgorithm;
@@ -34,32 +28,12 @@ public class User implements UserDetails {
         this.active = builder.active; // Initialize isActive from the builder
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
     public String getUsername() {
         return username;
-    }
-
-    @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isAccountNonLocked() {
-        return true;
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return active;
     }
 
     public String getEmail() {
@@ -68,13 +42,6 @@ public class User implements UserDetails {
 
     public SrsAlgorithm getSrsAlgorithm() {
         return srsAlgorithm;
-    }
-
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return getRolesList().stream()
-                .map(SimpleGrantedAuthority::new)
-                .collect(Collectors.toList());
     }
 
     public String getPassword() {
@@ -89,7 +56,7 @@ public class User implements UserDetails {
         return active;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -128,7 +95,7 @@ public class User implements UserDetails {
     }
 
     public static class Builder {
-        private long id;
+        private Long id;
         private String username;
         private String email;
         private SrsAlgorithm srsAlgorithm;
@@ -136,7 +103,7 @@ public class User implements UserDetails {
         private String roles;
         private Boolean active; // Include this to allow setting the active state via the builder
 
-        public Builder withId(long id) {
+        public Builder withId(Long id) {
             this.id = id;
             return this;
         }

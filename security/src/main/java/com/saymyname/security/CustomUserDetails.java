@@ -1,4 +1,4 @@
-package com.saymyname.persistence.entity;
+package com.saymyname.security;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
@@ -7,11 +7,13 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import com.saymyname.core.model.common.User;
+
 public class CustomUserDetails implements UserDetails {
 
-    private UserEntity user;
+    private User user;
 
-    public CustomUserDetails(UserEntity user) {
+    public CustomUserDetails(User user) {
         this.user = user;
     }
 
@@ -22,6 +24,14 @@ public class CustomUserDetails implements UserDetails {
                 .collect(Collectors.toList());
     }
 
+    public Long getId() {
+        return user.getId();
+    }
+
+    public User getUser() {
+        return user;
+    }
+
     @Override
     public String getPassword() {
         return user.getPassword();
@@ -30,6 +40,11 @@ public class CustomUserDetails implements UserDetails {
     @Override
     public String getUsername() {
         return user.getEmail();
+    }
+
+    public boolean hasRole(String role) {
+        return getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals(role));
     }
 
     @Override

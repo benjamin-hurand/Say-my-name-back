@@ -13,6 +13,7 @@
         <module>webapp</module>
         <module>service</module>
         <module>persistence</module>
+        <module>security</module>
     </modules>
 
     <properties>
@@ -103,7 +104,7 @@
                 <scope>test</scope>
             </dependency>
 
-            <!-- This exact project : My-Newro-Factory -->
+            <!-- This exact project : SayMyName -->
             <dependency>
                 <groupId>com.saymyname</groupId>
                 <artifactId>core</artifactId>
@@ -122,6 +123,11 @@
             <dependency>
                 <groupId>com.saymyname</groupId>
                 <artifactId>persistence</artifactId>
+                <version>${version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.saymyname</groupId>
+                <artifactId>security</artifactId>
                 <version>${version}</version>
             </dependency>
             <dependency>

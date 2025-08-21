@@ -3,7 +3,7 @@ package com.saymyname.core.model.people;
 import java.util.Objects;
 
 public class Attribute {
-    private long id;
+    private Long id;
     private String name;
     private boolean unique;
     private boolean filter;
@@ -33,7 +33,7 @@ public class Attribute {
     }
 
     // Getters
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
@@ -74,7 +74,7 @@ public class Attribute {
     }
 
     // Setters
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -116,7 +116,7 @@ public class Attribute {
 
     // Builder Pattern
     public static class Builder {
-        private long id;
+        private Long id;
         private String name;
         private boolean unique;
         private boolean filter;
@@ -127,7 +127,7 @@ public class Attribute {
         private String minValue;
         private String maxValue;
 
-        public Builder withId(long id) {
+        public Builder withId(Long id) {
             this.id = id;
             return this;
         }

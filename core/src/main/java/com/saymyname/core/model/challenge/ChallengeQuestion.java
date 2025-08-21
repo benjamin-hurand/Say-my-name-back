@@ -7,11 +7,12 @@ import java.util.Objects;
  * Représente une question d'une version de challenge, basée sur une personne.
  */
 public class ChallengeQuestion {
-    private long id;
+    private Long id;
     private ChallengeVersion version;
     private Person person;
 
-    public ChallengeQuestion() {}
+    public ChallengeQuestion() {
+    }
 
     private ChallengeQuestion(Builder builder) {
         this.id = builder.id;
@@ -19,7 +20,7 @@ public class ChallengeQuestion {
         this.person = builder.person;
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
@@ -31,7 +32,7 @@ public class ChallengeQuestion {
         return person;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -44,11 +45,11 @@ public class ChallengeQuestion {
     }
 
     public static class Builder {
-        private long id;
+        private Long id;
         private ChallengeVersion version;
         private Person person;
 
-        public Builder withId(long id) {
+        public Builder withId(Long id) {
             this.id = id;
             return this;
         }
@@ -70,12 +71,14 @@ public class ChallengeQuestion {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         ChallengeQuestion that = (ChallengeQuestion) o;
         return id == that.id &&
-               Objects.equals(version, that.version) &&
-               Objects.equals(person, that.person);
+                Objects.equals(version, that.version) &&
+                Objects.equals(person, that.person);
     }
 
     @Override
@@ -86,9 +89,9 @@ public class ChallengeQuestion {
     @Override
     public String toString() {
         return "ChallengeQuestion{" +
-               "id=" + id +
-               ", version=" + version +
-               ", person=" + person +
-               '}';
+                "id=" + id +
+                ", version=" + version +
+                ", person=" + person +
+                '}';
     }
 }

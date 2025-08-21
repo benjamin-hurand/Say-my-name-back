@@ -1,8 +1,8 @@
 package com.saymyname.webapp.dto;
 
 public record PersonAttributeDto(
-        long id,
+        Long id,
         AttributeDto attribute,
         String value,
-        long personId) {
+        Long personId) {
 }

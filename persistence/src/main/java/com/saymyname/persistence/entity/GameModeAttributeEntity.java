@@ -9,8 +9,7 @@ public class GameModeAttributeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
-
+    private Long id;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "game_mode_id")
     private GameModeEntity gameMode;
@@ -21,29 +20,30 @@ public class GameModeAttributeEntity {
 
     // Constructors, getters, setters, equals, hashCode, and toString methods
 
-    public GameModeAttributeEntity() {}
+    public GameModeAttributeEntity() {
+    }
 
     public GameModeAttributeEntity(GameModeEntity gameMode, AttributeEntity attribute) {
         this.gameMode = gameMode;
         this.attribute = attribute;
     }
 
-    public GameModeAttributeEntity(long id, AttributeEntity attribute) {
+    public GameModeAttributeEntity(Long id, AttributeEntity attribute) {
         this.id = id;
         this.attribute = attribute;
     }
 
-    public GameModeAttributeEntity(long id, GameModeEntity gameMode, AttributeEntity attribute) {
+    public GameModeAttributeEntity(Long id, GameModeEntity gameMode, AttributeEntity attribute) {
         this.id = id;
         this.gameMode = gameMode;
         this.attribute = attribute;
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -65,8 +65,10 @@ public class GameModeAttributeEntity {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof GameModeAttributeEntity)) return false;
+        if (this == o)
+            return true;
+        if (!(o instanceof GameModeAttributeEntity))
+            return false;
         GameModeAttributeEntity that = (GameModeAttributeEntity) o;
         return id == that.id &&
                 Objects.equals(gameMode, that.gameMode) &&

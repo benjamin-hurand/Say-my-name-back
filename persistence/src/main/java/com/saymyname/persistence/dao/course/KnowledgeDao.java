@@ -78,14 +78,14 @@ public class KnowledgeDao {
 
     // POOLS
     // UNKNOWN
-    public Knowledge findFirstNew(long courseId, long userId, long gameModeId, Long lastPersonId, boolean allowRepeat) {
+    public Knowledge findFirstNew(Long courseId, Long userId, Long gameModeId, Long lastPersonId, boolean allowRepeat) {
         KnowledgeEntity entity = knowledgeRepository.findFirstNewItem(courseId, userId, gameModeId, lastPersonId,
                 allowRepeat);
         return knowledgeEntityMapper.toModel(entity);
     }
 
     // DISCOVERED
-    public Knowledge findFirstDiscovered(long courseId, long userId, long gameModeId, Long lastPersonId,
+    public Knowledge findFirstDiscovered(Long courseId, Long userId, Long gameModeId, Long lastPersonId,
             boolean allowRepeat) {
         KnowledgeEntity entity = knowledgeRepository.findFirstNotSoNewItem(courseId, userId, gameModeId, lastPersonId,
                 allowRepeat);
@@ -93,7 +93,7 @@ public class KnowledgeDao {
     }
 
     // LEARNED: recent errors
-    public Knowledge findFirstRecentError(long courseId, long userId, long gameModeId, Long lastPersonId,
+    public Knowledge findFirstRecentError(Long courseId, Long userId, Long gameModeId, Long lastPersonId,
             boolean allowRepeat) {
         KnowledgeEntity entity = knowledgeRepository.findFirstRecentError(courseId, userId, gameModeId, lastPersonId,
                 allowRepeat);
@@ -101,7 +101,7 @@ public class KnowledgeDao {
     }
 
     // LEARNED: srs due
-    public Knowledge findFirstSRS(long courseId, long userId, long gameModeId, Long lastPersonId, boolean allowRepeat) {
+    public Knowledge findFirstSRS(Long courseId, Long userId, Long gameModeId, Long lastPersonId, boolean allowRepeat) {
         KnowledgeEntity entity = knowledgeRepository
                 .findFirstSrsDue(courseId, userId,
                         gameModeId, lastPersonId, allowRepeat);
@@ -109,7 +109,7 @@ public class KnowledgeDao {
     }
 
     // [BONUS REVISION] MASTERED and LEARNED: future srs due
-    public Knowledge findRevision(long courseId, long userId, long gameModeId, Long lastPersonId, boolean allowRepeat) {
+    public Knowledge findRevision(Long courseId, Long userId, Long gameModeId, Long lastPersonId, boolean allowRepeat) {
         KnowledgeEntity entity = knowledgeRepository.findRevision(courseId, userId, gameModeId, lastPersonId,
                 allowRepeat);
         return knowledgeEntityMapper.toModel(entity);

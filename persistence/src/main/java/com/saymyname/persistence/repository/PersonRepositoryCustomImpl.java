@@ -6,10 +6,12 @@ import java.util.List;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.saymyname.core.model.enums.PhotoStatus;
 import com.saymyname.core.model.game.options.GameAttributeFilter;
 import com.saymyname.core.model.game.options.GameOptions;
 import com.saymyname.persistence.entity.PersonAttributeEntity;
 import com.saymyname.persistence.entity.PersonEntity;
+import com.saymyname.persistence.entity.PhotoEntity;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -33,8 +35,13 @@ public class PersonRepositoryCustomImpl implements PersonRepositoryCustom {
         CriteriaQuery<PersonEntity> cq = cb.createQuery(PersonEntity.class);
         Root<PersonEntity> person = cq.from(PersonEntity.class);
 
+        // Récupérer la photo APPROVED
+        person.fetch("photos", JoinType.INNER);
+        Join<PersonEntity, PhotoEntity> photoJoin = person.join("photos", JoinType.INNER);
+
         // Liste des prédicats de filtrage
         List<Predicate> filterPredicates = new ArrayList<>();
+        filterPredicates.add(cb.equal(photoJoin.get("status"), PhotoStatus.APPROVED));
         if (options.getFilters() != null) {
             for (GameAttributeFilter filter : options.getFilters()) {
                 // Créer un join INNER sur les attributs
@@ -63,6 +70,7 @@ public class PersonRepositoryCustomImpl implements PersonRepositoryCustom {
                 filterPredicates.add(cb.and(attributeMatch, valueBetween, validPredicate));
             }
         }
+
         if (!filterPredicates.isEmpty()) {
             cq.where(cb.and(filterPredicates.toArray(new Predicate[0])));
         }

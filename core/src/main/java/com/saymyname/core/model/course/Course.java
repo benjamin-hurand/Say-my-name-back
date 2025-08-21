@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class Course {
-    private long id;
+    private Long id;
     private User user;
     private GameMode gameMode;
     private Attribute sortingAttribute;
@@ -32,7 +32,7 @@ public class Course {
         this.populations = b.populations;
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
@@ -64,7 +64,7 @@ public class Course {
         return populations;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -97,7 +97,7 @@ public class Course {
     }
 
     public static class Builder {
-        private long id;
+        private Long id;
         private User user;
         private GameMode gameMode;
         private Attribute sortingAttribute;
@@ -106,7 +106,7 @@ public class Course {
         private int currentRound;
         private List<Population> populations;
 
-        public Builder withId(long id) {
+        public Builder withId(Long id) {
             this.id = id;
             return this;
         }

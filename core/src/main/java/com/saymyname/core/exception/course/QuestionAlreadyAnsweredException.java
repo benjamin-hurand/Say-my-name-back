@@ -5,7 +5,7 @@ import org.springframework.http.HttpStatus;
 
 @ResponseStatus(value = HttpStatus.CONFLICT, reason = "This question has already been answered.")
 public class QuestionAlreadyAnsweredException extends RuntimeException {
-    public QuestionAlreadyAnsweredException(long questionId) {
+    public QuestionAlreadyAnsweredException(Long questionId) {
         super("Question history " + questionId + " has already been answered.");
     }
 }

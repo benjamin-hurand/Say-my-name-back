@@ -26,7 +26,7 @@ public class CourseQuestionHistoryService {
         return courseQuestionHistoryDao.create(history);
     }
 
-    public CourseQuestionHistory findById(long id) {
+    public CourseQuestionHistory findById(Long id) {
         return courseQuestionHistoryDao.findById(id);
     }
 

@@ -51,7 +51,7 @@ public interface PersonAttributeRepository extends JpaRepository<PersonAttribute
                      @Param("attributeId") Long attributeId,
                      @Param("value") String value);
 
-       long countDistinctByAttribute_IdAndValueBetween(long attributeId, String min, String max);
+       long countDistinctByAttribute_IdAndValueBetween(Long attributeId, String min, String max);
 
        @Modifying
        @Query(value = """

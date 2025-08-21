@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.people.Photo;
 import com.saymyname.webapp.dto.PhotoDto;
+import com.saymyname.webapp.dto.ReducedUserDto;
 
 @Component
 public class PhotoDtoMapper {
@@ -13,18 +14,28 @@ public class PhotoDtoMapper {
     private String photosBaseUrl;
 
     public PhotoDto toDto(Photo photo) {
-        if (photo == null)
+        if (photo == null) {
             return null;
+        }
+
         String fullUrl = null;
         if (photo.getStorageKey() != null && !photo.getStorageKey().isBlank()) {
-            // garantit un seul slash entre base et key
             fullUrl = photosBaseUrl.endsWith("/")
                     ? photosBaseUrl + photo.getStorageKey()
                     : photosBaseUrl + "/" + photo.getStorageKey();
         }
 
-        String createdAtStr = (photo.getCreatedAt() != null) ? photo.getCreatedAt().toString() : null;
-
-        return new PhotoDto(photo.getId(), fullUrl, createdAtStr);
+        return new PhotoDto(
+                photo.getId(),
+                fullUrl,
+                photo.getStatus(),
+                photo.getSubmittedAt(),
+                photo.getSubmittedBy() != null
+                        ? new ReducedUserDto(photo.getSubmittedBy().getId(), photo.getSubmittedBy().getUsername())
+                        : null,
+                photo.getApprovedAt(),
+                photo.getApprovedBy() != null
+                        ? new ReducedUserDto(photo.getApprovedBy().getId(), photo.getApprovedBy().getUsername())
+                        : null);
     }
 }

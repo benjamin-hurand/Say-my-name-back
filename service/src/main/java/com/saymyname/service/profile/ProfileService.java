@@ -7,7 +7,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.saymyname.core.exception.UserNotFoundException;
@@ -25,16 +24,13 @@ public class ProfileService {
     private final UserService userService;
     private final PersonService personService;
     private final PersonAttributeService personAttributeService;
-    private final PhotoService photoService; // <-- NEW
 
     public ProfileService(UserService userService,
             PersonService personService,
-            PersonAttributeService personAttributeService,
-            PhotoService photoService) { // <-- NEW
+            PersonAttributeService personAttributeService) { // <-- NEW
         this.userService = userService;
         this.personService = personService;
         this.personAttributeService = personAttributeService;
-        this.photoService = photoService; // <-- NEW
     }
 
     public Optional<Person> getProfile(String login) {
@@ -106,27 +102,29 @@ public class ProfileService {
 
     // -------- Photos -> délégation au PhotoService --------
 
-    @Transactional
-    public void updatePhoto(String login, MultipartFile photo) {
-        if (login == null || login.isBlank())
-            throw new InvalidUsernameException("Login invalide");
+    // @Transactional
+    // public void updatePhoto(String login, MultipartFile photo) {
+    // if (login == null || login.isBlank())
+    // throw new InvalidUsernameException("Login invalide");
 
-        final User user = userService.findByEmailOrUsername(login);
-        final Person person = personService.getPersonByUser(user)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Personne associée introuvable"));
+    // final User user = userService.findByEmailOrUsername(login);
+    // final Person person = personService.getPersonByUser(user)
+    // .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+    // "Personne associée introuvable"));
 
-        photoService.replaceForPerson(person.getId(), photo); // <-- délègue
-    }
+    // photoService.replaceForPerson(person.getId(), photo); // <-- délègue
+    // }
 
-    @Transactional
-    public void deletePhoto(String login) {
-        if (login == null || login.isBlank())
-            throw new InvalidUsernameException("Login invalide");
+    // @Transactional
+    // public void deletePhoto(String login) {
+    // if (login == null || login.isBlank())
+    // throw new InvalidUsernameException("Login invalide");
 
-        final User user = userService.findByEmailOrUsername(login);
-        final Person person = personService.getPersonByUser(user)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Personne associée introuvable"));
+    // final User user = userService.findByEmailOrUsername(login);
+    // final Person person = personService.getPersonByUser(user)
+    // .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+    // "Personne associée introuvable"));
 
-        photoService.deleteForPerson(person.getId()); // <-- délègue
-    }
+    // photoService.deleteForPerson(person.getId()); // <-- délègue
+    // }
 }

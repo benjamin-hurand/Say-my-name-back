@@ -1,5 +1,6 @@
-package com.saymyname.webapp.config;
+package com.saymyname.webapp.security;
 
+import com.saymyname.security.jwt.JwtService;
 import com.saymyname.service.UserService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -16,47 +17,55 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+/**
+ * Filtre d’authentification JWT appliqué à chaque requête.
+ */
 @Component
 public class JwtTokenFilter extends OncePerRequestFilter {
 
-    private JWTUtils jwtUtils;
-    private UserService userService;
     private static final Logger logger = LoggerFactory.getLogger(JwtTokenFilter.class);
 
-    public JwtTokenFilter(JWTUtils jwtUtils, UserService userService) {
-        this.jwtUtils = jwtUtils;
+    private final JwtService jwtService;
+    private final JwtHttpSupport jwtHttpSupport;
+    private final UserService userService;
+
+    public JwtTokenFilter(JwtService jwtService, JwtHttpSupport jwtHttpSupport, UserService userService) {
+        this.jwtService = jwtService;
+        this.jwtHttpSupport = jwtHttpSupport;
         this.userService = userService;
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+    protected void doFilterInternal(HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain)
             throws ServletException, IOException {
         try {
-            String jwt = parseJwt(request);
-            // logger.info("JWT Token: {}", jwt);
-            if (jwt != null && jwtUtils.validateJwtToken(jwt)) {
-                String username = jwtUtils.getUserNameFromJwtToken(jwt);
-                // logger.info("JWT valid, username: {}", username);
+            // 1. Récupérer le token (Authorization: Bearer xxx)
+            String jwt = jwtHttpSupport.resolveBearerToken(request);
 
+            if (jwt != null && jwtService.isValid(jwt)) {
+                // 2. Extraire le username
+                String username = jwtService.extractSubject(jwt);
+
+                // 3. Charger les détails utilisateur
                 UserDetails userDetails = userService.loadUserByUsername(username);
+
+                // 4. Créer un objet Authentication
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         userDetails,
                         null,
                         userDetails.getAuthorities());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
+                // 5. Sauvegarder dans le contexte de sécurité
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         } catch (Exception e) {
-            logger.error("Error processing auth filter", e);
-        } finally {
-            filterChain.doFilter(request, response);
+            logger.error("Erreur dans JwtTokenFilter", e);
         }
-    }
 
-    private String parseJwt(HttpServletRequest request) {
-        String jwt = jwtUtils.getJwtFromAuthorizationHeader(request);
-        // logger.info("Parsed JWT: {}", jwt);
-        return jwt;
+        // Toujours poursuivre la chaîne
+        filterChain.doFilter(request, response);
     }
 }

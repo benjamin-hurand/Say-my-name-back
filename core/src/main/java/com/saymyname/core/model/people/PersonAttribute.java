@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 public class PersonAttribute {
-    private long id;
+    private Long id;
     private Attribute attribute;
     private String value;
     private Person person;
@@ -23,7 +23,7 @@ public class PersonAttribute {
         this.validTo = builder.validTo;
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
@@ -47,7 +47,7 @@ public class PersonAttribute {
         return validTo;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -72,14 +72,14 @@ public class PersonAttribute {
     }
 
     public static class Builder {
-        private long id;
+        private Long id;
         private Attribute attribute;
         private String value;
         private Person person;
         private LocalDateTime validFrom;
         private LocalDateTime validTo;
 
-        public Builder withId(long id) {
+        public Builder withId(Long id) {
             this.id = id;
             return this;
         }
@@ -116,8 +116,10 @@ public class PersonAttribute {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof PersonAttribute)) return false;
+        if (this == o)
+            return true;
+        if (!(o instanceof PersonAttribute))
+            return false;
         PersonAttribute that = (PersonAttribute) o;
         return id == that.id &&
                 Objects.equals(attribute, that.attribute) &&

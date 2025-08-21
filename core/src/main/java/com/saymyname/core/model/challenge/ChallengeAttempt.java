@@ -11,7 +11,7 @@ import java.util.Objects;
  * utilisateur.
  */
 public class ChallengeAttempt {
-    private long id;
+    private Long id;
     private User user; // Utilisateur participant
     private ChallengeVersion challengeVersion; // Version du challenge tentée
     private AttemptStatus status; // Statut de la tentative (en cours, terminée, abandonnée)
@@ -34,7 +34,7 @@ public class ChallengeAttempt {
     }
 
     // Getters
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
@@ -63,7 +63,7 @@ public class ChallengeAttempt {
     }
 
     // Setters
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -93,7 +93,7 @@ public class ChallengeAttempt {
 
     // Builder
     public static class Builder {
-        private long id;
+        private Long id;
         private User user;
         private ChallengeVersion challengeVersion;
         private AttemptStatus status;
@@ -101,7 +101,7 @@ public class ChallengeAttempt {
         private LocalDateTime attemptEnd;
         private int correctAnswers;
 
-        public Builder withId(long id) {
+        public Builder withId(Long id) {
             this.id = id;
             return this;
         }

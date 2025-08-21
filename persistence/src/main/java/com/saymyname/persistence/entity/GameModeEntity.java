@@ -10,8 +10,7 @@ public class GameModeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
-
+    private Long id;
     @Column(name = "game_mode_title", nullable = false, length = 255)
     private String gameModeTitle;
 
@@ -26,7 +25,8 @@ public class GameModeEntity {
 
     // Constructors, getters, setters, equals, hashCode, and toString methods
 
-    public GameModeEntity() {}
+    public GameModeEntity() {
+    }
 
     public GameModeEntity(String gameModeTitle, String gameModeDescription, String operator) {
         this.gameModeTitle = gameModeTitle;
@@ -34,7 +34,8 @@ public class GameModeEntity {
         this.operator = operator;
     }
 
-    public GameModeEntity(long id, String gameModeTitle, String gameModeDescription, String operator, List<GameModeAttributeEntity> gameModeAttributes) {
+    public GameModeEntity(Long id, String gameModeTitle, String gameModeDescription, String operator,
+            List<GameModeAttributeEntity> gameModeAttributes) {
         this.id = id;
         this.gameModeTitle = gameModeTitle;
         this.gameModeDescription = gameModeDescription;
@@ -42,11 +43,11 @@ public class GameModeEntity {
         this.gameModeAttributes = gameModeAttributes;
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -84,8 +85,10 @@ public class GameModeEntity {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof GameModeEntity)) return false;
+        if (this == o)
+            return true;
+        if (!(o instanceof GameModeEntity))
+            return false;
         GameModeEntity that = (GameModeEntity) o;
         return id == that.id &&
                 Objects.equals(gameModeTitle, that.gameModeTitle) &&

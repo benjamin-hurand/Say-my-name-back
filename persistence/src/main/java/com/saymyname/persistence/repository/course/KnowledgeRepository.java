@@ -50,9 +50,9 @@ public interface KnowledgeRepository extends JpaRepository<KnowledgeEntity, Long
           difficulty                 = VALUES(difficulty)
       """, nativeQuery = true)
   void upsertKnowledge(
-      @Param("userId") long userId,
-      @Param("gameModeId") long gameModeId,
-      @Param("personId") long personId,
+      @Param("userId") Long userId,
+      @Param("gameModeId") Long gameModeId,
+      @Param("personId") Long personId,
       @Param("nextReviewDate") LocalDateTime nextReviewDate,
       @Param("totalCount") int totalCount,
       @Param("srs_streak") int srs_streak,
@@ -117,10 +117,10 @@ public interface KnowledgeRepository extends JpaRepository<KnowledgeEntity, Long
       LIMIT :limit
       """, nativeQuery = true)
   int insertNextKnowledgesForCourse(
-      @Param("courseId") long courseId,
-      @Param("userId") long userId,
-      @Param("gameModeId") long gameModeId,
-      @Param("sortingAttributeId") long sortingAttributeId,
+      @Param("courseId") Long courseId,
+      @Param("userId") Long userId,
+      @Param("gameModeId") Long gameModeId,
+      @Param("sortingAttributeId") Long sortingAttributeId,
       @Param("sortingOrder") String sortingOrder,
       @Param("initialEf") double initialEaseFactor,
       @Param("initialDiff") double initialDifficuly,
@@ -388,8 +388,8 @@ public interface KnowledgeRepository extends JpaRepository<KnowledgeEntity, Long
    * dont le status n'est pas MASTERED.
    */
   List<KnowledgeEntity> findByGameModeIdAndUserIdAndStatusNot(
-      long gameModeId,
-      long userId,
+      Long gameModeId,
+      Long userId,
       KnowledgeStatus statusExcluded);
 
 }

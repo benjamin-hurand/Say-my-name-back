@@ -12,8 +12,7 @@ public class ChallengeAttemptEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
-
+    private Long id;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
@@ -38,7 +37,7 @@ public class ChallengeAttemptEntity {
     public ChallengeAttemptEntity() {
     }
 
-    public ChallengeAttemptEntity(long id, UserEntity user, ChallengeVersionEntity challengeVersion,
+    public ChallengeAttemptEntity(Long id, UserEntity user, ChallengeVersionEntity challengeVersion,
             AttemptStatus status,
             LocalDateTime attemptStart, LocalDateTime attemptEnd, int correctAnswers) {
         this.id = id;
@@ -51,11 +50,11 @@ public class ChallengeAttemptEntity {
     }
 
     // Getters and setters
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -109,7 +108,7 @@ public class ChallengeAttemptEntity {
 
     // Builder
     public static class Builder {
-        private long id;
+        private Long id;
         private UserEntity user;
         private ChallengeVersionEntity challengeVersion;
         private AttemptStatus status;
@@ -117,7 +116,7 @@ public class ChallengeAttemptEntity {
         private LocalDateTime attemptEnd;
         private int correctAnswers;
 
-        public Builder withId(long id) {
+        public Builder withId(Long id) {
             this.id = id;
             return this;
         }

@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 import com.saymyname.core.model.challenge.ChallengeQuestion;
 import com.saymyname.core.model.course.Knowledge;
 import com.saymyname.core.model.game.QuizEntry;
-import com.saymyname.core.model.people.Photo;
+import com.saymyname.core.model.people.Person;
 import com.saymyname.webapp.dto.QuizEntryDto;
 
 @Component
@@ -21,15 +21,21 @@ public class QuizEntryDtoMapper {
     }
 
     public QuizEntryDto toDto(ChallengeQuestion challengeQuestion, String initials) {
-        Photo photo = challengeQuestion.getPerson().getPhoto();
-        String fullUrl = (photo != null) ? toPublicUrl(photo.getStorageKey()) : null;
-        return new QuizEntryDto(challengeQuestion.getPerson().getId(), fullUrl, initials);
+        Person person = challengeQuestion.getPerson();
+        String fullUrl = person.getApprovedPhoto()
+                .map(photo -> toPublicUrl(photo.getStorageKey()))
+                .orElse(null);
+
+        return new QuizEntryDto(person.getId(), fullUrl, initials);
     }
 
     public QuizEntryDto toDto(Knowledge knowledge, String initials) {
-        Photo photo = knowledge.getPerson().getPhoto();
-        String fullUrl = (photo != null) ? toPublicUrl(photo.getStorageKey()) : null;
-        return new QuizEntryDto(knowledge.getPerson().getId(), fullUrl, initials);
+        Person person = knowledge.getPerson();
+        String fullUrl = person.getApprovedPhoto()
+                .map(photo -> toPublicUrl(photo.getStorageKey()))
+                .orElse(null);
+
+        return new QuizEntryDto(person.getId(), fullUrl, initials);
     }
 
     /**

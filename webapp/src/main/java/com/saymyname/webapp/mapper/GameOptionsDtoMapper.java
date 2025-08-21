@@ -24,7 +24,7 @@ public class GameOptionsDtoMapper {
         // logger.info("Mapping GameOptionsDto to GameOptions - Start");
         GameOptions.Builder builder = new GameOptions.Builder();
         // logger.info("Mapping GameOptionsDto to GameOptions - Setting id");
-        builder.withId(gameOptionsDto.id().longValue());
+        builder.withId(gameOptionsDto.id());
         // logger.info("Mapping GameOptionsDto to GameOptions - Setting filters");
         builder.withFilters(gameOptionsDto.filters().stream().map(gameAttributeFilterDtoMapper::toModel).toList());
         // logger.info("Mapping GameOptionsDto to GameOptions - Setting sortBy");

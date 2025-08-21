@@ -5,7 +5,7 @@ import com.saymyname.core.model.people.Attribute;
 import java.util.Objects;
 
 public class GameAttributeFilter {
-    private long id;
+    private Long id;
     private Attribute attribute;
     private String minValue;
     private String maxValue;
@@ -22,7 +22,7 @@ public class GameAttributeFilter {
     }
 
     // Getters
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
@@ -40,13 +40,13 @@ public class GameAttributeFilter {
 
     // Builder class
     public static class Builder {
-        private long id;
+        private Long id;
         private Attribute attribute;
         private String minValue;
         private String maxValue;
 
         // Setters for each field that return the builder for chaining
-        public Builder withId(long id) {
+        public Builder withId(Long id) {
             this.id = id;
             return this;
         }
@@ -75,8 +75,10 @@ public class GameAttributeFilter {
     // equals, hashCode, and toString methods
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof GameAttributeFilter that)) return false;
+        if (this == o)
+            return true;
+        if (!(o instanceof GameAttributeFilter that))
+            return false;
         return getId() == that.getId() &&
                 Objects.equals(getAttribute(), that.getAttribute()) &&
                 Objects.equals(getMinValue(), that.getMinValue()) &&

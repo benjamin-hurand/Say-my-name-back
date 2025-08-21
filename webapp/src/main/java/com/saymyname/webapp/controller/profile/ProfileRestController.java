@@ -1,7 +1,6 @@
 package com.saymyname.webapp.controller.profile;
 
 import java.security.Principal;
-import java.util.List;
 import java.util.Optional;
 
 import org.springframework.http.ResponseEntity;
@@ -10,19 +9,15 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.saymyname.core.model.people.Person;
 import com.saymyname.core.model.people.PersonAttribute;
 import com.saymyname.service.profile.ProfileService;
 import com.saymyname.webapp.dto.PersonDto;
 import com.saymyname.webapp.dto.profile.CreatePersonAttributeRequest;
-import com.saymyname.webapp.dto.profile.PersonAttributePatch;
 import com.saymyname.webapp.dto.profile.ProfileResponseDto;
 import com.saymyname.webapp.dto.profile.UpdatePersonAttributesRequest;
 import com.saymyname.webapp.mapper.PersonAttributeDtoMapper;
@@ -75,25 +70,6 @@ public class ProfileRestController {
         profileService.updatePersonAttributes(principal.getName(), models);
 
         // renvoyer le profil à jour puisque le front l'attend
-        var personOpt = profileService.getProfile(principal.getName());
-        var personDto = personOpt.map(personDtoMapper::toDto).orElse(null);
-        return ResponseEntity.ok(new ProfileResponseDto(personDto));
-    }
-
-    // ---------- PATCH PHOTO (upload OU suppression si null) ----------
-    // Le front envoie un FormData { photo: Blob } ; pour supprimer il envoie
-    // "null".
-    // On garde un seul mapping, avec @RequestPart facultatif pour couvrir les 2
-    // cas.
-    @PatchMapping(value = "/photo", consumes = { "multipart/form-data" })
-    public ResponseEntity<ProfileResponseDto> patchPhoto(
-            @RequestPart(value = "photo", required = false) MultipartFile photo,
-            Principal principal) {
-        if (photo == null || photo.isEmpty()) {
-            profileService.deletePhoto(principal.getName());
-        } else {
-            profileService.updatePhoto(principal.getName(), photo);
-        }
         var personOpt = profileService.getProfile(principal.getName());
         var personDto = personOpt.map(personDtoMapper::toDto).orElse(null);
         return ResponseEntity.ok(new ProfileResponseDto(personDto));

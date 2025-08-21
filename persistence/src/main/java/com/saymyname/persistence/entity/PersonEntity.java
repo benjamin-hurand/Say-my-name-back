@@ -1,18 +1,9 @@
 package com.saymyname.persistence.entity;
 
+import jakarta.persistence.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "persons")
@@ -20,52 +11,41 @@ public class PersonEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @JoinColumn(name = "photo_id")
-    private PhotoEntity photo;
-
-    @OneToOne
-    @JoinColumn(name = "user_id", unique = true)
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
     private UserEntity user;
 
-    @OneToMany(mappedBy = "person", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<PersonAttributeEntity> attributes;
+    @OneToMany(mappedBy = "person", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PersonAttributeEntity> attributes = new ArrayList<>();
 
-    // Constructors, getters, setters, equals, hashCode, and toString methods
+    @OneToMany(mappedBy = "person", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PhotoEntity> photos = new ArrayList<>();
+
+    // --- Constructors
 
     public PersonEntity() {
     }
 
-    public PersonEntity(long id, String firstName, String lastName, PhotoEntity photo, UserEntity user,
-            List<PersonAttributeEntity> attributes) {
-        this.id = id;
-        this.photo = photo;
+    public PersonEntity(UserEntity user) {
         this.user = user;
-        this.attributes = attributes;
     }
 
-    public PersonEntity(PhotoEntity photo, UserEntity user, List<PersonAttributeEntity> attributes) {
-        this.photo = photo;
+    public PersonEntity(UserEntity user, List<PersonAttributeEntity> attributes, List<PhotoEntity> photos) {
         this.user = user;
-        this.attributes = attributes;
+        this.attributes = attributes != null ? attributes : new ArrayList<>();
+        this.photos = photos != null ? photos : new ArrayList<>();
     }
 
-    public long getId() {
+    // --- Getters & Setters
+
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
-    }
-
-    public PhotoEntity getPhoto() {
-        return photo;
-    }
-
-    public void setPhoto(PhotoEntity photo) {
-        this.photo = photo;
     }
 
     public UserEntity getUser() {
@@ -81,8 +61,48 @@ public class PersonEntity {
     }
 
     public void setAttributes(List<PersonAttributeEntity> attributes) {
-        this.attributes = attributes;
+        this.attributes = attributes != null ? attributes : new ArrayList<>();
     }
+
+    public List<PhotoEntity> getPhotos() {
+        return photos;
+    }
+
+    public void setPhotos(List<PhotoEntity> photos) {
+        this.photos = photos != null ? photos : new ArrayList<>();
+    }
+
+    // --- Helpers pour maintenir la relation bidirectionnelle
+
+    public void addAttribute(PersonAttributeEntity attribute) {
+        if (attribute == null)
+            return;
+        attributes.add(attribute);
+        attribute.setPerson(this);
+    }
+
+    public void removeAttribute(PersonAttributeEntity attribute) {
+        if (attribute == null)
+            return;
+        attributes.remove(attribute);
+        attribute.setPerson(null);
+    }
+
+    public void addPhoto(PhotoEntity photo) {
+        if (photo == null)
+            return;
+        photos.add(photo);
+        photo.setPerson(this);
+    }
+
+    public void removePhoto(PhotoEntity photo) {
+        if (photo == null)
+            return;
+        photos.remove(photo);
+        photo.setPerson(null);
+    }
+
+    // --- equals & hashCode (basés uniquement sur id)
 
     @Override
     public boolean equals(Object o) {
@@ -91,24 +111,23 @@ public class PersonEntity {
         if (!(o instanceof PersonEntity))
             return false;
         PersonEntity that = (PersonEntity) o;
-        return id == that.id &&
-                Objects.equals(photo, that.photo) &&
-                Objects.equals(user, that.user) &&
-                Objects.equals(attributes, that.attributes);
+        return Objects.equals(this.id, that.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, photo, user, attributes);
+        return Objects.hash(this.id);
     }
+
+    // --- toString (évite de charger les listes en LAZY)
 
     @Override
     public String toString() {
         return "PersonEntity{" +
                 "id=" + id +
-                ", photo=" + photo +
-                ", user=" + user +
-                ", attributes=" + attributes +
+                ", userId=" + (user != null ? user.getId() : null) +
+                ", attributesCount=" + (attributes != null ? attributes.size() : 0) +
+                ", photosCount=" + (photos != null ? photos.size() : 0) +
                 '}';
     }
 }

@@ -1,16 +1,18 @@
 package com.saymyname.persistence.entity;
 
+import com.saymyname.core.model.enums.PhotoStatus;
 import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
 import java.util.Objects;
-
-import com.saymyname.core.model.enums.PhotoStatus;
 
 @Entity
 @Table(name = "photos", indexes = {
         @Index(name = "idx_photos_person", columnList = "person_id"),
         @Index(name = "idx_photos_status", columnList = "status"),
         @Index(name = "idx_photos_approved_by", columnList = "approved_by")
+// NB: les contraintes uniques fonctionnelles (IF(status='...')) restent gérées
+// en SQL.
 })
 public class PhotoEntity {
 
@@ -18,37 +20,43 @@ public class PhotoEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "storage_key", nullable = true, length = 255)
+    /** NOT NULL en base */
+    @Column(name = "storage_key", nullable = false, length = 255)
     private String storageKey;
 
-    @Column(name = "created_at", updatable = false, nullable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 20)
-    private PhotoStatus status = PhotoStatus.PENDING;
-
-    @Column(name = "is_primary", nullable = false)
-    private boolean isPrimary = false;
-
-    @Column(name = "approved_at")
-    private LocalDateTime approvedAt;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "approved_by", foreignKey = @ForeignKey(name = "fk_photos_approved_by"))
-    private UserEntity approvedBy;
-
-    @Column(name = "rejected_reason", length = 255)
-    private String rejectedReason;
-
+    /** FK obligatoire vers persons */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "person_id", nullable = false, foreignKey = @ForeignKey(name = "fk_photos_person"))
     private PersonEntity person;
 
-    // === Constructeurs ===
+    /** ENUM('PENDING','APPROVED') NOT NULL DEFAULT 'PENDING' */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20, columnDefinition = "ENUM('PENDING','APPROVED')")
+    private PhotoStatus status = PhotoStatus.PENDING;
+
+    /**
+     * NOT NULL DEFAULT CURRENT_TIMESTAMP en base.
+     * On délègue au DEFAULT MySQL : insertable=false pour laisser la BDD poser la
+     * valeur.
+     */
+    @Column(name = "submitted_at", nullable = false, updatable = false, insertable = false)
+    private LocalDateTime submittedAt;
+
+    /** User ayant soumis la photo (NOT NULL) */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "submitted_by", nullable = false, foreignKey = @ForeignKey(name = "fk_photos_submitted_by"))
+    private UserEntity submittedBy;
+
+    /** Date d’approbation (nullable) */
+    @Column(name = "approved_at")
+    private LocalDateTime approvedAt;
+
+    /** User ayant approuvé la photo (nullable) */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "approved_by", foreignKey = @ForeignKey(name = "fk_photos_approved_by"))
+    private UserEntity approvedBy;
+
+    // ==== Constructeurs ====
     public PhotoEntity() {
     }
 
@@ -57,20 +65,7 @@ public class PhotoEntity {
         this.storageKey = storageKey;
     }
 
-    // === Hooks JPA ===
-    @PrePersist
-    public void prePersist() {
-        if (createdAt == null) {
-            createdAt = LocalDateTime.now();
-        }
-    }
-
-    @PreUpdate
-    public void preUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
-
-    // === Getters/Setters ===
+    // ==== Getters/Setters ====
     public Long getId() {
         return id;
     }
@@ -87,20 +82,12 @@ public class PhotoEntity {
         this.storageKey = storageKey;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
+    public PersonEntity getPerson() {
+        return person;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
+    public void setPerson(PersonEntity person) {
+        this.person = person;
     }
 
     public PhotoStatus getStatus() {
@@ -111,12 +98,20 @@ public class PhotoEntity {
         this.status = status;
     }
 
-    public boolean isPrimary() {
-        return isPrimary;
+    public LocalDateTime getSubmittedAt() {
+        return submittedAt;
     }
 
-    public void setPrimary(boolean primary) {
-        isPrimary = primary;
+    public void setSubmittedAt(LocalDateTime submittedAt) {
+        this.submittedAt = submittedAt;
+    }
+
+    public UserEntity getSubmittedBy() {
+        return submittedBy;
+    }
+
+    public void setSubmittedBy(UserEntity submittedBy) {
+        this.submittedBy = submittedBy;
     }
 
     public LocalDateTime getApprovedAt() {
@@ -135,23 +130,7 @@ public class PhotoEntity {
         this.approvedBy = approvedBy;
     }
 
-    public String getRejectedReason() {
-        return rejectedReason;
-    }
-
-    public void setRejectedReason(String rejectedReason) {
-        this.rejectedReason = rejectedReason;
-    }
-
-    public PersonEntity getPerson() {
-        return person;
-    }
-
-    public void setPerson(PersonEntity person) {
-        this.person = person;
-    }
-
-    // === equals / hashCode / toString ===
+    // ==== equals/hashCode/toString ====
     @Override
     public boolean equals(Object o) {
         if (this == o)
@@ -173,9 +152,10 @@ public class PhotoEntity {
                 "id=" + id +
                 ", storageKey='" + storageKey + '\'' +
                 ", status=" + status +
-                ", isPrimary=" + isPrimary +
-                ", createdAt=" + createdAt +
-                ", updatedAt=" + updatedAt +
+                ", submittedAt=" + submittedAt +
+                ", submittedBy=" + (submittedBy != null ? submittedBy.getId() : null) +
+                ", approvedAt=" + approvedAt +
+                ", approvedBy=" + (approvedBy != null ? approvedBy.getId() : null) +
                 '}';
     }
 }

@@ -3,16 +3,12 @@ package com.saymyname.persistence.dao;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import com.saymyname.core.exception.profile.RequiredAttributeDeletionException;
 import com.saymyname.core.model.people.PersonAttribute;
-import com.saymyname.persistence.entity.AttributeEntity;
 import com.saymyname.persistence.entity.PersonAttributeEntity;
-import com.saymyname.persistence.entity.PersonEntity;
 import com.saymyname.persistence.mapper.PersonAttributeEntityMapper;
 import com.saymyname.persistence.repository.AttributeRepository;
 import com.saymyname.persistence.repository.PersonAttributeRepository;

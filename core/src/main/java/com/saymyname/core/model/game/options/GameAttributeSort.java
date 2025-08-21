@@ -5,7 +5,7 @@ import com.saymyname.core.model.people.Attribute;
 import java.util.Objects;
 
 public class GameAttributeSort {
-    private long id;
+    private Long id;
     private Attribute attribute;
     private String order;
 
@@ -20,7 +20,7 @@ public class GameAttributeSort {
     }
 
     // Getters
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
@@ -34,12 +34,12 @@ public class GameAttributeSort {
 
     // Builder class
     public static class Builder {
-        private long id;
+        private Long id;
         private Attribute attribute;
         private String order;
 
         // Setters for each field that return the builder for chaining
-        public Builder withId(long id) {
+        public Builder withId(Long id) {
             this.id = id;
             return this;
         }
@@ -63,8 +63,10 @@ public class GameAttributeSort {
     // equals, hashCode, and toString methods
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof GameAttributeSort that)) return false;
+        if (this == o)
+            return true;
+        if (!(o instanceof GameAttributeSort that))
+            return false;
         return getId() == that.getId() &&
                 Objects.equals(getAttribute(), that.getAttribute()) &&
                 Objects.equals(getOrder(), that.getOrder());

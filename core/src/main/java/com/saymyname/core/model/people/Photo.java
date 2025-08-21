@@ -1,49 +1,54 @@
 package com.saymyname.core.model.people;
 
 import com.saymyname.core.model.enums.PhotoStatus;
+import com.saymyname.core.model.common.User;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
 
+/**
+ * Modèle domaine aligné avec la table 'photos'.
+ * Rappels métier :
+ * - Une seule PENDING et une seule APPROVED par personne.
+ * - Les rejetées ne sont pas conservées (suppression).
+ * - submittedBy est toujours présent; approvedBy est optionnel.
+ */
 public class Photo {
 
     private Long id;
     private String storageKey;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 
+    /** ENUM('PENDING','APPROVED'), par défaut PENDING */
     private PhotoStatus status = PhotoStatus.PENDING;
-    private boolean isPrimary = false;
 
+    /** NOT NULL en BDD (DEFAULT CURRENT_TIMESTAMP) */
+    private LocalDateTime submittedAt;
+
+    /** User ayant soumis (NOT NULL) */
+    private User submittedBy;
+
+    /** Optionnels (approbation) */
     private LocalDateTime approvedAt;
-    /**
-     * Identifiant de l'user ayant approuvé (on évite de coupler le modèle à une
-     * classe User ici)
-     */
-    private Long approvedById;
+    private User approvedBy;
 
-    private String rejectedReason;
-
+    /** Lien vers la personne (modèle de domaine) */
     private Person person;
 
     public Photo() {
     }
 
-    private Photo(Builder builder) {
-        this.id = builder.id;
-        this.storageKey = builder.storageKey;
-        this.createdAt = builder.createdAt;
-        this.updatedAt = builder.updatedAt;
-        this.status = builder.status != null ? builder.status : PhotoStatus.PENDING;
-        this.isPrimary = builder.isPrimary;
-        this.approvedAt = builder.approvedAt;
-        this.approvedById = builder.approvedById;
-        this.rejectedReason = builder.rejectedReason;
-        this.person = builder.person;
+    private Photo(Builder b) {
+        this.id = b.id;
+        this.storageKey = b.storageKey;
+        this.status = b.status != null ? b.status : PhotoStatus.PENDING;
+        this.submittedAt = b.submittedAt;
+        this.submittedBy = b.submittedBy;
+        this.approvedAt = b.approvedAt;
+        this.approvedBy = b.approvedBy;
+        this.person = b.person;
     }
 
     // ===== Getters / Setters =====
-
     public Long getId() {
         return id;
     }
@@ -60,22 +65,6 @@ public class Photo {
         this.storageKey = storageKey;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
     public PhotoStatus getStatus() {
         return status;
     }
@@ -84,12 +73,20 @@ public class Photo {
         this.status = status;
     }
 
-    public boolean isPrimary() {
-        return isPrimary;
+    public LocalDateTime getSubmittedAt() {
+        return submittedAt;
     }
 
-    public void setPrimary(boolean primary) {
-        isPrimary = primary;
+    public void setSubmittedAt(LocalDateTime submittedAt) {
+        this.submittedAt = submittedAt;
+    }
+
+    public User getSubmittedBy() {
+        return submittedBy;
+    }
+
+    public void setSubmittedBy(User submittedBy) {
+        this.submittedBy = submittedBy;
     }
 
     public LocalDateTime getApprovedAt() {
@@ -100,20 +97,12 @@ public class Photo {
         this.approvedAt = approvedAt;
     }
 
-    public Long getApprovedById() {
-        return approvedById;
+    public User getApprovedBy() {
+        return approvedBy;
     }
 
-    public void setApprovedById(Long approvedById) {
-        this.approvedById = approvedById;
-    }
-
-    public String getRejectedReason() {
-        return rejectedReason;
-    }
-
-    public void setRejectedReason(String rejectedReason) {
-        this.rejectedReason = rejectedReason;
+    public void setApprovedBy(User approvedBy) {
+        this.approvedBy = approvedBy;
     }
 
     public Person getPerson() {
@@ -124,21 +113,24 @@ public class Photo {
         this.person = person;
     }
 
-    // ===== Builder =====
+    // ===== Helpers métier =====
+    public boolean isPending() {
+        return status == PhotoStatus.PENDING;
+    }
 
+    public boolean isApproved() {
+        return status == PhotoStatus.APPROVED;
+    }
+
+    // ===== Builder =====
     public static class Builder {
         private Long id;
         private String storageKey;
-        private LocalDateTime createdAt;
-        private LocalDateTime updatedAt;
-
         private PhotoStatus status = PhotoStatus.PENDING;
-        private boolean isPrimary = false;
-
+        private LocalDateTime submittedAt;
+        private User submittedBy;
         private LocalDateTime approvedAt;
-        private Long approvedById;
-        private String rejectedReason;
-
+        private User approvedBy;
         private Person person;
 
         public Builder withId(Long id) {
@@ -151,23 +143,18 @@ public class Photo {
             return this;
         }
 
-        public Builder withCreatedAt(LocalDateTime createdAt) {
-            this.createdAt = createdAt;
-            return this;
-        }
-
-        public Builder withUpdatedAt(LocalDateTime updatedAt) {
-            this.updatedAt = updatedAt;
-            return this;
-        }
-
         public Builder withStatus(PhotoStatus status) {
             this.status = status;
             return this;
         }
 
-        public Builder withPrimary(boolean primary) {
-            this.isPrimary = primary;
+        public Builder withSubmittedAt(LocalDateTime submittedAt) {
+            this.submittedAt = submittedAt;
+            return this;
+        }
+
+        public Builder withSubmittedBy(User submittedBy) {
+            this.submittedBy = submittedBy;
             return this;
         }
 
@@ -176,25 +163,13 @@ public class Photo {
             return this;
         }
 
-        public Builder withApprovedById(Long approvedById) {
-            this.approvedById = approvedById;
-            return this;
-        }
-
-        public Builder withRejectedReason(String rejectedReason) {
-            this.rejectedReason = rejectedReason;
+        public Builder withApprovedBy(User approvedBy) {
+            this.approvedBy = approvedBy;
             return this;
         }
 
         public Builder withPerson(Person person) {
             this.person = person;
-            return this;
-        }
-
-        /** Compat rétro — à supprimer lorsque tout le code appelant est migré */
-        @Deprecated
-        public Builder withPersonId(Person personId) {
-            this.person = personId;
             return this;
         }
 
@@ -204,7 +179,6 @@ public class Photo {
     }
 
     // ===== equals / hashCode / toString =====
-
     @Override
     public boolean equals(Object o) {
         if (this == o)
@@ -213,21 +187,18 @@ public class Photo {
             return false;
         Photo photo = (Photo) o;
 
-        // Si id non nul, on compare sur l'identité
         if (this.id != null && photo.id != null) {
             return Objects.equals(this.id, photo.id);
         }
-        // Sinon on tombe sur une comparaison “valeur” minimale et stable
         return Objects.equals(storageKey, photo.storageKey)
-                && Objects.equals(createdAt, photo.createdAt);
+                && Objects.equals(submittedAt, photo.submittedAt);
     }
 
     @Override
     public int hashCode() {
-        if (id != null) {
+        if (id != null)
             return Objects.hash(id);
-        }
-        return Objects.hash(storageKey, createdAt);
+        return Objects.hash(storageKey, submittedAt);
     }
 
     @Override
@@ -236,12 +207,10 @@ public class Photo {
                 "id=" + id +
                 ", storageKey='" + storageKey + '\'' +
                 ", status=" + status +
-                ", isPrimary=" + isPrimary +
-                ", createdAt=" + createdAt +
-                ", updatedAt=" + updatedAt +
+                ", submittedAt=" + submittedAt +
+                ", submittedBy=" + (submittedBy != null ? submittedBy.getUsername() : null) +
                 ", approvedAt=" + approvedAt +
-                ", approvedById=" + approvedById +
-                ", rejectedReason='" + rejectedReason + '\'' +
+                ", approvedBy=" + (approvedBy != null ? approvedBy.getUsername() : null) +
                 ", person=" + (person != null ? person.getId() : null) +
                 '}';
     }

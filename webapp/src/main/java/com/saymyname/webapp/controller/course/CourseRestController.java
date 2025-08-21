@@ -17,7 +17,6 @@ import com.saymyname.core.model.course.Course;
 import com.saymyname.core.model.course.CourseQuestionHistory;
 import com.saymyname.core.model.enums.KnowledgeStatus;
 import com.saymyname.core.util.InitialCrafter;
-import com.saymyname.service.ChallengeService;
 import com.saymyname.service.course.CourseQuestionHistoryService;
 import com.saymyname.service.course.CourseService;
 import com.saymyname.service.course.KnowledgeService;
@@ -108,7 +107,7 @@ public class CourseRestController {
         // 2. Soumettre une réponse & récupérer la suite
         @PostMapping("/{courseId}/answer")
         public CourseAnswerAndNextQuestionDto answer(
-                        @PathVariable("courseId") long courseId,
+                        @PathVariable("courseId") Long courseId,
                         @RequestBody CourseAnswerDto answerDto) {
 
                 CourseQuestionHistory answerHistory = courseQuestionHistoryDtoMapper.toModel(answerDto);

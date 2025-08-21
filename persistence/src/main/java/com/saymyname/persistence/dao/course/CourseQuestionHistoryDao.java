@@ -35,7 +35,7 @@ public class CourseQuestionHistoryDao {
     }
 
     @Transactional
-    public CourseQuestionHistory findById(long id) {
+    public CourseQuestionHistory findById(Long id) {
         return courseQuestionHistoryRepository.findById(id)
                 .map(mapper::toModel)
                 .orElse(null);

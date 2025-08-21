@@ -24,7 +24,7 @@ public class CourseDao {
         this.courseEntityMapper = courseEntityMapper;
     }
 
-    public Optional<Course> getCurrentCourse(long userId) {
+    public Optional<Course> getCurrentCourse(Long userId) {
         return courseRepo.findFirstByUserIdAndStatus(userId, CourseStatus.IN_PROGRESS)
                 .map(courseEntityMapper::toModel);
     }
