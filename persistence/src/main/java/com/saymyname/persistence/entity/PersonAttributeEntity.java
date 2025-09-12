@@ -11,12 +11,13 @@ public class PersonAttributeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "attribute_id")
+    @JoinColumn(name = "attribute_id", nullable = false)
     private AttributeEntity attribute;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "person_id")
+    @JoinColumn(name = "person_id", nullable = false)
     private PersonEntity person;
 
     @Column(name = "value", length = 255)
@@ -28,18 +29,32 @@ public class PersonAttributeEntity {
     @Column(name = "valid_to")
     private LocalDateTime validTo;
 
+    /** MySQL: tinyint(1) NOT NULL DEFAULT 0 */
+    @Column(name = "is_pending_delete", nullable = false, columnDefinition = "tinyint(1) default 0")
+    private boolean pendingDelete = false;
+
     public PersonAttributeEntity() {
+        // boolean primitif => false par défaut
     }
 
-    public PersonAttributeEntity(Long id, AttributeEntity attribute, String value, LocalDateTime validFrom,
-            LocalDateTime validTo) {
+    public PersonAttributeEntity(
+            Long id,
+            AttributeEntity attribute,
+            PersonEntity person,
+            String value,
+            LocalDateTime validFrom,
+            LocalDateTime validTo,
+            boolean pendingDelete) {
         this.id = id;
         this.attribute = attribute;
+        this.person = person;
         this.value = value;
         this.validFrom = validFrom;
         this.validTo = validTo;
+        this.pendingDelete = pendingDelete;
     }
 
+    // --- Getters / Setters ---
     public Long getId() {
         return id;
     }
@@ -88,35 +103,40 @@ public class PersonAttributeEntity {
         this.validTo = validTo;
     }
 
+    public boolean isPendingDelete() {
+        return pendingDelete;
+    }
+
+    public void setPendingDelete(boolean pendingDelete) {
+        this.pendingDelete = pendingDelete;
+    }
+
+    // --- equals / hashCode basés sur l'id ---
     @Override
     public boolean equals(Object o) {
         if (this == o)
             return true;
-        if (o == null || getClass() != o.getClass())
+        if (!(o instanceof PersonAttributeEntity))
             return false;
         PersonAttributeEntity that = (PersonAttributeEntity) o;
-        return id == that.id &&
-                Objects.equals(attribute, that.attribute) &&
-                Objects.equals(person, that.person) &&
-                Objects.equals(value, that.value) &&
-                Objects.equals(validFrom, that.validFrom) &&
-                Objects.equals(validTo, that.validTo);
+        return Objects.equals(id, that.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, attribute, person, value, validFrom, validTo);
+        return Objects.hashCode(id);
     }
 
     @Override
     public String toString() {
         return "PersonAttributeEntity{" +
                 "id=" + id +
-                ", attribute=" + attribute +
-                ", person=" + person +
+                ", attribute=" + (attribute != null ? attribute.getId() : null) +
+                ", person=" + (person != null ? person.getId() : null) +
                 ", value='" + value + '\'' +
                 ", validFrom=" + validFrom +
                 ", validTo=" + validTo +
+                ", pendingDelete=" + pendingDelete +
                 '}';
     }
 }

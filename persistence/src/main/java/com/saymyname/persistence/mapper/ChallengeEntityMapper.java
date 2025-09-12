@@ -14,8 +14,8 @@ public class ChallengeEntityMapper {
     private final UserEntityMapper userEntityMapper;
 
     public ChallengeEntityMapper(GameModeEntityMapper gameModeEntityMapper,
-                                 AttributeEntityMapper attributeEntityMapper,
-                                 UserEntityMapper userEntityMapper) {
+            AttributeEntityMapper attributeEntityMapper,
+            UserEntityMapper userEntityMapper) {
         this.gameModeEntityMapper = gameModeEntityMapper;
         this.attributeEntityMapper = attributeEntityMapper;
         this.userEntityMapper = userEntityMapper;
@@ -49,14 +49,14 @@ public class ChallengeEntityMapper {
                 .withAttribute(attribute)
                 .withMinValue(minValue)
                 .withMaxValue(maxValue)
-                .build(); 
+                .build();
         return new Challenge.Builder()
                 .withId(entity.getId())
                 .withDescription(entity.getDescription())
                 .withGameMode(gameModeEntityMapper.toModel(entity.getGameMode()))
                 .withFilterAttribute(filterAttribute)
                 .withCreationDate(entity.getCreationDate())
-                .withCreator(userEntityMapper.toModel(entity.getCreator()))
+                .withCreator(userEntityMapper.toShortModel(entity.getCreator()))
                 .build();
     }
 }

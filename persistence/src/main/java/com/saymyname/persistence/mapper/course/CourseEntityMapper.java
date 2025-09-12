@@ -52,7 +52,7 @@ public class CourseEntityMapper {
             return null;
         return new Course.Builder()
                 .withId(e.getId())
-                .withUser(userMapper.toModel(e.getUser()))
+                .withUser(userMapper.toShortModel(e.getUser()))
                 .withGameMode(gameModeMapper.toModel(e.getGameMode()))
                 .withSortingAttribute(attributeMapper.toModel(e.getSortingAttribute()))
                 .withSortingOrder(e.getSortingOrder())

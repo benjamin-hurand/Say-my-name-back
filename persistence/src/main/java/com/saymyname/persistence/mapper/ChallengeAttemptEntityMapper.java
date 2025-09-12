@@ -37,7 +37,7 @@ public class ChallengeAttemptEntityMapper {
         }
         return new ChallengeAttempt.Builder()
                 .withId(entity.getId())
-                .withUser(userEntityMapper.toModel(entity.getUser()))
+                .withUser(userEntityMapper.toShortModel(entity.getUser()))
                 .withChallengeVersion(challengeVersionEntityMapper.toModel(entity.getChallengeVersion()))
                 .withStatus(entity.getStatus())
                 .withAttemptStart(entity.getAttemptStart())

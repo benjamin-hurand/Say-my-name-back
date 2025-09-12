@@ -1,12 +1,15 @@
+// src/main/java/com/saymyname/service/ChallengeSeasonService.java
 package com.saymyname.service;
 
 import com.saymyname.core.model.challenge.ChallengeSeason;
+import com.saymyname.core.model.challenge.SeasonConstants;
 import com.saymyname.persistence.dao.ChallengeSeasonDao;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
-import java.time.DayOfWeek;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -14,95 +17,160 @@ public class ChallengeSeasonService {
 
     private final ChallengeSeasonDao challengeSeasonDao;
 
+    // Cache en mémoire (instance unique Spring)
+    private volatile ChallengeSeason cachedCurrentSeason;
+    private volatile ChallengeSeason cachedNextSeason;
+
     public ChallengeSeasonService(ChallengeSeasonDao challengeSeasonDao) {
         this.challengeSeasonDao = challengeSeasonDao;
     }
 
-    /**
-     * Renvoie la saison de challenge couvrant le moment donné.
-     * 
-     * @param now la date et heure actuelle
-     * @return Optional contenant la saison si trouvée, sinon vide.
-     */
-    public Optional<ChallengeSeason> getCurrentSeason(LocalDateTime now) {
-        return challengeSeasonDao.findSeasonCoveringDate(now);
+    /* ===================== API publique minimale ===================== */
+
+    /** Version Optional — à privilégier côté appelant. */
+    public Optional<ChallengeSeason> getCurrentSeasonOpt() {
+        return getSeasonOptInternal(SeasonKind.CURRENT);
+    }
+
+    /** Version Optional — à privilégier côté appelant. */
+    public Optional<ChallengeSeason> getNextSeasonOpt() {
+        return getSeasonOptInternal(SeasonKind.NEXT);
+    }
+
+    /** Variante qui jette si indisponible (s’appuie sur la version Optional). */
+    public ChallengeSeason getCurrentSeasonOrThrow() {
+        return getCurrentSeasonOpt()
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.INTERNAL_SERVER_ERROR, "Invariant season: aucune saison disponible"));
+    }
+
+    /** Variante qui jette si indisponible (s’appuie sur la version Optional). */
+    public ChallengeSeason getNextSeasonOrThrow() {
+        return getNextSeasonOpt()
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.INTERNAL_SERVER_ERROR, "Invariant season: aucune saison disponible"));
+    }
+
+    /* ===================== Hooks démarrage + cron ===================== */
+
+    /** Démarrage : assure les saisons en BD et chauffe le cache (1 seule passe). */
+    public void onAppStart() {
+        ensureAndWarmNow();
+        // Purge déplacée dans SeasonMaintenanceService pour éviter les dépendances
+        // croisées
+    }
+
+    /** Tick planifié (ex. lundi 09:00) : même logique que le démarrage. */
+    public void onCronTick() {
+        ensureAndWarmNow();
+        // Purge déplacée dans SeasonMaintenanceService pour éviter les dépendances
+        // croisées
+    }
+
+    /** Expose aussi une action manuelle si tu veux déclencher depuis ailleurs. */
+    public boolean ensureAndWarmNow() {
+        SeasonsPair pair = ensureSeasonsFor(LocalDateTime.now());
+        return warmCacheAndReturnIfChanged(pair);
+    }
+
+    /* ===================== Implémentation factorisée ===================== */
+
+    private enum SeasonKind {
+        CURRENT, NEXT
     }
 
     /**
-     * Renvoie la saison suivante (celle dont le numéro est N+1 par rapport à la saison actuelle).
+     * Chemin principal sans exceptions : tente le cache, sinon assure en BD et warm
+     * le cache.
      */
-    public Optional<ChallengeSeason> getNextSeason() {
-        return challengeSeasonDao.findNextSeason();
-    }
-
-    /**
-     * Vérifie et crée la saison en cours et la saison suivante (N+1).
-     */
-    public void createSeasonsIfMissing() {
-        createCurrentSeasonIfMissing();
-        createNextSeasonIfMissing();
-    }
-
-    /**
-     * Crée la saison couvrant le moment actuel, si elle est manquante.
-     * La saison commence le lundi à 9h et se termine le dimanche à 23h59m59s.
-     */
-    public void createCurrentSeasonIfMissing() {
+    private Optional<ChallengeSeason> getSeasonOptInternal(SeasonKind kind) {
         LocalDateTime now = LocalDateTime.now();
-        // Calculer le lundi de la semaine en cours à 9h
-        LocalDateTime startDate = now.with(DayOfWeek.MONDAY).with(LocalTime.of(9, 0));
-        // Fin : exactement 7 jours plus tard, moins 1 seconde (donc la saison dure exactement 7 jours)
-        LocalDateTime endDate = startDate.plusDays(7).minusSeconds(1);
-        Optional<ChallengeSeason> currentSeasonOpt = challengeSeasonDao.findSeasonCoveringDate(now);
-        if (!currentSeasonOpt.isPresent()) {
-            // Créer la saison pour la semaine en cours
-            ChallengeSeason newSeason = new ChallengeSeason.Builder()
-                    .withSeasonNumber(1)  // Démarrage à 1 si aucune saison n'existe
-                    .withStartDate(startDate)
-                    .withEndDate(endDate)
-                    .build();
-            ChallengeSeason savedSeason = challengeSeasonDao.save(newSeason);
-            System.out.println("Saison en cours créée : " + savedSeason.getStartDate() + " à " + savedSeason.getEndDate());
-        } else {
-            System.out.println("Saison en cours déjà existante : " + currentSeasonOpt.get());
+
+        // 1) Cache valide ? (et next présent si demandé)
+        if (!isCurrentCacheValid(now) || (kind == SeasonKind.NEXT && cachedNextSeason == null)) {
+            // 2) Cache invalide → assure en BD (trouve ou crée) puis warm le cache
+            SeasonsPair pair = ensureSeasonsFor(now);
+            warmCacheAndReturnIfChanged(pair);
         }
+
+        ChallengeSeason result = (kind == SeasonKind.CURRENT) ? cachedCurrentSeason : cachedNextSeason;
+        return Optional.ofNullable(result);
     }
-    
+
+    /** Cache valide si la "current" existe et couvre 'now'. */
+    private boolean isCurrentCacheValid(LocalDateTime now) {
+        ChallengeSeason c = this.cachedCurrentSeason;
+        return c != null && !now.isBefore(c.getStartDate()) && !now.isAfter(c.getEndDate());
+    }
 
     /**
-     * Crée la saison suivante (N+1) si elle n'existe pas.
-     * Cette méthode utilise getNextSeason() pour vérifier son existence.
+     * Assure la présence de la saison courante (couvrant 'ref') et de la suivante :
+     * - tente de trouver en BD
+     * - crée si manquante
+     * Retourne les 2 objets (créés ou trouvés) pour warm le cache sans re-SELECT.
      */
-    public void createNextSeasonIfMissing() {
-        // On tente d'obtenir la saison couvrant l'instant actuel.
-        Optional<ChallengeSeason> currentSeasonOpt = challengeSeasonDao.findSeasonCoveringDate(LocalDateTime.now());
-        // Définir la durée d'une saison en jours (ici 7 jours)
-        final int SEASON_DURATION_DAYS = 7;
-        LocalDateTime nextStartDate;
-        if (currentSeasonOpt.isPresent()) {
-            // La saison suivante commence 1 seconde après la fin de la saison courante.
-            nextStartDate = currentSeasonOpt.get().getEndDate().plusSeconds(1);
-        } else {
-            // Si aucune saison n'existe, on part du prochain lundi à 9h.
-            LocalDateTime now = LocalDateTime.now();
-            nextStartDate = now.plusWeeks(1).with(DayOfWeek.MONDAY).with(LocalTime.of(9, 0));
+    private SeasonsPair ensureSeasonsFor(LocalDateTime ref) {
+        // 1) Saison courante
+        ChallengeSeason current = challengeSeasonDao.findSeasonCoveringDate(ref).orElse(null);
+        if (current == null) {
+            LocalDateTime start = seasonStartFor(ref);
+            LocalDateTime end = start.plusDays(SeasonConstants.DURATION_DAYS).minusSeconds(1);
+            int seasonNumber = 1; // par défaut si table vide (ajuste via DAO si besoin)
+            current = challengeSeasonDao.save(new ChallengeSeason.Builder()
+                    .withSeasonNumber(seasonNumber)
+                    .withStartDate(start)
+                    .withEndDate(end)
+                    .build());
         }
-        
-        // Vérifier si une saison couvrant nextStartDate existe déjà.
-        Optional<ChallengeSeason> nextSeasonOpt = challengeSeasonDao.findSeasonCoveringDate(nextStartDate);
-        if (nextSeasonOpt.isEmpty()) {
-            // La fin de la saison est calculée en ajoutant SEASON_DURATION_DAYS et en retirant 1 seconde.
-            LocalDateTime nextEndDate = nextStartDate.plusDays(SEASON_DURATION_DAYS).minusSeconds(1);
-            int newSeasonNumber = currentSeasonOpt.map(season -> season.getSeasonNumber() + 1).orElse(1);
-            ChallengeSeason newSeason = new ChallengeSeason.Builder()
-                    .withSeasonNumber(newSeasonNumber)
-                    .withStartDate(nextStartDate)
-                    .withEndDate(nextEndDate)
-                    .build();
-            ChallengeSeason savedSeason = challengeSeasonDao.save(newSeason);
-            System.out.println("Saison suivante créée : " + savedSeason.getStartDate() + " à " + savedSeason.getEndDate());
-        } else {
-            System.out.println("Saison suivante déjà existante : " + nextSeasonOpt.get());
+
+        // 2) Saison suivante (démarre à +1s de la fin de l’actuelle)
+        LocalDateTime nextStart = current.getEndDate().plusSeconds(1);
+        ChallengeSeason next = challengeSeasonDao.findSeasonCoveringDate(nextStart).orElse(null);
+        if (next == null) {
+            LocalDateTime nextEnd = nextStart.plusDays(SeasonConstants.DURATION_DAYS).minusSeconds(1);
+            int nextNumber = current.getSeasonNumber() + 1;
+            next = challengeSeasonDao.save(new ChallengeSeason.Builder()
+                    .withSeasonNumber(nextNumber)
+                    .withStartDate(nextStart)
+                    .withEndDate(nextEnd)
+                    .build());
         }
+
+        return new SeasonsPair(current, next);
+    }
+
+    /** Écrit les deux saisons dans le cache (idempotent). */
+    private void warmCache(SeasonsPair pair) {
+        if (!sameSeason(this.cachedCurrentSeason, pair.current)) {
+            this.cachedCurrentSeason = pair.current;
+        }
+        if (!sameSeason(this.cachedNextSeason, pair.next)) {
+            this.cachedNextSeason = pair.next;
+        }
+    }
+
+    /** Warm + renvoie si la "current" a changé (utile pour déclencher des jobs). */
+    private boolean warmCacheAndReturnIfChanged(SeasonsPair pair) {
+        boolean changed = !sameSeason(this.cachedCurrentSeason, pair.current);
+        warmCache(pair);
+        return changed;
+    }
+
+    private boolean sameSeason(ChallengeSeason a, ChallengeSeason b) {
+        if (a == null || b == null)
+            return a == b;
+        // Compare saison par (numéro + bornes) — adapte si tu as un ID stable
+        return a.getSeasonNumber() == b.getSeasonNumber()
+                && Objects.equals(a.getStartDate(), b.getStartDate())
+                && Objects.equals(a.getEndDate(), b.getEndDate());
+    }
+
+    /** Calcule le début de saison à partir des constantes (jour + heure). */
+    private LocalDateTime seasonStartFor(LocalDateTime ref) {
+        return ref.with(SeasonConstants.START_DOW).with(SeasonConstants.START_TIME);
+    }
+
+    /* ===================== Types internes ===================== */
+    private record SeasonsPair(ChallengeSeason current, ChallengeSeason next) {
     }
 }

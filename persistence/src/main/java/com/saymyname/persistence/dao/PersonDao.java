@@ -1,15 +1,17 @@
 package com.saymyname.persistence.dao;
 
-import com.saymyname.core.model.common.User;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.saymyname.core.model.game.options.GameOptions;
 import com.saymyname.core.model.people.Person;
 import com.saymyname.persistence.entity.PersonEntity;
 import com.saymyname.persistence.mapper.PersonEntityMapper;
 import com.saymyname.persistence.repository.PersonRepository;
-import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
-import java.util.List;
-import java.util.Optional;
 
 @Repository
 public class PersonDao {
@@ -38,9 +40,27 @@ public class PersonDao {
         return personEntityMapper.toModelList(personRepository.findByOptions(options));
     }
 
-    @Transactional
-    public Optional<Person> findByUser(User user) {
-        Optional<PersonEntity> entityOpt = personRepository.findByUserId(user.getId());
-        return entityOpt.map(personEntityMapper::toModel);
+    @Transactional(readOnly = true)
+    public Optional<Long> findPersonIdByUserId(Long userId) {
+        return personRepository.findIdByUserId(userId);
+    }
+
+    // Chaque "preload" exige une transaction existante (celle du service)
+    @Transactional(propagation = Propagation.MANDATORY, readOnly = true)
+    public void preloadAttributesGraph(Long personId) {
+        // Charge p + attributes + attribute (ManyToOne) dans le PC
+        personRepository.fetchAttributesGraph(personId);
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY, readOnly = true)
+    public void preloadPhotos(Long personId) {
+        personRepository.fetchPhotos(personId);
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY, readOnly = true)
+    public Optional<Person> mapManagedToModel(Long personId) {
+        // Récupère l’ENTITY managée dans le PC et mappe → Model
+        Optional<PersonEntity> pOpt = personRepository.findById(personId);
+        return pOpt.map(personEntityMapper::toModel);
     }
 }

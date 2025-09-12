@@ -18,6 +18,7 @@ public class Person {
 
     private Long id;
     private User user;
+
     private List<PersonAttribute> attributes = Collections.emptyList();
     private List<Photo> photos = Collections.emptyList();
 
@@ -32,6 +33,7 @@ public class Person {
         setPhotos(builder.photos);
     }
 
+    // --- Getters
     public Long getId() {
         return id;
     }
@@ -60,6 +62,7 @@ public class Person {
                 .findFirst();
     }
 
+    // --- Setters
     public void setId(Long id) {
         this.id = id;
     }
@@ -76,6 +79,7 @@ public class Person {
         this.photos = photos != null ? new ArrayList<>(photos) : Collections.emptyList();
     }
 
+    // --- Builder
     public static class Builder {
         private Long id;
         private User user;
@@ -107,6 +111,7 @@ public class Person {
         }
     }
 
+    // --- equals/hashCode sur id uniquement
     @Override
     public boolean equals(Object o) {
         if (this == o)

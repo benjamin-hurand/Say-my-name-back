@@ -3,6 +3,9 @@ package com.saymyname.persistence.entity;
 import jakarta.persistence.*;
 import java.util.Objects;
 
+import com.saymyname.core.model.enums.EditPolicy;
+import com.saymyname.core.model.people.AttributeType;
+
 @Entity
 @Table(name = "attributes")
 public class AttributeEntity {
@@ -10,11 +13,12 @@ public class AttributeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     @Column(name = "attribute_name", nullable = false, length = 255)
     private String attributeName;
 
-    @Column(name = "unique", nullable = false)
-    private boolean unique;
+    @Column(name = "max_values", nullable = false)
+    private int maxValues; // anciennement "unique"
 
     @Column(name = "filter", nullable = false)
     private boolean filter;
@@ -28,11 +32,13 @@ public class AttributeEntity {
     @Column(name = "required", nullable = false)
     private boolean required;
 
-    // New column for type (using ENUM or VARCHAR, depending on your DB setup)
+    @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false, length = 50)
-    private String type;
+    private AttributeType type;
 
-    // Constructors, getters, setters, builder, equals, hashCode, and toString
+    @Enumerated(EnumType.STRING)
+    @Column(name = "edit_policy", nullable = false, length = 20)
+    private EditPolicy editPolicy = EditPolicy.FREE;
 
     public AttributeEntity() {
     }
@@ -40,13 +46,16 @@ public class AttributeEntity {
     private AttributeEntity(Builder builder) {
         this.id = builder.id;
         this.attributeName = builder.attributeName;
-        this.unique = builder.unique;
+        this.maxValues = builder.maxValues;
         this.filter = builder.filter;
         this.sort = builder.sort;
         this.initializable = builder.initializable;
         this.required = builder.required;
         this.type = builder.type;
+        this.editPolicy = builder.editPolicy != null ? builder.editPolicy : EditPolicy.FREE;
     }
+
+    // --- Getters & Setters ---
 
     public Long getId() {
         return id;
@@ -64,12 +73,12 @@ public class AttributeEntity {
         this.attributeName = attributeName;
     }
 
-    public boolean isUnique() {
-        return unique;
+    public int getMaxValues() {
+        return maxValues;
     }
 
-    public void setUnique(boolean unique) {
-        this.unique = unique;
+    public void setMaxValues(int maxValues) {
+        this.maxValues = maxValues;
     }
 
     public boolean isFilter() {
@@ -104,24 +113,33 @@ public class AttributeEntity {
         this.required = required;
     }
 
-    public String getType() {
+    public AttributeType getType() {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(AttributeType type) {
         this.type = type;
     }
 
-    // Builder Pattern
+    public EditPolicy getEditPolicy() {
+        return editPolicy;
+    }
+
+    public void setEditPolicy(EditPolicy editPolicy) {
+        this.editPolicy = editPolicy;
+    }
+
+    // --- Builder ---
     public static class Builder {
         private Long id;
         private String attributeName;
-        private boolean unique;
+        private int maxValues;
         private boolean filter;
         private boolean sort;
         private boolean initializable;
         private boolean required;
-        private String type;
+        private AttributeType type;
+        private EditPolicy editPolicy;
 
         public Builder withId(Long id) {
             this.id = id;
@@ -133,8 +151,8 @@ public class AttributeEntity {
             return this;
         }
 
-        public Builder withUnique(boolean unique) {
-            this.unique = unique;
+        public Builder withMaxValues(int maxValues) {
+            this.maxValues = maxValues;
             return this;
         }
 
@@ -158,8 +176,13 @@ public class AttributeEntity {
             return this;
         }
 
-        public Builder withType(String type) {
+        public Builder withType(AttributeType type) {
             this.type = type;
+            return this;
+        }
+
+        public Builder withEditPolicy(EditPolicy editPolicy) {
+            this.editPolicy = editPolicy;
             return this;
         }
 
@@ -168,6 +191,8 @@ public class AttributeEntity {
         }
     }
 
+    // --- equals / hashCode / toString ---
+
     @Override
     public boolean equals(Object o) {
         if (this == o)
@@ -175,19 +200,20 @@ public class AttributeEntity {
         if (!(o instanceof AttributeEntity))
             return false;
         AttributeEntity that = (AttributeEntity) o;
-        return id == that.id &&
-                unique == that.unique &&
+        return maxValues == that.maxValues &&
                 filter == that.filter &&
                 sort == that.sort &&
                 initializable == that.initializable &&
                 required == that.required &&
+                Objects.equals(id, that.id) &&
                 Objects.equals(attributeName, that.attributeName) &&
-                Objects.equals(type, that.type);
+                Objects.equals(type, that.type) &&
+                editPolicy == that.editPolicy;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, attributeName, unique, filter, sort, initializable, required, type);
+        return Objects.hash(id, attributeName, maxValues, filter, sort, initializable, required, type, editPolicy);
     }
 
     @Override
@@ -195,12 +221,13 @@ public class AttributeEntity {
         return "AttributeEntity{" +
                 "id=" + id +
                 ", attributeName='" + attributeName + '\'' +
-                ", unique=" + unique +
+                ", maxValues=" + maxValues +
                 ", filter=" + filter +
                 ", sort=" + sort +
                 ", initializable=" + initializable +
                 ", required=" + required +
                 ", type='" + type + '\'' +
+                ", editPolicy=" + editPolicy +
                 '}';
     }
 }

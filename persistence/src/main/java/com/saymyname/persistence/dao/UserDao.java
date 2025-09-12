@@ -1,7 +1,5 @@
 package com.saymyname.persistence.dao;
 
-import java.util.List;
-
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Repository;
 
@@ -22,12 +20,6 @@ public class UserDao {
         this.userEntityMapper = userEntityMapper;
     }
 
-    public List<User> findAll() {
-        return userRepository.findAll().stream()
-                .map(userEntityMapper::toModel)
-                .toList();
-    }
-
     public User findById(Long id) {
         return userRepository.findById(id).map(userEntityMapper::toModel)
                 .orElseThrow(() -> new EntityNotFoundException("Entity user not found with id " + id));
@@ -35,14 +27,6 @@ public class UserDao {
 
     public User save(User user) {
         return userEntityMapper.toModel(userRepository.save(userEntityMapper.toEntity(user)));
-    }
-
-    public User update(User user) {
-        return userEntityMapper.toModel(userRepository.save(userEntityMapper.toEntity(user)));
-    }
-
-    public void delete(User user) {
-        userRepository.delete(userEntityMapper.toEntity(user));
     }
 
     public boolean checkIfEmailExists(String email) {
@@ -53,15 +37,11 @@ public class UserDao {
         return userRepository.existsByUsername(username);
     }
 
-    public void deleteById(Long id) {
-        userRepository.deleteById(id);
-    }
-
     public User findByEmailOrUsername(String identifier) {
         return userEntityMapper.toModel(findEntityByEmailOrUsername(identifier));
     }
 
-    public UserEntity findEntityByEmailOrUsername(String identifier) {
+    private UserEntity findEntityByEmailOrUsername(String identifier) {
         return userRepository.findByEmailOrUsername(identifier).orElseThrow(
                 () -> new UsernameNotFoundException("Entity user not found with email or username " + identifier));
     }

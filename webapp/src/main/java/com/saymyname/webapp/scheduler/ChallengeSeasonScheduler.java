@@ -1,5 +1,6 @@
 package com.saymyname.webapp.scheduler;
 
+import com.saymyname.core.model.challenge.SeasonConstants;
 import com.saymyname.service.ChallengeSeasonService;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -13,10 +14,9 @@ public class ChallengeSeasonScheduler {
         this.challengeSeasonService = challengeSeasonService;
     }
 
-    // Par exemple, planifié tous les lundis à 00:00 pour vérifier la création des saisons
-    @Scheduled(cron = "0 0 0 * * MON")
-    public void scheduleCreateSeasons() {
-        System.out.println("Scheduler déclenché : vérification des saisons (courante et suivante).");
-        challengeSeasonService.createSeasonsIfMissing();
+    // Déclenché au passage de saison (même source de vérité que le service)
+    @Scheduled(cron = SeasonConstants.BOUNDARY_CRON)
+    public void onSeasonBoundaryTick() {
+        challengeSeasonService.onCronTick();
     }
 }

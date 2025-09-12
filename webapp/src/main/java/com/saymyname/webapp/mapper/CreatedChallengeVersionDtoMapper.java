@@ -3,7 +3,8 @@ package com.saymyname.webapp.mapper;
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.challenge.ChallengeVersion;
-import com.saymyname.webapp.dto.CreatedChallengeVersionDto;
+import com.saymyname.webapp.dto.challenge.CreatedChallengeVersionDto;
+import com.saymyname.webapp.mapper.challenge.ChallengeDtoMapper;
 
 @Component
 public class CreatedChallengeVersionDtoMapper {
@@ -20,8 +21,7 @@ public class CreatedChallengeVersionDtoMapper {
                 model.getStartDate(),
                 model.getFirstSeason().getSeasonNumber(),
                 challengeDtoMapper.toDto(model.getChallenge()),
-                model.getQuestionCount()
-            );
+                model.getQuestionCount());
     }
-    
+
 }

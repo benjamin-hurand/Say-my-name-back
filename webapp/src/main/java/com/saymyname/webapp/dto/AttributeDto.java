@@ -3,12 +3,14 @@ package com.saymyname.webapp.dto;
 public record AttributeDto(
                 Long id,
                 String name,
-                Boolean unique,
+                Integer maxValues, // anciennement Boolean unique
                 Boolean filter,
                 Boolean sort,
                 Boolean initializable,
                 Boolean required,
-                String type,
+                String type, // ex: "TEXT", "DATE"…
                 String minValue,
-                String maxValue) {
+                String maxValue,
+                String editPolicy // "FREE" | "RESTRICTED"
+) {
 }

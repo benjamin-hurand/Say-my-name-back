@@ -13,7 +13,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.saymyname.core.model.people.Person;
 import com.saymyname.service.PersonAttributeService;
 import com.saymyname.service.PersonService;
-import com.saymyname.webapp.dto.PersonAttributeDto;
+import com.saymyname.webapp.dto.PersonAttributeLiteDto;
 import com.saymyname.webapp.mapper.PersonAttributeDtoMapper;
 
 @RestController
@@ -48,11 +48,11 @@ public class PersonRestController {
     }
 
     @GetMapping("/{id}/attributes")
-    public ResponseEntity<List<PersonAttributeDto>> getAttributesById(@PathVariable(name = "id") Long id) {
-        List<PersonAttributeDto> personAttributeDtoList = personAttributeService
+    public ResponseEntity<List<PersonAttributeLiteDto>> getAttributesById(@PathVariable(name = "id") Long id) {
+        List<PersonAttributeLiteDto> personAttributeDtoList = personAttributeService
                 .getAttributesByPersonId(id)
                 .stream()
-                .map(personAttributeDtoMapper::toDto)
+                .map(personAttributeDtoMapper::toLiteDto)
                 .toList();
         // personAttributeDtoList);
         return new ResponseEntity<>(personAttributeDtoList, HttpStatus.OK);

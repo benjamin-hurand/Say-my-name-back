@@ -5,6 +5,6 @@ import java.util.List;
 public record PersonDto(
                 Long id,
                 UserDto user,
-                List<ReducedPersonAttributeDto> attributes,
+                List<PersonAttributeDto> attributes,
                 List<PhotoDto> photos) {
 }

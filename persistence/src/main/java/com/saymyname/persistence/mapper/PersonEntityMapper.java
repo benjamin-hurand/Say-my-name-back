@@ -12,90 +12,90 @@ import com.saymyname.persistence.entity.PersonEntity;
 @Component
 public class PersonEntityMapper {
 
-    private final PhotoEntityMapper photoEntityMapper;
-    private final UserEntityMapper userEntityMapper;
-    private final PersonAttributeEntityMapper personAttributeEntityMapper;
+        private final PhotoEntityMapper photoEntityMapper;
+        private final UserEntityMapper userEntityMapper;
+        private final PersonAttributeEntityMapper personAttributeEntityMapper;
 
-    @Autowired
-    public PersonEntityMapper(PhotoEntityMapper photoEntityMapper,
-            UserEntityMapper userEntityMapper,
-            PersonAttributeEntityMapper personAttributeEntityMapper) {
-        this.photoEntityMapper = photoEntityMapper;
-        this.userEntityMapper = userEntityMapper;
-        this.personAttributeEntityMapper = personAttributeEntityMapper;
-    }
-
-    // --- Entity ⇐ Model
-    public PersonEntity toEntity(Person person) {
-        if (person == null) {
-            return null;
-        }
-        PersonEntity personEntity = new PersonEntity();
-        personEntity.setId(person.getId());
-        personEntity.setUser(userEntityMapper.toEntity(person.getUser()));
-
-        // Attributes
-        if (person.getAttributes() != null) {
-            personEntity.setAttributes(
-                    person.getAttributes().stream()
-                            .map(personAttributeEntityMapper::toEntity)
-                            .collect(Collectors.toList()));
+        @Autowired
+        public PersonEntityMapper(PhotoEntityMapper photoEntityMapper,
+                        UserEntityMapper userEntityMapper,
+                        PersonAttributeEntityMapper personAttributeEntityMapper) {
+                this.photoEntityMapper = photoEntityMapper;
+                this.userEntityMapper = userEntityMapper;
+                this.personAttributeEntityMapper = personAttributeEntityMapper;
         }
 
-        // Photos
-        if (person.getPhotos() != null) {
-            personEntity.setPhotos(
-                    person.getPhotos().stream()
-                            .map(photoEntityMapper::toEntity)
-                            .collect(Collectors.toList()));
+        // --- Entity ⇐ Model
+        public PersonEntity toEntity(Person person) {
+                if (person == null) {
+                        return null;
+                }
+                PersonEntity personEntity = new PersonEntity();
+                personEntity.setId(person.getId());
+                personEntity.setUser(userEntityMapper.toEntity(person.getUser()));
+
+                // Attributes
+                if (person.getAttributes() != null) {
+                        personEntity.setAttributes(
+                                        person.getAttributes().stream()
+                                                        .map(personAttributeEntityMapper::toEntity)
+                                                        .collect(Collectors.toList()));
+                }
+
+                // Photos
+                if (person.getPhotos() != null) {
+                        personEntity.setPhotos(
+                                        person.getPhotos().stream()
+                                                        .map(photoEntityMapper::toEntity)
+                                                        .collect(Collectors.toList()));
+                }
+
+                return personEntity;
         }
 
-        return personEntity;
-    }
-
-    // --- Model ⇐ Entity
-    public Person toModel(PersonEntity personEntity) {
-        if (personEntity == null) {
-            return null;
+        // --- Model ⇐ Entity
+        public Person toModel(PersonEntity personEntity) {
+                if (personEntity == null) {
+                        return null;
+                }
+                return new Person.Builder()
+                                .withId(personEntity.getId())
+                                .withUser(userEntityMapper.toShortModel(personEntity.getUser()))
+                                .withAttributes(
+                                                personEntity.getAttributes() != null
+                                                                ? personEntity.getAttributes().stream()
+                                                                                .map(personAttributeEntityMapper::toModel)
+                                                                                .collect(Collectors.toList())
+                                                                : List.of())
+                                .withPhotos(
+                                                personEntity.getPhotos() != null
+                                                                ? personEntity.getPhotos().stream()
+                                                                                .map(photoEntityMapper::toModel)
+                                                                                .collect(Collectors.toList())
+                                                                : List.of())
+                                .build();
         }
-        return new Person.Builder()
-                .withId(personEntity.getId())
-                .withUser(userEntityMapper.toModel(personEntity.getUser()))
-                .withAttributes(
-                        personEntity.getAttributes() != null
-                                ? personEntity.getAttributes().stream()
-                                        .map(personAttributeEntityMapper::toModel)
-                                        .collect(Collectors.toList())
-                                : List.of())
-                .withPhotos(
-                        personEntity.getPhotos() != null
-                                ? personEntity.getPhotos().stream()
-                                        .map(photoEntityMapper::toModel)
-                                        .collect(Collectors.toList())
-                                : List.of())
-                .build();
-    }
 
-    // --- Short model (id only)
-    public Person toShortModel(PersonEntity personEntity) {
-        if (personEntity == null) {
-            return null;
+        // --- Short model (id only)
+        public Person toShortModel(PersonEntity personEntity) {
+                if (personEntity == null) {
+                        return null;
+                }
+                return new Person.Builder()
+                                .withId(personEntity.getId())
+                                .build();
         }
-        return new Person.Builder()
-                .withId(personEntity.getId())
-                .build();
-    }
 
-    // --- List conversions
-    public List<Person> toModelList(List<PersonEntity> personEntities) {
-        return personEntities.stream()
-                .map(this::toModel)
-                .collect(Collectors.toList());
-    }
+        // --- List conversions
+        public List<Person> toModelList(List<PersonEntity> personEntities) {
+                return personEntities.stream()
+                                .map(this::toModel)
+                                .collect(Collectors.toList());
+        }
 
-    public List<PersonEntity> toEntityList(List<Person> persons) {
-        return persons.stream()
-                .map(this::toEntity)
-                .collect(Collectors.toList());
-    }
+        public List<PersonEntity> toEntityList(List<Person> persons) {
+                return persons.stream()
+                                .map(this::toEntity)
+                                .collect(Collectors.toList());
+        }
 }

@@ -2,7 +2,6 @@ package com.saymyname.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,14 +51,8 @@ public class ChallengeService {
             throw new ChallengeAlreadyExistsException("Un challenge avec ce mode et ce filtre existe déjà.");
         }
 
-        // 2. Récupérer la saison suivante via le service
-        Optional<ChallengeSeason> nextSeasonOpt = challengeSeasonService.getNextSeason();
-        if (nextSeasonOpt.isEmpty()) {
-            // Si la saison suivante n'existe pas, la créer puis la récupérer
-            challengeSeasonService.createNextSeasonIfMissing();
-            nextSeasonOpt = challengeSeasonService.getNextSeason();
-        }
-        ChallengeSeason nextSeason = nextSeasonOpt.get();
+        // 2) Récupérer la saison suivante
+        ChallengeSeason nextSeason = challengeSeasonService.getNextSeasonOrThrow();
 
         // 3. Vérifier qu'il existe suffisamment de questions (>=10) pour le challenge
         // dans la saison suivante

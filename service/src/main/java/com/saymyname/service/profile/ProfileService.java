@@ -43,88 +43,26 @@ public class ProfileService {
         } catch (UsernameNotFoundException ex) {
             throw new UserNotFoundException(login);
         }
-        return personService.getPersonByUser(user);
+        return personService.getPersonByUserWithAllAttributes(user);
     }
 
+    /**
+     * Orchestration bulk au niveau profil (identifié par username).
+     * Delegue l’application des changements au PersonAttributeService.
+     */
     @Transactional
-    public void updatePersonAttributes(String login, List<PersonAttribute> patches) {
-        if (login == null || login.isBlank())
-            throw new InvalidUsernameException("Login invalide : " + login);
+    public List<PersonAttribute> applyAttributeChanges(
+            String username,
+            Long attributeId,
+            List<PersonAttribute> toCreate,
+            List<PersonAttribute> toUpdate,
+            List<PersonAttribute> toDelete) {
 
-        final User user;
-        try {
-            user = userService.findByEmailOrUsername(login);
-        } catch (UsernameNotFoundException ex) {
-            throw new UserNotFoundException(login);
-        }
+        Person person = getProfile(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profil introuvable"));
 
-        Person person = personService.getPersonByUser(user)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Personne associée introuvable"));
-
-        for (PersonAttribute patch : patches) {
-            if (patch.getValue() == null) {
-                personAttributeService.deleteByIdAndPersonId(patch.getId(), person.getId());
-            } else {
-                personAttributeService.updateValue(patch.getId(), person.getId(), patch.getValue());
-            }
-        }
+        // ⬇️ délègue et récupère l'état canonique
+        return personAttributeService.applyChangesForPerson(
+                person.getId(), attributeId, toCreate, toUpdate, toDelete);
     }
-
-    @Transactional
-    public PersonAttribute createPersonAttribute(String login, Long attributeId, String value) {
-        if (login == null || login.isBlank())
-            throw new InvalidUsernameException("Login invalide");
-        if (attributeId == null)
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "attributeId manquant");
-        if (value == null || value.trim().isEmpty())
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "value manquante");
-
-        final User user = userService.findByEmailOrUsername(login);
-        final Person person = personService.getPersonByUser(user)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Personne associée introuvable"));
-
-        return personAttributeService.createForPerson(person.getId(), attributeId, value.trim());
-    }
-
-    @Transactional
-    public void deletePersonAttribute(String login, Long personAttributeId) {
-        if (login == null || login.isBlank())
-            throw new InvalidUsernameException("Login invalide");
-        if (personAttributeId == null)
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "id manquant");
-
-        final User user = userService.findByEmailOrUsername(login);
-        final Person person = personService.getPersonByUser(user)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Personne associée introuvable"));
-
-        personAttributeService.deleteByIdAndPersonId(personAttributeId, person.getId());
-    }
-
-    // -------- Photos -> délégation au PhotoService --------
-
-    // @Transactional
-    // public void updatePhoto(String login, MultipartFile photo) {
-    // if (login == null || login.isBlank())
-    // throw new InvalidUsernameException("Login invalide");
-
-    // final User user = userService.findByEmailOrUsername(login);
-    // final Person person = personService.getPersonByUser(user)
-    // .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-    // "Personne associée introuvable"));
-
-    // photoService.replaceForPerson(person.getId(), photo); // <-- délègue
-    // }
-
-    // @Transactional
-    // public void deletePhoto(String login) {
-    // if (login == null || login.isBlank())
-    // throw new InvalidUsernameException("Login invalide");
-
-    // final User user = userService.findByEmailOrUsername(login);
-    // final Person person = personService.getPersonByUser(user)
-    // .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-    // "Personne associée introuvable"));
-
-    // photoService.deleteForPerson(person.getId()); // <-- délègue
-    // }
 }

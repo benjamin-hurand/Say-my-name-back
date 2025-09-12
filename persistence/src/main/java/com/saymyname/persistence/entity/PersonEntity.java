@@ -32,7 +32,8 @@ public class PersonEntity {
         this.user = user;
     }
 
-    public PersonEntity(UserEntity user, List<PersonAttributeEntity> attributes, List<PhotoEntity> photos) {
+    public PersonEntity(UserEntity user, List<PersonAttributeEntity> attributes,
+            List<PhotoEntity> photos) {
         this.user = user;
         this.attributes = attributes != null ? attributes : new ArrayList<>();
         this.photos = photos != null ? photos : new ArrayList<>();
@@ -70,36 +71,6 @@ public class PersonEntity {
 
     public void setPhotos(List<PhotoEntity> photos) {
         this.photos = photos != null ? photos : new ArrayList<>();
-    }
-
-    // --- Helpers pour maintenir la relation bidirectionnelle
-
-    public void addAttribute(PersonAttributeEntity attribute) {
-        if (attribute == null)
-            return;
-        attributes.add(attribute);
-        attribute.setPerson(this);
-    }
-
-    public void removeAttribute(PersonAttributeEntity attribute) {
-        if (attribute == null)
-            return;
-        attributes.remove(attribute);
-        attribute.setPerson(null);
-    }
-
-    public void addPhoto(PhotoEntity photo) {
-        if (photo == null)
-            return;
-        photos.add(photo);
-        photo.setPerson(this);
-    }
-
-    public void removePhoto(PhotoEntity photo) {
-        if (photo == null)
-            return;
-        photos.remove(photo);
-        photo.setPerson(null);
     }
 
     // --- equals & hashCode (basés uniquement sur id)

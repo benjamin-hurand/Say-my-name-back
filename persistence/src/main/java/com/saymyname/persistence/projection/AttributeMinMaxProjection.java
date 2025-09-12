@@ -5,21 +5,31 @@ import java.util.Date;
 
 public interface AttributeMinMaxProjection {
     Long getId();
+
     String getAttributeName();
-    Boolean getUnique();
+
+    Integer getMaxValues(); // anciennement getUnique()
+
     Boolean getFilter();
+
     Boolean getSort();
+
     Boolean getInitializable();
+
     String getType();
 
     // Raw values coming from the query
     // For numbers, we expect integer values; for dates, a Date object.
     Integer getMinNumberValue();
+
     Integer getMaxNumberValue();
+
     Date getMinDateValue();
+
     Date getMaxDateValue();
 
-    // Default methods to merge the values into one minValue / maxValue based on attribute type.
+    // Default methods to merge the values into one minValue / maxValue based on
+    // attribute type.
     default String getMinValue() {
         if ("number".equalsIgnoreCase(getType())) {
             return getMinNumberValue() != null ? String.valueOf(getMinNumberValue()) : null;

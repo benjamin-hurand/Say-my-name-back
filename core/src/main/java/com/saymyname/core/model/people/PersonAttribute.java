@@ -10,8 +10,11 @@ public class PersonAttribute {
     private Person person;
     private LocalDateTime validFrom;
     private LocalDateTime validTo;
+    /** Correspond à tinyint(1) NOT NULL DEFAULT 0 en base */
+    private boolean isPendingDelete;
 
     public PersonAttribute() {
+        this.isPendingDelete = false; // défaut
     }
 
     private PersonAttribute(Builder builder) {
@@ -21,8 +24,10 @@ public class PersonAttribute {
         this.person = builder.person;
         this.validFrom = builder.validFrom;
         this.validTo = builder.validTo;
+        this.isPendingDelete = builder.isPendingDelete != null && builder.isPendingDelete;
     }
 
+    // --- Getters ---
     public Long getId() {
         return id;
     }
@@ -47,6 +52,11 @@ public class PersonAttribute {
         return validTo;
     }
 
+    public boolean isPendingDelete() {
+        return isPendingDelete;
+    }
+
+    // --- Setters ---
     public void setId(Long id) {
         this.id = id;
     }
@@ -71,6 +81,11 @@ public class PersonAttribute {
         this.validTo = validTo;
     }
 
+    public void setPendingDelete(boolean pendingDelete) {
+        isPendingDelete = pendingDelete;
+    }
+
+    // --- Builder ---
     public static class Builder {
         private Long id;
         private Attribute attribute;
@@ -78,6 +93,7 @@ public class PersonAttribute {
         private Person person;
         private LocalDateTime validFrom;
         private LocalDateTime validTo;
+        private Boolean isPendingDelete; // nullable -> défaut false
 
         public Builder withId(Long id) {
             this.id = id;
@@ -109,11 +125,17 @@ public class PersonAttribute {
             return this;
         }
 
+        public Builder withPendingDelete(boolean isPendingDelete) {
+            this.isPendingDelete = isPendingDelete;
+            return this;
+        }
+
         public PersonAttribute build() {
             return new PersonAttribute(this);
         }
     }
 
+    // --- equals / hashCode ---
     @Override
     public boolean equals(Object o) {
         if (this == o)
@@ -121,7 +143,8 @@ public class PersonAttribute {
         if (!(o instanceof PersonAttribute))
             return false;
         PersonAttribute that = (PersonAttribute) o;
-        return id == that.id &&
+        return isPendingDelete == that.isPendingDelete &&
+                Objects.equals(id, that.id) &&
                 Objects.equals(attribute, that.attribute) &&
                 Objects.equals(value, that.value) &&
                 Objects.equals(person, that.person) &&
@@ -131,7 +154,7 @@ public class PersonAttribute {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, attribute, value, person, validFrom, validTo);
+        return Objects.hash(id, attribute, value, person, validFrom, validTo, isPendingDelete);
     }
 
     @Override
@@ -140,9 +163,10 @@ public class PersonAttribute {
                 "id=" + id +
                 ", attribute=" + attribute +
                 ", value='" + value + '\'' +
-                ", person=" + person +
+                ", person=" + (person != null ? person.getId() : null) +
                 ", validFrom=" + validFrom +
                 ", validTo=" + validTo +
+                ", isPendingDelete=" + isPendingDelete +
                 '}';
     }
 }

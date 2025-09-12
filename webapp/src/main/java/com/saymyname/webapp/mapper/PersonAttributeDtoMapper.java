@@ -2,6 +2,7 @@ package com.saymyname.webapp.mapper;
 
 import com.saymyname.core.model.people.PersonAttribute;
 import com.saymyname.webapp.dto.PersonAttributeDto;
+import com.saymyname.webapp.dto.PersonAttributeLiteDto;
 import com.saymyname.webapp.dto.ReducedPersonAttributeDto;
 import com.saymyname.webapp.dto.profile.PersonAttributePatch;
 
@@ -21,7 +22,9 @@ public class PersonAttributeDtoMapper {
                 personAttribute.getId(),
                 attributeDtoMapper.toDto(personAttribute.getAttribute()),
                 personAttribute.getValue(),
-                personAttribute.getPerson().getId());
+                personAttribute.getValidFrom(),
+                personAttribute.getValidTo(),
+                Boolean.TRUE.equals(personAttribute.isPendingDelete()));
     }
 
     public ReducedPersonAttributeDto toReducedDto(PersonAttribute personAttribute) {
@@ -29,6 +32,14 @@ public class PersonAttributeDtoMapper {
                 personAttribute.getId(),
                 attributeDtoMapper.toDto(personAttribute.getAttribute()),
                 personAttribute.getValue());
+    }
+
+    public PersonAttributeLiteDto toLiteDto(PersonAttribute personAttribute) {
+        return new PersonAttributeLiteDto(
+                personAttribute.getId(),
+                attributeDtoMapper.toDto(personAttribute.getAttribute()),
+                personAttribute.getValue(),
+                personAttribute.getPerson().getId());
     }
 
     public PersonAttribute patchDtoToModel(PersonAttributePatch dto) {

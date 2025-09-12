@@ -14,8 +14,8 @@ public class ChallengeSeasonDao {
     private final ChallengeSeasonRepository seasonRepository;
     private final ChallengeSeasonEntityMapper challengeSeasonEntityMapper;
 
-    public ChallengeSeasonDao(ChallengeSeasonRepository seasonRepository, 
-                              ChallengeSeasonEntityMapper challengeSeasonEntityMapper) {
+    public ChallengeSeasonDao(ChallengeSeasonRepository seasonRepository,
+            ChallengeSeasonEntityMapper challengeSeasonEntityMapper) {
         this.seasonRepository = seasonRepository;
         this.challengeSeasonEntityMapper = challengeSeasonEntityMapper;
     }
@@ -35,20 +35,5 @@ public class ChallengeSeasonDao {
         ChallengeSeasonEntity entity = challengeSeasonEntityMapper.toEntity(seasonModel);
         ChallengeSeasonEntity savedEntity = seasonRepository.save(entity);
         return challengeSeasonEntityMapper.toModel(savedEntity);
-    }
-
-    /**
-     * Recherche la saison suivante, c'est-à-dire celle dont le numéro est égal à
-     * (numéro de la saison actuelle + 1).
-     */
-    public Optional<ChallengeSeason> findNextSeason() {
-        // On suppose ici que la saison actuelle existe.
-        Optional<ChallengeSeason> currentSeasonOpt = findSeasonCoveringDate(LocalDateTime.now());
-        if (currentSeasonOpt.isPresent()) {
-            int nextSeasonNumber = currentSeasonOpt.get().getSeasonNumber() + 1;
-            return seasonRepository.findBySeasonNumber(nextSeasonNumber)
-                    .map(challengeSeasonEntityMapper::toModel);
-        }
-        return Optional.empty();
     }
 }

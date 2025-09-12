@@ -51,7 +51,7 @@ public class KnowledgeEntityMapper {
             return null;
         return new Knowledge.Builder()
                 .withId(e.getId())
-                .withUser(userMapper.toModel(e.getUser()))
+                .withUser(userMapper.toShortModel(e.getUser()))
                 .withGameMode(gameModeMapper.toModel(e.getGameMode()))
                 .withPerson(personMapper.toModel(e.getPerson()))
                 .withStatus(e.getStatus())

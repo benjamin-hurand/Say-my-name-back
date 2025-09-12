@@ -50,7 +50,7 @@ public class PopulationEntityMapper {
                 .withAttributeFilter(attributeMapper.toModel(e.getAttributeFilter()))
                 .withMinValue(e.getMinValue())
                 .withMaxValue(e.getMaxValue())
-                .withCreatedBy(userMapper.toModel(e.getCreatedBy()))
+                .withCreatedBy(userMapper.toShortModel(e.getCreatedBy()))
                 .withCount(e.getCountPersons())
                 .build();
     }

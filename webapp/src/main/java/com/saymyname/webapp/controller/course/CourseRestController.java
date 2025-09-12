@@ -20,7 +20,7 @@ import com.saymyname.core.util.InitialCrafter;
 import com.saymyname.service.course.CourseQuestionHistoryService;
 import com.saymyname.service.course.CourseService;
 import com.saymyname.service.course.KnowledgeService;
-import com.saymyname.webapp.dto.PersonAttributeDto;
+import com.saymyname.webapp.dto.PersonAttributeLiteDto;
 import com.saymyname.webapp.dto.QuizEntryDto;
 import com.saymyname.webapp.dto.course.CourseAnswerAndNextQuestionDto;
 import com.saymyname.webapp.dto.course.CourseAnswerDto;
@@ -130,13 +130,13 @@ public class CourseRestController {
         }
 
         @PostMapping("/{courseId}/questions/{questionId}/help")
-        public ResponseEntity<List<PersonAttributeDto>> helpAndGetAttributes(
+        public ResponseEntity<List<PersonAttributeLiteDto>> helpAndGetAttributes(
                         @PathVariable("courseId") Long courseId,
                         @PathVariable("questionId") Long questionId) {
 
-                List<PersonAttributeDto> personAttributeDtoList = courseQuestionHistoryService
+                List<PersonAttributeLiteDto> personAttributeDtoList = courseQuestionHistoryService
                                 .markHelpAndGetAttributes(courseId, questionId).stream()
-                                .map(personAttributeDtoMapper::toDto)
+                                .map(personAttributeDtoMapper::toLiteDto)
                                 .toList();
 
                 return ResponseEntity.ok(personAttributeDtoList);

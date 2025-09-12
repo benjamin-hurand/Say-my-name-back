@@ -2,8 +2,9 @@ package com.saymyname.webapp.mapper;
 
 import com.saymyname.core.model.game.options.GameAttributeFilter;
 import com.saymyname.core.model.people.Attribute;
-import com.saymyname.webapp.dto.ChallengeAttributeFilterDto;
 import com.saymyname.webapp.dto.GameAttributeFilterDto;
+import com.saymyname.webapp.dto.challenge.ChallengeAttributeFilterDto;
+
 import org.springframework.stereotype.Component;
 
 @Component
@@ -37,7 +38,6 @@ public class GameAttributeFilterDtoMapper {
                 gameAttributeFilter.getId(),
                 attributeDtoMapper.toDto(gameAttributeFilter.getAttribute()),
                 gameAttributeFilter.getMinValue(),
-                gameAttributeFilter.getMaxValue()
-        );
+                gameAttributeFilter.getMaxValue());
     }
 }

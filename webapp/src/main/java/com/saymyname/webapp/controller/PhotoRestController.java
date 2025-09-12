@@ -1,7 +1,5 @@
 package com.saymyname.webapp.controller;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -23,8 +21,6 @@ import com.saymyname.webapp.mapper.PhotoDtoMapper;
 @RestController
 @RequestMapping("/api")
 public class PhotoRestController {
-
-    private final Logger logger = LoggerFactory.getLogger(PhotoRestController.class);
 
     private final PhotoService photoService;
     private final PhotoDtoMapper photoDtoMapper;

@@ -1,3 +1,4 @@
+// src/main/java/com/saymyname/webapp/scheduler/ChallengeSeasonInitializer.java
 package com.saymyname.webapp.scheduler;
 
 import com.saymyname.service.ChallengeSeasonService;
@@ -15,7 +16,7 @@ public class ChallengeSeasonInitializer {
 
     @PostConstruct
     public void init() {
-        System.out.println("Initialisation : vérification des saisons de challenge au démarrage.");
-        challengeSeasonService.createSeasonsIfMissing();
+        // Démarrage : assure les saisons, chauffe le cache, hard-delete si bascule
+        challengeSeasonService.onAppStart();
     }
 }

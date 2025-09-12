@@ -1,40 +1,47 @@
 package com.saymyname.webapp.mapper;
 
+import org.springframework.stereotype.Component;
+
+import com.saymyname.core.model.enums.EditPolicy;
 import com.saymyname.core.model.people.Attribute;
 import com.saymyname.core.model.people.AttributeType;
 import com.saymyname.webapp.dto.AttributeDto;
 import com.saymyname.webapp.dto.ReducedAttributeDto;
 
-import org.springframework.stereotype.Component;
-
 @Component
 public class AttributeDtoMapper {
+
     public AttributeDto toDto(Attribute attribute) {
         return new AttributeDto(
                 attribute.getId(),
                 attribute.getName(),
-                attribute.isUnique(),
+                attribute.getMaxValues(), // changé
                 attribute.isFilter(),
                 attribute.isSort(),
                 attribute.isInitializable(),
                 attribute.isRequired(),
-                attribute.getType().name().toLowerCase(),
+                attribute.getType() != null ? attribute.getType().name() : null,
                 attribute.getMinValue(),
-                attribute.getMaxValue());
+                attribute.getMaxValue(),
+                attribute.getEditPolicy() != null ? attribute.getEditPolicy().name() : "FREE");
     }
 
-    public Attribute toModel(AttributeDto attributeDto) {
+    public Attribute toModel(AttributeDto dto) {
+        final AttributeType at = dto.type() != null ? AttributeType.valueOf(dto.type()) : AttributeType.TEXT;
+        final EditPolicy policy = dto.editPolicy() != null ? EditPolicy.valueOf(dto.editPolicy()) : EditPolicy.FREE;
+
         return new Attribute.Builder()
-                .withId(attributeDto.id())
-                .withName(attributeDto.name())
-                .withUnique(attributeDto.unique())
-                .withFilter(attributeDto.filter())
-                .withSort(attributeDto.sort())
-                .withInitializable(attributeDto.initializable())
-                .withRequired(attributeDto.required())
-                .withType(AttributeType.valueOf(attributeDto.type().toUpperCase()))
-                .withMinValue(attributeDto.minValue())
-                .withMaxValue(attributeDto.maxValue())
+                .withId(dto.id())
+                .withName(dto.name())
+                .withMaxValues(dto.maxValues() != null ? dto.maxValues() : 1) // défaut à 1
+                .withFilter(Boolean.TRUE.equals(dto.filter()))
+                .withSort(Boolean.TRUE.equals(dto.sort()))
+                .withInitializable(Boolean.TRUE.equals(dto.initializable()))
+                .withRequired(Boolean.TRUE.equals(dto.required()))
+                .withType(at)
+                .withMinValue(dto.minValue())
+                .withMaxValue(dto.maxValue())
+                .withEditPolicy(policy)
                 .build();
     }
 

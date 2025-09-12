@@ -2,27 +2,33 @@ package com.saymyname.core.model.people;
 
 import java.util.Objects;
 
+import com.saymyname.core.model.enums.EditPolicy;
+
 public class Attribute {
     private Long id;
     private String name;
-    private boolean unique;
+    private int maxValues; // anciennement "unique"
     private boolean filter;
     private boolean sort;
     private boolean initializable;
-    private boolean required; // Nouveau champ
+    private boolean required; // présence obligatoire (≠ immuable)
     private AttributeType type;
     private String minValue;
     private String maxValue;
 
+    // NEW: contrôle de l'édition/suppression directe
+    private EditPolicy editPolicy;
+
     // Constructeur par défaut
     public Attribute() {
+        this.editPolicy = EditPolicy.FREE;
     }
 
     // Constructeur privé utilisé par le Builder
     private Attribute(Builder builder) {
         this.id = builder.id;
         this.name = builder.name;
-        this.unique = builder.unique;
+        this.maxValues = builder.maxValues;
         this.filter = builder.filter;
         this.sort = builder.sort;
         this.initializable = builder.initializable;
@@ -30,6 +36,7 @@ public class Attribute {
         this.type = builder.type;
         this.minValue = builder.minValue;
         this.maxValue = builder.maxValue;
+        this.editPolicy = builder.editPolicy != null ? builder.editPolicy : EditPolicy.FREE;
     }
 
     // Getters
@@ -41,8 +48,8 @@ public class Attribute {
         return name;
     }
 
-    public boolean isUnique() {
-        return unique;
+    public int getMaxValues() {
+        return maxValues;
     }
 
     public boolean isFilter() {
@@ -73,6 +80,10 @@ public class Attribute {
         return maxValue;
     }
 
+    public EditPolicy getEditPolicy() {
+        return editPolicy;
+    }
+
     // Setters
     public void setId(Long id) {
         this.id = id;
@@ -82,8 +93,8 @@ public class Attribute {
         this.name = name;
     }
 
-    public void setUnique(boolean unique) {
-        this.unique = unique;
+    public void setMaxValues(int maxValues) {
+        this.maxValues = maxValues;
     }
 
     public void setFilter(boolean filter) {
@@ -114,18 +125,23 @@ public class Attribute {
         this.maxValue = maxValue;
     }
 
+    public void setEditPolicy(EditPolicy editPolicy) {
+        this.editPolicy = editPolicy;
+    }
+
     // Builder Pattern
     public static class Builder {
         private Long id;
         private String name;
-        private boolean unique;
+        private int maxValues;
         private boolean filter;
         private boolean sort;
         private boolean initializable;
-        private boolean required; // Nouveau champ
+        private boolean required;
         private AttributeType type;
         private String minValue;
         private String maxValue;
+        private EditPolicy editPolicy;
 
         public Builder withId(Long id) {
             this.id = id;
@@ -137,8 +153,8 @@ public class Attribute {
             return this;
         }
 
-        public Builder withUnique(boolean unique) {
-            this.unique = unique;
+        public Builder withMaxValues(int maxValues) {
+            this.maxValues = maxValues;
             return this;
         }
 
@@ -177,6 +193,11 @@ public class Attribute {
             return this;
         }
 
+        public Builder withEditPolicy(EditPolicy editPolicy) {
+            this.editPolicy = editPolicy;
+            return this;
+        }
+
         public Attribute build() {
             return new Attribute(this);
         }
@@ -189,21 +210,23 @@ public class Attribute {
         if (!(o instanceof Attribute))
             return false;
         Attribute that = (Attribute) o;
-        return id == that.id &&
-                unique == that.unique &&
+        return maxValues == that.maxValues &&
                 filter == that.filter &&
                 sort == that.sort &&
                 initializable == that.initializable &&
                 required == that.required &&
+                Objects.equals(id, that.id) &&
                 Objects.equals(name, that.name) &&
-                Objects.equals(type, that.type) &&
+                type == that.type &&
                 Objects.equals(minValue, that.minValue) &&
-                Objects.equals(maxValue, that.maxValue);
+                Objects.equals(maxValue, that.maxValue) &&
+                editPolicy == that.editPolicy;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, unique, filter, sort, initializable, required, type, minValue, maxValue);
+        return Objects.hash(id, name, maxValues, filter, sort, initializable, required, type, minValue, maxValue,
+                editPolicy);
     }
 
     @Override
@@ -211,14 +234,15 @@ public class Attribute {
         return "Attribute{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
-                ", unique=" + unique +
+                ", maxValues=" + maxValues +
                 ", filter=" + filter +
                 ", sort=" + sort +
                 ", initializable=" + initializable +
                 ", required=" + required +
-                ", type='" + type + '\'' +
+                ", type=" + type +
                 ", minValue='" + minValue + '\'' +
                 ", maxValue='" + maxValue + '\'' +
+                ", editPolicy=" + editPolicy +
                 '}';
     }
 }

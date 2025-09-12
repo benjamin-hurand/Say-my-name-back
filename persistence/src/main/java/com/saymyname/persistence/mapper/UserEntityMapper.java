@@ -20,6 +20,14 @@ public class UserEntityMapper {
                 .build();
     }
 
+    public User toShortModel(UserEntity userEntity) {
+        if (userEntity == null)
+            return null;
+        return new User.Builder()
+                .withId(userEntity.getId())
+                .build();
+    }
+
     public UserEntity toEntity(User user) {
         if (user == null)
             return null;

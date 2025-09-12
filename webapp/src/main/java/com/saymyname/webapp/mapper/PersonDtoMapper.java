@@ -31,12 +31,8 @@ public class PersonDtoMapper {
                 person.getId(),
                 userDtoMapper.toDto(person.getUser()),
                 person.getAttributes() != null
-                        ? person.getAttributes().stream().map(personAttributeDtoMapper::toReducedDto).toList()
+                        ? person.getAttributes().stream().map(personAttributeDtoMapper::toDto).toList()
                         : null,
                 person.getPhotos() != null ? person.getPhotos().stream().map(photoDtoMapper::toDto).toList() : null);
-    }
-
-    public ProfileResponseDto toProfileResponseDto(Person person) {
-        return new ProfileResponseDto(toDto(person));
     }
 }

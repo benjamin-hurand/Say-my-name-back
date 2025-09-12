@@ -1,11 +1,17 @@
 package com.saymyname.service;
 
+import java.security.Principal;
+import java.util.Optional;
 import java.util.Random;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.saymyname.core.model.common.User;
 import com.saymyname.persistence.dao.UserDao;
@@ -155,5 +161,52 @@ public class UserService implements UserDetailsService {
     public UserDetails loadUserByUsername(String identifier) {
         User user = userDao.findByEmailOrUsername(identifier);
         return new CustomUserDetails(user);
+    }
+
+    /**
+     * Essaie de récupérer le User (modèle) depuis le Principal/Auth courant,
+     * en privilégiant CustomUserDetails pour éviter une requête BDD.
+     */
+    public Optional<User> getCurrentUser(Principal principal) {
+        if (principal == null)
+            return Optional.empty();
+
+        if (principal instanceof Authentication auth) {
+            Object p = auth.getPrincipal();
+            if (p instanceof CustomUserDetails cud) {
+                // ⚠️ CustomUserDetails doit exposer le modèle User
+                return Optional.ofNullable(cud.getUser());
+            }
+            // Fallback : nom du principal (email ou username) → lookup BDD
+            String identifier = auth.getName();
+            return Optional.ofNullable(findByEmailOrUsername(identifier));
+        }
+
+        // Dernier fallback si ce n’est pas une Authentication
+        return Optional.ofNullable(findByEmailOrUsername(principal.getName()));
+    }
+
+    /** Variante qui lève 401 si absent. */
+    public User getCurrentUserOrThrow(Principal principal) {
+        return getCurrentUser(principal)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Utilisateur non trouvé"));
+    }
+
+    /** Convenience: récupère depuis le SecurityContext (sans paramètre). */
+    public Optional<User> getCurrentAuthenticatedUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null)
+            return Optional.empty();
+        Object p = auth.getPrincipal();
+        if (p instanceof CustomUserDetails cud) {
+            return Optional.ofNullable(cud.getUser());
+        }
+        return Optional.ofNullable(findByEmailOrUsername(auth.getName()));
+    }
+
+    /** Variante sans Optional depuis le SecurityContext. */
+    public User getCurrentAuthenticatedUserOrThrow() {
+        return getCurrentAuthenticatedUser()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Utilisateur non trouvé"));
     }
 }

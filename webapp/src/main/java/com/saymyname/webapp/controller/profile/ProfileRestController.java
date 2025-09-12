@@ -1,25 +1,28 @@
 package com.saymyname.webapp.controller.profile;
 
 import java.security.Principal;
+import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import com.saymyname.core.model.common.User;
 import com.saymyname.core.model.people.Person;
 import com.saymyname.core.model.people.PersonAttribute;
-import com.saymyname.service.profile.ProfileService;
+import com.saymyname.service.ChangeRequestService;
+import com.saymyname.service.PersonService;
+import com.saymyname.service.UserService;
+import com.saymyname.webapp.dto.PersonAttributeDto;
 import com.saymyname.webapp.dto.PersonDto;
-import com.saymyname.webapp.dto.profile.CreatePersonAttributeRequest;
+import com.saymyname.webapp.dto.changerequest.ChangeRequestSummaryDto;
+import com.saymyname.webapp.dto.profile.AttributeValuesResponseDto;
+import com.saymyname.webapp.dto.profile.BulkPersonAttributeRequest;
 import com.saymyname.webapp.dto.profile.ProfileResponseDto;
-import com.saymyname.webapp.dto.profile.UpdatePersonAttributesRequest;
+import com.saymyname.webapp.mapper.BulkPersonAttributeDtoMapper;
+import com.saymyname.webapp.mapper.ChangeRequestDtoMapper;
 import com.saymyname.webapp.mapper.PersonAttributeDtoMapper;
 import com.saymyname.webapp.mapper.PersonDtoMapper;
 
@@ -27,81 +30,96 @@ import com.saymyname.webapp.mapper.PersonDtoMapper;
 @RequestMapping("/api/profile")
 public class ProfileRestController {
 
-    private final ProfileService profileService;
+    private final PersonService personService;
+    private final ChangeRequestService changeRequestService;
+    private final ChangeRequestDtoMapper changeRequestDtoMapper;
     private final PersonDtoMapper personDtoMapper;
+    private final BulkPersonAttributeDtoMapper bulkPersonAttributeDtoMapper;
     private final PersonAttributeDtoMapper personAttributeDtoMapper;
+    private final UserService userService;
 
-    public ProfileRestController(ProfileService profileService, PersonDtoMapper personDtoMapper,
-            PersonAttributeDtoMapper personAttributeDtoMapper) {
-        this.profileService = profileService;
+    private static final Logger logger = LoggerFactory.getLogger(ProfileRestController.class);
+
+    public ProfileRestController(PersonService personService,
+            ChangeRequestService changeRequestService,
+            ChangeRequestDtoMapper changeRequestDtoMapper,
+            PersonDtoMapper personDtoMapper,
+            BulkPersonAttributeDtoMapper bulkPersonAttributeDtoMapper,
+            PersonAttributeDtoMapper personAttributeDtoMapper,
+            UserService userService) {
+        this.personService = personService;
+        this.changeRequestService = changeRequestService;
+        this.changeRequestDtoMapper = changeRequestDtoMapper;
         this.personDtoMapper = personDtoMapper;
+        this.bulkPersonAttributeDtoMapper = bulkPersonAttributeDtoMapper;
         this.personAttributeDtoMapper = personAttributeDtoMapper;
+        this.userService = userService;
     }
 
     /**
      * GET /api/profile
-     * Récupère le profil (user + person) de l'utilisateur connecté.
-     * Si aucune Person n'est associée, renvoie person=null dans le DTO.
+     * Récupère le profil (user + person + changeRequests).
+     * Si aucune Person n'est associée, renvoie person=null et changeRequests=[].
      */
     @GetMapping
     public ResponseEntity<ProfileResponseDto> getProfile(Principal principal) {
-        // Récupère l'Optional<Person> depuis le service
-        Optional<Person> optPerson = profileService.getProfile(principal.getName());
+        // 0) User courant
+        User user = userService.getCurrentUserOrThrow(principal);
 
-        // Mappe en DTO, ou null si absent
-        PersonDto personDto = optPerson
-                .map(personDtoMapper::toDto)
-                .orElse(null);
+        // 1) Person + graph (attributs, photos)
+        Optional<Person> optPerson = personService.getPersonByUserWithAllAttributes(user);
+        PersonDto personDto = optPerson.map(personDtoMapper::toDto).orElse(null);
 
-        // Construit et renvoie le DTO de réponse
-        ProfileResponseDto response = new ProfileResponseDto(personDto);
+        // 2) ChangeRequests (choix: “open” ou “all”)
+        List<ChangeRequestSummaryDto> crDtos = optPerson.isPresent()
+                ? changeRequestService.findOpenForUser(user.getId()).stream()
+                        .map(changeRequestDtoMapper::toSummaryDto)
+                        .toList()
+                : List.of();
+
+        // 3) Réponse
+        ProfileResponseDto response = new ProfileResponseDto(personDto, crDtos);
         return ResponseEntity.ok(response);
     }
 
-    @PatchMapping("/attributes")
-    public ResponseEntity<ProfileResponseDto> patchAttributes(
-            @RequestBody UpdatePersonAttributesRequest body,
+    // ---------- BULK multi-valeurs pour un attribut ----------
+    /**
+     * POST /api/profile/attributes/{attributeId}/bulk
+     * Applique en une fois create/update/delete pour l’attribut {attributeId}.
+     * On s’appuie sur l’utilisateur courant (Principal) pour identifier la Person.
+     * Retourne l'état canonique de l'attribut (liste de PersonAttribute) après
+     * normalisation.
+     */
+    @PostMapping("/attributes/{attributeId}/bulk")
+    public ResponseEntity<AttributeValuesResponseDto> applyAttributeChanges(
+            @PathVariable("attributeId") Long attributeId,
+            @RequestBody BulkPersonAttributeRequest body,
             Principal principal) {
-        // body.attributes: [{ id, value }]
-        var models = body.attributes().stream()
-                .map(personAttributeDtoMapper::patchDtoToModel)
+
+        logger.info("Applying bulk attribute changes for attributeId: {}", attributeId);
+
+        // 0) User courant (→ person)
+        User user = userService.getCurrentUserOrThrow(principal);
+
+        // 1) Map DTO -> modèles (delta)
+        var toCreate = bulkPersonAttributeDtoMapper.toCreateModels(body.create());
+        var toUpdate = bulkPersonAttributeDtoMapper.toUpdateModels(body.update());
+        var toDelete = bulkPersonAttributeDtoMapper.toDeleteModels(body.delete());
+
+        // 2) Orchestration via PersonService (référence “profil” = person de l'user)
+        List<PersonAttribute> updatedAttributes = personService.applyAttributeChangesForUser(
+                user,
+                attributeId,
+                toCreate,
+                toUpdate,
+                toDelete);
+
+        // 3) Model -> DTO
+        List<PersonAttributeDto> updatedDtos = updatedAttributes.stream()
+                .map(personAttributeDtoMapper::toDto)
                 .toList();
 
-        profileService.updatePersonAttributes(principal.getName(), models);
-
-        // renvoyer le profil à jour puisque le front l'attend
-        var personOpt = profileService.getProfile(principal.getName());
-        var personDto = personOpt.map(personDtoMapper::toDto).orElse(null);
-        return ResponseEntity.ok(new ProfileResponseDto(personDto));
-    }
-
-    // ---------- POST ATTRIBUTE (création d'une valeur) ----------
-    // Correspond à createPersonAttribute(attributeId, value) côté front
-
-    @PostMapping("/attributes")
-    public ResponseEntity<?> createPersonAttribute(
-            @RequestBody CreatePersonAttributeRequest body,
-            Principal principal) {
-        PersonAttribute created = profileService.createPersonAttribute(
-                principal.getName(),
-                body.attributeId(),
-                body.value());
-        // Le front attend un PersonAttribute "plat" (id, attribute, value, personId)
-        var dto = personAttributeDtoMapper.toDto(created);
-        return ResponseEntity.ok(dto);
-    }
-
-    // ---------- DELETE ATTRIBUTE (suppression d'une valeur) ----------
-    @DeleteMapping("/attributes/{id}")
-    public ResponseEntity<Void> deletePersonAttribute(
-            @PathVariable("id") Long personAttributeId,
-            Principal principal) {
-        profileService.deletePersonAttribute(principal.getName(), personAttributeId);
-        return ResponseEntity.noContent().build();
-    }
-
-    // ---------- PATCH ROOT (mise à jour username / email) ----------
-    // Correspond à updateAccount(username, email) côté front
-    public record UpdateAccountRequest(String username, String email) {
+        var response = new AttributeValuesResponseDto(attributeId, updatedDtos);
+        return ResponseEntity.ok(response);
     }
 }
