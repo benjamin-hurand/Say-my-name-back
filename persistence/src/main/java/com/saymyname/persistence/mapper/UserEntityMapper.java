@@ -1,6 +1,6 @@
 package com.saymyname.persistence.mapper;
 
-import com.saymyname.core.model.common.User;
+import com.saymyname.core.model.auth.User;
 import com.saymyname.persistence.entity.UserEntity;
 import org.springframework.stereotype.Component;
 
@@ -15,6 +15,7 @@ public class UserEntityMapper {
                 .withEmail(userEntity.getEmail())
                 .withSrsAlgorithm(userEntity.getSrsAlgorithm())
                 .withPassword(userEntity.getPassword())
+                .withPasswordVersion(userEntity.getPasswordVersion())
                 .withRoles(userEntity.getRoles())
                 .withActive(userEntity.isActive())
                 .build();
@@ -32,6 +33,6 @@ public class UserEntityMapper {
         if (user == null)
             return null;
         return new UserEntity(user.getId(), user.getUsername(), user.getEmail(), user.getSrsAlgorithm(),
-                user.getPassword(), user.getRoles(), user.isActive());
+                user.getPassword(), user.getPasswordVersion(), user.getRoles(), user.isActive());
     }
 }

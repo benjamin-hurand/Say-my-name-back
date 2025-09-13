@@ -1,6 +1,6 @@
 package com.saymyname.core.model.people;
 
-import com.saymyname.core.model.common.User;
+import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.enums.PhotoStatus;
 
 import java.util.ArrayList;

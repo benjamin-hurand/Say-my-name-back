@@ -13,7 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.saymyname.core.exception.common.ForbiddenException;
 import com.saymyname.core.exception.common.NotFoundException;
 import com.saymyname.core.exception.common.ValidationException;
-import com.saymyname.core.model.common.User;
+import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.enums.PhotoStatus;
 import com.saymyname.core.model.people.Person;
 import com.saymyname.core.model.people.Photo;

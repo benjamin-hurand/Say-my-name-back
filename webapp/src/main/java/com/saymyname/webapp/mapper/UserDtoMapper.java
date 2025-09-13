@@ -2,7 +2,7 @@ package com.saymyname.webapp.mapper;
 
 import org.springframework.stereotype.Component;
 
-import com.saymyname.core.model.common.User;
+import com.saymyname.core.model.auth.User;
 import com.saymyname.webapp.dto.ReducedUserDto;
 import com.saymyname.webapp.dto.UserDto;
 

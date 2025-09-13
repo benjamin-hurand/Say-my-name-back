@@ -12,7 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.saymyname.core.model.common.User;
+import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.course.AnswerValidationResult;
 import com.saymyname.core.model.course.Course;
 import com.saymyname.core.model.course.Knowledge;

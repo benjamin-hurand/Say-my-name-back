@@ -1,9 +1,11 @@
 package com.saymyname.persistence.dao;
 
+import java.util.Optional;
+
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Repository;
 
-import com.saymyname.core.model.common.User;
+import com.saymyname.core.model.auth.User;
 import com.saymyname.persistence.entity.UserEntity;
 import com.saymyname.persistence.mapper.UserEntityMapper;
 import com.saymyname.persistence.repository.UserRepository;
@@ -39,6 +41,10 @@ public class UserDao {
 
     public User findByEmailOrUsername(String identifier) {
         return userEntityMapper.toModel(findEntityByEmailOrUsername(identifier));
+    }
+
+    public Optional<User> findOptionalByEmailIgnoreCase(String email) {
+        return userRepository.findByEmailIgnoreCase(email).map(userEntityMapper::toModel);
     }
 
     private UserEntity findEntityByEmailOrUsername(String identifier) {

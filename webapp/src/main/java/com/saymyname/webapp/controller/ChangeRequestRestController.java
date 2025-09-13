@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
-import com.saymyname.core.model.common.User;
+import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.people.ChangeRequest;
 import com.saymyname.service.ChangeRequestService;
 import com.saymyname.service.UserService;

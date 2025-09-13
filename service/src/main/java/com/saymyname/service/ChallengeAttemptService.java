@@ -11,13 +11,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.saymyname.core.exception.ChallengeAttemptException;
+import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.challenge.ChallengeAttempt;
 import com.saymyname.core.model.challenge.ChallengeEvaluation;
 import com.saymyname.core.model.challenge.ChallengeEvaluationRequest;
 import com.saymyname.core.model.challenge.ChallengeHistoryEntry;
 import com.saymyname.core.model.challenge.ChallengeQuestion;
 import com.saymyname.core.model.challenge.CorrectionEntry;
-import com.saymyname.core.model.common.User;
 import com.saymyname.core.model.enums.AttemptStatus;
 import com.saymyname.core.model.game.options.GameMode;
 import com.saymyname.core.model.people.PersonAttribute;

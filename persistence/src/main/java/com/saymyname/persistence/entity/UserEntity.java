@@ -40,8 +40,11 @@ public class UserEntity {
     @Column(name = "password", nullable = false, length = 255)
     private String password;
 
+    @Column(name = "password_version", nullable = false)
+    private int passwordVersion = 0; // défaut
+
     @Column(name = "roles", nullable = false)
-    private String roles; // Comma-separated roles
+    private String roles; // comma-separated
 
     @Column(name = "active", nullable = false)
     private Boolean active;
@@ -49,104 +52,106 @@ public class UserEntity {
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = true)
     private PersonEntity person;
 
-    public UserEntity(Long id, String username, String email, SrsAlgorithm srsAlgorithm, String password,
-            String roles, Boolean active,
-            PersonEntity person) {
+    public UserEntity() {
+    }
+
+    public UserEntity(Long id, String username, String email, SrsAlgorithm srsAlgorithm,
+            String password, int passwordVersion, String roles, Boolean active, PersonEntity person) {
         this.id = id;
         this.username = username;
         this.email = email;
         this.srsAlgorithm = srsAlgorithm;
         this.password = password;
+        this.passwordVersion = passwordVersion;
         this.roles = roles;
         this.active = active;
         this.person = person;
     }
 
-    public UserEntity(Long id, String username, String email, SrsAlgorithm srsAlgorithm, String password,
-            String roles, Boolean active) {
-        this.id = id;
-        this.username = username;
-        this.email = email;
-        this.srsAlgorithm = srsAlgorithm;
-        this.password = password;
-        this.roles = roles;
-        this.active = active;
+    public UserEntity(Long id, String username, String email, SrsAlgorithm srsAlgorithm,
+            String password, int passwordVersion, String roles, Boolean active) {
+        this(id, username, email, srsAlgorithm, password, passwordVersion, roles, active, null);
     }
 
-    public UserEntity() {
-
-    }
-
+    // Getters
     public Long getId() {
         return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public String getUsername() {
         return username;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
     public String getEmail() {
         return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
     }
 
     public SrsAlgorithm getSrsAlgorithm() {
         return srsAlgorithm;
     }
 
-    public void setSrsAlgorithm(SrsAlgorithm srsAlgorithm) {
-        this.srsAlgorithm = srsAlgorithm;
-    }
-
     public String getPassword() {
         return password;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public int getPasswordVersion() {
+        return passwordVersion;
     }
 
     public String getRoles() {
         return roles;
     }
 
-    public void setRoles(String roles) {
-        this.roles = roles;
-    }
-
     public Boolean isActive() {
         return active;
-    }
-
-    public void setActive(Boolean active) {
-        this.active = active;
     }
 
     public PersonEntity getPerson() {
         return person;
     }
 
+    // Setters
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public void setSrsAlgorithm(SrsAlgorithm srsAlgorithm) {
+        this.srsAlgorithm = srsAlgorithm;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public void setPasswordVersion(int passwordVersion) {
+        this.passwordVersion = passwordVersion;
+    }
+
+    public void setRoles(String roles) {
+        this.roles = roles;
+    }
+
+    public void setActive(Boolean active) {
+        this.active = active;
+    }
+
     public void setPerson(PersonEntity person) {
         this.person = person;
     }
 
-    // Method to get roles as a list
+    // Roles helpers
     public List<String> getRolesList() {
         return Arrays.stream(roles.split(",")).toList();
     }
 
-    // Method to set roles from a list
     public void setRolesList(List<String> rolesList) {
         this.roles = String.join(",", rolesList);
     }
@@ -157,17 +162,20 @@ public class UserEntity {
             return true;
         if (!(o instanceof UserEntity that))
             return false;
-        return Objects.equals(getId(), that.getId()) && Objects.equals(getUsername(), that.getUsername())
-                && Objects.equals(getEmail(), that.getEmail()) && getSrsAlgorithm() == that.getSrsAlgorithm()
-                && Objects.equals(getPassword(), that.getPassword())
-                && Objects.equals(getRoles(), that.getRoles()) && Objects.equals(isActive(), that.isActive())
-                && Objects.equals(getPerson(), that.getPerson());
+        return passwordVersion == that.passwordVersion
+                && Objects.equals(id, that.id)
+                && Objects.equals(username, that.username)
+                && Objects.equals(email, that.email)
+                && srsAlgorithm == that.srsAlgorithm
+                && Objects.equals(password, that.password)
+                && Objects.equals(roles, that.roles)
+                && Objects.equals(active, that.active)
+                && Objects.equals(person, that.person);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getId(), getUsername(), getEmail(), getSrsAlgorithm(), getPassword(), getRoles(),
-                isActive(), getPerson());
+        return Objects.hash(id, username, email, srsAlgorithm, password, passwordVersion, roles, active, person);
     }
 
     @Override
@@ -176,8 +184,9 @@ public class UserEntity {
                 "id=" + id +
                 ", username='" + username + '\'' +
                 ", email='" + email + '\'' +
-                ", srsAlgorithm='" + srsAlgorithm + '\'' +
+                ", srsAlgorithm=" + srsAlgorithm +
                 ", password='" + password + '\'' +
+                ", passwordVersion=" + passwordVersion +
                 ", roles='" + roles + '\'' +
                 ", active=" + active +
                 ", person=" + person +

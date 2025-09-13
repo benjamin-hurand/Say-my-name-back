@@ -23,12 +23,13 @@ public class JwtService {
         this.key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(props.getSecret()));
     }
 
-    public String generateToken(String subject) {
+    public String generateToken(String subject, int passwordVersion) {
         long now = System.currentTimeMillis();
         return Jwts.builder()
                 .setSubject(subject)
                 .setIssuedAt(new Date(now))
                 .setExpiration(new Date(now + props.getExpirationMs()))
+                .claim("passwordVersion", passwordVersion)
                 .signWith(key)
                 .compact();
     }

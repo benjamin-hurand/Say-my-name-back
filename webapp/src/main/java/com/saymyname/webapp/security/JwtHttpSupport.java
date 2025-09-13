@@ -3,7 +3,7 @@ package com.saymyname.webapp.security;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.saymyname.webapp.dto.JwtResponseDto;
+import com.saymyname.webapp.dto.auth.JwtResponseDto;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;

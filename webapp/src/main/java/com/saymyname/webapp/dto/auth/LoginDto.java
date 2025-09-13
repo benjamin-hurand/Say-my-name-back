@@ -1,4 +1,4 @@
-package com.saymyname.webapp.dto;
+package com.saymyname.webapp.dto.auth;
 
 public record LoginDto(
         String identifier,

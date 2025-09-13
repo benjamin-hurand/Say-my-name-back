@@ -2,8 +2,8 @@ package com.saymyname.webapp.mapper.challenge;
 
 import org.springframework.stereotype.Component;
 
+import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.challenge.Challenge;
-import com.saymyname.core.model.common.User;
 import com.saymyname.core.model.game.options.GameMode;
 import com.saymyname.webapp.dto.challenge.AddChallengeDto;
 import com.saymyname.webapp.dto.challenge.ChallengeDto;

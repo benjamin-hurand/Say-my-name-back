@@ -1,6 +1,6 @@
 package com.saymyname.core.model.challenge;
 
-import com.saymyname.core.model.common.User;
+import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.enums.AttemptStatus;
 
 import java.time.LocalDateTime;

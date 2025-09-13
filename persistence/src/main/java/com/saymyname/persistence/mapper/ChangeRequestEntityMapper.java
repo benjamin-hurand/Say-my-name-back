@@ -1,6 +1,6 @@
 package com.saymyname.persistence.mapper;
 
-import com.saymyname.core.model.common.User;
+import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.enums.ChangeStatus;
 import com.saymyname.core.model.people.Attribute;
 import com.saymyname.core.model.people.ChangeRequest;

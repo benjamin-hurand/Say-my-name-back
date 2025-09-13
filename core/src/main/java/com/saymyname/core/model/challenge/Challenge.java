@@ -3,7 +3,7 @@ package com.saymyname.core.model.challenge;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-import com.saymyname.core.model.common.User;
+import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.game.options.GameAttributeFilter;
 import com.saymyname.core.model.game.options.GameMode;
 

@@ -2,9 +2,9 @@ package com.saymyname.webapp.mapper.challenge;
 
 import org.springframework.stereotype.Component;
 
+import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.challenge.ChallengeAttempt;
 import com.saymyname.core.model.challenge.ChallengeVersion;
-import com.saymyname.core.model.common.User;
 import com.saymyname.core.model.enums.AttemptStatus;
 import com.saymyname.core.util.InitialCrafter;
 import com.saymyname.webapp.dto.QuizEntryDto;

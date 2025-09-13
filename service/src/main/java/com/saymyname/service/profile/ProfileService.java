@@ -11,7 +11,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.saymyname.core.exception.UserNotFoundException;
 import com.saymyname.core.exception.profile.InvalidUsernameException;
-import com.saymyname.core.model.common.User;
+import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.people.Person;
 import com.saymyname.core.model.people.PersonAttribute;
 import com.saymyname.service.PersonAttributeService;

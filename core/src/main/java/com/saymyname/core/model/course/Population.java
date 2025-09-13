@@ -1,6 +1,6 @@
 package com.saymyname.core.model.course;
 
-import com.saymyname.core.model.common.User;
+import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.people.Attribute;
 
 import java.util.Objects;

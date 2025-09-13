@@ -2,7 +2,7 @@ package com.saymyname.webapp.mapper.course;
 
 import org.springframework.stereotype.Component;
 
-import com.saymyname.core.model.common.User;
+import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.course.Course;
 import com.saymyname.core.model.enums.CourseStatus;
 import com.saymyname.core.model.game.options.GameMode;

@@ -1,4 +1,4 @@
-package com.saymyname.core.model.common;
+package com.saymyname.core.model.auth;
 
 import java.util.Arrays;
 import java.util.List;
@@ -12,8 +12,10 @@ public class User {
     private String email;
     private SrsAlgorithm srsAlgorithm;
     private String password;
+    /** Version de mot de passe pour invalider les JWT existants. */
+    private int passwordVersion = 0; // défaut
     private String roles;
-    private Boolean active; // Correct the data type if needed, Boolean is used if it could be null
+    private Boolean active; // peut rester nullable si besoin
 
     public User() {
     }
@@ -24,10 +26,12 @@ public class User {
         this.email = builder.email;
         this.srsAlgorithm = builder.srsAlgorithm;
         this.password = builder.password;
+        this.passwordVersion = builder.passwordVersion;
         this.roles = builder.roles;
-        this.active = builder.active; // Initialize isActive from the builder
+        this.active = builder.active;
     }
 
+    // Getters
     public Long getId() {
         return id;
     }
@@ -48,14 +52,19 @@ public class User {
         return password;
     }
 
+    public int getPasswordVersion() {
+        return passwordVersion;
+    }
+
     public String getRoles() {
         return roles;
     }
 
-    public Boolean isActive() { // Getter for isActive
+    public Boolean isActive() {
         return active;
     }
 
+    // Setters
     public void setId(Long id) {
         this.id = id;
     }
@@ -72,36 +81,41 @@ public class User {
         this.srsAlgorithm = srsAlgorithm;
     }
 
-    public void setRoles(String roles) {
-        this.roles = roles;
-    }
-
     public void setPassword(String password) {
         this.password = password;
     }
 
-    public void setActive(Boolean active) { // Setter for isActive
+    public void setPasswordVersion(int passwordVersion) {
+        this.passwordVersion = passwordVersion;
+    }
+
+    public void setRoles(String roles) {
+        this.roles = roles;
+    }
+
+    public void setActive(Boolean active) {
         this.active = active;
     }
 
-    // Method to get roles as a list
+    // Roles helpers
     public List<String> getRolesList() {
         return Arrays.stream(roles.split(",")).toList();
     }
 
-    // Method to set roles from a list
     public void setRolesList(List<String> rolesList) {
         this.roles = String.join(",", rolesList);
     }
 
+    // Builder
     public static class Builder {
         private Long id;
         private String username;
         private String email;
         private SrsAlgorithm srsAlgorithm;
         private String password;
+        private int passwordVersion = 0;
         private String roles;
-        private Boolean active; // Include this to allow setting the active state via the builder
+        private Boolean active;
 
         public Builder withId(Long id) {
             this.id = id;
@@ -128,12 +142,17 @@ public class User {
             return this;
         }
 
+        public Builder withPasswordVersion(int passwordVersion) {
+            this.passwordVersion = passwordVersion;
+            return this;
+        }
+
         public Builder withRoles(String roles) {
             this.roles = roles;
             return this;
         }
 
-        public Builder withActive(Boolean active) { // Builder method for isActive
+        public Builder withActive(Boolean active) {
             this.active = active;
             return this;
         }
@@ -149,15 +168,19 @@ public class User {
             return true;
         if (!(o instanceof User user))
             return false;
-        return getId() == user.getId() && Objects.equals(getUsername(), user.getUsername())
-                && Objects.equals(getEmail(), user.getEmail()) && (getSrsAlgorithm() == user.getSrsAlgorithm())
-                && Objects.equals(getPassword(), user.getPassword())
-                && Objects.equals(getRoles(), user.getRoles()) && Objects.equals(active, user.active);
+        return passwordVersion == user.passwordVersion
+                && Objects.equals(id, user.id)
+                && Objects.equals(username, user.username)
+                && Objects.equals(email, user.email)
+                && srsAlgorithm == user.srsAlgorithm
+                && Objects.equals(password, user.password)
+                && Objects.equals(roles, user.roles)
+                && Objects.equals(active, user.active);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getId(), getUsername(), getEmail(), getSrsAlgorithm(), getPassword(), getRoles(), active);
+        return Objects.hash(id, username, email, srsAlgorithm, password, passwordVersion, roles, active);
     }
 
     @Override
@@ -166,8 +189,9 @@ public class User {
                 "id=" + id +
                 ", username='" + username + '\'' +
                 ", email='" + email + '\'' +
-                ", srsAlgorithm='" + srsAlgorithm + '\'' +
+                ", srsAlgorithm=" + srsAlgorithm +
                 ", password='" + password + '\'' +
+                ", passwordVersion=" + passwordVersion +
                 ", roles='" + roles + '\'' +
                 ", active=" + active +
                 '}';
