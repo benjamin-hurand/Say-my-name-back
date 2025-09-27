@@ -5,5 +5,5 @@ import com.saymyname.persistence.entity.PersonEntity;
 import java.util.List;
 
 public interface PersonRepositoryCustom {
-    List<PersonEntity> findByOptions(GameOptions options);
+    List<PersonEntity> findByOptions(GameOptions options, Long userId);
 }

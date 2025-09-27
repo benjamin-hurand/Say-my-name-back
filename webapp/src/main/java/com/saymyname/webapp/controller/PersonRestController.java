@@ -1,20 +1,24 @@
+// src/main/java/com/saymyname/webapp/controller/PersonRestController.java
 package com.saymyname.webapp.controller;
 
+import java.security.Principal;
 import java.util.List;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.*;
+import org.springframework.web.bind.annotation.*;
 
-import com.saymyname.core.model.people.Person;
+import com.saymyname.core.model.persondirectory.PersonCard;
+import com.saymyname.core.model.persondirectory.PersonSearchCriteria;
 import com.saymyname.service.PersonAttributeService;
 import com.saymyname.service.PersonService;
+import com.saymyname.service.UserService;
 import com.saymyname.webapp.dto.PersonAttributeLiteDto;
+import com.saymyname.webapp.dto.person.PersonCardDto;
+import com.saymyname.webapp.dto.person.PersonSearchRequestDto;
 import com.saymyname.webapp.mapper.PersonAttributeDtoMapper;
+import com.saymyname.webapp.mapper.person.PersonDirectoryDtoMapper;
 
 @RestController
 @RequestMapping("/api/persons")
@@ -23,30 +27,23 @@ public class PersonRestController {
     private final PersonService personService;
     private final PersonAttributeService personAttributeService;
     private final PersonAttributeDtoMapper personAttributeDtoMapper;
+    private final PersonDirectoryDtoMapper personDirectoryDtoMapper;
+    private final UserService userService;
 
     public PersonRestController(
             PersonService personService,
             PersonAttributeService personAttributeService,
-            PersonAttributeDtoMapper personAttributeDtoMapper) {
+            PersonAttributeDtoMapper personAttributeDtoMapper,
+            PersonDirectoryDtoMapper personDirectoryDtoMapper,
+            UserService userService) {
         this.personService = personService;
         this.personAttributeService = personAttributeService;
         this.personAttributeDtoMapper = personAttributeDtoMapper;
+        this.personDirectoryDtoMapper = personDirectoryDtoMapper;
+        this.userService = userService;
     }
 
-    @GetMapping
-    public ResponseEntity<List<Person>> findAll() {
-        List<Person> persons = personService.findAll();
-        // logger.info("find all persons ? => " + persons);
-        return new ResponseEntity<>(persons, HttpStatus.OK);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<Person> getById(@PathVariable(name = "id") Long id) {
-        Person person = personService.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No person found with ID: " + id));
-        return ResponseEntity.ok(person);
-    }
-
+    /** EXISTANT — on garde tel quel */
     @GetMapping("/{id}/attributes")
     public ResponseEntity<List<PersonAttributeLiteDto>> getAttributesById(@PathVariable(name = "id") Long id) {
         List<PersonAttributeLiteDto> personAttributeDtoList = personAttributeService
@@ -54,8 +51,22 @@ public class PersonRestController {
                 .stream()
                 .map(personAttributeDtoMapper::toLiteDto)
                 .toList();
-        // personAttributeDtoList);
         return new ResponseEntity<>(personAttributeDtoList, HttpStatus.OK);
     }
 
+    /** NOUVEAU — recherche trombinoscope filtrée/triée/paginée */
+    @PostMapping("/search")
+    public ResponseEntity<Page<PersonCardDto>> searchPersons(
+            @RequestBody PersonSearchRequestDto body,
+            Pageable pageable,
+            Principal principal) {
+
+        Long currentUserId = userService.getCurrentUserOrThrow(principal).getId();
+        PersonSearchCriteria criteria = personDirectoryDtoMapper.toModel(body);
+
+        Page<PersonCard> page = personService.searchPersons(criteria, pageable, currentUserId);
+        Page<PersonCardDto> dtoPage = page.map(personDirectoryDtoMapper::toDto);
+
+        return ResponseEntity.ok(dtoPage);
+    }
 }

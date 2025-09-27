@@ -1,14 +1,11 @@
+// src/main/java/com/saymyname/webapp/controller/PhotoRestController.java
 package com.saymyname.webapp.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -32,7 +29,7 @@ public class PhotoRestController {
 
     /**
      * POST /persons/{personId}/photos
-     * Soumet une photo pour approbation (status = PENDING).
+     * Soumet une photo pour approbation (status = PENDING) + génère la miniature.
      */
     @PostMapping(path = "/persons/{personId}/photos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<PhotoDto> submitPhotoForApproval(
@@ -45,12 +42,19 @@ public class PhotoRestController {
         }
         validateContentType(photo);
 
-        // 1) Délégation complète au service (stockage + BDD)
         Photo created = photoService.submitPhotoForApproval(personId, photo, principal);
-
-        // 2) Répondre avec le DTO
         PhotoDto body = photoDtoMapper.toDto(created);
         return ResponseEntity.status(HttpStatus.CREATED).body(body);
+    }
+
+    /**
+     * POST /photos/{storageKey}/thumbnail:ensure
+     * (Ré)génère la miniature si manquante. 204 si OK / déjà présent, 404 sinon.
+     */
+    @PostMapping("/photos/{storageKey}/thumbnail:ensure")
+    public ResponseEntity<Void> ensureThumbnail(@PathVariable("storageKey") String storageKey) {
+        boolean ok = photoService.ensureSmallExists(storageKey);
+        return ok ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 
     // --- Helpers ---

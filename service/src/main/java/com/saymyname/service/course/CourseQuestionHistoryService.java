@@ -1,10 +1,12 @@
 package com.saymyname.service.course;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.saymyname.core.model.course.Course;
 import com.saymyname.core.model.course.CourseQuestionHistory;
 import com.saymyname.core.model.people.PersonAttribute;
 import com.saymyname.persistence.dao.course.CourseQuestionHistoryDao;
@@ -37,6 +39,10 @@ public class CourseQuestionHistoryService {
         return question;
     }
 
+    public void deleteAllByCourse(Course course) {
+        courseQuestionHistoryDao.deleteAllByCourse(course);
+    }
+
     public void update(CourseQuestionHistory courseQuestion) {
         courseQuestionHistoryDao.update(courseQuestion);
     }
@@ -50,5 +56,18 @@ public class CourseQuestionHistoryService {
         Long personId = questionMarked.getKnowledge().getPerson().getId();
 
         return personAttributeService.getAttributesByPersonId(personId);
+    }
+
+    // ------- Stats activité -------
+    public int countAllAnswersByCourse(Course course) {
+        return courseQuestionHistoryDao.countAllAnswersByCourse(course);
+    }
+
+    public int countAnswersSince(Course course, LocalDateTime since) {
+        return courseQuestionHistoryDao.countAnswersSince(course, since);
+    }
+
+    public LocalDateTime findLastAnsweredAt(Course course) {
+        return courseQuestionHistoryDao.findLastAnsweredAt(course);
     }
 }

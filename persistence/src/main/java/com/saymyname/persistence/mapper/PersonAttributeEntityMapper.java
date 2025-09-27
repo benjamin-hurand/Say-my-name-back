@@ -2,9 +2,10 @@ package com.saymyname.persistence.mapper;
 
 import com.saymyname.core.model.people.Person;
 import com.saymyname.core.model.people.PersonAttribute;
-import com.saymyname.persistence.entity.AttributeEntity;
 import com.saymyname.persistence.entity.PersonAttributeEntity;
 import com.saymyname.persistence.entity.PersonEntity;
+import com.saymyname.persistence.entity.attribute.AttributeEntity;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

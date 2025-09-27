@@ -6,11 +6,13 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Repository;
 
 import com.saymyname.core.model.auth.User;
+import com.saymyname.core.model.enums.SrsAlgorithm;
 import com.saymyname.persistence.entity.UserEntity;
 import com.saymyname.persistence.mapper.UserEntityMapper;
 import com.saymyname.persistence.repository.UserRepository;
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 
 @Repository
 public class UserDao {
@@ -54,5 +56,17 @@ public class UserDao {
 
     public User findByToken(String token) {
         return null;
+    }
+
+    @Transactional
+    public User updateSrsAlgorithm(User userModel, SrsAlgorithm newAlgo) {
+        final Long id = userModel.getId();
+        int updated = userRepository.updateSrsAlgorithmById(id, newAlgo);
+        if (updated != 1) {
+            throw new IllegalStateException("SRS update failed for userId=" + id);
+        }
+
+        // Pas de SELECT supplémentaire : on renvoie un Model minimal “synchronisé”
+        return UserEntityMapper.toSrsUpdateModel(id, newAlgo);
     }
 }

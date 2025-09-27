@@ -8,7 +8,6 @@ import org.springframework.stereotype.Repository;
 
 import com.saymyname.core.model.people.Attribute;
 import com.saymyname.persistence.mapper.AttributeEntityMapper;
-import com.saymyname.persistence.mapper.AttributeMinMaxProjectionMapper;
 import com.saymyname.persistence.repository.AttributeRepository;
 
 @Repository
@@ -16,13 +15,10 @@ public class AttributeDao {
 
     private final AttributeRepository attributeRepository;
     private final AttributeEntityMapper attributeEntityMapper;
-    private final AttributeMinMaxProjectionMapper attributeMinMaxProjectionMapper;
 
-    public AttributeDao(AttributeRepository attributeRepository, AttributeEntityMapper attributeEntityMapper,
-            AttributeMinMaxProjectionMapper attributeMinMaxProjectionMapper) {
+    public AttributeDao(AttributeRepository attributeRepository, AttributeEntityMapper attributeEntityMapper) {
         this.attributeRepository = attributeRepository;
         this.attributeEntityMapper = attributeEntityMapper;
-        this.attributeMinMaxProjectionMapper = attributeMinMaxProjectionMapper;
     }
 
     public List<Attribute> findAll() {
@@ -34,10 +30,10 @@ public class AttributeDao {
                 .map(attributeEntityMapper::toModel);
     }
 
-    public List<Attribute> getFilterableAttributesWithMinMax() {
-        return attributeRepository.findAttributesWithMinMax()
+    public List<Attribute> getFilterableAttributes() {
+        return attributeRepository.findByFilterTrue()
                 .stream()
-                .map(attributeMinMaxProjectionMapper::toModel)
+                .map(attributeEntityMapper::toModel)
                 .collect(Collectors.toList());
     }
 

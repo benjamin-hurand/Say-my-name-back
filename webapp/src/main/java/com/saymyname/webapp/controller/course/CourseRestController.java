@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.saymyname.core.model.course.AnswerAndNextQuestion;
 import com.saymyname.core.model.course.Course;
 import com.saymyname.core.model.course.CourseQuestionHistory;
+import com.saymyname.core.model.course.CourseStats;
 import com.saymyname.core.model.enums.KnowledgeStatus;
 import com.saymyname.core.util.InitialCrafter;
 import com.saymyname.service.course.CourseQuestionHistoryService;
@@ -25,6 +26,7 @@ import com.saymyname.webapp.dto.QuizEntryDto;
 import com.saymyname.webapp.dto.course.CourseAnswerAndNextQuestionDto;
 import com.saymyname.webapp.dto.course.CourseAnswerDto;
 import com.saymyname.webapp.dto.course.CourseDto;
+import com.saymyname.webapp.dto.course.CourseStatsDto;
 import com.saymyname.webapp.dto.course.CourseQuestionDto;
 import com.saymyname.webapp.dto.course.CreateCourseDto;
 import com.saymyname.webapp.dto.course.StatusCountsDto;
@@ -33,6 +35,7 @@ import com.saymyname.webapp.mapper.QuizEntryDtoMapper;
 import com.saymyname.webapp.mapper.course.CourseAnswerAndNextQuestionDtoMapper;
 import com.saymyname.webapp.mapper.course.CourseDtoMapper;
 import com.saymyname.webapp.mapper.course.CourseQuestionHistoryDtoMapper;
+import com.saymyname.webapp.mapper.course.CourseStatsDtoMapper;
 
 @RestController
 @RequestMapping("/api/courses")
@@ -40,6 +43,7 @@ public class CourseRestController {
 
         private final CourseService courseService;
         private final CourseDtoMapper courseDtoMapper;
+        private final CourseStatsDtoMapper courseStatsDtoMapper;
         private final CourseQuestionHistoryDtoMapper courseQuestionHistoryDtoMapper;
         private final CourseAnswerAndNextQuestionDtoMapper courseAnswerAndNextQuestionDtoMapper;
         private final KnowledgeService knowledgeService;
@@ -52,6 +56,7 @@ public class CourseRestController {
         public CourseRestController(
                         CourseService courseService,
                         CourseDtoMapper courseDtoMapper,
+                        CourseStatsDtoMapper courseStatsDtoMapper,
                         CourseQuestionHistoryDtoMapper courseQuestionHistoryDtoMapper,
                         CourseAnswerAndNextQuestionDtoMapper courseAnswerAndNextQuestionDtoMapper,
                         KnowledgeService knowledgeService,
@@ -61,6 +66,7 @@ public class CourseRestController {
                         InitialCrafter initialCrafter) {
                 this.courseService = courseService;
                 this.courseDtoMapper = courseDtoMapper;
+                this.courseStatsDtoMapper = courseStatsDtoMapper;
                 this.courseQuestionHistoryDtoMapper = courseQuestionHistoryDtoMapper;
                 this.courseAnswerAndNextQuestionDtoMapper = courseAnswerAndNextQuestionDtoMapper;
                 this.knowledgeService = knowledgeService;
@@ -94,6 +100,18 @@ public class CourseRestController {
                 return ResponseEntity.status(201).body(createdDto);
         }
 
+        @PostMapping("/{courseId}/restart")
+        public ResponseEntity<CourseDto> restart(@PathVariable("courseId") Long courseId) {
+                Course restarted = courseService.restartCourse(courseId);
+                return ResponseEntity.ok(courseDtoMapper.toDto(restarted));
+        }
+
+        @PostMapping("/{courseId}/abandon")
+        public ResponseEntity<CourseDto> abandon(@PathVariable("courseId") Long courseId) {
+                Course abandoned = courseService.abandonCourse(courseId);
+                return ResponseEntity.ok(courseDtoMapper.toDto(abandoned));
+        }
+
         // 1. Démarrer / récupérer la première question
         @GetMapping("/{courseId}/continue")
         public ResponseEntity<CourseQuestionDto> start(@PathVariable("courseId") Long courseId) {
@@ -113,6 +131,7 @@ public class CourseRestController {
                 CourseQuestionHistory answerHistory = courseQuestionHistoryDtoMapper.toModel(answerDto);
                 Course course = courseService.findById(answerHistory.getCourse().getId());
                 answerHistory.setCourse(course);
+                AnswerAndNextQuestion answerAndNextQuestion = courseService.answer(course, answerHistory);
                 Integer unknown = knowledgeService.countByCourseAndStatus(answerHistory.getCourse(),
                                 KnowledgeStatus.UNKNOWN);
                 Integer discoveries = knowledgeService.countByCourseAndStatus(answerHistory.getCourse(),
@@ -121,7 +140,6 @@ public class CourseRestController {
                                 KnowledgeStatus.LEARNED);
                 Integer mastered = knowledgeService.countByCourseAndStatus(answerHistory.getCourse(),
                                 KnowledgeStatus.MASTERED);
-                AnswerAndNextQuestion answerAndNextQuestion = courseService.answer(course, answerHistory);
                 StatusCountsDto statusCounts = new StatusCountsDto(unknown, discoveries, learned, mastered);
                 CourseAnswerAndNextQuestionDto dto = courseAnswerAndNextQuestionDtoMapper.toDto(answerAndNextQuestion,
                                 statusCounts);
@@ -154,5 +172,11 @@ public class CourseRestController {
                                 }).toList();
                 return quizListDto;
 
+        }
+
+        @GetMapping("/{courseId}/stats")
+        public ResponseEntity<CourseStatsDto> stats(@PathVariable("courseId") Long courseId) {
+                CourseStats cs = courseService.getStats(courseId);
+                return ResponseEntity.ok(courseStatsDtoMapper.toDto(cs));
         }
 }

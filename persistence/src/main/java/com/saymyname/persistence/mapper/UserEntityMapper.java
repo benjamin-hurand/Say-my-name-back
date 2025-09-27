@@ -1,6 +1,7 @@
 package com.saymyname.persistence.mapper;
 
 import com.saymyname.core.model.auth.User;
+import com.saymyname.core.model.enums.SrsAlgorithm;
 import com.saymyname.persistence.entity.UserEntity;
 import org.springframework.stereotype.Component;
 
@@ -26,6 +27,13 @@ public class UserEntityMapper {
             return null;
         return new User.Builder()
                 .withId(userEntity.getId())
+                .build();
+    }
+
+    public static User toSrsUpdateModel(Long id, SrsAlgorithm srs) {
+        return new User.Builder()
+                .withId(id)
+                .withSrsAlgorithm(srs)
                 .build();
     }
 

@@ -3,6 +3,8 @@ package com.saymyname.persistence.entity;
 import jakarta.persistence.*;
 import java.util.Objects;
 
+import com.saymyname.persistence.entity.attribute.AttributeEntity;
+
 @Entity
 @Table(name = "game_modes_attributes")
 public class GameModeAttributeEntity {

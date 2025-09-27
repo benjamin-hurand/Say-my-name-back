@@ -1,6 +1,7 @@
 package com.saymyname.persistence.repository;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,9 +11,36 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.saymyname.persistence.entity.PersonAttributeEntity;
+import com.saymyname.persistence.projection.PersonPrimaryAttrProjection;
+
+import static org.hibernate.jpa.HibernateHints.HINT_FETCH_SIZE;
+import static org.hibernate.jpa.HibernateHints.HINT_READ_ONLY;
+import jakarta.persistence.QueryHint;
 
 @Repository
 public interface PersonAttributeRepository extends JpaRepository<PersonAttributeEntity, Long> {
+
+  // MIN/MAX pour attributs numériques (valeurs stockées en texte)
+  @Query(value = """
+      SELECT pa.attribute_id    AS attributeId,
+             MIN(CAST(pa.value AS DECIMAL(20,6))) AS minVal,
+             MAX(CAST(pa.value AS DECIMAL(20,6))) AS maxVal
+      FROM persons_attributes pa
+      WHERE pa.attribute_id IN (:attributeIds)
+      GROUP BY pa.attribute_id
+      """, nativeQuery = true)
+  List<Object[]> findNumberMinMaxByAttributeIds(@Param("attributeIds") Collection<Long> attributeIds);
+
+  // MIN/MAX pour attributs date (format 'YYYY-MM-DD' côté DB)
+  @Query(value = """
+      SELECT pa.attribute_id AS attributeId,
+             DATE_FORMAT(MIN(STR_TO_DATE(pa.value, '%Y-%m-%d')), '%Y-%m-%d') AS minVal,
+             DATE_FORMAT(MAX(STR_TO_DATE(pa.value, '%Y-%m-%d')), '%Y-%m-%d') AS maxVal
+      FROM persons_attributes pa
+      WHERE pa.attribute_id IN (:attributeIds)
+      GROUP BY pa.attribute_id
+      """, nativeQuery = true)
+  List<Object[]> findDateMinMaxByAttributeIds(@Param("attributeIds") Collection<Long> attributeIds);
 
   @Query(value = "SELECT COUNT(DISTINCT pa.person_id) " +
       "FROM persons_attributes pa " +
@@ -109,4 +137,27 @@ public interface PersonAttributeRepository extends JpaRepository<PersonAttribute
          AND valid_to < :cutoff
       """, nativeQuery = true)
   int hardDeleteExpiredPendingAttributes(@Param("cutoff") LocalDateTime cutoff);
+
+  /**
+   * 🔎 Projection pour les attributs primaires (primaryField=true) d’un batch de
+   * personnes.
+   */
+  @org.springframework.data.jpa.repository.QueryHints({
+      @QueryHint(name = HINT_READ_ONLY, value = "true"),
+      @QueryHint(name = HINT_FETCH_SIZE, value = "500")
+  })
+  @Query("""
+      select
+        pa.person.id as personId,
+        pa.id as personAttributeId,
+        a.id as attributeId,
+        pa.value as value,
+        a.displayOrder as displayOrder
+      from PersonAttributeEntity pa
+        join pa.attribute a
+      where pa.person.id in :personIds
+        and a.primaryField = true
+      order by pa.person.id asc, a.displayOrder asc, pa.id asc
+      """)
+  List<PersonPrimaryAttrProjection> findPrimaryAttributesForPersons(@Param("personIds") Collection<Long> personIds);
 }

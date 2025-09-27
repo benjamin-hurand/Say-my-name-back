@@ -1,42 +1,55 @@
+// src/main/java/com/saymyname/core/model/people/Attribute.java
 package com.saymyname.core.model.people;
 
+import java.util.Map;
 import java.util.Objects;
 
+import com.saymyname.core.model.enums.ConstraintKind;
 import com.saymyname.core.model.enums.EditPolicy;
 
 public class Attribute {
+
     private Long id;
     private String name;
-    private int maxValues; // anciennement "unique"
+
+    // NEW (aligné DB)
+    private int displayOrder = 100;
+    private boolean primaryField;
+    private boolean category;
+
+    private int maxValues;
     private boolean filter;
-    private boolean sort;
-    private boolean initializable;
-    private boolean required; // présence obligatoire (≠ immuable)
-    private AttributeType type;
     private String minValue;
     private String maxValue;
+    private boolean sort;
+    private boolean initializable;
+    private boolean required;
+    private AttributeType type;
+    private EditPolicy editPolicy = EditPolicy.FREE;
+    private ConstraintKind constraintKind = ConstraintKind.NONE;
+    /** Représente le JSON (clé/valeur) stocké en DB. */
+    private Map<String, Object> constraintPayload;
 
-    // NEW: contrôle de l'édition/suppression directe
-    private EditPolicy editPolicy;
-
-    // Constructeur par défaut
     public Attribute() {
-        this.editPolicy = EditPolicy.FREE;
     }
 
-    // Constructeur privé utilisé par le Builder
-    private Attribute(Builder builder) {
-        this.id = builder.id;
-        this.name = builder.name;
-        this.maxValues = builder.maxValues;
-        this.filter = builder.filter;
-        this.sort = builder.sort;
-        this.initializable = builder.initializable;
-        this.required = builder.required;
-        this.type = builder.type;
-        this.minValue = builder.minValue;
-        this.maxValue = builder.maxValue;
-        this.editPolicy = builder.editPolicy != null ? builder.editPolicy : EditPolicy.FREE;
+    private Attribute(Builder b) {
+        this.id = b.id;
+        this.name = b.name;
+        this.displayOrder = b.displayOrder;
+        this.primaryField = b.primaryField;
+        this.category = b.category;
+        this.maxValues = b.maxValues;
+        this.filter = b.filter;
+        this.minValue = b.minValue;
+        this.maxValue = b.maxValue;
+        this.sort = b.sort;
+        this.initializable = b.initializable;
+        this.required = b.required;
+        this.type = b.type;
+        this.editPolicy = b.editPolicy != null ? b.editPolicy : EditPolicy.FREE;
+        this.constraintKind = b.constraintKind != null ? b.constraintKind : ConstraintKind.NONE;
+        this.constraintPayload = b.constraintPayload;
     }
 
     // Getters
@@ -48,12 +61,32 @@ public class Attribute {
         return name;
     }
 
+    public int getDisplayOrder() {
+        return displayOrder;
+    }
+
+    public boolean isPrimaryField() {
+        return primaryField;
+    }
+
+    public boolean isCategory() {
+        return category;
+    }
+
     public int getMaxValues() {
         return maxValues;
     }
 
     public boolean isFilter() {
         return filter;
+    }
+
+    public String getMinValue() {
+        return minValue;
+    }
+
+    public String getMaxValue() {
+        return maxValue;
     }
 
     public boolean isSort() {
@@ -72,16 +105,16 @@ public class Attribute {
         return type;
     }
 
-    public String getMinValue() {
-        return minValue;
-    }
-
-    public String getMaxValue() {
-        return maxValue;
-    }
-
     public EditPolicy getEditPolicy() {
         return editPolicy;
+    }
+
+    public ConstraintKind getConstraintKind() {
+        return constraintKind;
+    }
+
+    public Map<String, Object> getConstraintPayload() {
+        return constraintPayload;
     }
 
     // Setters
@@ -91,6 +124,18 @@ public class Attribute {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public void setDisplayOrder(int displayOrder) {
+        this.displayOrder = displayOrder;
+    }
+
+    public void setPrimaryField(boolean primaryField) {
+        this.primaryField = primaryField;
+    }
+
+    public void setCategory(boolean category) {
+        this.category = category;
     }
 
     public void setMaxValues(int maxValues) {
@@ -117,31 +162,36 @@ public class Attribute {
         this.type = type;
     }
 
-    public void setMinValue(String minValue) {
-        this.minValue = minValue;
-    }
-
-    public void setMaxValue(String maxValue) {
-        this.maxValue = maxValue;
-    }
-
     public void setEditPolicy(EditPolicy editPolicy) {
         this.editPolicy = editPolicy;
     }
 
-    // Builder Pattern
+    public void setConstraintKind(ConstraintKind constraintKind) {
+        this.constraintKind = constraintKind;
+    }
+
+    public void setConstraintPayload(Map<String, Object> constraintPayload) {
+        this.constraintPayload = constraintPayload;
+    }
+
+    // Builder
     public static class Builder {
         private Long id;
         private String name;
+        private int displayOrder = 100;
+        private boolean primaryField;
+        private boolean category;
         private int maxValues;
         private boolean filter;
+        private String minValue;
+        private String maxValue;
         private boolean sort;
         private boolean initializable;
         private boolean required;
         private AttributeType type;
-        private String minValue;
-        private String maxValue;
         private EditPolicy editPolicy;
+        private ConstraintKind constraintKind = ConstraintKind.NONE;
+        private Map<String, Object> constraintPayload;
 
         public Builder withId(Long id) {
             this.id = id;
@@ -153,6 +203,21 @@ public class Attribute {
             return this;
         }
 
+        public Builder withDisplayOrder(int displayOrder) {
+            this.displayOrder = displayOrder;
+            return this;
+        }
+
+        public Builder withPrimaryField(boolean primaryField) {
+            this.primaryField = primaryField;
+            return this;
+        }
+
+        public Builder withCategory(boolean category) {
+            this.category = category;
+            return this;
+        }
+
         public Builder withMaxValues(int maxValues) {
             this.maxValues = maxValues;
             return this;
@@ -160,6 +225,16 @@ public class Attribute {
 
         public Builder withFilter(boolean filter) {
             this.filter = filter;
+            return this;
+        }
+
+        public Builder withMinValue(String minValue) {
+            this.minValue = minValue;
+            return this;
+        }
+
+        public Builder withMaxValue(String maxValue) {
+            this.maxValue = maxValue;
             return this;
         }
 
@@ -183,18 +258,18 @@ public class Attribute {
             return this;
         }
 
-        public Builder withMinValue(String minValue) {
-            this.minValue = minValue;
-            return this;
-        }
-
-        public Builder withMaxValue(String maxValue) {
-            this.maxValue = maxValue;
-            return this;
-        }
-
         public Builder withEditPolicy(EditPolicy editPolicy) {
             this.editPolicy = editPolicy;
+            return this;
+        }
+
+        public Builder withConstraintKind(ConstraintKind k) {
+            this.constraintKind = k;
+            return this;
+        }
+
+        public Builder withConstraintPayload(Map<String, Object> payload) {
+            this.constraintPayload = payload;
             return this;
         }
 
@@ -210,7 +285,10 @@ public class Attribute {
         if (!(o instanceof Attribute))
             return false;
         Attribute that = (Attribute) o;
-        return maxValues == that.maxValues &&
+        return displayOrder == that.displayOrder &&
+                primaryField == that.primaryField &&
+                category == that.category &&
+                maxValues == that.maxValues &&
                 filter == that.filter &&
                 sort == that.sort &&
                 initializable == that.initializable &&
@@ -218,15 +296,15 @@ public class Attribute {
                 Objects.equals(id, that.id) &&
                 Objects.equals(name, that.name) &&
                 type == that.type &&
-                Objects.equals(minValue, that.minValue) &&
-                Objects.equals(maxValue, that.maxValue) &&
-                editPolicy == that.editPolicy;
+                editPolicy == that.editPolicy &&
+                constraintKind == that.constraintKind &&
+                Objects.equals(constraintPayload, that.constraintPayload);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, maxValues, filter, sort, initializable, required, type, minValue, maxValue,
-                editPolicy);
+        return Objects.hash(id, name, displayOrder, primaryField, category, maxValues, filter, sort,
+                initializable, required, type, editPolicy, constraintKind, constraintPayload);
     }
 
     @Override
@@ -234,15 +312,20 @@ public class Attribute {
         return "Attribute{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
+                ", displayOrder=" + displayOrder +
+                ", primaryField=" + primaryField +
+                ", category=" + category +
                 ", maxValues=" + maxValues +
                 ", filter=" + filter +
+                ", minValue='" + minValue + '\'' +
+                ", maxValue='" + maxValue + '\'' +
                 ", sort=" + sort +
                 ", initializable=" + initializable +
                 ", required=" + required +
                 ", type=" + type +
-                ", minValue='" + minValue + '\'' +
-                ", maxValue='" + maxValue + '\'' +
                 ", editPolicy=" + editPolicy +
+                ", constraintKind=" + constraintKind +
+                ", constraintPayload=" + constraintPayload +
                 '}';
     }
 }

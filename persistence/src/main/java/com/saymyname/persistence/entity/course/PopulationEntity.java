@@ -6,8 +6,8 @@ import java.util.Objects;
 
 import org.hibernate.annotations.Formula;
 
-import com.saymyname.persistence.entity.AttributeEntity;
 import com.saymyname.persistence.entity.UserEntity;
+import com.saymyname.persistence.entity.attribute.AttributeEntity;
 
 @Entity
 @Table(name = "populations")

@@ -3,6 +3,7 @@ package com.saymyname.service.profile;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Objects;
 import javax.imageio.ImageIO;
 
@@ -19,6 +20,8 @@ import com.saymyname.core.model.people.Person;
 import com.saymyname.core.model.people.Photo;
 import com.saymyname.persistence.dao.PhotoDao;
 import com.saymyname.persistence.storage.PhotoStorage;
+import com.saymyname.persistence.storage.PhotoStorageReadable;
+import com.saymyname.persistence.storage.SmallPhotoStorage;
 import com.saymyname.security.CustomUserDetails;
 import com.saymyname.security.Roles;
 import com.saymyname.service.PersonService;
@@ -29,17 +32,33 @@ public class PhotoService {
     private final PhotoDao photoDao;
     private final PhotoStorage photoStorage;
     private final PersonService personService;
+    private final SmallPhotoStorage smallPhotoStorage;
+
+    // Si disponible, permet de lire l’original pour régénérer les miniatures
+    private final PhotoStorageReadable readableStorage; // peut être null
 
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 Mo
     private static final int MIN_WIDTH = 200; // px
     private static final int MIN_HEIGHT = 200; // px
 
-    public PhotoService(PhotoDao photoDao, PhotoStorage photoStorage, PersonService personService) {
+    // Taille cible de la miniature du trombi
+    private static final int THUMB_SIZE = 256;
+
+    public PhotoService(
+            PhotoDao photoDao,
+            PhotoStorage photoStorage,
+            PersonService personService,
+            SmallPhotoStorage smallPhotoStorage) {
         this.photoDao = photoDao;
         this.photoStorage = photoStorage;
         this.personService = personService;
+        this.smallPhotoStorage = smallPhotoStorage;
+        this.readableStorage = (photoStorage instanceof PhotoStorageReadable psr) ? psr : null;
     }
 
+    /**
+     * Upload d’une photo (PENDING) + génération immédiate de la miniature.
+     */
     @Transactional
     public Photo submitPhotoForApproval(Long personId, MultipartFile file, CustomUserDetails principal) {
         if (personId == null)
@@ -55,11 +74,11 @@ public class PhotoService {
             throw new ValidationException("La photo dépasse la taille maximale autorisée (5 Mo)");
         }
 
+        final BufferedImage img;
         try {
-            BufferedImage img = ImageIO.read(file.getInputStream());
-            if (img == null) {
+            img = ImageIO.read(file.getInputStream());
+            if (img == null)
                 throw new ValidationException("Le fichier n'est pas une image valide");
-            }
             if (img.getWidth() < MIN_WIDTH || img.getHeight() < MIN_HEIGHT) {
                 throw new ValidationException(
                         String.format("La photo est trop petite : minimum %dx%d requis", MIN_WIDTH, MIN_HEIGHT));
@@ -71,8 +90,14 @@ public class PhotoService {
         var stored = photoStorage.store(file);
 
         try {
+            // 1) Génère la miniature (depuis l'image déjà en mémoire)
+            BufferedImage thumb = ImageResize.squareThumbnail(img, THUMB_SIZE);
+            smallPhotoStorage.storeSmall(stored.key(), thumb);
+
+            // 2) Supprime toute éventuelle PENDING existante pour cette personne
             photoDao.deletePendingByPersonId(personId);
 
+            // 3) Persiste la nouvelle PENDING
             Photo toCreate = new Photo.Builder()
                     .withPerson(new Person.Builder().withId(personId).build())
                     .withStorageKey(stored.key())
@@ -83,9 +108,47 @@ public class PhotoService {
             return photoDao.save(toCreate);
 
         } catch (RuntimeException ex) {
+            // rollback storage si la suite échoue
+            smallPhotoStorage.deleteQuietly(stored.key());
             photoStorage.deleteQuietly(stored.key());
             throw ex;
         }
+    }
+
+    /**
+     * Tente de (ré)générer la miniature pour la storageKey donnée s’il en manque
+     * une.
+     * 
+     * @return true si la miniature existe (déjà ou régénérée), false sinon (ex: pas
+     *         de lecture dispo).
+     */
+    @Transactional(readOnly = true)
+    public boolean ensureSmallExists(String storageKey) {
+        if (storageKey == null || storageKey.isBlank())
+            return false;
+
+        if (smallPhotoStorage.exists(storageKey)) {
+            return true;
+        }
+
+        // Si on peut lire l’original → on régénère
+        if (readableStorage != null && readableStorage.exists(storageKey)) {
+            try (InputStream in = readableStorage.open(storageKey)) {
+                BufferedImage img = ImageIO.read(in);
+                if (img == null)
+                    return false;
+                BufferedImage thumb = ImageResize.squareThumbnail(img, THUMB_SIZE);
+                smallPhotoStorage.storeSmall(storageKey, thumb);
+                return true;
+            } catch (IOException e) {
+                return false;
+            } catch (RuntimeException re) {
+                return false;
+            }
+        }
+
+        // Pas de miniature et pas de lecture du storage → impossible ici
+        return false;
     }
 
     private void checkAuthorization(CustomUserDetails principal, Long personId) {

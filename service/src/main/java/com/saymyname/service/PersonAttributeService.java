@@ -3,6 +3,8 @@ package com.saymyname.service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +20,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.saymyname.core.model.enums.EditPolicy;
 import com.saymyname.core.model.people.Attribute;
+import com.saymyname.core.model.people.AttributeType;
+import com.saymyname.core.model.people.ObservedMinMax;
 import com.saymyname.core.model.people.PersonAttribute;
 import com.saymyname.core.util.TextNormalization;
 import com.saymyname.core.validation.AttributeValueValidator;
@@ -41,6 +45,35 @@ public class PersonAttributeService {
 
     public List<PersonAttribute> getAttributesByPersonId(Long personId) {
         return personAttributeDao.findAttributesByPersonId(personId);
+    }
+
+    /**
+     * Calcule min/max observés pour NUMBER/DATE et renvoie Map<attributeId,
+     * ObservedMinMax>.
+     */
+    public Map<Long, ObservedMinMax> computeObservedMinMaxByAttributes(List<Attribute> attributes) {
+        if (attributes == null || attributes.isEmpty())
+            return Collections.emptyMap();
+
+        Set<Long> numberIds = attributes.stream()
+                .filter(a -> a.isFilter() && a.getType() == AttributeType.NUMBER)
+                .map(Attribute::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        Set<Long> dateIds = attributes.stream()
+                .filter(a -> a.isFilter() && a.getType() == AttributeType.DATE)
+                .map(Attribute::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        var numberMinMax = personAttributeDao.findNumberMinMaxByAttributeIds(numberIds); // Map<Long, String[]>
+        var dateMinMax = personAttributeDao.findDateMinMaxByAttributeIds(dateIds); // Map<Long, String[]>
+
+        Map<Long, ObservedMinMax> out = new HashMap<>();
+        numberMinMax.forEach((id, arr) -> out.put(id, new ObservedMinMax(arr[0], arr[1])));
+        dateMinMax.forEach((id, arr) -> out.put(id, new ObservedMinMax(arr[0], arr[1])));
+        return out;
     }
 
     public Long countPersonsMatchingFilter(String minValue, String maxValue, LocalDateTime validFor,

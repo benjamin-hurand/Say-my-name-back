@@ -107,7 +107,6 @@ public class KnowledgeService {
                     boolean isTarget = modeAttrIds.contains(pa.getAttribute().getId());
                     boolean isCorrectAttr = true;
                     if (isTarget) {
-                        // normalisation basique, à adapter si vous utilisez un utilitaire
                         String normAnswer = answer.trim().toLowerCase();
                         String normVal = pa.getValue().trim().toLowerCase();
                         if (gameMode.getOperator() == "AND") {
@@ -142,10 +141,6 @@ public class KnowledgeService {
      * Regroupe par (gameModeId, personId), charge ou crée un seul Knowledge par
      * groupe,
      * applique tous les events, et upsert en base.
-     *
-     * @param user   l'utilisateur authentifié
-     * @param events la liste d'événements métier
-     * @return le nombre de Knowledge distincts mis à jour
      */
     @Transactional
     public int recordBatchResults(User user, List<KnowledgeResultEvent> events) {
@@ -191,10 +186,7 @@ public class KnowledgeService {
     }
 
     /**
-     * Applique un seul résultat (correct/helpUsed) sur un Knowledge donné :
-     * – mise à jour des compteurs (total, success, failure, streaks)
-     * – scheduling SRS selon l'algorithme de l'utilisateur
-     * – mise à jour du status (UNKNOWN → DISCOVERED → LEARNED)
+     * Applique un seul résultat (correct/helpUsed) sur un Knowledge donné.
      */
     private void applyResultToKnowledge(
             Knowledge k,
@@ -256,37 +248,34 @@ public class KnowledgeService {
     private record GroupKey(Long gameModeId, Long personId) {
     }
 
-    // POOLS
-    // UNKNOWN
-    public Knowledge findFirstNew(Long courseId, Long userId, Long gameModeId, Long lastPersonId, boolean allowRepeat) {
-        return knowledgeDao.findFirstNew(courseId, userId, gameModeId, lastPersonId, allowRepeat);
+    // ----------------- POOLS (signatures basées sur Course) -----------------
+
+    /** UNKNOWN */
+    public Knowledge findFirstNew(Course course, Long lastPersonId, boolean allowRepeat) {
+        return knowledgeDao.findFirstNew(course, lastPersonId, allowRepeat);
     }
 
-    // DISCOVERED
-    public Knowledge findFirstDiscovered(Long courseId, Long userId, Long gameModeId, Long lastPersonId,
-            boolean allowRepeat) {
-        return knowledgeDao.findFirstDiscovered(courseId, userId, gameModeId, lastPersonId, allowRepeat);
+    /** DISCOVERED */
+    public Knowledge findFirstDiscovered(Course course, Long lastPersonId, boolean allowRepeat) {
+        return knowledgeDao.findFirstDiscovered(course, lastPersonId, allowRepeat);
     }
 
-    // LEARNED: recent errors
-    public Knowledge findFirstRecentError(Long courseId, Long userId, Long gameModeId, Long lastPersonId,
-            boolean allowRepeat) {
-        return knowledgeDao.findFirstRecentError(courseId, userId, gameModeId, lastPersonId, allowRepeat);
+    /** LEARNED: erreurs récentes */
+    public Knowledge findFirstRecentError(Course course, Long lastPersonId, boolean allowRepeat) {
+        return knowledgeDao.findFirstRecentError(course, lastPersonId, allowRepeat);
     }
 
-    // LEARNED: srs due
-    public Knowledge findFirstSRS(Long courseId, Long userId, Long gameModeId, Long lastPersonId,
-            boolean allowRepeat) {
-        return knowledgeDao.findFirstSRS(courseId, userId, gameModeId, lastPersonId, allowRepeat);
+    /** LEARNED: SRS dues */
+    public Knowledge findFirstSRS(Course course, Long lastPersonId, boolean allowRepeat) {
+        return knowledgeDao.findFirstSRS(course, lastPersonId, allowRepeat);
     }
 
-    // [BONUS REVISION] MASTERED and LEARNED: future srs due
-    public Knowledge findRevision(Long courseId, Long userId, Long gameModeId, Long lastPersonId, boolean allowRepeat) {
-        return knowledgeDao.findRevision(courseId, userId, gameModeId, lastPersonId, allowRepeat);
+    /** MASTERED/LEARNED future dues — random */
+    public Knowledge findRevision(Course course, Long lastPersonId, boolean allowRepeat) {
+        return knowledgeDao.findRevision(course, lastPersonId, allowRepeat);
     }
 
     public List<Knowledge> findAllByCourse(Course course) {
         return knowledgeDao.findAllByCourse(course);
     }
-
 }

@@ -1,6 +1,8 @@
 package com.saymyname.persistence.entity;
 
 import com.saymyname.core.model.enums.ChangeStatus;
+import com.saymyname.persistence.entity.attribute.AttributeEntity;
+
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;

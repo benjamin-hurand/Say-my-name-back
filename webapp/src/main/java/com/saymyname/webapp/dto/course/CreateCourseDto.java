@@ -1,12 +1,10 @@
 package com.saymyname.webapp.dto.course;
 
-import java.util.List;
+import com.saymyname.core.model.enums.PopulationScope;
 
 public record CreateCourseDto(
-                Long userId,
-                Long gameModeId,
-                Long sortingAttributeId,
-                String sortingOrder,
-                List<Long> populationIds) {
+        Long userId,
+        Long gameModeId,
+        PopulationScope populationScope) {
 
 }

@@ -1,4 +1,4 @@
-// src/main/java/.../storage/LocalPhotoStorage.java
+// src/main/java/com/saymyname/persistence/storage/LocalPhotoStorage.java
 package com.saymyname.persistence.storage;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -10,7 +10,7 @@ import java.nio.file.*;
 import java.util.UUID;
 
 @Service
-public class LocalPhotoStorage implements PhotoStorage {
+public class LocalPhotoStorage implements PhotoStorageReadable { // ⬅️ implémente aussi Readable
 
     private final Path root;
     private final String publicBaseUrl; // ex: "/photos/"
@@ -58,6 +58,29 @@ public class LocalPhotoStorage implements PhotoStorage {
         try {
             Files.deleteIfExists(p);
         } catch (Exception ignore) {
+        }
+    }
+
+    // ====== lecture (nécessaire pour les miniatures) ======
+    @Override
+    public InputStream open(String key) {
+        try {
+            Path p = root.resolve(key).normalize();
+            if (!p.startsWith(root))
+                throw new RuntimeException("Path traversal");
+            return Files.newInputStream(p, StandardOpenOption.READ);
+        } catch (Exception e) {
+            throw new RuntimeException("Cannot open original image: " + key, e);
+        }
+    }
+
+    @Override
+    public boolean exists(String key) {
+        try {
+            Path p = root.resolve(key).normalize();
+            return p.startsWith(root) && Files.exists(p);
+        } catch (Exception e) {
+            return false;
         }
     }
 }

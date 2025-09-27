@@ -15,8 +15,9 @@ public class AttributeService {
         this.attributeDao = attributeDao;
     }
 
-    public List<Attribute> getFilterableAttributesWithMinMax() {
-        return attributeDao.getFilterableAttributesWithMinMax();
+    /** Renvoie les attributes filtrables ENRICHIS avec min/max observés. */
+    public List<Attribute> getFilterableAttributes() {
+        return attributeDao.getFilterableAttributes();
     }
 
     public List<Attribute> findAllSorts() {

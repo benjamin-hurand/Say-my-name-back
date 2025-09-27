@@ -1,6 +1,9 @@
 package com.saymyname.persistence.repository;
 
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.saymyname.core.model.enums.PhotoStatus;
@@ -15,4 +18,12 @@ public interface PhotoRepository extends JpaRepository<PhotoEntity, Long> {
      * au plus qu'une en PENDING.
      */
     long deleteByPersonIdAndStatus(Long personId, PhotoStatus status);
+
+    // 🔎 Toutes les keys APPROVED
+    @Query("select p.storageKey from PhotoEntity p where p.status = com.saymyname.core.model.enums.PhotoStatus.APPROVED")
+    List<String> findAllApprovedKeys();
+
+    // (optionnel) toutes les keys (si tu veux backfiller aussi les PENDING)
+    @Query("select p.storageKey from PhotoEntity p")
+    List<String> findAllKeys();
 }

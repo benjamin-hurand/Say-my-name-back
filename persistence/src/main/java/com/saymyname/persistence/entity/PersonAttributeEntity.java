@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
+import com.saymyname.persistence.entity.attribute.AttributeEntity;
+
 @Entity
 @Table(name = "persons_attributes")
 public class PersonAttributeEntity {

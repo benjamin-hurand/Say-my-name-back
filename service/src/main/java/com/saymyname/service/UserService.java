@@ -14,8 +14,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.saymyname.core.model.auth.User;
+import com.saymyname.core.model.enums.SrsAlgorithm;
 import com.saymyname.persistence.dao.UserDao;
 import com.saymyname.security.CustomUserDetails;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class UserService implements UserDetailsService {
@@ -208,5 +211,13 @@ public class UserService implements UserDetailsService {
     public User getCurrentAuthenticatedUserOrThrow() {
         return getCurrentAuthenticatedUser()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Utilisateur non trouvé"));
+    }
+
+    @Transactional
+    public User updateSrsAlgorithm(User me, SrsAlgorithm newAlgo) {
+        if (newAlgo == null || newAlgo.equals(me.getSrsAlgorithm())) {
+            return me; // rien à faire
+        }
+        return userDao.updateSrsAlgorithm(me, newAlgo);
     }
 }

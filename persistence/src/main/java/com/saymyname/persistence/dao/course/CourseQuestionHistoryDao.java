@@ -1,8 +1,11 @@
 package com.saymyname.persistence.dao.course;
 
+import java.time.LocalDateTime;
+
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.saymyname.core.model.course.Course;
 import com.saymyname.core.model.course.CourseQuestionHistory;
 import com.saymyname.persistence.entity.course.CourseQuestionHistoryEntity;
 import com.saymyname.persistence.mapper.course.CourseQuestionHistoryEntityMapper;
@@ -41,8 +44,27 @@ public class CourseQuestionHistoryDao {
                 .orElse(null);
     }
 
+    public void deleteAllByCourse(Course course) {
+        if (course != null) {
+            courseQuestionHistoryRepository.deleteByCourseId(course.getId());
+        }
+    }
+
     public void update(CourseQuestionHistory courseQuestion) {
         courseQuestionHistoryRepository.save(mapper.toEntity(courseQuestion));
     }
 
+    // ------- Stats activité -------
+    public int countAllAnswersByCourse(Course course) {
+        return Math.toIntExact(courseQuestionHistoryRepository.countByCourseId(course.getId()));
+    }
+
+    public int countAnswersSince(Course course, LocalDateTime since) {
+        return Math
+                .toIntExact(courseQuestionHistoryRepository.countByCourseIdAndAnsweredAtAfter(course.getId(), since));
+    }
+
+    public LocalDateTime findLastAnsweredAt(Course course) {
+        return courseQuestionHistoryRepository.findLastAnsweredAt(course.getId());
+    }
 }

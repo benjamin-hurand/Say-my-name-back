@@ -2,10 +2,13 @@ package com.saymyname.persistence.dao;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.saymyname.core.model.people.PersonAttribute;
@@ -32,6 +35,38 @@ public class PersonAttributeDao {
         this.personAttributeEntityMapper = personAttributeEntityMapper;
         this.attributeRepository = attributeRepository;
         this.personRepository = personRepository;
+    }
+
+    /** Retourne Map<attributeId, [min, max]> pour les attributs NUMBER. */
+    @Transactional(readOnly = true)
+    public Map<Long, String[]> findNumberMinMaxByAttributeIds(Collection<Long> attributeIds) {
+        if (attributeIds == null || attributeIds.isEmpty())
+            return Collections.emptyMap();
+        List<Object[]> rows = personAttributeRepository.findNumberMinMaxByAttributeIds(attributeIds);
+        return toMinMaxMap(rows);
+    }
+
+    /** Retourne Map<attributeId, [min, max]> pour les attributs DATE. */
+    @Transactional(readOnly = true)
+    public Map<Long, String[]> findDateMinMaxByAttributeIds(Collection<Long> attributeIds) {
+        if (attributeIds == null || attributeIds.isEmpty())
+            return Collections.emptyMap();
+        List<Object[]> rows = personAttributeRepository.findDateMinMaxByAttributeIds(attributeIds);
+        return toMinMaxMap(rows);
+    }
+
+    private Map<Long, String[]> toMinMaxMap(List<Object[]> rows) {
+        if (rows == null || rows.isEmpty())
+            return Collections.emptyMap();
+        Map<Long, String[]> map = new HashMap<>(rows.size());
+        for (Object[] r : rows) {
+            Long id = r[0] != null ? ((Number) r[0]).longValue() : null;
+            String min = r[1] != null ? String.valueOf(r[1]) : null;
+            String max = r[2] != null ? String.valueOf(r[2]) : null;
+            if (id != null)
+                map.put(id, new String[] { min, max });
+        }
+        return map;
     }
 
     public Long countPersonsMatchingFilter(String minValue, String nextValue, LocalDateTime validFor,

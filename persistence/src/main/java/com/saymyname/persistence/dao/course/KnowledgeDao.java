@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.saymyname.core.model.course.Course;
 import com.saymyname.core.model.course.Knowledge;
 import com.saymyname.core.model.enums.KnowledgeStatus;
+import com.saymyname.core.model.enums.PopulationScope;
 import com.saymyname.persistence.entity.course.KnowledgeEntity;
 import com.saymyname.persistence.mapper.course.KnowledgeEntityMapper;
 import com.saymyname.persistence.repository.course.KnowledgeRepository;
@@ -30,17 +31,26 @@ public class KnowledgeDao {
         this.knowledgeRepository = knowledgeRepository;
     }
 
+    /** Insère un batch d’UNKNOWN selon le scope du course (FOLLOWED / ALL) */
     public int insertBatchOfTenKnowledges(Course course) {
-        return knowledgeRepository.insertNextKnowledgesForCourse(
-                course.getId(),
-                course.getUser().getId(),
-                course.getGameMode().getId(),
-                course.getSortingAttribute().getId(),
-                course.getSortingOrder(),
-                INITIAL_EF,
-                INITIAL_DIFF,
-                INITIAL_STABILITY,
-                BATCH_SIZE);
+        PopulationScope scope = course.getPopulationScope() != null ? course.getPopulationScope()
+                : PopulationScope.FOLLOWED;
+        return switch (scope) {
+            case FOLLOWED -> knowledgeRepository.insertNextKnowledgesForCourseFollowed(
+                    course.getUser().getId(),
+                    course.getGameMode().getId(),
+                    INITIAL_EF,
+                    INITIAL_DIFF,
+                    INITIAL_STABILITY,
+                    BATCH_SIZE);
+            case ALL -> knowledgeRepository.insertNextKnowledgesForCourseAll(
+                    course.getUser().getId(),
+                    course.getGameMode().getId(),
+                    INITIAL_EF,
+                    INITIAL_DIFF,
+                    INITIAL_STABILITY,
+                    BATCH_SIZE);
+        };
     }
 
     public int countByCourseAndStatus(Course course, KnowledgeStatus status) {
@@ -76,44 +86,69 @@ public class KnowledgeDao {
                 k.getDifficulty());
     }
 
-    // POOLS
-    // UNKNOWN
-    public Knowledge findFirstNew(Long courseId, Long userId, Long gameModeId, Long lastPersonId, boolean allowRepeat) {
-        KnowledgeEntity entity = knowledgeRepository.findFirstNewItem(courseId, userId, gameModeId, lastPersonId,
-                allowRepeat);
+    // --------- POOLS : signatures basées sur Course pour router via le scope -----
+
+    /** UNKNOWN */
+    public Knowledge findFirstNew(Course course, Long lastPersonId, boolean allowRepeat) {
+        var scope = course.getPopulationScope() != null ? course.getPopulationScope() : PopulationScope.FOLLOWED;
+        KnowledgeEntity entity = switch (scope) {
+            case FOLLOWED -> knowledgeRepository.findFirstNewItemFollowed(
+                    course.getUser().getId(), course.getGameMode().getId(), lastPersonId, allowRepeat);
+            case ALL -> knowledgeRepository.findFirstNewItemAll(
+                    course.getUser().getId(), course.getGameMode().getId(), lastPersonId, allowRepeat);
+        };
         return knowledgeEntityMapper.toModel(entity);
     }
 
-    // DISCOVERED
-    public Knowledge findFirstDiscovered(Long courseId, Long userId, Long gameModeId, Long lastPersonId,
-            boolean allowRepeat) {
-        KnowledgeEntity entity = knowledgeRepository.findFirstNotSoNewItem(courseId, userId, gameModeId, lastPersonId,
-                allowRepeat);
+    /** DISCOVERED */
+    public Knowledge findFirstDiscovered(Course course, Long lastPersonId, boolean allowRepeat) {
+        var scope = course.getPopulationScope() != null ? course.getPopulationScope() : PopulationScope.FOLLOWED;
+        KnowledgeEntity entity = switch (scope) {
+            case FOLLOWED -> knowledgeRepository.findFirstNotSoNewItemFollowed(
+                    course.getUser().getId(), course.getGameMode().getId(), lastPersonId, allowRepeat);
+            case ALL -> knowledgeRepository.findFirstNotSoNewItemAll(
+                    course.getUser().getId(), course.getGameMode().getId(), lastPersonId, allowRepeat);
+        };
         return knowledgeEntityMapper.toModel(entity);
     }
 
-    // LEARNED: recent errors
-    public Knowledge findFirstRecentError(Long courseId, Long userId, Long gameModeId, Long lastPersonId,
-            boolean allowRepeat) {
-        KnowledgeEntity entity = knowledgeRepository.findFirstRecentError(courseId, userId, gameModeId, lastPersonId,
-                allowRepeat);
+    /** LEARNED: erreurs récentes */
+    public Knowledge findFirstRecentError(Course course, Long lastPersonId, boolean allowRepeat) {
+        var scope = course.getPopulationScope() != null ? course.getPopulationScope() : PopulationScope.FOLLOWED;
+        KnowledgeEntity entity = switch (scope) {
+            case FOLLOWED -> knowledgeRepository.findFirstRecentErrorFollowed(
+                    course.getUser().getId(), course.getGameMode().getId(), lastPersonId, allowRepeat);
+            case ALL -> knowledgeRepository.findFirstRecentErrorAll(
+                    course.getUser().getId(), course.getGameMode().getId(), lastPersonId, allowRepeat);
+        };
         return knowledgeEntityMapper.toModel(entity);
     }
 
-    // LEARNED: srs due
-    public Knowledge findFirstSRS(Long courseId, Long userId, Long gameModeId, Long lastPersonId, boolean allowRepeat) {
-        KnowledgeEntity entity = knowledgeRepository
-                .findFirstSrsDue(courseId, userId,
-                        gameModeId, lastPersonId, allowRepeat);
+    /** LEARNED: SRS dues */
+    public Knowledge findFirstSRS(Course course, Long lastPersonId, boolean allowRepeat) {
+        var scope = course.getPopulationScope() != null ? course.getPopulationScope() : PopulationScope.FOLLOWED;
+        KnowledgeEntity entity = switch (scope) {
+            case FOLLOWED -> knowledgeRepository.findFirstSrsDueFollowed(
+                    course.getUser().getId(), course.getGameMode().getId(), lastPersonId, allowRepeat);
+            case ALL -> knowledgeRepository.findFirstSrsDueAll(
+                    course.getUser().getId(), course.getGameMode().getId(), lastPersonId, allowRepeat);
+        };
         return knowledgeEntityMapper.toModel(entity);
     }
 
-    // [BONUS REVISION] MASTERED and LEARNED: future srs due
-    public Knowledge findRevision(Long courseId, Long userId, Long gameModeId, Long lastPersonId, boolean allowRepeat) {
-        KnowledgeEntity entity = knowledgeRepository.findRevision(courseId, userId, gameModeId, lastPersonId,
-                allowRepeat);
+    /** MASTERED ou LEARNED future dues — random */
+    public Knowledge findRevision(Course course, Long lastPersonId, boolean allowRepeat) {
+        var scope = course.getPopulationScope() != null ? course.getPopulationScope() : PopulationScope.FOLLOWED;
+        KnowledgeEntity entity = switch (scope) {
+            case FOLLOWED -> knowledgeRepository.findRevisionFollowed(
+                    course.getUser().getId(), course.getGameMode().getId(), lastPersonId, allowRepeat);
+            case ALL -> knowledgeRepository.findRevisionAll(
+                    course.getUser().getId(), course.getGameMode().getId(), lastPersonId, allowRepeat);
+        };
         return knowledgeEntityMapper.toModel(entity);
     }
+
+    // ----------------------------------------------------------------
 
     public void update(Knowledge knowledge) {
         knowledgeRepository.save(knowledgeEntityMapper.toEntity(knowledge));
@@ -121,9 +156,12 @@ public class KnowledgeDao {
 
     public List<Knowledge> findAllByCourse(Course course) {
         return knowledgeRepository
-                .findByGameModeIdAndUserIdAndStatusNot(course.getGameMode().getId(), course.getUser().getId(),
+                .findByGameModeIdAndUserIdAndStatusNot(
+                        course.getGameMode().getId(),
+                        course.getUser().getId(),
                         KnowledgeStatus.MASTERED)
                 .stream()
-                .map(knowledgeEntityMapper::toModel).toList();
+                .map(knowledgeEntityMapper::toModel)
+                .toList();
     }
 }

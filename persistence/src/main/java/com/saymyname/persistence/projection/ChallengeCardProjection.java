@@ -2,6 +2,8 @@ package com.saymyname.persistence.projection;
 
 import java.time.LocalDateTime;
 
+import com.saymyname.core.model.people.AttributeType;
+
 public interface ChallengeCardProjection {
     // Champs du challenge
     Long getChallengeId();
@@ -37,7 +39,7 @@ public interface ChallengeCardProjection {
 
     String getAttributeName();
 
-    String getFilterType();
+    AttributeType getFilterType();
 
     // Champs du game mode
     Long getGameModeId();

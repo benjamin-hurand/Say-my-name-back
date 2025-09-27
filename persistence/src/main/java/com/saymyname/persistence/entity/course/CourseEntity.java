@@ -1,12 +1,12 @@
+// src/main/java/com/saymyname/persistence/entity/course/CourseEntity.java
 package com.saymyname.persistence.entity.course;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Objects;
 
 import com.saymyname.core.model.enums.CourseStatus;
-import com.saymyname.persistence.entity.AttributeEntity;
+import com.saymyname.core.model.enums.PopulationScope; // ✅ nouvel enum côté core
 import com.saymyname.persistence.entity.GameModeEntity;
 import com.saymyname.persistence.entity.UserEntity;
 
@@ -17,20 +17,16 @@ public class CourseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    // user_id -> users.id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
+    // game_mode_id -> game_modes.id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "game_mode_id", nullable = false)
     private GameModeEntity gameMode;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sorting_attribute_id")
-    private AttributeEntity sortingAttribute;
-
-    @Column(name = "sorting_order", nullable = false)
-    private String sortingOrder;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 12)
@@ -39,9 +35,9 @@ public class CourseEntity {
     @Column(name = "current_round", nullable = false)
     private int currentRound = 0;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "course_populations", joinColumns = @JoinColumn(name = "course_id"), inverseJoinColumns = @JoinColumn(name = "population_id"))
-    private List<PopulationEntity> populations;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "population_scope", nullable = false, length = 32)
+    private PopulationScope populationScope = PopulationScope.FOLLOWED;
 
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false, columnDefinition = "DATETIME DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime createdAt;
@@ -76,22 +72,6 @@ public class CourseEntity {
         this.gameMode = gameMode;
     }
 
-    public AttributeEntity getSortingAttribute() {
-        return sortingAttribute;
-    }
-
-    public void setSortingAttribute(AttributeEntity sortingAttribute) {
-        this.sortingAttribute = sortingAttribute;
-    }
-
-    public String getSortingOrder() {
-        return sortingOrder;
-    }
-
-    public void setSortingOrder(String sortingOrder) {
-        this.sortingOrder = sortingOrder;
-    }
-
     public CourseStatus getStatus() {
         return status;
     }
@@ -108,12 +88,12 @@ public class CourseEntity {
         this.currentRound = currentRound;
     }
 
-    public List<PopulationEntity> getPopulations() {
-        return populations;
+    public PopulationScope getPopulationScope() {
+        return populationScope;
     }
 
-    public void setPopulations(List<PopulationEntity> populations) {
-        this.populations = populations;
+    public void setPopulationScope(PopulationScope populationScope) {
+        this.populationScope = populationScope;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -138,33 +118,26 @@ public class CourseEntity {
             return true;
         if (!(o instanceof CourseEntity))
             return false;
-        CourseEntity c = (CourseEntity) o;
-        return id == c.id &&
-                Objects.equals(user, c.user) &&
-                Objects.equals(gameMode, c.gameMode) &&
-                Objects.equals(sortingAttribute, c.sortingAttribute) &&
-                Objects.equals(sortingOrder, c.sortingOrder) &&
-                Objects.equals(status, c.status) &&
-                Objects.equals(populations, c.populations);
+        CourseEntity that = (CourseEntity) o;
+        // Égalité sur l'identifiant uniquement (évite les charges LAZY)
+        return Objects.equals(id, that.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, user, gameMode,
-                sortingAttribute, sortingOrder,
-                status, populations);
+        // Hash basé uniquement sur l'id
+        return Objects.hash(id);
     }
 
     @Override
     public String toString() {
         return "CourseEntity{" +
                 "id=" + id +
-                ", user=" + user +
-                ", gameMode=" + gameMode +
-                ", sortingAttribute=" + sortingAttribute +
-                ", sortingOrder='" + sortingOrder + '\'' +
-                ", status='" + status + '\'' +
-                ", populations=" + populations +
+                ", userId=" + (user != null ? user.getId() : null) +
+                ", gameModeId=" + (gameMode != null ? gameMode.getId() : null) +
+                ", status=" + status +
+                ", currentRound=" + currentRound +
+                ", populationScope=" + populationScope +
                 '}';
     }
 }

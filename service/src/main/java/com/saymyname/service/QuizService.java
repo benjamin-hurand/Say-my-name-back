@@ -22,9 +22,9 @@ public class QuizService {
         this.initialCrafter = initialCrafter;
     }
 
-    public List<QuizEntry> getQuizEntries(GameOptions options) {
+    public List<QuizEntry> getQuizEntries(GameOptions options, Long userId) {
         // Récupérer une liste filtrée de personnes selon vos options
-        List<Person> persons = personDao.findByOptions(options);
+        List<Person> persons = personDao.findByOptions(options, userId);
 
         // Appliquer le tri en mémoire si des critères de tri sont définis
         if (options.getSortBy() != null && !options.getSortBy().isEmpty()) {

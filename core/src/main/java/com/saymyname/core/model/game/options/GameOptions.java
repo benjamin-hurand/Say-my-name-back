@@ -3,9 +3,12 @@ package com.saymyname.core.model.game.options;
 import java.util.List;
 import java.util.Objects;
 
+import com.saymyname.core.model.enums.FollowFilter;
+
 public class GameOptions {
     private Long id;
     private GameMode gameMode;
+    private FollowFilter populationScope;
     private List<GameAttributeFilter> filters;
     private List<GameAttributeSort> sortBy;
     private Boolean initialGiven;
@@ -17,6 +20,7 @@ public class GameOptions {
     private GameOptions(Builder builder) {
         this.id = builder.id;
         this.gameMode = builder.gameMode;
+        this.populationScope = builder.populationScope;
         this.filters = builder.filters;
         this.sortBy = builder.sortBy;
         this.initialGiven = builder.initialGiven;
@@ -29,6 +33,10 @@ public class GameOptions {
 
     public GameMode getGameMode() {
         return gameMode;
+    }
+
+    public FollowFilter getPopulationScope() {
+        return populationScope;
     }
 
     public List<GameAttributeFilter> getFilters() {
@@ -47,6 +55,7 @@ public class GameOptions {
     public static class Builder {
         private Long id;
         private GameMode gameMode;
+        private FollowFilter populationScope;
         private List<GameAttributeFilter> filters;
         private List<GameAttributeSort> sortBy;
         private Boolean initialGiven;
@@ -59,6 +68,11 @@ public class GameOptions {
 
         public Builder withGameMode(GameMode gameMode) {
             this.gameMode = gameMode;
+            return this;
+        }
+
+        public Builder withPopulationScope(FollowFilter populationScope) {
+            this.populationScope = populationScope;
             return this;
         }
 
@@ -89,14 +103,17 @@ public class GameOptions {
             return true;
         if (!(o instanceof GameOptions that))
             return false;
-        return getId() == that.getId() && Objects.equals(getGameMode(), that.getGameMode())
-                && Objects.equals(getFilters(), that.getFilters()) && Objects.equals(getSortBy(), that.getSortBy())
+        return Objects.equals(getId(), that.getId())
+                && Objects.equals(getGameMode(), that.getGameMode())
+                && Objects.equals(getPopulationScope(), that.getPopulationScope())
+                && Objects.equals(getFilters(), that.getFilters())
+                && Objects.equals(getSortBy(), that.getSortBy())
                 && Objects.equals(isInitialGiven(), that.isInitialGiven());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getId(), getGameMode(), getFilters(), getSortBy(), isInitialGiven());
+        return Objects.hash(getId(), getGameMode(), getPopulationScope(), getFilters(), getSortBy(), isInitialGiven());
     }
 
     @Override
@@ -104,6 +121,7 @@ public class GameOptions {
         return "GameOptions{" +
                 "id=" + id +
                 ", gameMode=" + gameMode +
+                ", populationScope=" + populationScope +
                 ", filters=" + filters +
                 ", sortBy=" + sortBy +
                 ", initialGiven=" + initialGiven +

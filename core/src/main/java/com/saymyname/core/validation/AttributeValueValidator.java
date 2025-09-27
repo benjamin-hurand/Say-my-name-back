@@ -30,6 +30,7 @@ public final class AttributeValueValidator {
                     LocalDate.parse(value); // ISO-8601 "yyyy-MM-dd"
                     yield true;
                 }
+                case ENUM -> true; // tout accepté (vérifié côté contrainte)
                 case DATETIME -> {
                     LocalDateTime.parse(value); // ISO-8601 "yyyy-MM-ddTHH:mm:ss"
                     yield true;
