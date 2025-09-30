@@ -1,6 +1,7 @@
 // src/main/java/com/saymyname/core/model/course/Course.java
 package com.saymyname.core.model.course;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 import com.saymyname.core.model.auth.User;
@@ -18,7 +19,12 @@ public class Course {
 
     private PopulationScope populationScope;
 
-    // Getters/Setters
+    // Nouveau : métadonnées temporelles
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private LocalDateTime lastAccessedAt;
+
+    // Getters/Setters de base
     public Long getId() {
         return id;
     }
@@ -67,6 +73,30 @@ public class Course {
         this.populationScope = populationScope;
     }
 
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public LocalDateTime getLastAccessedAt() {
+        return lastAccessedAt;
+    }
+
+    public void setLastAccessedAt(LocalDateTime lastAccessedAt) {
+        this.lastAccessedAt = lastAccessedAt;
+    }
+
     // Builder
     public static class Builder {
         private final Course c = new Course();
@@ -101,6 +131,21 @@ public class Course {
             return this;
         }
 
+        public Builder withCreatedAt(LocalDateTime v) {
+            c.createdAt = v;
+            return this;
+        }
+
+        public Builder withUpdatedAt(LocalDateTime v) {
+            c.updatedAt = v;
+            return this;
+        }
+
+        public Builder withLastAccessedAt(LocalDateTime v) {
+            c.lastAccessedAt = v;
+            return this;
+        }
+
         public Course build() {
             return c;
         }
@@ -112,19 +157,13 @@ public class Course {
             return true;
         if (!(o instanceof Course))
             return false;
-        Course c = (Course) o;
-        return id == c.id &&
-                Objects.equals(user, c.user) &&
-                Objects.equals(gameMode, c.gameMode) &&
-                Objects.equals(status, c.status) &&
-                currentRound == c.currentRound &&
-                Objects.equals(populationScope, c.populationScope);
+        Course c2 = (Course) o;
+        return Objects.equals(id, c2.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, user, gameMode,
-                status, populationScope);
+        return Objects.hash(id);
     }
 
     @Override
@@ -133,9 +172,12 @@ public class Course {
                 "id=" + id +
                 ", user=" + user +
                 ", gameMode=" + gameMode +
-                ", status='" + status + '\'' +
+                ", status=" + status +
                 ", currentRound=" + currentRound +
                 ", populationScope=" + populationScope +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
+                ", lastAccessedAt=" + lastAccessedAt +
                 '}';
     }
 }

@@ -3,10 +3,14 @@ package com.saymyname.webapp.controller;
 
 import java.security.Principal;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.*;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.people.ChangeRequest;
@@ -26,7 +30,6 @@ public class ChangeRequestRestController {
     private final ChangeRequestService changeRequestService;
     private final ChangeRequestDtoMapper crDtoMapper;
     private final UserService userService;
-    private final Logger logger = LoggerFactory.getLogger(ChangeRequestRestController.class);
 
     public ChangeRequestRestController(ChangeRequestService changeRequestService,
             ChangeRequestDtoMapper crDtoMapper,

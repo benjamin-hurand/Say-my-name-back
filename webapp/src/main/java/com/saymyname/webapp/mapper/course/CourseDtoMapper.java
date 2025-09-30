@@ -28,7 +28,7 @@ public class CourseDtoMapper {
                                 course.getUser().getId(),
                                 course.getGameMode().getId(),
                                 course.getStatus(),
-                                course.getPopulationScope());
+                                course.getCurrentRound());
         }
 
         /** DTO -> Model (si jamais utilisé en entrée) */
@@ -38,7 +38,6 @@ public class CourseDtoMapper {
                                 .withUser(new User.Builder().withId(courseDto.userId()).build())
                                 .withGameMode(new GameMode.Builder().withId(courseDto.gameModeId()).build())
                                 .withStatus(courseDto.status())
-                                .withPopulationScope(courseDto.populationScope())
                                 .build();
         }
 

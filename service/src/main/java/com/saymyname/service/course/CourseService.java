@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
@@ -26,6 +27,7 @@ import com.saymyname.core.model.course.Knowledge;
 import com.saymyname.core.model.enums.CourseStatus;
 import com.saymyname.core.model.enums.KnowledgeStatus;
 import com.saymyname.core.model.enums.PoolType;
+import com.saymyname.core.model.enums.PopulationScope;
 import com.saymyname.persistence.dao.course.CourseDao;
 import com.saymyname.service.PersonService;
 import com.saymyname.service.UserSubscriptionService;
@@ -39,7 +41,10 @@ public class CourseService {
     private final UserSubscriptionService userSubscriptionService;
     private final PersonService personService;
 
-    // Poids à ajuster
+    // Statuts actifs = uniquement IN_PROGRESS
+    private static final List<CourseStatus> ACTIVE_STATUSES = List.of(CourseStatus.IN_PROGRESS);
+
+    // Poids des pools
     private static final double WEIGHT_ERROR = 5;
     private static final double WEIGHT_SRS = 4;
     private static final double WEIGHT_NOT_SO_NEW = 6;
@@ -56,45 +61,90 @@ public class CourseService {
         this.personService = personService;
     }
 
+    /** Legacy: premier IN_PROGRESS si besoin. */
     public Optional<Course> getCurrentCourse(Long userId) {
+        return courseDao.getCurrentCourse(userId);
+    }
+
+    /** Dernier cours “focus” (lastAccessedAt) parmi les actifs, sinon fallback. */
+    @Transactional(readOnly = true)
+    public Optional<Course> getLastUsedCourse(Long userId) {
+        Optional<Course> focused = courseDao.findLastAccessedFirstActive(userId, ACTIVE_STATUSES);
+        if (focused.isPresent())
+            return focused;
+
+        var actives = courseDao.findAllByUserAndStatusesOrderedByUpdatedAt(userId, ACTIVE_STATUSES);
+        if (!actives.isEmpty())
+            return Optional.of(actives.get(0));
+
         return courseDao.getCurrentCourse(userId);
     }
 
     @Transactional
     public Course createCourse(Course course) {
-        if (courseDao.getCurrentCourse(course.getUser().getId()).isPresent()) {
+        var existing = courseDao.findFirstByUserModeScopeAndStatus(
+                course.getUser().getId(),
+                course.getGameMode().getId(),
+                course.getPopulationScope(),
+                CourseStatus.IN_PROGRESS);
+
+        if (existing.isPresent()) {
             throw new CourseAlreadyExistsException();
         }
+
         Course created = courseDao.saveCourse(course);
-        // On lance l'upsert des connaissances (batch initial) selon le scope
+        knowledgeService.insertBatchOfTenKnowledges(created);
+        return created;
+    }
+
+    /**
+     * Crée si aucun IN_PROGRESS pour (user,mode,scope), sinon renvoie l’existant.
+     */
+    @Transactional
+    public Course createOrResume(Course proto) {
+        var existing = courseDao.findFirstByUserModeScopeAndStatus(
+                proto.getUser().getId(),
+                proto.getGameMode().getId(),
+                proto.getPopulationScope(),
+                CourseStatus.IN_PROGRESS);
+
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+
+        Course created = courseDao.saveCourse(proto);
         knowledgeService.insertBatchOfTenKnowledges(created);
         return created;
     }
 
     @Transactional
-    public Course restartCourse(Long courseId) {
-        Optional<Course> courseOptional = courseDao.findById(courseId);
-        Course course = courseOptional
+    public Course restartCourse(Long courseId, long userId) {
+        Course course = courseDao.findById(courseId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Course not found"));
+        if (!course.getUser().getId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Forbidden");
+        }
 
-        // 1) Purger l’historique des questions
+        // 1) purge historique local
         courseQuestionHistoryService.deleteAllByCourse(course);
 
-        // 2) Remettre le statut du cours à IN_PROGRESS
+        // 2) reset “dur” des knowledges pour le périmètre du cours
+        final double BASELINE_EASE = 2.5;
+        final double BASELINE_DIFF = 1.0;
+        final double BASELINE_STAB = 1.0;
+        var scope = course.getPopulationScope() != null ? course.getPopulationScope() : PopulationScope.FOLLOWED;
+
+        knowledgeService.resetForCourseScope(
+                userId,
+                course.getGameMode().getId(),
+                scope,
+                BASELINE_EASE, BASELINE_DIFF, BASELINE_STAB);
+
+        // 3) méta du course
         course.setStatus(CourseStatus.IN_PROGRESS);
+        course.setCurrentRound(0);
 
-        // 3) Sauvegarder & retourner
         return courseDao.saveCourse(course);
-    }
-
-    @Transactional
-    public Course abandonCourse(Long courseId) {
-        Optional<Course> course = courseDao.findById(courseId);
-        course.ifPresent(c -> {
-            c.setStatus(CourseStatus.ABANDONED);
-            courseDao.saveCourse(c);
-        });
-        return course.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Course not found"));
     }
 
     @Transactional
@@ -105,6 +155,152 @@ public class CourseService {
     public Course findById(Long courseId) {
         return courseDao.findById(courseId)
                 .orElseThrow(() -> new IllegalArgumentException("Course not found"));
+    }
+
+    /** Marque le “focus” utilisateur sur ce cours. */
+    @Transactional
+    public void touchLastAccessed(Long courseId) {
+        courseDao.findById(courseId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Course not found"));
+        courseDao.touchLastAccessed(courseId, LocalDateTime.now());
+    }
+
+    /** Démarrer/récupérer la prochaine question (marque aussi le focus). */
+    @Transactional
+    public CourseQuestionHistory continueCourse(Long courseId) {
+        Course course = courseDao.findById(courseId)
+                .orElseThrow(() -> new IllegalArgumentException("Course not found"));
+
+        courseDao.touchLastAccessed(course.getId(), LocalDateTime.now());
+
+        if (knowledgeService.countByCourseAndStatus(course, KnowledgeStatus.UNKNOWN) == 0) {
+            knowledgeService.insertBatchOfTenKnowledges(course);
+        }
+        return courseQuestionHistoryService.create(findNextDue(course, null, null, null, true));
+    }
+
+    @Transactional(readOnly = true)
+    public CourseStats getStats(Long courseId) {
+        Course course = courseDao.findById(courseId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Course not found"));
+
+        long unknown = knowledgeService.countByCourseAndStatus(course, KnowledgeStatus.UNKNOWN);
+        long discovered = knowledgeService.countByCourseAndStatus(course, KnowledgeStatus.DISCOVERED);
+        long learned = knowledgeService.countByCourseAndStatus(course, KnowledgeStatus.LEARNED);
+        long mastered = knowledgeService.countByCourseAndStatus(course, KnowledgeStatus.MASTERED);
+
+        long totalCandidates = userSubscriptionService.countFollowedEligibleForMode(course);
+        long universeEligible = personService.countUniverseEligibleForMode(course);
+
+        LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+        long totalAnswers = courseQuestionHistoryService.countAllAnswersByCourse(course);
+        long answersToday = courseQuestionHistoryService.countAnswersSince(course, startOfDay);
+        LocalDateTime lastActivity = courseQuestionHistoryService.findLastAnsweredAt(course);
+
+        long dueNow = knowledgeService.countDueNow(course);
+
+        return new CourseStats.Builder()
+                .withCourseId(course.getId())
+                .withGameModeId(course.getGameMode().getId())
+                .withTotalCandidates(totalCandidates)
+                .withUniverseEligible(universeEligible)
+                .withUnknown(unknown)
+                .withDiscovered(discovered)
+                .withLearned(learned)
+                .withMastered(mastered)
+                .withTotalAnswers(totalAnswers)
+                .withAnswersToday(answersToday)
+                .withLastActivity(lastActivity)
+                .withCurrentRound(course.getCurrentRound())
+                .withDueNow(dueNow)
+                .build();
+    }
+
+    /**
+     * Hub : ne renvoie que les cours actifs (IN_PROGRESS), triés par lastAccessedAt
+     * desc (fallback updatedAt).
+     */
+    @Transactional(readOnly = true)
+    public List<Course> findAllByUser(Long userId) {
+        var list = courseDao.findAllByUserAndStatusesOrderedByLastAccess(userId, ACTIVE_STATUSES);
+        if (!list.isEmpty())
+            return list;
+        return courseDao.findAllByUserAndStatusesOrderedByUpdatedAt(userId, ACTIVE_STATUSES);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CourseStats> getStatsForUser(Long userId) {
+        return findAllByUser(userId).stream()
+                .map(c -> getStats(c.getId()))
+                .toList();
+    }
+
+    // ------ pools ------
+    @Transactional
+    private CourseQuestionHistory findNextDue(
+            Course course,
+            Long lastPersonId,
+            Boolean correct,
+            String feedback,
+            boolean allowRepeat) {
+
+        Map<PoolType, Double> weights = new LinkedHashMap<>(Map.of(
+                PoolType.ERROR_RECENT, WEIGHT_ERROR,
+                PoolType.SRS_DUE, WEIGHT_SRS,
+                PoolType.NEW, WEIGHT_NEW,
+                PoolType.DISCOVERED, WEIGHT_NOT_SO_NEW,
+                PoolType.REVISION, WEIGHT_REVISION));
+
+        Random rnd = new Random();
+        while (!weights.isEmpty()) {
+            double sum = weights.values().stream().mapToDouble(Double::doubleValue).sum();
+            double r = rnd.nextDouble() * sum;
+
+            PoolType selected = null;
+            for (var e : weights.entrySet()) {
+                r -= e.getValue();
+                if (r <= 0) {
+                    selected = e.getKey();
+                    break;
+                }
+            }
+            if (selected == null)
+                selected = weights.keySet().iterator().next();
+
+            Knowledge k;
+            switch (selected) {
+                case ERROR_RECENT -> k = knowledgeService.findFirstRecentError(course, lastPersonId, allowRepeat);
+                case SRS_DUE -> k = knowledgeService.findFirstSRS(course, lastPersonId, allowRepeat);
+                case DISCOVERED -> k = knowledgeService.findFirstDiscovered(course, lastPersonId, allowRepeat);
+                case NEW -> k = knowledgeService.findFirstNew(course, lastPersonId, allowRepeat);
+                default -> k = knowledgeService.findRevision(course, lastPersonId, allowRepeat);
+            }
+
+            if (k != null) {
+                return new CourseQuestionHistory.Builder()
+                        .withCourse(course)
+                        .withKnowledge(k)
+                        .withQuestionRound(course.getCurrentRound() + 1)
+                        .withAskedAt(LocalDateTime.now())
+                        .withResponseTimeMs(0)
+                        .withUserAnswer(null)
+                        .withCorrect(correct != null && correct)
+                        .withPoolType(selected)
+                        .withHelpUsed(false)
+                        .build();
+            }
+            weights.remove(selected);
+        }
+
+        if (allowRepeat) {
+            throw new NoMoreQuestionsException(course.getId());
+        } else {
+            return findNextDue(course, lastPersonId, correct, feedback, true);
+        }
+    }
+
+    private String getFeedbackMessage(Boolean correct) {
+        return correct ? "Correct !" : "Incorrect !";
     }
 
     /**
@@ -169,148 +365,5 @@ public class CourseService {
                 .withNextQuestion(savedNext)
                 .withResultAttributes(validation.getResultAttributes())
                 .build();
-    }
-
-    public CourseQuestionHistory continueCourse(Long courseId) {
-        Course course = courseDao.findById(courseId)
-                .orElseThrow(() -> new IllegalArgumentException("Course not found"));
-        if (knowledgeService.countByCourseAndStatus(course, KnowledgeStatus.UNKNOWN) == 0) {
-            knowledgeService.insertBatchOfTenKnowledges(course);
-        }
-        return courseQuestionHistoryService.create(findNextDue(course, null, null, null, true));
-    }
-
-    @Transactional(readOnly = true)
-    public CourseStats getStats(Long courseId) {
-        Course course = courseDao.findById(courseId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Course not found"));
-
-        // Répartition des knowledges (créés) pour ce user + gameMode
-        int unknown = knowledgeService.countByCourseAndStatus(course, KnowledgeStatus.UNKNOWN);
-        int discovered = knowledgeService.countByCourseAndStatus(course, KnowledgeStatus.DISCOVERED);
-        int learned = knowledgeService.countByCourseAndStatus(course, KnowledgeStatus.LEARNED);
-        int mastered = knowledgeService.countByCourseAndStatus(course, KnowledgeStatus.MASTERED);
-        int createdTotal = unknown + discovered + learned + mastered;
-
-        // Taille du "scope" (candidats potentiels) + total global persons
-        long totalPersonsGlobal = personService.countAll();
-        long totalCandidates = switch (course.getPopulationScope()) {
-            case FOLLOWED -> userSubscriptionService.countFollowed(course.getUser().getId());
-            case ALL -> totalPersonsGlobal;
-        };
-
-        // Ratios (safe)
-        double createdCoverage = (totalCandidates > 0) ? (double) createdTotal / (double) totalCandidates : 0.0;
-        double masteredRatio = (createdTotal > 0) ? (double) mastered / (double) createdTotal : 0.0;
-
-        // Activité
-        LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
-        int totalAnswers = courseQuestionHistoryService.countAllAnswersByCourse(course);
-        int answersToday = courseQuestionHistoryService.countAnswersSince(course, startOfDay);
-        LocalDateTime lastActivity = courseQuestionHistoryService.findLastAnsweredAt(course);
-
-        return new CourseStats.Builder()
-                .withCourseId(course.getId())
-                .withUserId(course.getUser().getId())
-                .withGameModeId(course.getGameMode().getId())
-                .withPopulationScope(course.getPopulationScope())
-                .withTotalCandidates(totalCandidates)
-                .withTotalPersonsGlobal(totalPersonsGlobal)
-                .withUnknown(unknown)
-                .withDiscovered(discovered)
-                .withLearned(learned)
-                .withMastered(mastered)
-                .withCreatedTotal(createdTotal)
-                .withCreatedCoverageRatio(createdCoverage)
-                .withMasteredRatio(masteredRatio)
-                .withTotalAnswers(totalAnswers)
-                .withAnswersToday(answersToday)
-                .withLastActivity(lastActivity)
-                .withCurrentRound(course.getCurrentRound())
-                .build();
-    }
-
-    /**
-     * Construit le CourseQuestionHistory via un tirage pondéré sur les pools.
-     */
-    @Transactional
-    private CourseQuestionHistory findNextDue(
-            Course course,
-            Long lastPersonId,
-            Boolean correct,
-            String feedback,
-            boolean allowRepeat) {
-
-        // 1) Les pools et leurs poids
-        Map<PoolType, Double> weights = new LinkedHashMap<>(Map.of(
-                PoolType.ERROR_RECENT, WEIGHT_ERROR,
-                PoolType.SRS_DUE, WEIGHT_SRS,
-                PoolType.NEW, WEIGHT_NEW,
-                PoolType.DISCOVERED, WEIGHT_NOT_SO_NEW,
-                PoolType.REVISION, WEIGHT_REVISION));
-
-        Random rnd = new Random();
-        while (!weights.isEmpty()) {
-            double sum = weights.values().stream().mapToDouble(Double::doubleValue).sum();
-            double r = rnd.nextDouble() * sum;
-
-            PoolType selected = null;
-            for (var e : weights.entrySet()) {
-                r -= e.getValue();
-                if (r <= 0) {
-                    selected = e.getKey();
-                    break;
-                }
-            }
-            if (selected == null) {
-                selected = weights.keySet().iterator().next();
-            }
-
-            Knowledge k;
-            switch (selected) {
-                case ERROR_RECENT ->
-                    k = knowledgeService.findFirstRecentError(course, lastPersonId, allowRepeat);
-                case SRS_DUE ->
-                    k = knowledgeService.findFirstSRS(course, lastPersonId, allowRepeat);
-                case DISCOVERED ->
-                    k = knowledgeService.findFirstDiscovered(course, lastPersonId, allowRepeat);
-                case NEW ->
-                    k = knowledgeService.findFirstNew(course, lastPersonId, allowRepeat);
-                default ->
-                    k = knowledgeService.findRevision(course, lastPersonId, allowRepeat);
-            }
-
-            // Trouvé
-            if (k != null) {
-                // On a trouvé, on construit l’historique et on retourne
-                return new CourseQuestionHistory.Builder()
-                        .withCourse(course)
-                        .withKnowledge(k)
-                        .withQuestionRound(course.getCurrentRound() + 1)
-                        .withAskedAt(LocalDateTime.now())
-                        .withResponseTimeMs(0)
-                        .withUserAnswer(null)
-                        .withCorrect(correct != null && correct)
-                        .withPoolType(selected)
-                        .withHelpUsed(false)
-                        .build();
-            }
-
-            // Pas trouvé dans ce pool → on enlève le pool et on recommence
-            weights.remove(selected);
-        }
-
-        // ICI ON A RIEN TROUVÉ DANS TOUS LES POOLS
-        if (allowRepeat) {
-            // déjà autorisé la répétition → plus rien à proposer
-            throw new NoMoreQuestionsException(course.getId());
-        } else {
-            // on réessaie en autorisant la répétition (évite le blocage si petit scope)
-            return findNextDue(course, lastPersonId, correct, feedback, true);
-        }
-    }
-
-    private String getFeedbackMessage(Boolean correct) {
-        return correct ? "Correct !" : "Incorrect !";
     }
 }

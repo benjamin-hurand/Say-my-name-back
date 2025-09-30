@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.saymyname.core.model.auth.User;
+import com.saymyname.core.model.course.Course;
+import com.saymyname.core.model.game.options.GameMode;
 import com.saymyname.core.model.people.Person;
 import com.saymyname.core.model.people.PersonAttribute;
 import com.saymyname.core.model.persondirectory.PersonCard;
@@ -39,6 +41,18 @@ public class PersonService {
 
     public long countAll() {
         return personDao.countAll();
+    }
+
+    public long countUniverseEligibleForMode(Course course) {
+        GameMode gameMode = course.getGameMode();
+        Long gameModeId = gameMode.getId();
+        String op = gameMode.getOperator();
+        String operator = (op == null || op.isBlank()) ? "AND" : op.trim();
+        if ("AND".equalsIgnoreCase(operator)) {
+            return personDao.countUniverseEligibleAND(gameModeId);
+        } else {
+            return personDao.countUniverseEligibleOR(gameModeId);
+        }
     }
 
     public Optional<Person> findById(Long id) {

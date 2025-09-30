@@ -46,4 +46,52 @@ public interface UserSubscriptionRepository extends JpaRepository<UserSubscripti
         @Modifying
         @Query("delete from UserSubscriptionEntity e where e.id.userId = :userId and e.id.personId in :personIds")
         int deleteByUserIdAndPersonIdIn(@Param("userId") Long userId, @Param("personIds") List<Long> personIds);
+
+        /**
+         * FOLLOWED + AND :
+         * Compter les personnes suivies pour lesquelles TOUTES les attributes cibles du
+         * game mode
+         * existent (valeur non nulle / non vide).
+         *
+         * HAVING COUNT(DISTINCT gma.attribute_id) = COUNT(DISTINCT pa.attribute_id)
+         * + garde-fou: COUNT(DISTINCT gma.attribute_id) > 0 (évite 0=0 si pas
+         * d’attributs cibles)
+         */
+        @Query(value = """
+                        SELECT COUNT(*) FROM (
+                          SELECT s.person_id
+                          FROM user_subscriptions s
+                          JOIN game_modes_attributes gma
+                            ON gma.game_mode_id = :gameModeId
+                          LEFT JOIN persons_attributes pa
+                            ON pa.person_id = s.person_id
+                           AND pa.attribute_id = gma.attribute_id
+                           AND pa.value IS NOT NULL AND pa.value <> ''
+                          WHERE s.user_id = :userId
+                          GROUP BY s.person_id
+                          HAVING COUNT(DISTINCT gma.attribute_id) > 0
+                             AND COUNT(DISTINCT gma.attribute_id) = COUNT(DISTINCT pa.attribute_id)
+                        ) t
+                        """, nativeQuery = true)
+        long countFollowedEligibleAND(@Param("userId") Long userId, @Param("gameModeId") Long gameModeId);
+
+        /**
+         * FOLLOWED + OR :
+         * Compter les personnes suivies pour lesquelles AU MOINS UN attribut cible du
+         * game mode existe.
+         * On passe par un DISTINCT sur s.person_id puisque plusieurs attributes peuvent
+         * “matcher”.
+         */
+        @Query(value = """
+                        SELECT COUNT(DISTINCT s.person_id)
+                        FROM user_subscriptions s
+                        JOIN game_modes_attributes gma
+                          ON gma.game_mode_id = :gameModeId
+                        JOIN persons_attributes pa
+                          ON pa.person_id = s.person_id
+                         AND pa.attribute_id = gma.attribute_id
+                         AND pa.value IS NOT NULL AND pa.value <> ''
+                        WHERE s.user_id = :userId
+                        """, nativeQuery = true)
+        long countFollowedEligibleOR(@Param("userId") Long userId, @Param("gameModeId") Long gameModeId);
 }

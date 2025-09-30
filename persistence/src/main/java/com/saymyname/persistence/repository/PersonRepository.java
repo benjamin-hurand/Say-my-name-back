@@ -41,4 +41,41 @@ public interface PersonRepository extends JpaRepository<PersonEntity, Long>, Per
                         where p.id = :personId
                         """)
         Optional<PersonEntity> fetchPhotos(@Param("personId") Long personId);
+
+        /**
+         * UNIVERSE + AND :
+         * Toutes les personnes qui possèdent TOUTES les attributes cibles.
+         */
+        @Query(value = """
+                        SELECT COUNT(*) FROM (
+                          SELECT p.id
+                          FROM persons p
+                          JOIN game_modes_attributes gma
+                            ON gma.game_mode_id = :gameModeId
+                          LEFT JOIN persons_attributes pa
+                            ON pa.person_id = p.id
+                           AND pa.attribute_id = gma.attribute_id
+                           AND pa.value IS NOT NULL AND pa.value <> ''
+                          GROUP BY p.id
+                          HAVING COUNT(DISTINCT gma.attribute_id) > 0
+                             AND COUNT(DISTINCT gma.attribute_id) = COUNT(DISTINCT pa.attribute_id)
+                        ) t
+                        """, nativeQuery = true)
+        long countUniverseEligibleAND(@Param("gameModeId") Long gameModeId);
+
+        /**
+         * UNIVERSE + OR :
+         * Toutes les personnes qui possèdent AU MOINS UN attribut cible du mode.
+         */
+        @Query(value = """
+                        SELECT COUNT(DISTINCT p.id)
+                        FROM persons p
+                        JOIN game_modes_attributes gma
+                          ON gma.game_mode_id = :gameModeId
+                        JOIN persons_attributes pa
+                          ON pa.person_id = p.id
+                         AND pa.attribute_id = gma.attribute_id
+                         AND pa.value IS NOT NULL AND pa.value <> ''
+                        """, nativeQuery = true)
+        long countUniverseEligibleOR(@Param("gameModeId") Long gameModeId);
 }

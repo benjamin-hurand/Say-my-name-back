@@ -19,6 +19,7 @@ import com.saymyname.core.model.course.Knowledge;
 import com.saymyname.core.model.course.KnowledgeResultEvent;
 import com.saymyname.core.model.course.ResultAttribute;
 import com.saymyname.core.model.enums.KnowledgeStatus;
+import com.saymyname.core.model.enums.PopulationScope;
 import com.saymyname.core.model.enums.SrsAlgorithm;
 import com.saymyname.core.model.game.options.GameMode;
 import com.saymyname.core.model.people.Attribute;
@@ -275,7 +276,21 @@ public class KnowledgeService {
         return knowledgeDao.findRevision(course, lastPersonId, allowRepeat);
     }
 
+    public long countDueNow(Course course) {
+        return knowledgeDao.countDueNow(course);
+    }
+
     public List<Knowledge> findAllByCourse(Course course) {
         return knowledgeDao.findAllByCourse(course);
+    }
+
+    public int resetForCourseScope(long userId, long gameModeId, PopulationScope popScope,
+            double baselineEase, double baselineDiff, double baselineStability) {
+        return knowledgeDao.resetForCourseScope(userId, gameModeId, popScope, baselineEase, baselineDiff,
+                baselineStability);
+    }
+
+    public long countToResetForCourseScope(long userId, long gameModeId, PopulationScope popScope) {
+        return knowledgeDao.countToResetForCourseScope(userId, gameModeId, popScope);
     }
 }

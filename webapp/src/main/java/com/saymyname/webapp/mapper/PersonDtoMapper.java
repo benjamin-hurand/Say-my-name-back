@@ -4,7 +4,6 @@ import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.people.Person;
 import com.saymyname.webapp.dto.PersonDto;
-import com.saymyname.webapp.dto.profile.ProfileResponseDto;
 
 @Component
 public class PersonDtoMapper {

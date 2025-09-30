@@ -136,6 +136,20 @@ public class KnowledgeDao {
         return knowledgeEntityMapper.toModel(entity);
     }
 
+    /** Nombre d’items SRS “dus” maintenant pour ce course (dépend du scope) */
+    public long countDueNow(Course course) {
+        PopulationScope scope = course.getPopulationScope() != null ? course.getPopulationScope()
+                : PopulationScope.FOLLOWED;
+
+        Long userId = course.getUser().getId();
+        Long gameModeId = course.getGameMode().getId();
+
+        return switch (scope) {
+            case FOLLOWED -> knowledgeRepository.countSrsDueFollowed(userId, gameModeId);
+            case ALL -> knowledgeRepository.countSrsDueAll(userId, gameModeId);
+        };
+    }
+
     /** MASTERED ou LEARNED future dues — random */
     public Knowledge findRevision(Course course, Long lastPersonId, boolean allowRepeat) {
         var scope = course.getPopulationScope() != null ? course.getPopulationScope() : PopulationScope.FOLLOWED;
@@ -163,5 +177,17 @@ public class KnowledgeDao {
                 .stream()
                 .map(knowledgeEntityMapper::toModel)
                 .toList();
+    }
+
+    public int resetForCourseScope(long userId, long gameModeId, PopulationScope popScope,
+            double baselineEase, double baselineDiff, double baselineStability) {
+        return knowledgeRepository.resetForCourseScope(
+                userId, gameModeId, popScope.name(),
+                KnowledgeStatus.UNKNOWN,
+                baselineEase, baselineDiff, baselineStability);
+    }
+
+    public long countToResetForCourseScope(long userId, long gameModeId, PopulationScope popScope) {
+        return knowledgeRepository.countToResetForCourseScope(userId, gameModeId, popScope.name());
     }
 }

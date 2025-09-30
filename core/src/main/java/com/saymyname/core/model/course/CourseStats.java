@@ -2,36 +2,32 @@
 package com.saymyname.core.model.course;
 
 import java.time.LocalDateTime;
-import com.saymyname.core.model.enums.PopulationScope;
 
 public class CourseStats {
 
     private Long courseId;
-    private Long userId;
     private Long gameModeId;
-    private PopulationScope populationScope;
 
-    // Portée (candidats) et global
-    private long totalCandidates; // ex. nb suivis si FOLLOWED, sinon nb total persons
-    private long totalPersonsGlobal; // nb total de persons dans la base
+    // Éligibles pour CE course (dépend du game mode + scope suivi)
+    private long totalCandidates; // ex. # suivis éligibles pour ce mode
+    private long universeEligible; // ex. # personnes éligibles globalement pour ce mode
 
-    // Répartition des knowledges (créés)
-    private int unknown;
-    private int discovered;
-    private int learned;
-    private int mastered;
-    private int createdTotal;
-
-    // Ratios utiles à l'UI
-    private double createdCoverageRatio; // createdTotal / totalCandidates
-    private double masteredRatio; // mastered / createdTotal
+    // Répartition des knowledges
+    private long unknown;
+    private long discovered;
+    private long learned;
+    private long mastered;
 
     // Activité
-    private int totalAnswers; // nb d’answers au total (historiques)
-    private int answersToday; // nb d’answers aujourd’hui
+    private long totalAnswers;
+    private long answersToday;
     private LocalDateTime lastActivity;
 
-    private int currentRound; // round courant (info du course)
+    // État du course
+    private int currentRound;
+
+    // Indicateur utile (non dérivable simplement)
+    private long dueNow; // ex. # items SRS “dus” maintenant pour ce course
 
     public static class Builder {
         private final CourseStats s = new CourseStats();
@@ -41,18 +37,8 @@ public class CourseStats {
             return this;
         }
 
-        public Builder withUserId(Long v) {
-            s.userId = v;
-            return this;
-        }
-
         public Builder withGameModeId(Long v) {
             s.gameModeId = v;
-            return this;
-        }
-
-        public Builder withPopulationScope(PopulationScope v) {
-            s.populationScope = v;
             return this;
         }
 
@@ -61,52 +47,37 @@ public class CourseStats {
             return this;
         }
 
-        public Builder withTotalPersonsGlobal(long v) {
-            s.totalPersonsGlobal = v;
+        public Builder withUniverseEligible(long v) {
+            s.universeEligible = v;
             return this;
         }
 
-        public Builder withUnknown(int v) {
+        public Builder withUnknown(long v) {
             s.unknown = v;
             return this;
         }
 
-        public Builder withDiscovered(int v) {
+        public Builder withDiscovered(long v) {
             s.discovered = v;
             return this;
         }
 
-        public Builder withLearned(int v) {
+        public Builder withLearned(long v) {
             s.learned = v;
             return this;
         }
 
-        public Builder withMastered(int v) {
+        public Builder withMastered(long v) {
             s.mastered = v;
             return this;
         }
 
-        public Builder withCreatedTotal(int v) {
-            s.createdTotal = v;
-            return this;
-        }
-
-        public Builder withCreatedCoverageRatio(double v) {
-            s.createdCoverageRatio = v;
-            return this;
-        }
-
-        public Builder withMasteredRatio(double v) {
-            s.masteredRatio = v;
-            return this;
-        }
-
-        public Builder withTotalAnswers(int v) {
+        public Builder withTotalAnswers(long v) {
             s.totalAnswers = v;
             return this;
         }
 
-        public Builder withAnswersToday(int v) {
+        public Builder withAnswersToday(long v) {
             s.answersToday = v;
             return this;
         }
@@ -121,69 +92,53 @@ public class CourseStats {
             return this;
         }
 
+        public Builder withDueNow(long v) {
+            s.dueNow = v;
+            return this;
+        }
+
         public CourseStats build() {
             return s;
         }
     }
 
-    // Getters simples (omits setters pour concision)
     public Long getCourseId() {
         return courseId;
-    }
-
-    public Long getUserId() {
-        return userId;
     }
 
     public Long getGameModeId() {
         return gameModeId;
     }
 
-    public PopulationScope getPopulationScope() {
-        return populationScope;
-    }
-
     public long getTotalCandidates() {
         return totalCandidates;
     }
 
-    public long getTotalPersonsGlobal() {
-        return totalPersonsGlobal;
+    public long getUniverseEligible() {
+        return universeEligible;
     }
 
-    public int getUnknown() {
+    public long getUnknown() {
         return unknown;
     }
 
-    public int getDiscovered() {
+    public long getDiscovered() {
         return discovered;
     }
 
-    public int getLearned() {
+    public long getLearned() {
         return learned;
     }
 
-    public int getMastered() {
+    public long getMastered() {
         return mastered;
     }
 
-    public int getCreatedTotal() {
-        return createdTotal;
-    }
-
-    public double getCreatedCoverageRatio() {
-        return createdCoverageRatio;
-    }
-
-    public double getMasteredRatio() {
-        return masteredRatio;
-    }
-
-    public int getTotalAnswers() {
+    public long getTotalAnswers() {
         return totalAnswers;
     }
 
-    public int getAnswersToday() {
+    public long getAnswersToday() {
         return answersToday;
     }
 
@@ -193,5 +148,9 @@ public class CourseStats {
 
     public int getCurrentRound() {
         return currentRound;
+    }
+
+    public long getDueNow() {
+        return dueNow;
     }
 }

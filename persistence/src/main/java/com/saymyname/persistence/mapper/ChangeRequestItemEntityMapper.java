@@ -1,26 +1,21 @@
 package com.saymyname.persistence.mapper;
 
+import org.springframework.stereotype.Component;
+
 import com.saymyname.core.model.enums.ChangeAction;
-import com.saymyname.core.model.people.Attribute;
 import com.saymyname.core.model.people.ChangeRequest;
 import com.saymyname.core.model.people.ChangeRequestItem;
 import com.saymyname.core.model.people.PersonAttribute;
 import com.saymyname.persistence.entity.ChangeRequestEntity;
 import com.saymyname.persistence.entity.ChangeRequestItemEntity;
 import com.saymyname.persistence.entity.PersonAttributeEntity;
-import com.saymyname.persistence.entity.attribute.AttributeEntity;
-
-import org.springframework.stereotype.Component;
 
 @Component
 public class ChangeRequestItemEntityMapper {
 
-    private final AttributeEntityMapper attributeEntityMapper;
     private final PersonAttributeEntityMapper personAttributeEntityMapper;
 
-    public ChangeRequestItemEntityMapper(AttributeEntityMapper attributeEntityMapper,
-            PersonAttributeEntityMapper personAttributeEntityMapper) {
-        this.attributeEntityMapper = attributeEntityMapper;
+    public ChangeRequestItemEntityMapper(PersonAttributeEntityMapper personAttributeEntityMapper) {
         this.personAttributeEntityMapper = personAttributeEntityMapper;
     }
 

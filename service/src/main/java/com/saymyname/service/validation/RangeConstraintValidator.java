@@ -1,17 +1,16 @@
 package com.saymyname.service.validation;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.saymyname.core.exception.ConstraintViolationException;
-import com.saymyname.core.model.enums.ConstraintKind;
-import com.saymyname.core.model.people.Attribute;
-import com.saymyname.core.model.people.AttributeType;
-import com.saymyname.core.model.rules.RangeRules;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import org.springframework.stereotype.Component;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.saymyname.core.exception.ConstraintViolationException;
+import com.saymyname.core.model.enums.ConstraintKind;
+import com.saymyname.core.model.people.Attribute;
+import com.saymyname.core.model.rules.RangeRules;
 
 @Component
 public class RangeConstraintValidator implements SingleValueConstraintValidator {

@@ -135,4 +135,12 @@ public class UserSubscriptionDao {
         }
         return deleted;
     }
+
+    public long countFollowedEligibleAND(Long userId, Long gameModeId) {
+        return repository.countFollowedEligibleAND(userId, gameModeId);
+    }
+
+    public long countFollowedEligibleOR(Long userId, Long gameModeId) {
+        return repository.countFollowedEligibleOR(userId, gameModeId);
+    }
 }

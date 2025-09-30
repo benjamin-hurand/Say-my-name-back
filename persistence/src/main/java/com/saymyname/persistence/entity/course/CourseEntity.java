@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 import com.saymyname.core.model.enums.CourseStatus;
-import com.saymyname.core.model.enums.PopulationScope; // ✅ nouvel enum côté core
+import com.saymyname.core.model.enums.PopulationScope;
 import com.saymyname.persistence.entity.GameModeEntity;
 import com.saymyname.persistence.entity.UserEntity;
 
@@ -44,6 +44,10 @@ public class CourseEntity {
 
     @Column(name = "updated_at", nullable = false, insertable = false, updatable = false, columnDefinition = "DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
     private LocalDateTime updatedAt;
+
+    // Nouveau : accès utilisateur
+    @Column(name = "last_accessed_at")
+    private LocalDateTime lastAccessedAt;
 
     public CourseEntity() {
     }
@@ -112,6 +116,14 @@ public class CourseEntity {
         this.updatedAt = updatedAt;
     }
 
+    public LocalDateTime getLastAccessedAt() {
+        return lastAccessedAt;
+    }
+
+    public void setLastAccessedAt(LocalDateTime lastAccessedAt) {
+        this.lastAccessedAt = lastAccessedAt;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o)
@@ -119,13 +131,11 @@ public class CourseEntity {
         if (!(o instanceof CourseEntity))
             return false;
         CourseEntity that = (CourseEntity) o;
-        // Égalité sur l'identifiant uniquement (évite les charges LAZY)
         return Objects.equals(id, that.id);
     }
 
     @Override
     public int hashCode() {
-        // Hash basé uniquement sur l'id
         return Objects.hash(id);
     }
 
@@ -138,6 +148,9 @@ public class CourseEntity {
                 ", status=" + status +
                 ", currentRound=" + currentRound +
                 ", populationScope=" + populationScope +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
+                ", lastAccessedAt=" + lastAccessedAt +
                 '}';
     }
 }

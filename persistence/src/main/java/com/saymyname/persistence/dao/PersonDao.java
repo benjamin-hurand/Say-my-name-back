@@ -118,6 +118,14 @@ public class PersonDao {
         return pOpt.map(personEntityMapper::toModel);
     }
 
+    public long countUniverseEligibleAND(Long gameModeId) {
+        return personRepository.countUniverseEligibleAND(gameModeId);
+    }
+
+    public long countUniverseEligibleOR(Long gameModeId) {
+        return personRepository.countUniverseEligibleOR(gameModeId);
+    }
+
     /**
      * Page des personnes filtrée/triée (sur attributs et/ou champs simples).
      * - Filtrage par attributs: EXISTS sur PersonAttributeEntity

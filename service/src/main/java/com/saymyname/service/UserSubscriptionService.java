@@ -1,5 +1,6 @@
 package com.saymyname.service;
 
+import com.saymyname.core.model.course.Course;
 import com.saymyname.core.model.enums.FollowFilter;
 import com.saymyname.core.model.people.SubscriptionBulkResult;
 import com.saymyname.core.model.people.UserSubscription;
@@ -55,6 +56,18 @@ public class UserSubscriptionService {
     @Transactional(readOnly = true)
     public long countFollowed(Long userId) {
         return dao.countByUser(userId);
+    }
+
+    public long countFollowedEligibleForMode(Course course) {
+        Long userId = course.getUser().getId();
+        Long gameModeId = course.getGameMode().getId();
+        var op = course.getGameMode().getOperator();
+        String operator = (op == null || op.isBlank()) ? "AND" : op.trim();
+        if ("AND".equalsIgnoreCase(operator)) {
+            return dao.countFollowedEligibleAND(userId, gameModeId);
+        } else {
+            return dao.countFollowedEligibleOR(userId, gameModeId);
+        }
     }
 
     /** Page d'abonnements (modèles complets). */

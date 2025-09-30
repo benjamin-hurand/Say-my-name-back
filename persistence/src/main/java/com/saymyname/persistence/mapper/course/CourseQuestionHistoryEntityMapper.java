@@ -44,7 +44,7 @@ public class CourseQuestionHistoryEntityMapper {
 
         return new CourseQuestionHistory.Builder()
                 .withId(entity.getId())
-                .withCourse(courseMapper.toModel(entity.getCourse()))
+                .withCourse(courseMapper.toShortModel(entity.getCourse()))
                 .withKnowledge(knowledgeMapper.toModel(entity.getKnowledge()))
                 .withQuestionRound(entity.getQuestionRound())
                 .withAskedAt(entity.getAskedAt())

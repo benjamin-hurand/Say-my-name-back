@@ -43,4 +43,8 @@ public class GameModeEntityMapper {
                 .withOperator(gameModeEntity.getOperator())
                 .build();
     }
+
+    public GameMode toShortModel(GameModeEntity gameMode) {
+        return new GameMode.Builder().withId(gameMode.getId()).build();
+    }
 }

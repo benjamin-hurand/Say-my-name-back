@@ -169,6 +169,32 @@ public interface KnowledgeRepository extends JpaRepository<KnowledgeEntity, Long
       Long gameModeId,
       Collection<KnowledgeStatus> statuses);
 
+  /**
+   * SRS dues pour le scope FOLLOWED : LEARNED && next_review_date <= now &&
+   * person suivie
+   */
+  @Query(value = """
+      SELECT COUNT(*)
+      FROM knowledges k
+      WHERE k.user_id = :userId
+        AND k.game_mode_id = :gameModeId
+        AND k.status = 'LEARNED'
+        AND k.next_review_date <= CURRENT_TIMESTAMP
+        AND k.person_id IN (SELECT s.person_id FROM user_subscriptions s WHERE s.user_id = :userId)
+      """, nativeQuery = true)
+  long countSrsDueFollowed(@Param("userId") Long userId, @Param("gameModeId") Long gameModeId);
+
+  /** SRS dues pour le scope ALL : LEARNED && next_review_date <= now */
+  @Query(value = """
+      SELECT COUNT(*)
+      FROM knowledges k
+      WHERE k.user_id = :userId
+        AND k.game_mode_id = :gameModeId
+        AND k.status = 'LEARNED'
+        AND k.next_review_date <= CURRENT_TIMESTAMP
+      """, nativeQuery = true)
+  long countSrsDueAll(@Param("userId") Long userId, @Param("gameModeId") Long gameModeId);
+
   // --- FALLBACK / SINGLE ------------------------------------------
 
   Optional<KnowledgeEntity> findByUserIdAndGameModeIdAndPersonId(
@@ -411,47 +437,60 @@ public interface KnowledgeRepository extends JpaRepository<KnowledgeEntity, Long
       """, nativeQuery = true)
   int countAllKnowledges(@Param("userId") Long userId, @Param("gameModeId") Long gameModeId);
 
-  // --- SRS DUE & RECENT ERRORS (FOLLOWED scope) -----------------
+  @Modifying(clearAutomatically = true, flushAutomatically = true)
+  @Query("""
+        update KnowledgeEntity k
+           set k.status = :unknown,
+               k.nextReviewDate = CURRENT_TIMESTAMP,
+               k.lastReviewDate = null,
+               k.easeFactor = :baselineEase,
+               k.srsStreak = 0,
+               k.globalStreak = 0,
+               k.totalRepetitionCount = 0,
+               k.successCount = 0,
+               k.failureCount = 0,
+               k.difficulty = :baselineDiff,
+               k.stability = :baselineStability
+         where k.user.id = :userId
+           and k.gameMode.id = :gameModeId
+           and (
+             :popScope = 'ALL'
+             or (
+               :popScope = 'FOLLOWED'
+               and exists (
+                 select 1 from UserSubscriptionEntity s
+                  where s.id.userId = :userId
+                    and s.id.personId = k.person.id
+               )
+             )
+           )
+      """)
+  int resetForCourseScope(@Param("userId") long userId,
+      @Param("gameModeId") long gameModeId,
+      @Param("popScope") String popScope, // 'ALL' | 'FOLLOWED'
+      @Param("unknown") com.saymyname.core.model.enums.KnowledgeStatus unknown,
+      @Param("baselineEase") double baselineEase,
+      @Param("baselineDiff") double baselineDiff,
+      @Param("baselineStability") double baselineStability);
 
-  @Query(value = """
-      SELECT COUNT(*) FROM knowledges k
-      WHERE k.user_id = :userId
-        AND k.game_mode_id = :gameModeId
-        AND k.status = 'LEARNED'
-        AND k.next_review_date <= CURRENT_TIMESTAMP
-        AND k.person_id IN (SELECT s.person_id FROM user_subscriptions s WHERE s.user_id = :userId)
-      """, nativeQuery = true)
-  int countSrsDueFollowed(@Param("userId") Long userId, @Param("gameModeId") Long gameModeId);
+  @Query("""
+        select count(k) from KnowledgeEntity k
+         where k.user.id = :userId
+           and k.gameMode.id = :gameModeId
+           and (
+             :popScope = 'ALL'
+             or (
+               :popScope = 'FOLLOWED'
+               and exists (
+                 select 1 from UserSubscriptionEntity s
+                  where s.id.userId = :userId
+                    and s.id.personId = k.person.id
+               )
+             )
+           )
+      """)
+  long countToResetForCourseScope(@Param("userId") long userId,
+      @Param("gameModeId") long gameModeId,
+      @Param("popScope") String popScope);
 
-  @Query(value = """
-      SELECT COUNT(*) FROM knowledges k
-      WHERE k.user_id = :userId
-        AND k.game_mode_id = :gameModeId
-        AND k.status = 'LEARNED'
-        AND k.global_streak <= 0
-        AND k.last_review_date >= CURRENT_TIMESTAMP - INTERVAL 1 DAY
-        AND k.person_id IN (SELECT s.person_id FROM user_subscriptions s WHERE s.user_id = :userId)
-      """, nativeQuery = true)
-  int countRecentErrorsFollowed(@Param("userId") Long userId, @Param("gameModeId") Long gameModeId);
-
-  // --- SRS DUE & RECENT ERRORS (ALL scope) ----------------------
-
-  @Query(value = """
-      SELECT COUNT(*) FROM knowledges k
-      WHERE k.user_id = :userId
-        AND k.game_mode_id = :gameModeId
-        AND k.status = 'LEARNED'
-        AND k.next_review_date <= CURRENT_TIMESTAMP
-      """, nativeQuery = true)
-  int countSrsDueAll(@Param("userId") Long userId, @Param("gameModeId") Long gameModeId);
-
-  @Query(value = """
-      SELECT COUNT(*) FROM knowledges k
-      WHERE k.user_id = :userId
-        AND k.game_mode_id = :gameModeId
-        AND k.status = 'LEARNED'
-        AND k.global_streak <= 0
-        AND k.last_review_date >= CURRENT_TIMESTAMP - INTERVAL 1 DAY
-      """, nativeQuery = true)
-  int countRecentErrorsAll(@Param("userId") Long userId, @Param("gameModeId") Long gameModeId);
 }
