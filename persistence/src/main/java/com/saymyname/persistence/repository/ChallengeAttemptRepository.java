@@ -11,7 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.saymyname.core.model.enums.AttemptStatus;
-import com.saymyname.persistence.entity.ChallengeAttemptEntity;
+import com.saymyname.persistence.entity.organization.ChallengeAttemptEntity;
 
 @Repository
 public interface ChallengeAttemptRepository extends JpaRepository<ChallengeAttemptEntity, Long> {
@@ -41,24 +41,30 @@ public interface ChallengeAttemptRepository extends JpaRepository<ChallengeAttem
   /**
    * Supprime toutes les tentatives pour l'utilisateur userId
    * dont attemptStart ET attemptEnd sont tous deux NULL.
+   * ⚠ Bulk JPQL → on applique un garde-fou tenant explicite.
    */
   @Modifying
   @Query("""
         DELETE FROM ChallengeAttemptEntity a
         WHERE a.user.id = :userId
-          AND (a.attemptStart IS NULL
-          OR a.attemptEnd   IS NULL)
+          AND a.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+          AND a.attemptStart IS NULL
+          AND a.attemptEnd   IS NULL
       """)
   void deleteIncompleteAttemptsByUserId(@Param("userId") Long userId);
 
+  /**
+   * Marque une tentative comme abandonnée.
+   * ⚠ Bulk JPQL → garde-fou tenant explicite.
+   */
   @Modifying
   @Query("""
         UPDATE ChallengeAttemptEntity a
-        SET a.status = 'ABANDONED'
-        WHERE a.id = :id
+           SET a.status = 'ABANDONED'
+         WHERE a.id = :id
+           AND a.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
       """)
   void markAbandoned(@Param("id") Long id);
 
   List<ChallengeAttemptEntity> findByStatusAndAttemptStartBefore(AttemptStatus inProgress, LocalDateTime cutoff);
-
 }

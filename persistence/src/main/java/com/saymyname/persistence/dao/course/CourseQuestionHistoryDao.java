@@ -7,7 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.saymyname.core.model.course.Course;
 import com.saymyname.core.model.course.CourseQuestionHistory;
-import com.saymyname.persistence.entity.course.CourseQuestionHistoryEntity;
+import com.saymyname.persistence.entity.organization.course.CourseQuestionHistoryEntity;
 import com.saymyname.persistence.mapper.course.CourseQuestionHistoryEntityMapper;
 import com.saymyname.persistence.repository.course.CourseQuestionHistoryRepository;
 

@@ -11,8 +11,8 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.saymyname.core.model.people.UserSubscription;
-import com.saymyname.persistence.entity.subscription.UserSubscriptionEntity;
-import com.saymyname.persistence.entity.subscription.UserSubscriptionId;
+import com.saymyname.persistence.entity.organization.subscription.UserSubscriptionEntity;
+import com.saymyname.persistence.entity.organization.subscription.UserSubscriptionId;
 import com.saymyname.persistence.mapper.UserSubscriptionEntityMapper;
 import com.saymyname.persistence.repository.UserSubscriptionRepository;
 

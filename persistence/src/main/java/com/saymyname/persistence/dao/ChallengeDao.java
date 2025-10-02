@@ -8,7 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.saymyname.core.model.challenge.Challenge;
 import com.saymyname.core.model.challenge.ChallengeMenu;
-import com.saymyname.persistence.entity.ChallengeEntity;
+import com.saymyname.persistence.entity.organization.ChallengeEntity;
 import com.saymyname.persistence.mapper.ChallengeEntityMapper;
 import com.saymyname.persistence.projection.ChallengeCardProjection;
 import com.saymyname.persistence.repository.ChallengeRepository;

@@ -7,8 +7,8 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.game.options.GameMode;
-import com.saymyname.persistence.entity.GameModeAttributeEntity;
-import com.saymyname.persistence.entity.GameModeEntity;
+import com.saymyname.persistence.entity.organization.GameModeAttributeEntity;
+import com.saymyname.persistence.entity.organization.GameModeEntity;
 
 @Component
 public class GameModeEntityMapper {

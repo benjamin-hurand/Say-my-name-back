@@ -3,22 +3,29 @@ package com.saymyname.persistence.repository.course;
 import java.time.LocalDateTime;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.saymyname.persistence.entity.course.CourseQuestionHistoryEntity;
+import com.saymyname.persistence.entity.organization.course.CourseQuestionHistoryEntity;
 
 @Repository
 public interface CourseQuestionHistoryRepository extends JpaRepository<CourseQuestionHistoryEntity, Long> {
 
-    void deleteByCourseId(Long courseId);
+  /** ⚠ Bulk JPQL → garde-fou tenant explicite */
+  @Modifying
+  @Query("""
+          DELETE FROM CourseQuestionHistoryEntity c
+           WHERE c.course.id = :courseId
+             AND c.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+      """)
+  void deleteByCourseId(@Param("courseId") Long courseId);
 
-    long countByCourseId(Long courseId);
+  long countByCourseId(Long courseId);
 
-    long countByCourseIdAndAnsweredAtAfter(Long courseId, LocalDateTime after);
+  long countByCourseIdAndAnsweredAtAfter(Long courseId, LocalDateTime after);
 
-    @Query("select max(c.answeredAt) from CourseQuestionHistoryEntity c where c.course.id = :courseId")
-    LocalDateTime findLastAnsweredAt(@Param("courseId") Long courseId);
-
+  @Query("select max(c.answeredAt) from CourseQuestionHistoryEntity c where c.course.id = :courseId")
+  LocalDateTime findLastAnsweredAt(@Param("courseId") Long courseId);
 }

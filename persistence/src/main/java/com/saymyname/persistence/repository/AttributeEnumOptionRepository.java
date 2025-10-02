@@ -1,6 +1,6 @@
 package com.saymyname.persistence.repository;
 
-import com.saymyname.persistence.entity.attribute.AttributeEnumOptionEntity;
+import com.saymyname.persistence.entity.organization.attribute.AttributeEnumOptionEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

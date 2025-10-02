@@ -2,7 +2,7 @@ package com.saymyname.persistence.mapper;
 
 import org.springframework.stereotype.Component;
 import com.saymyname.core.model.challenge.ChallengeAttempt;
-import com.saymyname.persistence.entity.ChallengeAttemptEntity;
+import com.saymyname.persistence.entity.organization.ChallengeAttemptEntity;
 
 @Component
 public class ChallengeAttemptEntityMapper {

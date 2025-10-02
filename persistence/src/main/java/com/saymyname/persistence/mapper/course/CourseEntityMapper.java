@@ -1,16 +1,15 @@
 // src/main/java/com/saymyname/persistence/mapper/course/CourseEntityMapper.java
 package com.saymyname.persistence.mapper.course;
 
-import com.saymyname.core.model.auth.User;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
 import com.saymyname.core.model.course.Course;
 import com.saymyname.core.model.enums.CourseStatus;
 import com.saymyname.core.model.enums.PopulationScope;
-import com.saymyname.core.model.game.options.GameMode;
-import com.saymyname.persistence.entity.course.CourseEntity;
+import com.saymyname.persistence.entity.organization.course.CourseEntity;
 import com.saymyname.persistence.mapper.GameModeEntityMapper;
 import com.saymyname.persistence.mapper.UserEntityMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 @Component
 public class CourseEntityMapper {

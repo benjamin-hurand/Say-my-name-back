@@ -6,7 +6,7 @@ import com.saymyname.core.model.enums.ConstraintKind;
 import com.saymyname.core.model.enums.EditPolicy;
 import com.saymyname.core.model.people.Attribute;
 import com.saymyname.core.model.people.AttributeType;
-import com.saymyname.persistence.entity.attribute.AttributeEntity;
+import com.saymyname.persistence.entity.organization.attribute.AttributeEntity;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;

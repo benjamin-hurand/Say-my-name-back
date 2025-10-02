@@ -1,7 +1,7 @@
 package com.saymyname.persistence.dao;
 
 import com.saymyname.core.model.people.AttributeEnumOption;
-import com.saymyname.persistence.entity.attribute.AttributeEnumOptionEntity;
+import com.saymyname.persistence.entity.organization.attribute.AttributeEnumOptionEntity;
 import com.saymyname.persistence.mapper.AttributeEnumOptionEntityMapper;
 import com.saymyname.persistence.repository.AttributeEnumOptionRepository;
 import org.springframework.stereotype.Repository;

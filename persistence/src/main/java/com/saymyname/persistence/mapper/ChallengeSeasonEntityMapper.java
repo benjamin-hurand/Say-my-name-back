@@ -2,7 +2,7 @@ package com.saymyname.persistence.mapper;
 
 import org.springframework.stereotype.Component;
 import com.saymyname.core.model.challenge.ChallengeSeason;
-import com.saymyname.persistence.entity.ChallengeSeasonEntity;
+import com.saymyname.persistence.entity.organization.ChallengeSeasonEntity;
 
 @Component
 public class ChallengeSeasonEntityMapper {

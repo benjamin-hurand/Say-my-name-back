@@ -24,7 +24,7 @@ import com.saymyname.core.model.people.PersonAttribute;
 import com.saymyname.core.util.AnswerValidator;
 import com.saymyname.persistence.dao.ChallengeAttemptDao;
 import com.saymyname.persistence.dao.PersonAttributeDao;
-import com.saymyname.persistence.entity.ChallengeAttemptEntity;
+import com.saymyname.persistence.entity.organization.ChallengeAttemptEntity;
 
 @Service
 public class ChallengeAttemptService {

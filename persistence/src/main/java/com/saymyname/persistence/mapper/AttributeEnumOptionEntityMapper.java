@@ -1,8 +1,8 @@
 package com.saymyname.persistence.mapper;
 
 import com.saymyname.core.model.people.AttributeEnumOption;
-import com.saymyname.persistence.entity.attribute.AttributeEntity;
-import com.saymyname.persistence.entity.attribute.AttributeEnumOptionEntity;
+import com.saymyname.persistence.entity.organization.attribute.AttributeEntity;
+import com.saymyname.persistence.entity.organization.attribute.AttributeEnumOptionEntity;
 import org.springframework.stereotype.Component;
 
 @Component

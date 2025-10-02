@@ -1,7 +1,8 @@
 package com.saymyname.persistence.mapper;
 
 import com.saymyname.core.model.game.options.GameModeAttribute;
-import com.saymyname.persistence.entity.GameModeAttributeEntity;
+import com.saymyname.persistence.entity.organization.GameModeAttributeEntity;
+
 import org.springframework.stereotype.Component;
 
 @Component
@@ -14,7 +15,8 @@ public class GameModeAttributeEntityMapper {
     }
 
     public GameModeAttributeEntity toEntity(GameModeAttribute gameModeAttribute) {
-        return new GameModeAttributeEntity(gameModeAttribute.getId(), attributeEntityMapper.toEntity(gameModeAttribute.getAttribute()));
+        return new GameModeAttributeEntity(gameModeAttribute.getId(),
+                attributeEntityMapper.toEntity(gameModeAttribute.getAttribute()));
     }
 
     public GameModeAttribute toModel(GameModeAttributeEntity gameModeAttributeEntity) {

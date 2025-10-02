@@ -6,9 +6,9 @@ import com.saymyname.core.model.enums.ChangeAction;
 import com.saymyname.core.model.people.ChangeRequest;
 import com.saymyname.core.model.people.ChangeRequestItem;
 import com.saymyname.core.model.people.PersonAttribute;
-import com.saymyname.persistence.entity.ChangeRequestEntity;
-import com.saymyname.persistence.entity.ChangeRequestItemEntity;
-import com.saymyname.persistence.entity.PersonAttributeEntity;
+import com.saymyname.persistence.entity.organization.ChangeRequestEntity;
+import com.saymyname.persistence.entity.organization.ChangeRequestItemEntity;
+import com.saymyname.persistence.entity.organization.PersonAttributeEntity;
 
 @Component
 public class ChangeRequestItemEntityMapper {

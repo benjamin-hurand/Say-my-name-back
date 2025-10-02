@@ -1,7 +1,7 @@
 package com.saymyname.persistence.mapper.course;
 
 import com.saymyname.core.model.course.Knowledge;
-import com.saymyname.persistence.entity.course.KnowledgeEntity;
+import com.saymyname.persistence.entity.organization.course.KnowledgeEntity;
 import com.saymyname.persistence.mapper.GameModeEntityMapper;
 import com.saymyname.persistence.mapper.PersonEntityMapper;
 import com.saymyname.persistence.mapper.UserEntityMapper;

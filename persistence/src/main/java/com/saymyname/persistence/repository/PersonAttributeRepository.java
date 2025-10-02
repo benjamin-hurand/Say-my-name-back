@@ -10,7 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.saymyname.persistence.entity.PersonAttributeEntity;
+import com.saymyname.persistence.entity.organization.PersonAttributeEntity;
 import com.saymyname.persistence.projection.PersonPrimaryAttrProjection;
 
 import static org.hibernate.jpa.HibernateHints.HINT_FETCH_SIZE;
@@ -21,37 +21,47 @@ import jakarta.persistence.QueryHint;
 public interface PersonAttributeRepository extends JpaRepository<PersonAttributeEntity, Long> {
 
   // MIN/MAX pour attributs numériques (valeurs stockées en texte)
+  // SQL natif conservé + filtrage tenant (organization_id)
   @Query(value = """
       SELECT pa.attribute_id    AS attributeId,
              MIN(CAST(pa.value AS DECIMAL(20,6))) AS minVal,
              MAX(CAST(pa.value AS DECIMAL(20,6))) AS maxVal
-      FROM persons_attributes pa
-      WHERE pa.attribute_id IN (:attributeIds)
-      GROUP BY pa.attribute_id
+        FROM persons_attributes pa
+       WHERE pa.attribute_id IN (:attributeIds)
+         AND pa.organization_id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+       GROUP BY pa.attribute_id
       """, nativeQuery = true)
   List<Object[]> findNumberMinMaxByAttributeIds(@Param("attributeIds") Collection<Long> attributeIds);
 
   // MIN/MAX pour attributs date (format 'YYYY-MM-DD' côté DB)
+  // SQL natif conservé + filtrage tenant
   @Query(value = """
       SELECT pa.attribute_id AS attributeId,
              DATE_FORMAT(MIN(STR_TO_DATE(pa.value, '%Y-%m-%d')), '%Y-%m-%d') AS minVal,
              DATE_FORMAT(MAX(STR_TO_DATE(pa.value, '%Y-%m-%d')), '%Y-%m-%d') AS maxVal
-      FROM persons_attributes pa
-      WHERE pa.attribute_id IN (:attributeIds)
-      GROUP BY pa.attribute_id
+        FROM persons_attributes pa
+       WHERE pa.attribute_id IN (:attributeIds)
+         AND pa.organization_id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+       GROUP BY pa.attribute_id
       """, nativeQuery = true)
   List<Object[]> findDateMinMaxByAttributeIds(@Param("attributeIds") Collection<Long> attributeIds);
 
-  @Query(value = "SELECT COUNT(DISTINCT pa.person_id) " +
-      "FROM persons_attributes pa " +
-      "WHERE pa.value >= ?1 " +
-      "  AND pa.value < ?2 " +
-      "  AND pa.valid_from <= ?3 " +
-      "  AND (pa.valid_to IS NULL OR pa.valid_to >= ?3) " +
-      "  AND pa.attribute_id = ?4", nativeQuery = true)
+  // Comptage par intervalle (string range) + validité — SQL natif conservé +
+  // filtrage tenant
+  @Query(value = """
+      SELECT COUNT(DISTINCT pa.person_id)
+        FROM persons_attributes pa
+       WHERE pa.value >= ?1
+         AND pa.value <  ?2
+         AND pa.valid_from <= ?3
+         AND (pa.valid_to IS NULL OR pa.valid_to >= ?3)
+         AND pa.attribute_id = ?4
+         AND pa.organization_id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+      """, nativeQuery = true)
   long countPersonsMatchingFilter(String minValue, String nextValue, LocalDateTime validFor, Long attributeId);
 
-  // Actifs “runtime” : exclude pending_delete — ordre déterministe
+  // Actifs “runtime” : exclude pending_delete — ordre déterministe (JPQL → org
+  // auto)
   @Query("""
       SELECT pa FROM PersonAttributeEntity pa JOIN pa.attribute a
       WHERE pa.person.id = :personId
@@ -62,7 +72,8 @@ public interface PersonAttributeRepository extends JpaRepository<PersonAttribute
       """)
   List<PersonAttributeEntity> findAttributesByPersonIdActive(@Param("personId") Long personId);
 
-  // Actifs par attribut, hors pending_delete — ordre déterministe
+  // Actifs par attribut, hors pending_delete — ordre déterministe (JPQL → org
+  // auto)
   @Query("""
       SELECT pa FROM PersonAttributeEntity pa
       WHERE pa.person.id = :personId
@@ -76,7 +87,8 @@ public interface PersonAttributeRepository extends JpaRepository<PersonAttribute
       @Param("personId") Long personId,
       @Param("attributeId") Long attributeId);
 
-  // NON-pending à partir de NOW (actives + futures) — ordre déterministe
+  // NON-pending à partir de NOW (actives + futures) — ordre déterministe (JPQL →
+  // org auto)
   @Query("""
       SELECT pa FROM PersonAttributeEntity pa
       WHERE pa.person.id = :personId
@@ -93,6 +105,7 @@ public interface PersonAttributeRepository extends JpaRepository<PersonAttribute
   /**
    * SOFT-CLOSE en lot : set pending_delete=true, valid_to = :seasonEnd (seulement
    * sur les lignes actives au :now)
+   * JPQL conservé (filtre tenant appliqué par Hibernate).
    */
   @Modifying
   @Query("""
@@ -112,6 +125,7 @@ public interface PersonAttributeRepository extends JpaRepository<PersonAttribute
 
   /**
    * Hard delete des lignes FUTURES non-pending (valid_from > :now)
+   * JPQL conservé (filtre tenant appliqué par Hibernate).
    */
   @Modifying
   @Query("""
@@ -127,7 +141,8 @@ public interface PersonAttributeRepository extends JpaRepository<PersonAttribute
 
   /**
    * Hard delete en une requête : toutes les lignes marquées is_pending_delete=1
-   * et expirées
+   * et expirées.
+   * SQL natif conservé + filtrage tenant explicite (sécurité cross-tenant).
    */
   @Modifying
   @Query(value = """
@@ -135,12 +150,14 @@ public interface PersonAttributeRepository extends JpaRepository<PersonAttribute
        WHERE is_pending_delete = 1
          AND valid_to IS NOT NULL
          AND valid_to < :cutoff
+         AND organization_id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
       """, nativeQuery = true)
   int hardDeleteExpiredPendingAttributes(@Param("cutoff") LocalDateTime cutoff);
 
   /**
    * 🔎 Projection pour les attributs primaires (primaryField=true) d’un batch de
    * personnes.
+   * JPQL → org auto, avec hints lecture/streaming.
    */
   @org.springframework.data.jpa.repository.QueryHints({
       @QueryHint(name = HINT_READ_ONLY, value = "true"),

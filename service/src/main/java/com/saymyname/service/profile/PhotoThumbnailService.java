@@ -55,7 +55,7 @@ public class PhotoThumbnailService {
     }
 
     /** Variante asynchrone (pour fallback non bloquant dans le listing). */
-    @Async
+    @Async("appAsyncExecutor")
     public void ensureSmallExistsAsync(String originalKey) {
         try {
             ensureSmallExists(originalKey);

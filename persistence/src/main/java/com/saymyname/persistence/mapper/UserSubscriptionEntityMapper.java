@@ -3,8 +3,8 @@ package com.saymyname.persistence.mapper;
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.people.UserSubscription;
-import com.saymyname.persistence.entity.subscription.UserSubscriptionEntity;
-import com.saymyname.persistence.entity.subscription.UserSubscriptionId;
+import com.saymyname.persistence.entity.organization.subscription.UserSubscriptionEntity;
+import com.saymyname.persistence.entity.organization.subscription.UserSubscriptionId;
 
 @Component
 public class UserSubscriptionEntityMapper {

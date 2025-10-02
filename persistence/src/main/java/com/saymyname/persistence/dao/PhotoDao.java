@@ -5,7 +5,7 @@ import org.springframework.stereotype.Repository;
 
 import com.saymyname.core.model.enums.PhotoStatus;
 import com.saymyname.core.model.people.Photo;
-import com.saymyname.persistence.entity.PhotoEntity;
+import com.saymyname.persistence.entity.organization.PhotoEntity;
 import com.saymyname.persistence.mapper.PhotoEntityMapper;
 import com.saymyname.persistence.repository.PhotoRepository;
 

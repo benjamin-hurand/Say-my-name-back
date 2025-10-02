@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.saymyname.core.model.auth.User; // ← ajuste si besoin
+import com.saymyname.core.model.enums.SrsAlgorithm;
 import com.saymyname.security.google.GoogleAuthService;
 import com.saymyname.service.UserService;
 import com.saymyname.webapp.dto.RegisterFormDto;
@@ -45,6 +46,7 @@ public class AuthRegisterController {
                 .withPassword(dto.password())
                 .withRoles("ROLE_USER")
                 .withActive(true)
+                .withSrsAlgorithm(SrsAlgorithm.SM2)
                 .build();
 
         User saved = userService.save(newUser);
@@ -73,6 +75,7 @@ public class AuthRegisterController {
                     .withPassword(randomPassword)
                     .withRoles("ROLE_USER")
                     .withActive(true)
+                    .withSrsAlgorithm(SrsAlgorithm.SM2)
                     .build();
             userService.save(user);
         }

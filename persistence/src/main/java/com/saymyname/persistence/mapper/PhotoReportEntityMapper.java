@@ -3,9 +3,9 @@ package com.saymyname.persistence.mapper;
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.people.PhotoReport;
-import com.saymyname.persistence.entity.PersonEntity;
-import com.saymyname.persistence.entity.PhotoReportEntity;
 import com.saymyname.persistence.entity.UserEntity;
+import com.saymyname.persistence.entity.organization.PersonEntity;
+import com.saymyname.persistence.entity.organization.PhotoReportEntity;
 
 @Component
 public class PhotoReportEntityMapper {

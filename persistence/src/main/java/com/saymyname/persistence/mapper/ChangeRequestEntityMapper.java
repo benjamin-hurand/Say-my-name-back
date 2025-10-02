@@ -6,11 +6,11 @@ import com.saymyname.core.model.people.Attribute;
 import com.saymyname.core.model.people.ChangeRequest;
 import com.saymyname.core.model.people.ChangeRequestItem;
 import com.saymyname.core.model.people.Person;
-import com.saymyname.persistence.entity.ChangeRequestEntity;
-import com.saymyname.persistence.entity.ChangeRequestItemEntity;
-import com.saymyname.persistence.entity.PersonEntity;
 import com.saymyname.persistence.entity.UserEntity;
-import com.saymyname.persistence.entity.attribute.AttributeEntity;
+import com.saymyname.persistence.entity.organization.attribute.AttributeEntity;
+import com.saymyname.persistence.entity.organization.ChangeRequestEntity;
+import com.saymyname.persistence.entity.organization.ChangeRequestItemEntity;
+import com.saymyname.persistence.entity.organization.PersonEntity;
 
 import org.springframework.stereotype.Component;
 

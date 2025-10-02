@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import org.springframework.stereotype.Repository;
 import com.saymyname.core.model.challenge.ChallengeSeason;
-import com.saymyname.persistence.entity.ChallengeSeasonEntity;
+import com.saymyname.persistence.entity.organization.ChallengeSeasonEntity;
 import com.saymyname.persistence.mapper.ChallengeSeasonEntityMapper;
 import com.saymyname.persistence.repository.ChallengeSeasonRepository;
 

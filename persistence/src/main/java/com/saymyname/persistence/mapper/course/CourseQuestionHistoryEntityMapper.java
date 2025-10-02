@@ -3,7 +3,7 @@ package com.saymyname.persistence.mapper.course;
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.course.CourseQuestionHistory;
-import com.saymyname.persistence.entity.course.CourseQuestionHistoryEntity;
+import com.saymyname.persistence.entity.organization.course.CourseQuestionHistoryEntity;
 
 @Component
 public class CourseQuestionHistoryEntityMapper {

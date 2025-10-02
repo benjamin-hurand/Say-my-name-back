@@ -10,10 +10,10 @@ import com.saymyname.core.model.enums.FollowFilter;
 import com.saymyname.core.model.enums.PhotoStatus;
 import com.saymyname.core.model.game.options.GameAttributeFilter;
 import com.saymyname.core.model.game.options.GameOptions;
-import com.saymyname.persistence.entity.PersonAttributeEntity;
-import com.saymyname.persistence.entity.PersonEntity;
-import com.saymyname.persistence.entity.PhotoEntity;
-import com.saymyname.persistence.entity.subscription.UserSubscriptionEntity;
+import com.saymyname.persistence.entity.organization.PersonAttributeEntity;
+import com.saymyname.persistence.entity.organization.PersonEntity;
+import com.saymyname.persistence.entity.organization.PhotoEntity;
+import com.saymyname.persistence.entity.organization.subscription.UserSubscriptionEntity;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;

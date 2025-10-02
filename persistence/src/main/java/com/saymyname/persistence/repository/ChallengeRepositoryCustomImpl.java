@@ -12,11 +12,11 @@ import com.saymyname.core.model.challenge.ChallengeSortCriterion;
 import com.saymyname.core.model.enums.OrderDirection;
 import com.saymyname.core.model.enums.UserPerformance;
 import com.saymyname.core.model.people.AttributeType;
-import com.saymyname.persistence.entity.ChallengeAttemptEntity;
-import com.saymyname.persistence.entity.ChallengeEntity;
-import com.saymyname.persistence.entity.ChallengeVersionEntity;
-import com.saymyname.persistence.entity.GameModeEntity;
-import com.saymyname.persistence.entity.attribute.AttributeEntity;
+import com.saymyname.persistence.entity.organization.attribute.AttributeEntity;
+import com.saymyname.persistence.entity.organization.ChallengeAttemptEntity;
+import com.saymyname.persistence.entity.organization.ChallengeEntity;
+import com.saymyname.persistence.entity.organization.ChallengeVersionEntity;
+import com.saymyname.persistence.entity.organization.GameModeEntity;
 import com.saymyname.persistence.projection.ChallengeCardProjection;
 
 import jakarta.persistence.EntityManager;

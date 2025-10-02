@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.people.Person;
-import com.saymyname.persistence.entity.PersonEntity;
+import com.saymyname.persistence.entity.organization.PersonEntity;
 
 @Component
 public class PersonEntityMapper {

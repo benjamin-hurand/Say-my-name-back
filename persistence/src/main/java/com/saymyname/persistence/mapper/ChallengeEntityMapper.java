@@ -4,7 +4,7 @@ import org.springframework.stereotype.Component;
 import com.saymyname.core.model.challenge.Challenge;
 import com.saymyname.core.model.game.options.GameAttributeFilter;
 import com.saymyname.core.model.people.Attribute;
-import com.saymyname.persistence.entity.ChallengeEntity;
+import com.saymyname.persistence.entity.organization.ChallengeEntity;
 
 @Component
 public class ChallengeEntityMapper {

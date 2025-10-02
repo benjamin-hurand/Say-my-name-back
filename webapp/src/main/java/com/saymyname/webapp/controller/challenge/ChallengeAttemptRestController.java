@@ -180,7 +180,7 @@ public class ChallengeAttemptRestController {
     }
 
     @PostMapping("/api/attempts/{id}/abandon")
-    public ResponseEntity<Void> abandon(@PathVariable Long id) {
+    public ResponseEntity<Void> abandon(@PathVariable("id") Long id) {
         challengeAttemptService.markAbandoned(id);
         return ResponseEntity.ok().build();
     }

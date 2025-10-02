@@ -2,8 +2,9 @@ package com.saymyname.persistence.mapper;
 
 import org.springframework.stereotype.Component;
 import com.saymyname.core.model.challenge.ChallengeVersion;
-import com.saymyname.persistence.entity.ChallengeQuestionEntity;
-import com.saymyname.persistence.entity.ChallengeVersionEntity;
+import com.saymyname.persistence.entity.organization.ChallengeQuestionEntity;
+import com.saymyname.persistence.entity.organization.ChallengeVersionEntity;
+
 import java.util.List;
 import java.util.stream.Collectors;
 

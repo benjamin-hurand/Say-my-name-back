@@ -4,6 +4,8 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,6 +16,7 @@ import com.saymyname.core.model.course.CourseQuestionHistory;
 import com.saymyname.core.model.course.CourseStats;
 import com.saymyname.core.model.enums.KnowledgeStatus;
 import com.saymyname.core.util.InitialCrafter;
+import com.saymyname.infra.mail.ConsoleMailer;
 import com.saymyname.service.UserService;
 import com.saymyname.service.course.CourseQuestionHistoryService;
 import com.saymyname.service.course.CourseService;
@@ -49,6 +52,7 @@ public class CourseRestController {
         private final PersonAttributeDtoMapper personAttributeDtoMapper;
         private final QuizEntryDtoMapper quizEntryDtoMapper;
         private final InitialCrafter initialCrafter;
+        private final Logger logger = LoggerFactory.getLogger(CourseRestController.class);
 
         public CourseRestController(
                         CourseService courseService,
@@ -81,6 +85,7 @@ public class CourseRestController {
          */
         @GetMapping("/{userId}/current")
         public ResponseEntity<CourseDto> currentCourse(@PathVariable("userId") Long userId) {
+                logger.info("userId pour current course: {}", userId);
                 Optional<Course> c = courseService.getLastUsedCourse(userId);
                 return c.map(course -> ResponseEntity.ok(courseDtoMapper.toDto(course)))
                                 .orElseGet(() -> ResponseEntity.noContent().build());

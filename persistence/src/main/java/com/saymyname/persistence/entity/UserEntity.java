@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Objects;
 
 import com.saymyname.core.model.enums.SrsAlgorithm;
+import com.saymyname.persistence.entity.organization.PersonEntity;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;

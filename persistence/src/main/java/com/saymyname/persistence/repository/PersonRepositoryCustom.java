@@ -1,7 +1,8 @@
 package com.saymyname.persistence.repository;
 
 import com.saymyname.core.model.game.options.GameOptions;
-import com.saymyname.persistence.entity.PersonEntity;
+import com.saymyname.persistence.entity.organization.PersonEntity;
+
 import java.util.List;
 
 public interface PersonRepositoryCustom {

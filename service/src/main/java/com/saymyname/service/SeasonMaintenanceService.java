@@ -2,6 +2,8 @@
 package com.saymyname.service;
 
 import com.saymyname.core.model.challenge.ChallengeSeason;
+import com.saymyname.core.multitenancy.OrgContext;
+
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -15,14 +17,16 @@ public class SeasonMaintenanceService {
 
     private final ChallengeSeasonService challengeSeasonService;
     private final PersonAttributeService personAttributeService;
+    private final OrganizationService organizationService;
 
     // Garde pour ne purger qu’une fois par saison
     private final AtomicInteger lastCleanupSeasonNumber = new AtomicInteger(-1);
 
     public SeasonMaintenanceService(ChallengeSeasonService challengeSeasonService,
-            PersonAttributeService personAttributeService) {
+            PersonAttributeService personAttributeService, OrganizationService organizationService) {
         this.challengeSeasonService = challengeSeasonService;
         this.personAttributeService = personAttributeService;
+        this.organizationService = organizationService;
     }
 
     /** Démarrage appli : assure saisons + purge si nécessaire */
@@ -35,8 +39,12 @@ public class SeasonMaintenanceService {
     /** Tick planifié — ajuste le cron selon tes besoins/SeasonConstants. */
     @Scheduled(cron = "0 0 9 * * MON") // ex: chaque lundi 09:00
     public void onCronTick() {
-        challengeSeasonService.onCronTick();
-        runHardDeleteIfNeeded(challengeSeasonService.getCurrentSeasonOrThrow());
+        for (Long orgId : organizationService.listActiveOrganizationIds()) {
+            OrgContext.runWith(orgId, () -> {
+                challengeSeasonService.onCronTick();
+                runHardDeleteIfNeeded(challengeSeasonService.getCurrentSeasonOrThrow());
+            });
+        }
     }
 
     private void runHardDeleteIfNeeded(ChallengeSeason currentSeason) {

@@ -12,7 +12,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.saymyname.core.model.people.PersonAttribute;
-import com.saymyname.persistence.entity.PersonAttributeEntity;
+import com.saymyname.persistence.entity.organization.PersonAttributeEntity;
 import com.saymyname.persistence.mapper.PersonAttributeEntityMapper;
 import com.saymyname.persistence.repository.AttributeRepository;
 import com.saymyname.persistence.repository.PersonAttributeRepository;

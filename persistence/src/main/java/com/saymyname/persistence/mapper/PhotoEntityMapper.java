@@ -3,9 +3,10 @@ package com.saymyname.persistence.mapper;
 import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.people.Person;
 import com.saymyname.core.model.people.Photo;
-import com.saymyname.persistence.entity.PersonEntity;
-import com.saymyname.persistence.entity.PhotoEntity;
 import com.saymyname.persistence.entity.UserEntity;
+import com.saymyname.persistence.entity.organization.PersonEntity;
+import com.saymyname.persistence.entity.organization.PhotoEntity;
+
 import org.springframework.stereotype.Component;
 
 @Component

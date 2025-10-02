@@ -5,7 +5,7 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.saymyname.persistence.entity.attribute.AttributeEntity;
+import com.saymyname.persistence.entity.organization.attribute.AttributeEntity;
 
 @Repository
 public interface AttributeRepository extends JpaRepository<AttributeEntity, Long> {

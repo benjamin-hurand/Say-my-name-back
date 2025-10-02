@@ -18,12 +18,12 @@ public class AuthUsernameController {
 
     // ——— USERNAMES ————————————————————————————————
     @GetMapping("/usernames/generate/{lang}")
-    public ResponseEntity<String> generateUsername(@PathVariable String lang) {
+    public ResponseEntity<String> generateUsername(@PathVariable("lang") String lang) {
         return ResponseEntity.ok(userService.generateUniqueUsername(lang));
     }
 
     @GetMapping("/usernames/isavailable/{username}")
-    public ResponseEntity<Boolean> isUsernameAvailable(@PathVariable String username) {
+    public ResponseEntity<Boolean> isUsernameAvailable(@PathVariable("username") String username) {
         boolean available = !userService.checkIfAccountExistsWithUsername(username);
         return available
                 ? ResponseEntity.ok(true)
