@@ -1,4 +1,4 @@
-// src/main/java/com/saymyname/persistence/entity/AttributeEntity.java
+// src/main/java/com/saymyname/persistence/entity/organization/attribute/AttributeEntity.java
 package com.saymyname.persistence.entity.organization.attribute;
 
 import jakarta.persistence.*;
@@ -6,6 +6,7 @@ import java.util.Objects;
 
 import com.saymyname.core.model.enums.ConstraintKind;
 import com.saymyname.core.model.enums.EditPolicy;
+import com.saymyname.core.model.enums.CasingStrategy;
 import com.saymyname.core.model.people.AttributeType;
 import com.saymyname.persistence.multitenancy.BaseOrgScoped;
 
@@ -54,6 +55,11 @@ public class AttributeEntity extends BaseOrgScoped {
     @Column(name = "edit_policy", nullable = false, length = 20)
     private EditPolicy editPolicy = EditPolicy.FREE;
 
+    // NEW: stratégie de casse
+    @Enumerated(EnumType.STRING)
+    @Column(name = "casing_strategy", nullable = false, length = 32)
+    private CasingStrategy casingStrategy = CasingStrategy.NONE;
+
     // NEW: contraintes génériques
     @Enumerated(EnumType.STRING)
     @Column(name = "constraint_kind", nullable = false, length = 16)
@@ -82,6 +88,7 @@ public class AttributeEntity extends BaseOrgScoped {
         this.required = b.required;
         this.type = b.type;
         this.editPolicy = b.editPolicy != null ? b.editPolicy : EditPolicy.FREE;
+        this.casingStrategy = b.casingStrategy != null ? b.casingStrategy : CasingStrategy.NONE;
         this.constraintKind = b.constraintKind != null ? b.constraintKind : ConstraintKind.NONE;
         this.constraintPayload = b.constraintPayload;
     }
@@ -183,6 +190,14 @@ public class AttributeEntity extends BaseOrgScoped {
         this.editPolicy = editPolicy;
     }
 
+    public CasingStrategy getCasingStrategy() {
+        return casingStrategy;
+    }
+
+    public void setCasingStrategy(CasingStrategy casingStrategy) {
+        this.casingStrategy = casingStrategy;
+    }
+
     public ConstraintKind getConstraintKind() {
         return constraintKind;
     }
@@ -213,6 +228,7 @@ public class AttributeEntity extends BaseOrgScoped {
         private boolean required;
         private AttributeType type;
         private EditPolicy editPolicy;
+        private CasingStrategy casingStrategy = CasingStrategy.NONE;
         private ConstraintKind constraintKind = ConstraintKind.NONE;
         private String constraintPayload;
 
@@ -276,6 +292,11 @@ public class AttributeEntity extends BaseOrgScoped {
             return this;
         }
 
+        public Builder withCasingStrategy(CasingStrategy strategy) {
+            this.casingStrategy = strategy;
+            return this;
+        }
+
         public Builder withConstraintKind(ConstraintKind kind) {
             this.constraintKind = kind;
             return this;
@@ -310,14 +331,16 @@ public class AttributeEntity extends BaseOrgScoped {
                 Objects.equals(attributeName, that.attributeName) &&
                 type == that.type &&
                 editPolicy == that.editPolicy &&
+                casingStrategy == that.casingStrategy &&
                 constraintKind == that.constraintKind &&
                 Objects.equals(constraintPayload, that.constraintPayload);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, attributeName, displayOrder, primaryField, category, maxValues, filter, sort,
-                initializable, required, type, editPolicy, constraintKind, constraintPayload);
+        return Objects.hash(id, attributeName, displayOrder, primaryField, category, maxValues,
+                filter, sort, initializable, required, type, editPolicy, casingStrategy,
+                constraintKind, constraintPayload);
     }
 
     @Override
@@ -335,6 +358,7 @@ public class AttributeEntity extends BaseOrgScoped {
                 ", required=" + required +
                 ", type=" + type +
                 ", editPolicy=" + editPolicy +
+                ", casingStrategy=" + casingStrategy +
                 ", constraintKind=" + constraintKind +
                 ", constraintPayload=" + constraintPayload +
                 '}';

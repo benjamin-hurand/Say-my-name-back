@@ -110,7 +110,7 @@ public class ChangeRequestEntityMapper {
                 : null;
 
         User requesterModel = (e.getRequester() != null)
-                ? userEntityMapper.toShortModel(e.getRequester())
+                ? userEntityMapper.toPublicModel(e.getRequester())
                 : null;
 
         Attribute attributeModel = (e.getAttribute() != null)
@@ -118,7 +118,7 @@ public class ChangeRequestEntityMapper {
                 : null;
 
         User resolvedByModel = (e.getResolvedBy() != null)
-                ? userEntityMapper.toShortModel(e.getResolvedBy())
+                ? userEntityMapper.toPublicModel(e.getResolvedBy())
                 : null;
 
         List<ChangeRequestItem> items = (e.getItems() != null)

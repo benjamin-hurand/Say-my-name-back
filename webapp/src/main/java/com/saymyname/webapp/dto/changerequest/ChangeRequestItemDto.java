@@ -9,14 +9,14 @@ import com.saymyname.core.model.enums.ChangeAction;
  * - On expose les IDs utiles à l’UI.
  */
 public record ChangeRequestItemDto(
-        Long id,
-        Long changeRequestId,
-        Long personId, // déduit de l’enveloppe
+                Long id,
+                Long changeRequestId,
+                Long personId, // déduit de l’enveloppe
 
-        String attributeName, // optionnel
+                String attributeName, // optionnel
 
-        Long personAttributeId, // présent pour UPDATE/DELETE
+                Long personAttributeId, // présent pour UPDATE/DELETE
 
-        ChangeAction action,
-        String proposedValue) {
+                ChangeAction action,
+                String proposedValue) {
 }

@@ -16,6 +16,8 @@ import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.enums.ChangeStatus;
 import com.saymyname.core.model.people.ChangeRequest;
 import com.saymyname.core.model.people.ChangeRequestItem;
+import com.saymyname.core.model.people.ChangeRequestResolution;
+import com.saymyname.core.model.people.ChangeRequestResolutionItem;
 import com.saymyname.persistence.entity.UserEntity;
 import com.saymyname.persistence.entity.organization.ChangeRequestEntity;
 import com.saymyname.persistence.entity.organization.ChangeRequestItemEntity;
@@ -47,14 +49,25 @@ public class ChangeRequestDao {
     @Transactional(readOnly = true)
     public ChangeRequest findOpenByTriplet(Long personId, Long requesterId, Long attributeId,
             Set<ChangeStatus> openStatuses) {
-        return crRepo.findFirstOpenByTriplet(personId, requesterId, attributeId, openStatuses)
+        return crRepo.findFirstOpenByTripletOrgScoped(personId, requesterId, attributeId, openStatuses)
                 .map(crMapper::toModel)
                 .orElse(null);
     }
 
+    /**
+     * Utilisée par le service pour récupérer l’enveloppe (MODEL) avec org-scope.
+     */
+    @Transactional(readOnly = true)
+    public ChangeRequest getByIdOrThrowModel(Long id) {
+        ChangeRequestEntity e = crRepo.findByIdDeepOrgScoped(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "ChangeRequest introuvable"));
+        return crMapper.toModel(e);
+    }
+
+    /** Ancienne méthode conservée pour compat — renvoie aussi un MODEL. */
     @Transactional(readOnly = true)
     public ChangeRequest getEnvelopeOrThrow(Long id) {
-        ChangeRequestEntity e = crRepo.findByIdDeep(id)
+        ChangeRequestEntity e = crRepo.findByIdDeepOrgScoped(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "ChangeRequest introuvable"));
         return crMapper.toModel(e);
     }
@@ -63,10 +76,8 @@ public class ChangeRequestDao {
 
     @Transactional
     public ChangeRequest createEnvelope(ChangeRequest envelope) {
-        // Model -> Entity
         ChangeRequestEntity e = crMapper.toEntity(envelope);
 
-        // cohérence parent/enfants
         if (e.getItems() != null) {
             for (ChangeRequestItemEntity it : e.getItems()) {
                 it.setId(null);
@@ -83,18 +94,16 @@ public class ChangeRequestDao {
 
         ChangeRequestEntity saved = crRepo.save(e);
 
-        // reload DEEP pour renvoyer un modèle hydraté
-        ChangeRequestEntity deep = crRepo.findByIdDeep(saved.getId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "ChangeRequest introuvable après création"));
+        ChangeRequestEntity deep = crRepo.findByIdDeepOrgScoped(saved.getId())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "ChangeRequest introuvable après création"));
         return crMapper.toModel(deep);
     }
 
     /* ---------- Replace (par id trouvé via triplet en service) ---------- */
     @Transactional
     public ChangeRequest replaceEnvelopeItems(Long envelopeId, Long requesterId, ChangeRequest source) {
-        // Charger DEEP pour manipuler la collection managée (orphanRemoval-friendly)
-        ChangeRequestEntity env = crRepo.findByIdDeep(envelopeId)
+        ChangeRequestEntity env = crRepo.findByIdDeepOrgScoped(envelopeId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "ChangeRequest introuvable"));
 
         Long authorId = (env.getRequester() != null ? env.getRequester().getId() : null);
@@ -106,12 +115,10 @@ public class ChangeRequestDao {
                     "Seules les enveloppes PENDING peuvent être modifiées (actuel: " + env.getStatus() + ")");
         }
 
-        // Mettre à jour le motif (si fourni, déjà normalisé par le service)
         if (source.getRequestReason() != null && !source.getRequestReason().trim().isEmpty()) {
             env.setRequestReason(source.getRequestReason().trim());
         }
 
-        // Rebuild de la collection
         env.getItems().clear();
         if (source.getItems() != null) {
             for (ChangeRequestItem it : source.getItems()) {
@@ -125,15 +132,16 @@ public class ChangeRequestDao {
         env.setUpdatedAt(LocalDateTime.now());
         crRepo.save(env);
 
-        ChangeRequestEntity deep = crRepo.findByIdDeep(env.getId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "ChangeRequest introuvable après update"));
+        ChangeRequestEntity deep = crRepo.findByIdDeepOrgScoped(env.getId())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "ChangeRequest introuvable après update"));
         return crMapper.toModel(deep);
     }
 
+    /* ---------- Cancel par requester ---------- */
     @Transactional
     public void cancelEnvelope(Long changeRequestId, User requester) {
-        ChangeRequestEntity e = crRepo.findById(changeRequestId)
+        ChangeRequestEntity e = crRepo.findByIdOrgScoped(changeRequestId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "ChangeRequest introuvable"));
 
         Long requesterId = requester.getId();
@@ -159,10 +167,55 @@ public class ChangeRequestDao {
         crRepo.save(e);
     }
 
+    /* ---------- Listings ---------- */
+
     @Transactional(readOnly = true)
     public List<ChangeRequest> findByUserIdAndStatuses(Long userId, Collection<ChangeStatus> statuses) {
-        return crRepo.findByUserIdAndStatusesDeep(userId, statuses).stream()
+        return crRepo.findByUserIdAndStatusesDeepOrgScoped(userId, statuses).stream()
                 .map(crMapper::toModel)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ChangeRequest> findByPersonIdAndStatuses(Long personId, Collection<ChangeStatus> statuses) {
+        return crRepo.findByPersonIdAndStatusesDeepOrgScoped(personId, statuses).stream()
+                .map(crMapper::toModel)
+                .toList();
+    }
+
+    /*
+     * ---------- Métadonnées de résolution (utilisée par le service.resolve)
+     * ----------
+     */
+
+    /**
+     * Met à jour le header d’enveloppe (status, resolvedAt, resolvedBy, comment,
+     * updatedAt)
+     * via un bulk JPQL org-scoped.
+     */
+    @Transactional
+    public void updateEnvelopeResolutionMeta(Long crId,
+            ChangeStatus status,
+            LocalDateTime resolvedAt,
+            User resolvedBy,
+            String resolutionComment) {
+        if (resolvedBy == null || resolvedBy.getId() == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "resolvedBy manquant");
+        }
+        int updated = crRepo.updateResolutionMetaOrgScoped(
+                crId, status, resolvedAt, resolvedBy.getId(), trimTo512(resolutionComment));
+        if (updated == 0) {
+            // CR introuvable dans cette org ou concurrent update
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "ChangeRequest introuvable");
+        }
+    }
+
+    private String trimTo512(String s) {
+        if (s == null)
+            return null;
+        String t = s.trim();
+        if (t.isEmpty())
+            return null;
+        return (t.length() > 512) ? t.substring(0, 512) : t;
     }
 }

@@ -2,6 +2,7 @@
 package com.saymyname.webapp.dto.changerequest;
 
 import com.saymyname.core.model.enums.ChangeAction;
+import com.saymyname.webapp.dto.person.PersonAttributeMinimalDto;
 
 /**
  * Représentation API d’un item de ChangeRequest (schéma simplifié).
@@ -9,8 +10,8 @@ import com.saymyname.core.model.enums.ChangeAction;
  * - On expose les IDs utiles à l’UI.
  */
 public record ChangeRequestItemSummaryDto(
-                Long id,
-                Long personAttributeId,
-                ChangeAction action,
-                String proposedValue) {
+        Long id,
+        PersonAttributeMinimalDto personAttribute,
+        ChangeAction action,
+        String proposedValue) {
 }

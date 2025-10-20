@@ -63,6 +63,6 @@ public class ProfileService {
 
         // ⬇️ délègue et récupère l'état canonique
         return personAttributeService.applyChangesForPerson(
-                person.getId(), attributeId, toCreate, toUpdate, toDelete);
+                person.getId(), attributeId, toCreate, toUpdate, toDelete, false);
     }
 }

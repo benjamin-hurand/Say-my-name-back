@@ -1,8 +1,10 @@
+// src/main/java/com/saymyname/persistence/mapper/ChangeRequestItemEntityMapper.java
 package com.saymyname.persistence.mapper;
 
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.enums.ChangeAction;
+import com.saymyname.core.model.enums.ChangeItemResolutionStatus;
 import com.saymyname.core.model.people.ChangeRequest;
 import com.saymyname.core.model.people.ChangeRequestItem;
 import com.saymyname.core.model.people.PersonAttribute;
@@ -42,10 +44,8 @@ public class ChangeRequestItemEntityMapper {
 
         // Cible selon l'action
         if (action == ChangeAction.CREATE) {
-            // personAttribute = null
             e.setPersonAttribute(null);
         } else if (action == ChangeAction.UPDATE || action == ChangeAction.DELETE) {
-            // personAttribute requis
             if (m.getPersonAttribute() != null && m.getPersonAttribute().getId() != null) {
                 PersonAttributeEntity paRef = new PersonAttributeEntity();
                 paRef.setId(m.getPersonAttribute().getId());
@@ -54,13 +54,16 @@ public class ChangeRequestItemEntityMapper {
                 e.setPersonAttribute(null);
             }
         } else {
-            // sécurité (au cas où de nouvelles actions apparaissent)
             e.setPersonAttribute(null);
         }
 
-        // Valeur (proposedValue est la valeur *déjà* normalisée si tu le fais
-        // au service)
+        // Valeur proposée (déjà normalisée si besoin côté service)
         e.setProposedValue(m.getProposedValue());
+
+        // Résolution par item
+        e.setResolutionStatus(
+                m.getResolutionStatus() != null ? m.getResolutionStatus() : ChangeItemResolutionStatus.PENDING);
+        e.setResolutionComment(m.getResolutionComment());
 
         return e;
     }
@@ -80,9 +83,9 @@ public class ChangeRequestItemEntityMapper {
                     .build();
         }
 
-        // Cibles
+        // Cible
         PersonAttribute pa = (e.getPersonAttribute() != null)
-                ? personAttributeEntityMapper.toShortModel(e.getPersonAttribute())
+                ? personAttributeEntityMapper.toModel(e.getPersonAttribute())
                 : null;
 
         return new ChangeRequestItem.Builder()
@@ -91,6 +94,9 @@ public class ChangeRequestItemEntityMapper {
                 .withAction(e.getAction())
                 .withPersonAttribute(pa)
                 .withProposedValue(e.getProposedValue())
+                .withResolutionStatus(
+                        e.getResolutionStatus() != null ? e.getResolutionStatus() : ChangeItemResolutionStatus.PENDING)
+                .withResolutionComment(e.getResolutionComment())
                 .build();
     }
 

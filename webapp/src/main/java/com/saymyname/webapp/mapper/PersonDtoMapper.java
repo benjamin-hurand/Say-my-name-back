@@ -2,6 +2,7 @@ package com.saymyname.webapp.mapper;
 
 import org.springframework.stereotype.Component;
 
+import com.saymyname.core.model.enums.OrgRole;
 import com.saymyname.core.model.people.Person;
 import com.saymyname.webapp.dto.PersonDto;
 
@@ -23,6 +24,16 @@ public class PersonDtoMapper {
         return new Person.Builder()
                 .withId(personId)
                 .build();
+    }
+
+    public PersonDto toDto(Person person, OrgRole organizationRole) {
+        return new PersonDto(
+                person.getId(),
+                userDtoMapper.toDto(person.getUser(), organizationRole),
+                person.getAttributes() != null
+                        ? person.getAttributes().stream().map(personAttributeDtoMapper::toDto).toList()
+                        : null,
+                person.getPhotos() != null ? person.getPhotos().stream().map(photoDtoMapper::toDto).toList() : null);
     }
 
     public PersonDto toDto(Person person) {

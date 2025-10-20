@@ -47,6 +47,15 @@ public interface PersonRepository extends JpaRepository<PersonEntity, Long>, Per
       """)
   Optional<PersonEntity> fetchPhotos(@Param("personId") Long personId);
 
+  // 3) p.user (linked account)
+  @Query("""
+      select distinct p
+      from PersonEntity p
+      left join fetch p.user u
+      where p.id = :personId
+      """)
+  Optional<PersonEntity> fetchUser(@Param("personId") Long personId);
+
   /**
    * UNIVERSE + AND :
    * Toutes les personnes qui possèdent TOUTES les attributes cibles.

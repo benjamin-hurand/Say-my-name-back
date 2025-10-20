@@ -3,6 +3,7 @@ package com.saymyname.webapp.mapper;
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.auth.User;
+import com.saymyname.core.model.enums.OrgRole;
 import com.saymyname.webapp.dto.ReducedUserDto;
 import com.saymyname.webapp.dto.UserDto;
 
@@ -20,12 +21,31 @@ public class UserDtoMapper {
         return new User.Builder().withId(userId).build();
     }
 
-    public UserDto toDto(User user) {
+    public UserDto toDto(User user, OrgRole organizationRole) {
+        if (user == null) {
+            return null;
+        }
         return new UserDto(
                 user.getId(),
                 user.getUsername(),
                 user.getEmail(),
                 user.getSrsAlgorithm(),
-                user.getRoles() != null ? String.join(",", user.getRoles()) : null);
+                user.getRoles() != null ? String.join(",", user.getRoles()) : null,
+                user.isActive(),
+                organizationRole);
+    }
+
+    public UserDto toDto(User user) {
+        if (user == null) {
+            return null;
+        }
+        return new UserDto(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getSrsAlgorithm(),
+                user.getRoles() != null ? String.join(",", user.getRoles()) : null,
+                user.isActive(),
+                null);
     }
 }

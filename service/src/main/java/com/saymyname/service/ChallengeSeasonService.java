@@ -3,6 +3,7 @@ package com.saymyname.service;
 
 import com.saymyname.core.model.challenge.ChallengeSeason;
 import com.saymyname.core.model.challenge.SeasonConstants;
+import com.saymyname.core.multitenancy.OrgContext;
 import com.saymyname.persistence.dao.ChallengeSeasonDao;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -11,15 +12,16 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 @Service
 public class ChallengeSeasonService {
 
     private final ChallengeSeasonDao challengeSeasonDao;
 
-    // Cache en mémoire (instance unique Spring)
-    private volatile ChallengeSeason cachedCurrentSeason;
-    private volatile ChallengeSeason cachedNextSeason;
+    // Cache en mémoire par organisation (clé = orgId)
+    private final ConcurrentMap<Long, SeasonsPair> cache = new ConcurrentHashMap<>();
 
     public ChallengeSeasonService(ChallengeSeasonDao challengeSeasonDao) {
         this.challengeSeasonDao = challengeSeasonDao;
@@ -27,50 +29,104 @@ public class ChallengeSeasonService {
 
     /* ===================== API publique minimale ===================== */
 
-    /** Version Optional — à privilégier côté appelant. */
+    /**
+     * Version Optional — à privilégier côté appelant (doit avoir un OrgContext en
+     * place).
+     */
     public Optional<ChallengeSeason> getCurrentSeasonOpt() {
         return getSeasonOptInternal(SeasonKind.CURRENT);
     }
 
-    /** Version Optional — à privilégier côté appelant. */
+    /**
+     * Version Optional — à privilégier côté appelant (doit avoir un OrgContext en
+     * place).
+     */
     public Optional<ChallengeSeason> getNextSeasonOpt() {
         return getSeasonOptInternal(SeasonKind.NEXT);
     }
 
-    /** Variante qui jette si indisponible (s’appuie sur la version Optional). */
+    /** Variante qui jette si indisponible (doit avoir un OrgContext en place). */
     public ChallengeSeason getCurrentSeasonOrThrow() {
         return getCurrentSeasonOpt()
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.INTERNAL_SERVER_ERROR, "Invariant season: aucune saison disponible"));
     }
 
-    /** Variante qui jette si indisponible (s’appuie sur la version Optional). */
+    /** Variante qui jette si indisponible (doit avoir un OrgContext en place). */
     public ChallengeSeason getNextSeasonOrThrow() {
         return getNextSeasonOpt()
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.INTERNAL_SERVER_ERROR, "Invariant season: aucune saison disponible"));
     }
 
-    /* ===================== Hooks démarrage + cron ===================== */
+    /*
+     * ========= Helpers sûrs pour être appelés SANS contexte préexistant =========
+     */
 
-    /** Démarrage : assure les saisons en BD et chauffe le cache (1 seule passe). */
+    /**
+     * Initialise/rafraîchit pour UNE organisation (pose et restaure l’OrgContext).
+     */
+    public boolean ensureAndWarmNowForOrg(Long orgId) {
+        try (AutoCloseable ctx = useOrg(orgId)) {
+            return ensureAndWarmNow();
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) { // AutoCloseable#close checked
+            throw new IllegalStateException(e);
+        }
+    }
+
+    /**
+     * Lit la saison courante pour UNE org (convenience sans imposer un contexte
+     * appelant).
+     */
+    public Optional<ChallengeSeason> getCurrentSeasonOptForOrg(Long orgId) {
+        try (AutoCloseable ctx = useOrg(orgId)) {
+            return getCurrentSeasonOpt();
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    /**
+     * Lit la prochaine saison pour UNE org (convenience sans imposer un contexte
+     * appelant).
+     */
+    public Optional<ChallengeSeason> getNextSeasonOptForOrg(Long orgId) {
+        try (AutoCloseable ctx = useOrg(orgId)) {
+            return getNextSeasonOpt();
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    /*
+     * ===================== Hooks (doivent être appelés avec contexte)
+     * =====================
+     */
+
+    /**
+     * Démarrage : assure les saisons en BD et chauffe le cache (1 passe). REQUIERT
+     * OrgContext.
+     */
     public void onAppStart() {
         ensureAndWarmNow();
-        // Purge déplacée dans SeasonMaintenanceService pour éviter les dépendances
-        // croisées
     }
 
-    /** Tick planifié (ex. lundi 09:00) : même logique que le démarrage. */
+    /** Tick planifié (ex. lundi 09:00). REQUIERT OrgContext. */
     public void onCronTick() {
         ensureAndWarmNow();
-        // Purge déplacée dans SeasonMaintenanceService pour éviter les dépendances
-        // croisées
     }
 
-    /** Expose aussi une action manuelle si tu veux déclencher depuis ailleurs. */
+    /** Action interne : utilise l’OrgContext courant. */
     public boolean ensureAndWarmNow() {
-        SeasonsPair pair = ensureSeasonsFor(LocalDateTime.now());
-        return warmCacheAndReturnIfChanged(pair);
+        final Long orgId = requireOrgId();
+        final SeasonsPair fresh = ensureSeasonsFor(LocalDateTime.now());
+        return warmCacheAndReturnIfChanged(orgId, fresh);
     }
 
     /* ===================== Implémentation factorisée ===================== */
@@ -80,34 +136,37 @@ public class ChallengeSeasonService {
     }
 
     /**
-     * Chemin principal sans exceptions : tente le cache, sinon assure en BD et warm
-     * le cache.
+     * Chemin principal : tente le cache pour l’org courante, sinon assure en BD
+     * puis warm.
      */
     private Optional<ChallengeSeason> getSeasonOptInternal(SeasonKind kind) {
-        LocalDateTime now = LocalDateTime.now();
+        final Long orgId = requireOrgId();
+        final LocalDateTime now = LocalDateTime.now();
 
-        // 1) Cache valide ? (et next présent si demandé)
-        if (!isCurrentCacheValid(now) || (kind == SeasonKind.NEXT && cachedNextSeason == null)) {
-            // 2) Cache invalide → assure en BD (trouve ou crée) puis warm le cache
-            SeasonsPair pair = ensureSeasonsFor(now);
-            warmCacheAndReturnIfChanged(pair);
+        SeasonsPair pair = cache.get(orgId);
+        final boolean currentValid = isCurrentCacheValid(pair, now);
+        final boolean needsNext = (kind == SeasonKind.NEXT);
+
+        if (!currentValid || (needsNext && (pair == null || pair.next == null))) {
+            pair = ensureSeasonsFor(now);
+            warmCache(orgId, pair);
         }
 
-        ChallengeSeason result = (kind == SeasonKind.CURRENT) ? cachedCurrentSeason : cachedNextSeason;
-        return Optional.ofNullable(result);
+        if (pair == null)
+            return Optional.empty();
+        return Optional.of(kind == SeasonKind.CURRENT ? pair.current : pair.next);
     }
 
     /** Cache valide si la "current" existe et couvre 'now'. */
-    private boolean isCurrentCacheValid(LocalDateTime now) {
-        ChallengeSeason c = this.cachedCurrentSeason;
-        return c != null && !now.isBefore(c.getStartDate()) && !now.isAfter(c.getEndDate());
+    private boolean isCurrentCacheValid(SeasonsPair pair, LocalDateTime now) {
+        if (pair == null || pair.current == null)
+            return false;
+        return !now.isBefore(pair.current.getStartDate()) && !now.isAfter(pair.current.getEndDate());
     }
 
     /**
-     * Assure la présence de la saison courante (couvrant 'ref') et de la suivante :
-     * - tente de trouver en BD
-     * - crée si manquante
-     * Retourne les 2 objets (créés ou trouvés) pour warm le cache sans re-SELECT.
+     * Assure la présence de la saison courante (couvrant 'ref') et de la suivante.
+     * Le DAO est tenant-aware via OrgContext/filters.
      */
     private SeasonsPair ensureSeasonsFor(LocalDateTime ref) {
         // 1) Saison courante
@@ -115,7 +174,7 @@ public class ChallengeSeasonService {
         if (current == null) {
             LocalDateTime start = seasonStartFor(ref);
             LocalDateTime end = start.plusDays(SeasonConstants.DURATION_DAYS).minusSeconds(1);
-            int seasonNumber = 1; // par défaut si table vide (ajuste via DAO si besoin)
+            int seasonNumber = 1; // si table vide, sinon laisse le DAO calculer
             current = challengeSeasonDao.save(new ChallengeSeason.Builder()
                     .withSeasonNumber(seasonNumber)
                     .withStartDate(start)
@@ -139,27 +198,35 @@ public class ChallengeSeasonService {
         return new SeasonsPair(current, next);
     }
 
-    /** Écrit les deux saisons dans le cache (idempotent). */
-    private void warmCache(SeasonsPair pair) {
-        if (!sameSeason(this.cachedCurrentSeason, pair.current)) {
-            this.cachedCurrentSeason = pair.current;
-        }
-        if (!sameSeason(this.cachedNextSeason, pair.next)) {
-            this.cachedNextSeason = pair.next;
-        }
+    /** Écrit les deux saisons dans le cache (idempotent) pour l’org fournie. */
+    private void warmCache(Long orgId, SeasonsPair pair) {
+        cache.put(orgId, pair);
     }
 
     /** Warm + renvoie si la "current" a changé (utile pour déclencher des jobs). */
-    private boolean warmCacheAndReturnIfChanged(SeasonsPair pair) {
-        boolean changed = !sameSeason(this.cachedCurrentSeason, pair.current);
-        warmCache(pair);
-        return changed;
+    private boolean warmCacheAndReturnIfChanged(Long orgId, SeasonsPair fresh) {
+        SeasonsPair old = cache.put(orgId, fresh);
+        return !sameSeason(old == null ? null : old.current, fresh.current);
+    }
+
+    private Long requireOrgId() {
+        Long orgId = OrgContext.get();
+        if (orgId == null) {
+            throw new IllegalStateException("OrgContext manquant (organization_id requis).");
+        }
+        return orgId;
+    }
+
+    /** Utilitaire try-with-resources pour poser/restaurer l’OrgContext. */
+    private AutoCloseable useOrg(Long orgId) {
+        final Long previous = OrgContext.get();
+        OrgContext.set(orgId);
+        return () -> OrgContext.set(previous);
     }
 
     private boolean sameSeason(ChallengeSeason a, ChallengeSeason b) {
         if (a == null || b == null)
             return a == b;
-        // Compare saison par (numéro + bornes) — adapte si tu as un ID stable
         return a.getSeasonNumber() == b.getSeasonNumber()
                 && Objects.equals(a.getStartDate(), b.getStartDate())
                 && Objects.equals(a.getEndDate(), b.getEndDate());

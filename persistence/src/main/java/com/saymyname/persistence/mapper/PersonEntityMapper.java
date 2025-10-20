@@ -76,6 +76,28 @@ public class PersonEntityMapper {
                                 .build();
         }
 
+        public Person toModelWithMediumUser(PersonEntity personEntity) {
+                if (personEntity == null) {
+                        return null;
+                }
+                return new Person.Builder()
+                                .withId(personEntity.getId())
+                                .withUser(userEntityMapper.toMediumModel(personEntity.getUser()))
+                                .withAttributes(
+                                                personEntity.getAttributes() != null
+                                                                ? personEntity.getAttributes().stream()
+                                                                                .map(personAttributeEntityMapper::toModel)
+                                                                                .collect(Collectors.toList())
+                                                                : List.of())
+                                .withPhotos(
+                                                personEntity.getPhotos() != null
+                                                                ? personEntity.getPhotos().stream()
+                                                                                .map(photoEntityMapper::toModel)
+                                                                                .collect(Collectors.toList())
+                                                                : List.of())
+                                .build();
+        }
+
         // --- Short model (id only)
         public Person toShortModel(PersonEntity personEntity) {
                 if (personEntity == null) {

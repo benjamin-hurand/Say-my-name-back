@@ -22,12 +22,32 @@ public class UserEntityMapper {
                 .build();
     }
 
+    public User toMediumModel(UserEntity userEntity) {
+        if (userEntity == null) {
+            return null;
+        }
+        return new User.Builder()
+                .withId(userEntity.getId())
+                .withUsername(userEntity.getUsername())
+                .withEmail(userEntity.getEmail())
+                .withSrsAlgorithm(userEntity.getSrsAlgorithm())
+                .withActive(userEntity.isActive())
+                .build();
+    }
+
     public User toShortModel(UserEntity userEntity) {
         if (userEntity == null)
             return null;
         return new User.Builder()
                 .withId(userEntity.getId())
                 .build();
+    }
+
+    public User toPublicModel(UserEntity userEntity) {
+        if (userEntity == null) {
+            return null;
+        }
+        return new User.Builder().withId(userEntity.getId()).withUsername(userEntity.getUsername()).build();
     }
 
     public static User toSrsUpdateModel(Long id, SrsAlgorithm srs) {

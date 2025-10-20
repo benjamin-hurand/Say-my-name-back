@@ -23,6 +23,12 @@ import com.saymyname.webapp.dto.changerequest.SubmitChangeRequestItemDto;
 @Component
 public class ChangeRequestItemDtoMapper {
 
+    private final PersonAttributeDtoMapper personAttributeDtoMapper;
+
+    public ChangeRequestItemDtoMapper(PersonAttributeDtoMapper personAttributeDtoMapper) {
+        this.personAttributeDtoMapper = personAttributeDtoMapper;
+    }
+
     /** DTO in -> Model (pour submit/update d’un item, sans parent ni person) */
     public ChangeRequestItem toModel(SubmitChangeRequestItemDto in) {
         if (in == null)
@@ -82,11 +88,9 @@ public class ChangeRequestItemDtoMapper {
         if (it == null)
             return null;
 
-        Long personAttributeId = (it.getPersonAttribute() != null) ? it.getPersonAttribute().getId() : null;
-
         return new ChangeRequestItemSummaryDto(
                 it.getId(),
-                personAttributeId,
+                personAttributeDtoMapper.toMinimalDto(it.getPersonAttribute()),
                 it.getAction(),
                 it.getProposedValue());
     }

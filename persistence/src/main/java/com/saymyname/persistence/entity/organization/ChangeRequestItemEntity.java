@@ -1,10 +1,11 @@
+// src/main/java/com/saymyname/persistence/entity/organization/ChangeRequestItemEntity.java
 package com.saymyname.persistence.entity.organization;
 
 import com.saymyname.core.model.enums.ChangeAction;
+import com.saymyname.core.model.enums.ChangeItemResolutionStatus;
 import com.saymyname.persistence.multitenancy.BaseOrgScoped;
 
 import jakarta.persistence.*;
-
 import java.util.Objects;
 
 @Entity
@@ -35,6 +36,15 @@ public class ChangeRequestItemEntity extends BaseOrgScoped {
     @Column(name = "proposed_value", length = 512)
     private String proposedValue;
 
+    /** Statut de résolution (par item) */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "resolution_status", nullable = false, length = 16)
+    private ChangeItemResolutionStatus resolutionStatus = ChangeItemResolutionStatus.PENDING;
+
+    /** Commentaire de résolution (par item, optionnel) */
+    @Column(name = "resolution_comment", length = 512)
+    private String resolutionComment;
+
     // --- Constructeurs ---
     public ChangeRequestItemEntity() {
     }
@@ -44,12 +54,16 @@ public class ChangeRequestItemEntity extends BaseOrgScoped {
             ChangeRequestEntity changeRequest,
             ChangeAction action,
             PersonAttributeEntity personAttribute,
-            String proposedValue) {
+            String proposedValue,
+            ChangeItemResolutionStatus resolutionStatus,
+            String resolutionComment) {
         this.id = id;
         this.changeRequest = changeRequest;
         this.action = action;
         this.personAttribute = personAttribute;
         this.proposedValue = proposedValue;
+        this.resolutionStatus = (resolutionStatus != null ? resolutionStatus : ChangeItemResolutionStatus.PENDING);
+        this.resolutionComment = resolutionComment;
     }
 
     // --- Getters / Setters ---
@@ -93,6 +107,22 @@ public class ChangeRequestItemEntity extends BaseOrgScoped {
         this.proposedValue = proposedValue;
     }
 
+    public ChangeItemResolutionStatus getResolutionStatus() {
+        return resolutionStatus;
+    }
+
+    public void setResolutionStatus(ChangeItemResolutionStatus resolutionStatus) {
+        this.resolutionStatus = resolutionStatus;
+    }
+
+    public String getResolutionComment() {
+        return resolutionComment;
+    }
+
+    public void setResolutionComment(String resolutionComment) {
+        this.resolutionComment = resolutionComment;
+    }
+
     // --- equals / hashCode sur id ---
     @Override
     public boolean equals(Object o) {
@@ -117,6 +147,7 @@ public class ChangeRequestItemEntity extends BaseOrgScoped {
                 ", crId=" + (changeRequest != null ? changeRequest.getId() : null) +
                 ", action=" + action +
                 ", personAttributeId=" + (personAttribute != null ? personAttribute.getId() : null) +
+                ", resolutionStatus=" + resolutionStatus +
                 '}';
     }
 }

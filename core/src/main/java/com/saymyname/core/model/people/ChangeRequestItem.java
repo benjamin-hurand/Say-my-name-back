@@ -1,6 +1,8 @@
+// src/main/java/com/saymyname/core/model/people/ChangeRequestItem.java
 package com.saymyname.core.model.people;
 
 import com.saymyname.core.model.enums.ChangeAction;
+import com.saymyname.core.model.enums.ChangeItemResolutionStatus;
 
 import java.util.Objects;
 
@@ -10,8 +12,9 @@ import java.util.Objects;
  * - UPDATE : personAttribute requis, proposedValue requis
  * - DELETE : personAttribute requis, proposedValue null
  *
- * Les métadonnées (person, requester, attribute, statut, dates, résolution)
- * sont portées par l’enveloppe ChangeRequest.
+ * Métadonnées de résolution (status/comment) sont portées par l'ITEM.
+ * Les champs "qui/quand" (resolvedBy/At) restent sur l'ENVELOPPE
+ * (ChangeRequest).
  */
 public class ChangeRequestItem {
 
@@ -29,6 +32,12 @@ public class ChangeRequestItem {
     /** Valeur proposée (null pour DELETE) */
     private String proposedValue;
 
+    /** Statut de résolution (par item) — PENDING par défaut */
+    private ChangeItemResolutionStatus resolutionStatus = ChangeItemResolutionStatus.PENDING;
+
+    /** Commentaire de résolution (facultatif, utile surtout pour REJECTED) */
+    private String resolutionComment;
+
     public ChangeRequestItem() {
     }
 
@@ -38,6 +47,8 @@ public class ChangeRequestItem {
         this.action = b.action;
         this.personAttribute = b.personAttribute;
         this.proposedValue = b.proposedValue;
+        this.resolutionStatus = (b.resolutionStatus != null ? b.resolutionStatus : ChangeItemResolutionStatus.PENDING);
+        this.resolutionComment = b.resolutionComment;
     }
 
     // --- Getters ---
@@ -61,6 +72,14 @@ public class ChangeRequestItem {
         return proposedValue;
     }
 
+    public ChangeItemResolutionStatus getResolutionStatus() {
+        return resolutionStatus;
+    }
+
+    public String getResolutionComment() {
+        return resolutionComment;
+    }
+
     // --- Setters ---
     public void setId(Long id) {
         this.id = id;
@@ -82,6 +101,14 @@ public class ChangeRequestItem {
         this.proposedValue = proposedValue;
     }
 
+    public void setResolutionStatus(ChangeItemResolutionStatus resolutionStatus) {
+        this.resolutionStatus = resolutionStatus;
+    }
+
+    public void setResolutionComment(String resolutionComment) {
+        this.resolutionComment = resolutionComment;
+    }
+
     // --- Builder ---
     public static class Builder {
         private Long id;
@@ -89,6 +116,8 @@ public class ChangeRequestItem {
         private ChangeAction action;
         private PersonAttribute personAttribute;
         private String proposedValue;
+        private ChangeItemResolutionStatus resolutionStatus;
+        private String resolutionComment;
 
         public Builder withId(Long id) {
             this.id = id;
@@ -112,6 +141,16 @@ public class ChangeRequestItem {
 
         public Builder withProposedValue(String proposedValue) {
             this.proposedValue = proposedValue;
+            return this;
+        }
+
+        public Builder withResolutionStatus(ChangeItemResolutionStatus resolutionStatus) {
+            this.resolutionStatus = resolutionStatus;
+            return this;
+        }
+
+        public Builder withResolutionComment(String resolutionComment) {
+            this.resolutionComment = resolutionComment;
             return this;
         }
 
@@ -144,6 +183,8 @@ public class ChangeRequestItem {
                 ", action=" + action +
                 ", personAttributeId=" + (personAttribute != null ? personAttribute.getId() : null) +
                 ", proposedValue=" + proposedValue +
+                ", resolutionStatus=" + resolutionStatus +
+                ", resolutionComment=" + (resolutionComment != null ? "'" + resolutionComment + "'" : "null") +
                 '}';
     }
 }

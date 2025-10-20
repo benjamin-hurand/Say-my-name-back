@@ -2,7 +2,7 @@ package com.saymyname.webapp.multitenancy;
 
 import com.saymyname.core.multitenancy.OrgContext;
 import com.saymyname.security.AuthFacade;
-import com.saymyname.security.OrgRole;
+import com.saymyname.core.model.enums.OrgRole;
 import com.saymyname.service.security.MembershipService;
 import org.springframework.stereotype.Component;
 

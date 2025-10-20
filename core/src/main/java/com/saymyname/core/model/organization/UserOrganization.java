@@ -3,10 +3,12 @@ package com.saymyname.core.model.organization;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
+import com.saymyname.core.model.enums.OrgRole;
+
 public class UserOrganization {
     private Long userId;
     private Long organizationId;
-    private String role;
+    private OrgRole role;
     private LocalDateTime createdAt;
     private Organization organization; // optionnel si tu veux embarquer l’orga complète
 
@@ -26,7 +28,7 @@ public class UserOrganization {
         return organizationId;
     }
 
-    public String getRole() {
+    public OrgRole getRole() {
         return role;
     }
 
@@ -45,7 +47,7 @@ public class UserOrganization {
     public static class Builder {
         private Long userId;
         private Long organizationId;
-        private String role;
+        private OrgRole role;
         private LocalDateTime createdAt;
         private Organization organization;
 
@@ -59,7 +61,7 @@ public class UserOrganization {
             return this;
         }
 
-        public Builder role(String role) {
+        public Builder role(OrgRole role) {
             this.role = role;
             return this;
         }

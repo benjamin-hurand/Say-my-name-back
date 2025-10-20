@@ -1,8 +1,8 @@
 package com.saymyname.webapp.security;
 
+import com.saymyname.core.model.enums.OrgRole;
 import com.saymyname.core.multitenancy.OrgContext;
 import com.saymyname.security.AuthFacade; // vient du module security (ok)
-import com.saymyname.security.OrgRole;
 import com.saymyname.service.security.MembershipService; // service (ok)
 import org.springframework.stereotype.Component;
 

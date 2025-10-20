@@ -4,6 +4,7 @@ import com.saymyname.core.model.people.PersonAttribute;
 import com.saymyname.webapp.dto.PersonAttributeDto;
 import com.saymyname.webapp.dto.PersonAttributeLiteDto;
 import com.saymyname.webapp.dto.ReducedPersonAttributeDto;
+import com.saymyname.webapp.dto.person.PersonAttributeMinimalDto;
 import com.saymyname.webapp.dto.profile.PersonAttributePatch;
 
 import org.springframework.stereotype.Component;
@@ -18,9 +19,12 @@ public class PersonAttributeDtoMapper {
     }
 
     public PersonAttributeDto toDto(PersonAttribute personAttribute) {
+        if (personAttribute == null) {
+            return null;
+        }
         return new PersonAttributeDto(
                 personAttribute.getId(),
-                attributeDtoMapper.toDto(personAttribute.getAttribute()),
+                personAttribute.getAttribute().getId(),
                 personAttribute.getValue(),
                 personAttribute.getValidFrom(),
                 personAttribute.getValidTo(),
@@ -28,6 +32,9 @@ public class PersonAttributeDtoMapper {
     }
 
     public ReducedPersonAttributeDto toReducedDto(PersonAttribute personAttribute) {
+        if (personAttribute == null) {
+            return null;
+        }
         return new ReducedPersonAttributeDto(
                 personAttribute.getId(),
                 attributeDtoMapper.toDto(personAttribute.getAttribute()),
@@ -35,11 +42,23 @@ public class PersonAttributeDtoMapper {
     }
 
     public PersonAttributeLiteDto toLiteDto(PersonAttribute personAttribute) {
+        if (personAttribute == null) {
+            return null;
+        }
         return new PersonAttributeLiteDto(
                 personAttribute.getId(),
                 attributeDtoMapper.toDto(personAttribute.getAttribute()),
                 personAttribute.getValue(),
                 personAttribute.getPerson().getId());
+    }
+
+    public PersonAttributeMinimalDto toMinimalDto(PersonAttribute personAttribute) {
+        if (personAttribute == null) {
+            return null;
+        }
+        return new PersonAttributeMinimalDto(
+                personAttribute.getId(),
+                personAttribute.getValue());
     }
 
     public PersonAttribute patchDtoToModel(PersonAttributePatch dto) {

@@ -6,6 +6,7 @@ import java.util.Objects;
 
 import com.saymyname.core.model.enums.ConstraintKind;
 import com.saymyname.core.model.enums.EditPolicy;
+import com.saymyname.core.model.enums.CasingStrategy;
 
 public class Attribute {
 
@@ -26,7 +27,12 @@ public class Attribute {
     private boolean required;
     private AttributeType type;
     private EditPolicy editPolicy = EditPolicy.FREE;
+
+    // NEW: stratégie de casse
+    private CasingStrategy casingStrategy = CasingStrategy.NONE;
+
     private ConstraintKind constraintKind = ConstraintKind.NONE;
+
     /** Représente le JSON (clé/valeur) stocké en DB. */
     private Map<String, Object> constraintPayload;
 
@@ -48,6 +54,7 @@ public class Attribute {
         this.required = b.required;
         this.type = b.type;
         this.editPolicy = b.editPolicy != null ? b.editPolicy : EditPolicy.FREE;
+        this.casingStrategy = b.casingStrategy != null ? b.casingStrategy : CasingStrategy.NONE;
         this.constraintKind = b.constraintKind != null ? b.constraintKind : ConstraintKind.NONE;
         this.constraintPayload = b.constraintPayload;
     }
@@ -109,6 +116,10 @@ public class Attribute {
         return editPolicy;
     }
 
+    public CasingStrategy getCasingStrategy() {
+        return casingStrategy;
+    }
+
     public ConstraintKind getConstraintKind() {
         return constraintKind;
     }
@@ -166,6 +177,10 @@ public class Attribute {
         this.editPolicy = editPolicy;
     }
 
+    public void setCasingStrategy(CasingStrategy casingStrategy) {
+        this.casingStrategy = casingStrategy;
+    }
+
     public void setConstraintKind(ConstraintKind constraintKind) {
         this.constraintKind = constraintKind;
     }
@@ -190,6 +205,7 @@ public class Attribute {
         private boolean required;
         private AttributeType type;
         private EditPolicy editPolicy;
+        private CasingStrategy casingStrategy = CasingStrategy.NONE;
         private ConstraintKind constraintKind = ConstraintKind.NONE;
         private Map<String, Object> constraintPayload;
 
@@ -263,6 +279,11 @@ public class Attribute {
             return this;
         }
 
+        public Builder withCasingStrategy(CasingStrategy strategy) {
+            this.casingStrategy = strategy;
+            return this;
+        }
+
         public Builder withConstraintKind(ConstraintKind k) {
             this.constraintKind = k;
             return this;
@@ -297,14 +318,18 @@ public class Attribute {
                 Objects.equals(name, that.name) &&
                 type == that.type &&
                 editPolicy == that.editPolicy &&
+                casingStrategy == that.casingStrategy &&
                 constraintKind == that.constraintKind &&
-                Objects.equals(constraintPayload, that.constraintPayload);
+                Objects.equals(constraintPayload, that.constraintPayload) &&
+                Objects.equals(minValue, that.minValue) &&
+                Objects.equals(maxValue, that.maxValue);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(id, name, displayOrder, primaryField, category, maxValues, filter, sort,
-                initializable, required, type, editPolicy, constraintKind, constraintPayload);
+                initializable, required, type, editPolicy, casingStrategy, constraintKind,
+                constraintPayload, minValue, maxValue);
     }
 
     @Override
@@ -324,6 +349,7 @@ public class Attribute {
                 ", required=" + required +
                 ", type=" + type +
                 ", editPolicy=" + editPolicy +
+                ", casingStrategy=" + casingStrategy +
                 ", constraintKind=" + constraintKind +
                 ", constraintPayload=" + constraintPayload +
                 '}';

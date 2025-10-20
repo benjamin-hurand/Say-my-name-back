@@ -8,28 +8,28 @@ import java.util.Objects;
 public class PersonCard {
 
     private Long idPerson;
-
-    /** Clé de stockage canonique de la photo (original) */
     private String photoStorageKey;
 
-    private List<PrimaryAttribute> primaryAttributes = new ArrayList<>();
+    /** Champs primaires (nom, prénom, etc.) */
+    private List<AttributeValueView> primaryAttributes = new ArrayList<>();
+
+    /** Suivi (côté utilisateur non admin) */
     private boolean followed;
 
-    /** Attributs "contexte" (filtres/tri/catégories) */
-    private List<PersonAttributeExtra> extraAttributes = new ArrayList<>();
+    /** Attributs “contexte” (filtres/tri/catégories) */
+    private List<AttributeValueView> extraAttributes = new ArrayList<>();
 
     public PersonCard() {
     }
 
-    private PersonCard(Builder builder) {
-        this.idPerson = builder.idPerson;
-        this.photoStorageKey = builder.photoStorageKey;
-        this.primaryAttributes = builder.primaryAttributes;
-        this.followed = builder.followed;
-        this.extraAttributes = builder.extraAttributes;
+    private PersonCard(Builder b) {
+        this.idPerson = b.idPerson;
+        this.photoStorageKey = b.photoStorageKey;
+        this.primaryAttributes = b.primaryAttributes;
+        this.followed = b.followed;
+        this.extraAttributes = b.extraAttributes;
     }
 
-    // Getters
     public Long getIdPerson() {
         return idPerson;
     }
@@ -38,7 +38,7 @@ public class PersonCard {
         return photoStorageKey;
     }
 
-    public List<PrimaryAttribute> getPrimaryAttributes() {
+    public List<AttributeValueView> getPrimaryAttributes() {
         return primaryAttributes;
     }
 
@@ -46,11 +46,10 @@ public class PersonCard {
         return followed;
     }
 
-    public List<PersonAttributeExtra> getExtraAttributes() {
+    public List<AttributeValueView> getExtraAttributes() {
         return extraAttributes;
     }
 
-    // Setters
     public void setIdPerson(Long idPerson) {
         this.idPerson = idPerson;
     }
@@ -59,7 +58,7 @@ public class PersonCard {
         this.photoStorageKey = photoStorageKey;
     }
 
-    public void setPrimaryAttributes(List<PrimaryAttribute> primaryAttributes) {
+    public void setPrimaryAttributes(List<AttributeValueView> primaryAttributes) {
         this.primaryAttributes = primaryAttributes;
     }
 
@@ -67,258 +66,49 @@ public class PersonCard {
         this.followed = followed;
     }
 
-    public void setExtraAttributes(List<PersonAttributeExtra> extraAttributes) {
+    public void setExtraAttributes(List<AttributeValueView> extraAttributes) {
         this.extraAttributes = extraAttributes;
     }
 
-    // ====== Inner: PrimaryAttribute (riche) ======
-    public static class PrimaryAttribute {
-        private Long personAttributeId;
-        private Long attributeId;
-        private String value;
-        private Integer displayOrder;
-        private boolean primary;
-
-        public PrimaryAttribute() {
-        }
-
-        private PrimaryAttribute(Builder builder) {
-            this.personAttributeId = builder.personAttributeId;
-            this.attributeId = builder.attributeId;
-            this.value = builder.value;
-            this.displayOrder = builder.displayOrder;
-            this.primary = builder.primary;
-        }
-
-        public Long getPersonAttributeId() {
-            return personAttributeId;
-        }
-
-        public Long getAttributeId() {
-            return attributeId;
-        }
-
-        public String getValue() {
-            return value;
-        }
-
-        public Integer getDisplayOrder() {
-            return displayOrder;
-        }
-
-        public boolean isPrimary() {
-            return primary;
-        }
-
-        public void setPersonAttributeId(Long personAttributeId) {
-            this.personAttributeId = personAttributeId;
-        }
-
-        public void setAttributeId(Long attributeId) {
-            this.attributeId = attributeId;
-        }
-
-        public void setValue(String value) {
-            this.value = value;
-        }
-
-        public void setDisplayOrder(Integer displayOrder) {
-            this.displayOrder = displayOrder;
-        }
-
-        public void setPrimary(boolean primary) {
-            this.primary = primary;
-        }
-
-        public static class Builder {
-            private Long personAttributeId;
-            private Long attributeId;
-            private String value;
-            private Integer displayOrder;
-            private boolean primary = true;
-
-            public Builder withPersonAttributeId(Long personAttributeId) {
-                this.personAttributeId = personAttributeId;
-                return this;
-            }
-
-            public Builder withAttributeId(Long attributeId) {
-                this.attributeId = attributeId;
-                return this;
-            }
-
-            public Builder withValue(String value) {
-                this.value = value;
-                return this;
-            }
-
-            public Builder withDisplayOrder(Integer displayOrder) {
-                this.displayOrder = displayOrder;
-                return this;
-            }
-
-            public Builder withPrimary(boolean primary) {
-                this.primary = primary;
-                return this;
-            }
-
-            public PrimaryAttribute build() {
-                return new PrimaryAttribute(this);
-            }
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o)
-                return true;
-            if (!(o instanceof PrimaryAttribute that))
-                return false;
-            return primary == that.primary
-                    && Objects.equals(personAttributeId, that.personAttributeId)
-                    && Objects.equals(attributeId, that.attributeId)
-                    && Objects.equals(value, that.value)
-                    && Objects.equals(displayOrder, that.displayOrder);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(personAttributeId, attributeId, value, displayOrder, primary);
-        }
-
-        @Override
-        public String toString() {
-            return "PrimaryAttribute{personAttributeId=" + personAttributeId + ", attributeId=" + attributeId
-                    + ", value='" + value + "', displayOrder=" + displayOrder + ", primary=" + primary + '}';
-        }
-    }
-
-    /** Attribut léger pour l’UI */
-    public static class PersonAttributeExtra {
-        private Long attributeId;
-        private String value;
-        private Integer displayOrder;
-
-        public PersonAttributeExtra() {
-        }
-
-        private PersonAttributeExtra(Builder builder) {
-            this.attributeId = builder.attributeId;
-            this.value = builder.value;
-            this.displayOrder = builder.displayOrder;
-        }
-
-        public Long getAttributeId() {
-            return attributeId;
-        }
-
-        public String getValue() {
-            return value;
-        }
-
-        public Integer getDisplayOrder() {
-            return displayOrder;
-        }
-
-        public void setAttributeId(Long attributeId) {
-            this.attributeId = attributeId;
-        }
-
-        public void setValue(String value) {
-            this.value = value;
-        }
-
-        public void setDisplayOrder(Integer displayOrder) {
-            this.displayOrder = displayOrder;
-        }
-
-        public static class Builder {
-            private Long attributeId;
-            private String value;
-            private Integer displayOrder;
-
-            public Builder withAttributeId(Long attributeId) {
-                this.attributeId = attributeId;
-                return this;
-            }
-
-            public Builder withValue(String value) {
-                this.value = value;
-                return this;
-            }
-
-            public Builder withDisplayOrder(Integer displayOrder) {
-                this.displayOrder = displayOrder;
-                return this;
-            }
-
-            public PersonAttributeExtra build() {
-                return new PersonAttributeExtra(this);
-            }
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o)
-                return true;
-            if (!(o instanceof PersonAttributeExtra that))
-                return false;
-            return Objects.equals(attributeId, that.attributeId)
-                    && Objects.equals(value, that.value)
-                    && Objects.equals(displayOrder, that.displayOrder);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(attributeId, value, displayOrder);
-        }
-
-        @Override
-        public String toString() {
-            return "PersonAttributeExtra{attributeId=" + attributeId + ", value='" + value + "', displayOrder="
-                    + displayOrder + '}';
-        }
-    }
-
-    // ====== Builder principal ======
     public static class Builder {
         private Long idPerson;
         private String photoStorageKey;
-        private List<PrimaryAttribute> primaryAttributes = new ArrayList<>();
+        private List<AttributeValueView> primaryAttributes = new ArrayList<>();
         private boolean followed;
-        private List<PersonAttributeExtra> extraAttributes = new ArrayList<>();
+        private List<AttributeValueView> extraAttributes = new ArrayList<>();
 
-        public Builder withIdPerson(Long idPerson) {
-            this.idPerson = idPerson;
+        public Builder withIdPerson(Long v) {
+            this.idPerson = v;
             return this;
         }
 
-        public Builder withPhotoStorageKey(String photoStorageKey) {
-            this.photoStorageKey = photoStorageKey;
+        public Builder withPhotoStorageKey(String v) {
+            this.photoStorageKey = v;
             return this;
         }
 
-        public Builder withPrimaryAttributes(List<PrimaryAttribute> primaryAttributes) {
-            this.primaryAttributes = primaryAttributes;
+        public Builder withPrimaryAttributes(List<AttributeValueView> v) {
+            this.primaryAttributes = v;
             return this;
         }
 
-        public Builder addPrimaryAttribute(PrimaryAttribute attr) {
-            this.primaryAttributes.add(attr);
+        public Builder addPrimaryAttribute(AttributeValueView v) {
+            this.primaryAttributes.add(v);
             return this;
         }
 
-        public Builder withFollowed(boolean followed) {
-            this.followed = followed;
+        public Builder withFollowed(boolean v) {
+            this.followed = v;
             return this;
         }
 
-        public Builder withExtraAttributes(List<PersonAttributeExtra> extraAttributes) {
-            this.extraAttributes = extraAttributes;
+        public Builder withExtraAttributes(List<AttributeValueView> v) {
+            this.extraAttributes = v;
             return this;
         }
 
-        public Builder addExtraAttribute(PersonAttributeExtra extra) {
-            this.extraAttributes.add(extra);
+        public Builder addExtraAttribute(AttributeValueView v) {
+            this.extraAttributes.add(v);
             return this;
         }
 

@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
+import com.saymyname.core.model.enums.OrgRole;
+
 @Entity
 @Table(name = "user_organizations")
 public class UserOrganizationEntity {
@@ -16,8 +18,9 @@ public class UserOrganizationEntity {
     @JoinColumn(name = "organization_id", nullable = false)
     private OrganizationEntity organization;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false, length = 32)
-    private String role;
+    private OrgRole role;
 
     @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "timestamp default current_timestamp")
     private LocalDateTime createdAt;
@@ -25,7 +28,7 @@ public class UserOrganizationEntity {
     public UserOrganizationEntity() {
     }
 
-    public UserOrganizationEntity(UserOrganizationId id, OrganizationEntity organization, String role,
+    public UserOrganizationEntity(UserOrganizationId id, OrganizationEntity organization, OrgRole role,
             LocalDateTime createdAt) {
         this.id = id;
         this.organization = organization;
@@ -49,11 +52,11 @@ public class UserOrganizationEntity {
         this.organization = organization;
     }
 
-    public String getRole() {
+    public OrgRole getRole() {
         return role;
     }
 
-    public void setRole(String role) {
+    public void setRole(OrgRole role) {
         this.role = role;
     }
 

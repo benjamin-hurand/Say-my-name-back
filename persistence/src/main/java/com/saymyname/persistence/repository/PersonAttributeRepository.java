@@ -11,7 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.saymyname.persistence.entity.organization.PersonAttributeEntity;
-import com.saymyname.persistence.projection.PersonPrimaryAttrProjection;
+import com.saymyname.persistence.projection.PersonAttrValueProjection;
 
 import static org.hibernate.jpa.HibernateHints.HINT_FETCH_SIZE;
 import static org.hibernate.jpa.HibernateHints.HINT_READ_ONLY;
@@ -123,6 +123,20 @@ public interface PersonAttributeRepository extends JpaRepository<PersonAttribute
       @Param("seasonEnd") LocalDateTime seasonEnd,
       @Param("now") LocalDateTime now);
 
+  @Modifying(clearAutomatically = true, flushAutomatically = true)
+  @Query("""
+          update PersonAttributeEntity pa
+             set pa.pendingDelete = true,
+                 pa.validTo = pa.validFrom
+           where pa.person.id = :personId
+             and pa.id in :ids
+             and pa.pendingDelete = false
+             and pa.validFrom > CURRENT_TIMESTAMP
+             and pa.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+      """)
+  int softCloseFutureByIdsAndPersonId(@Param("personId") Long personId,
+      @Param("ids") Collection<Long> ids);
+
   /**
    * Hard delete des lignes FUTURES non-pending (valid_from > :now)
    * JPQL conservé (filtre tenant appliqué par Hibernate).
@@ -155,9 +169,9 @@ public interface PersonAttributeRepository extends JpaRepository<PersonAttribute
   int hardDeleteExpiredPendingAttributes(@Param("cutoff") LocalDateTime cutoff);
 
   /**
-   * 🔎 Projection pour les attributs primaires (primaryField=true) d’un batch de
+   * 🔎 Valeurs des attributs primaires (primaryField=true) pour un batch de
    * personnes.
-   * JPQL → org auto, avec hints lecture/streaming.
+   * NB: on ne remonte plus personAttributeId ici.
    */
   @org.springframework.data.jpa.repository.QueryHints({
       @QueryHint(name = HINT_READ_ONLY, value = "true"),
@@ -166,9 +180,8 @@ public interface PersonAttributeRepository extends JpaRepository<PersonAttribute
   @Query("""
       select
         pa.person.id as personId,
-        pa.id as personAttributeId,
-        a.id as attributeId,
-        pa.value as value,
+        a.id          as attributeId,
+        pa.value      as value,
         a.displayOrder as displayOrder
       from PersonAttributeEntity pa
         join pa.attribute a
@@ -176,5 +189,6 @@ public interface PersonAttributeRepository extends JpaRepository<PersonAttribute
         and a.primaryField = true
       order by pa.person.id asc, a.displayOrder asc, pa.id asc
       """)
-  List<PersonPrimaryAttrProjection> findPrimaryAttributesForPersons(@Param("personIds") Collection<Long> personIds);
+  List<PersonAttrValueProjection> findPrimaryAttributesForPersons(
+      @Param("personIds") Collection<Long> personIds);
 }

@@ -46,4 +46,8 @@ public class ChallengeDao {
         return challengeEntityMapper.toModel(savedChallenge);
     }
 
+    public long countAll() {
+        return challengeRepository.count();
+    }
+
 }

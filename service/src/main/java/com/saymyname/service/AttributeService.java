@@ -27,4 +27,8 @@ public class AttributeService {
     public List<Attribute> findAll() {
         return attributeDao.findAll();
     }
+
+    public long countAll() {
+        return attributeDao.countAll();
+    }
 }

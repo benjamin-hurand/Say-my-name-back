@@ -187,4 +187,22 @@ public class PersonAttributeDao {
     // Helper pour créations à dates variées
     public record ValueAtDate(String value, LocalDateTime validFrom) {
     }
+
+    /**
+     * "Tombstone" des PA futures : pending_delete = true et valid_to = valid_from
+     * pour les lignes correspondant à personId + ids.
+     * Ne fait rien si la liste est vide.
+     *
+     * @return nombre de lignes mises à jour
+     */
+    @Transactional
+    public int softCloseFutureByIdsAndPersonId(Long personId, List<Long> ids) {
+        if (personId == null) {
+            throw new IllegalArgumentException("personId ne peut pas être null");
+        }
+        if (ids == null || ids.isEmpty()) {
+            return 0;
+        }
+        return personAttributeRepository.softCloseFutureByIdsAndPersonId(personId, ids);
+    }
 }

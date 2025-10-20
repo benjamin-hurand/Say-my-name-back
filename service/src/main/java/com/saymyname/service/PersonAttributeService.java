@@ -120,7 +120,9 @@ public class PersonAttributeService {
             Long attributeId,
             List<PersonAttribute> toCreate,
             List<PersonAttribute> toUpdate,
-            List<PersonAttribute> toDelete) {
+            List<PersonAttribute> toDelete,
+            boolean bypassRestricted,
+            boolean avoidHardDelete) {
 
         if (personId == null || attributeId == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "personId ou attributeId manquant");
@@ -135,7 +137,7 @@ public class PersonAttributeService {
         Attribute attr = attributeDao.findById(attributeId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Attribut inconnu"));
 
-        if (attr.getEditPolicy() == EditPolicy.RESTRICTED) {
+        if (!bypassRestricted && attr.getEditPolicy() == EditPolicy.RESTRICTED) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Modifications soumises à approbation");
         }
 
@@ -184,7 +186,9 @@ public class PersonAttributeService {
                 if (curr.isPendingDelete())
                     throw new ResponseStatusException(HttpStatus.CONFLICT, "Ligne en cours de suppression");
 
-                String normalized = TextNormalization.normalizeForStorage(u.getValue()); // <- UTILISATION
+                // NEW: normalisation contextualisée (type + casing strategy)
+                String normalized = TextNormalization.normalizeWithStrategy(
+                        u.getValue(), attr.getType(), attr.getCasingStrategy());
                 if (normalized == null || normalized.isBlank())
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Valeur de mise à jour vide");
 
@@ -193,7 +197,8 @@ public class PersonAttributeService {
                             "Valeur invalide pour le type " + attr.getType());
 
                 // Filtrer no-op (même valeur après normalisation)
-                String currNorm = TextNormalization.normalizeForStorage(curr.getValue()); // <- UTILISATION
+                String currNorm = TextNormalization.normalizeWithStrategy(
+                        curr.getValue(), attr.getType(), attr.getCasingStrategy());
                 if (Objects.equals(currNorm, normalized)) {
                     continue; // no-op
                 }
@@ -232,7 +237,9 @@ public class PersonAttributeService {
         List<String> createNextSeasonValues = new ArrayList<>();
         if (toCreate != null) {
             for (var c : toCreate) {
-                String normalized = TextNormalization.normalizeForStorage(c.getValue()); // <- UTILISATION
+                // NEW: normalisation contextualisée (type + casing strategy)
+                String normalized = TextNormalization.normalizeWithStrategy(
+                        c.getValue(), attr.getType(), attr.getCasingStrategy());
                 if (normalized == null || normalized.isBlank())
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Valeur de création vide");
 
@@ -247,8 +254,10 @@ public class PersonAttributeService {
         // 4) Simulation à nextSeasonStart (état APRÈS opérations)
         List<SnapshotItem> snapshotBeforeOps = nonPendingFromNow.stream()
                 .filter(pa -> isValidAt(pa, nextSeasonStart))
-                .map(pa -> new SnapshotItem(pa.getId(), TextNormalization.normalizeForStorage(pa.getValue()))) // <-
-                                                                                                               // UTILISATION
+                // NEW: normalisation contextualisée (type + casing strategy)
+                .map(pa -> new SnapshotItem(pa.getId(),
+                        TextNormalization.normalizeWithStrategy(pa.getValue(), attr.getType(),
+                                attr.getCasingStrategy())))
                 .collect(Collectors.toCollection(ArrayList::new));
 
         List<SnapshotItem> snapshotAfterOps = new ArrayList<>(snapshotBeforeOps);
@@ -318,7 +327,12 @@ public class PersonAttributeService {
             personAttributeDao.softCloseAllByIdsAndPersonId(personId, delActiveIds, seasonEnd, now);
         }
         if (!delFutureIds.isEmpty()) {
-            personAttributeDao.hardDeleteFutureByIdsAndPersonId(personId, delFutureIds, now);
+            if (avoidHardDelete) {
+                // tombstone: ligne conserve son id, plus visible, FK CR conservée
+                personAttributeDao.softCloseFutureByIdsAndPersonId(personId, delFutureIds);
+            } else {
+                personAttributeDao.hardDeleteFutureByIdsAndPersonId(personId, delFutureIds, now);
+            }
         }
 
         // b) UPDATE
@@ -331,8 +345,12 @@ public class PersonAttributeService {
         }
         if (!updFuture.isEmpty()) {
             var ids = updFuture.stream().map(UpdFuture::id).toList();
-            personAttributeDao.hardDeleteFutureByIdsAndPersonId(personId, ids, now);
-
+            if (avoidHardDelete) {
+                personAttributeDao.softCloseFutureByIdsAndPersonId(personId, ids);
+            } else {
+                personAttributeDao.hardDeleteFutureByIdsAndPersonId(personId, ids, now);
+            }
+            // puis recreate aux dates d'origine (inchangé)
             var items = updFuture.stream()
                     .map(u -> new PersonAttributeDao.ValueAtDate(u.newValue(), u.originalValidFrom()))
                     .toList();
@@ -345,6 +363,19 @@ public class PersonAttributeService {
         }
 
         return personAttributeDao.findNonPendingFromNowByPersonAndAttribute(personId, attributeId, now);
+    }
+
+    @Transactional
+    public List<PersonAttribute> applyChangesForPerson(
+            Long personId,
+            Long attributeId,
+            List<PersonAttribute> toCreate,
+            List<PersonAttribute> toUpdate,
+            List<PersonAttribute> toDelete,
+            boolean bypassRestricted) {
+        // appelle la version étendue avec avoidHardDelete=false
+        return applyChangesForPerson(
+                personId, attributeId, toCreate, toUpdate, toDelete, bypassRestricted, /* avoidHardDelete= */false);
     }
 
     private static boolean isValidAt(PersonAttribute pa, LocalDateTime instant) {

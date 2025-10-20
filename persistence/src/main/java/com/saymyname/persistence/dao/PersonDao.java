@@ -23,6 +23,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.saymyname.core.model.enums.PhotoStatus;
 import com.saymyname.core.model.game.options.GameOptions;
 import com.saymyname.core.model.people.Person;
+import com.saymyname.core.model.persondirectory.AdminPersonSearchCriteria;
+import com.saymyname.core.model.persondirectory.AttributeValueRow;
+import com.saymyname.core.model.persondirectory.AttributeValueView;
+import com.saymyname.core.model.persondirectory.PagePersonRow;
 import com.saymyname.core.model.persondirectory.PersonSearchCriteria;
 import com.saymyname.persistence.entity.organization.attribute.AttributeEntity;
 import com.saymyname.persistence.entity.organization.PersonAttributeEntity;
@@ -39,22 +43,6 @@ public class PersonDao {
 
     /** Id “magique” envoyé par le front pour la recherche globale texte. */
     private static final long GLOBAL_TEXT_ATTR_ID = -1L;
-
-    /**
-     * Données minimales pour la page : id + storageKey de la photo approuvée (peut
-     * être null).
-     */
-    public record PagePerson(Long personId, String photoStorageKey) {
-    }
-
-    /** Lignes d'attributs primaires à remonter en batch. */
-    public record PrimaryAttrRow(Long personId, Long personAttributeId, Long attributeId, String value,
-            Integer displayOrder) {
-    }
-
-    /** Lignes d'attributs “contexte” (extra) à remonter en batch. */
-    public record AnyAttrRow(Long personId, Long attributeId, String value, Integer displayOrder) {
-    }
 
     private final PersonRepository personRepository;
     private final PersonEntityMapper personEntityMapper;
@@ -101,6 +89,31 @@ public class PersonDao {
         return personRepository.findIdByUserId(userId);
     }
 
+    /**
+     * Charge une Person par id en préchargeant (1) le graphe d'attributs et (2) les
+     * photos,
+     * puis mappe vers le modèle domaine.
+     * Renvoie Optional.empty() si l'id n'existe pas (ou est hors org via filtre
+     * multi-tenant).
+     */
+    @Transactional(readOnly = true)
+    public Optional<Person> loadWithAttributesAndPhotos(Long personId) {
+        if (personId == null)
+            return Optional.empty();
+
+        // (facultatif) petit "guard" d'existence si tu as un existsById() scoped org.
+        // Sans ça, c'est OK de laisser le mapping retourner empty si rien n'est trouvé.
+        // if (!personRepository.existsById(personId)) return Optional.empty();
+
+        // 1) Précharges ciblées (tu les as déjà)
+        preloadAttributesGraph(personId);
+        preloadPhotos(personId);
+        preloadUser(personId);
+
+        // 2) Mappe l'entité managée vers le modèle
+        return mapManagedToModel(personId);
+    }
+
     // Chaque "preload" exige une transaction existante (celle du service)
     @Transactional(propagation = Propagation.MANDATORY, readOnly = true)
     public void preloadAttributesGraph(Long personId) {
@@ -113,9 +126,14 @@ public class PersonDao {
     }
 
     @Transactional(propagation = Propagation.MANDATORY, readOnly = true)
+    public void preloadUser(Long personId) {
+        personRepository.fetchUser(personId);
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY, readOnly = true)
     public Optional<Person> mapManagedToModel(Long personId) {
         Optional<PersonEntity> pOpt = personRepository.findById(personId);
-        return pOpt.map(personEntityMapper::toModel);
+        return pOpt.map(personEntityMapper::toModelWithMediumUser);
     }
 
     public long countUniverseEligibleAND(Long gameModeId) {
@@ -134,7 +152,7 @@ public class PersonDao {
      * - Photo: storageKey de la dernière photo APPROVED (max approvedAt)
      */
     @Transactional(readOnly = true)
-    public Page<PagePerson> findPersonsPage(PersonSearchCriteria criteria, Pageable pageable, Long userId) {
+    public Page<PagePersonRow> findPersonsPage(PersonSearchCriteria criteria, Pageable pageable, Long userId) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
 
         // -------- COUNT --------
@@ -204,8 +222,68 @@ public class PersonDao {
         q.setFirstResult((int) pageable.getOffset());
         q.setMaxResults(pageable.getPageSize());
 
-        List<PagePerson> rows = q.getResultList().stream()
-                .map(t -> new PagePerson(
+        List<PagePersonRow> rows = q.getResultList().stream()
+                .map(t -> new PagePersonRow(
+                        t.get("personId", Long.class),
+                        t.get("photoStorageKey", String.class)))
+                .toList();
+
+        return new PageImpl<>(rows, pageable, total);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PagePersonRow> findPersonsPageForAdmin(AdminPersonSearchCriteria criteria, Pageable pageable) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+
+        // -------- COUNT --------
+        CriteriaQuery<Long> cqCount = cb.createQuery(Long.class);
+        Root<PersonEntity> rootC = cqCount.from(PersonEntity.class);
+
+        List<Predicate> whereCount = buildAttributeFiltersForAdmin(criteria, cb, cqCount, rootC);
+
+        cqCount.select(cb.countDistinct(rootC)).where(whereCount.toArray(new Predicate[0]));
+        long total = em.createQuery(cqCount).getSingleResult();
+        if (total == 0) {
+            return new PageImpl<>(List.of(), pageable, 0);
+        }
+
+        // -------- PAGE --------
+        CriteriaQuery<Tuple> cq = cb.createTupleQuery();
+        Root<PersonEntity> root = cq.from(PersonEntity.class);
+
+        List<Predicate> where = buildAttributeFiltersForAdmin(criteria, cb, cq, root);
+
+        // Sous-requête: max(approvedAt) pour cette person avec status=APPROVED
+        Subquery<LocalDateTime> maxApprovedAt = cq.subquery(LocalDateTime.class);
+        Root<PhotoEntity> phMax = maxApprovedAt.from(PhotoEntity.class);
+        maxApprovedAt.select(cb.greatest(phMax.<LocalDateTime>get("approvedAt")));
+        maxApprovedAt.where(
+                cb.equal(phMax.get("person").get("id"), root.get("id")),
+                cb.equal(phMax.get("status"), PhotoStatus.APPROVED));
+
+        // Sous-requête: storageKey correspondant à ce max(approvedAt)
+        Subquery<String> photoStorageKeySub = cq.subquery(String.class);
+        Root<PhotoEntity> ph = photoStorageKeySub.from(PhotoEntity.class);
+        photoStorageKeySub.select(ph.get("storageKey"));
+        photoStorageKeySub.where(
+                cb.equal(ph.get("person").get("id"), root.get("id")),
+                cb.equal(ph.get("status"), PhotoStatus.APPROVED),
+                cb.equal(ph.<LocalDateTime>get("approvedAt"), maxApprovedAt));
+
+        cq.multiselect(
+                root.get("id").alias("personId"),
+                photoStorageKeySub.alias("photoStorageKey"))
+                .where(where.toArray(new Predicate[0]))
+                .distinct(true);
+
+        applySortForAdmin(criteria, cb, cq, root);
+
+        TypedQuery<Tuple> q = em.createQuery(cq);
+        q.setFirstResult((int) pageable.getOffset());
+        q.setMaxResults(pageable.getPageSize());
+
+        List<PagePersonRow> rows = q.getResultList().stream()
+                .map(t -> new PagePersonRow(
                         t.get("personId", Long.class),
                         t.get("photoStorageKey", String.class)))
                 .toList();
@@ -263,24 +341,53 @@ public class PersonDao {
                 .collect(java.util.stream.Collectors.toSet());
     }
 
-    /** Attributs primaires (primaryField=true) en batch. */
     @Transactional(readOnly = true)
-    public List<PrimaryAttrRow> fetchPrimaryAttributes(List<Long> personIds) {
-        if (personIds == null || personIds.isEmpty())
+    public List<AttributeValueRow> fetchPrimaryAttributeRows(List<Long> personIds) {
+        if (personIds == null || personIds.isEmpty()) {
             return List.of();
+        }
 
-        return personAttributeRepository.findPrimaryAttributesForPersons(personIds).stream()
-                .map(p -> new PrimaryAttrRow(
-                        p.getPersonId(),
-                        p.getPersonAttributeId(),
-                        p.getAttributeId(),
-                        p.getValue(),
-                        p.getDisplayOrder()))
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Tuple> cq = cb.createTupleQuery();
+
+        Root<PersonAttributeEntity> pa = cq.from(PersonAttributeEntity.class);
+        Join<PersonAttributeEntity, AttributeEntity> a = pa.join("attribute", JoinType.INNER);
+
+        // ⏱️ now côté DB
+        var now = cb.currentTimestamp();
+
+        List<Predicate> where = new ArrayList<>();
+        // Batch de personnes
+        where.add(pa.get("person").get("id").in(personIds));
+        // Actifs runtime
+        where.add(cb.isFalse(pa.get("pendingDelete")));
+        where.add(cb.lessThanOrEqualTo(pa.get("validFrom"), now));
+        where.add(cb.or(cb.isNull(pa.get("validTo")), cb.greaterThan(pa.get("validTo"), now)));
+        // Attributs primaires uniquement
+        where.add(cb.isTrue(a.get("primaryField")));
+
+        cq.multiselect(
+                pa.get("person").get("id").alias("personId"),
+                a.get("id").alias("attributeId"),
+                pa.<String>get("value").alias("value"),
+                a.get("displayOrder").alias("displayOrder"))
+                .where(cb.and(where.toArray(new Predicate[0])))
+                .orderBy(
+                        cb.asc(pa.get("person").get("id")),
+                        cb.asc(a.get("displayOrder")),
+                        cb.asc(pa.get("id")));
+
+        return em.createQuery(cq).getResultList().stream()
+                .map(t -> new AttributeValueRow(
+                        t.get("personId", Long.class),
+                        t.get("attributeId", Long.class),
+                        t.get("value", String.class),
+                        t.get("displayOrder", Integer.class)))
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<AnyAttrRow> fetchContextAttributes(List<Long> personIds,
+    public List<AttributeValueRow> fetchContextAttributes(List<Long> personIds,
             List<Long> attributeIdsFromRequest,
             boolean includeCategories,
             boolean includeFilterSortAttributes) {
@@ -343,7 +450,7 @@ public class PersonDao {
                         cb.asc(pa.get("id")));
 
         return em.createQuery(cq).getResultList().stream()
-                .map(t -> new AnyAttrRow(
+                .map(t -> new AttributeValueRow(
                         t.get("personId", Long.class),
                         t.get("attributeId", Long.class),
                         t.get("value", String.class),
@@ -493,4 +600,126 @@ public class PersonDao {
             orders.add(cb.asc(root.get("id")));
         cq.orderBy(orders);
     }
+
+    private <T> List<Predicate> buildAttributeFiltersForAdmin(
+            AdminPersonSearchCriteria criteria,
+            CriteriaBuilder cb,
+            CriteriaQuery<T> cq,
+            Root<PersonEntity> root) {
+
+        List<Predicate> predicates = new ArrayList<>();
+        if (criteria == null || criteria.getFilters() == null)
+            return predicates;
+
+        for (var f : criteria.getFilters()) {
+            Long attrId = f.getAttributeId();
+            String op = f.getOperator() == null ? "IN" : f.getOperator().toUpperCase();
+            List<String> vals = (f.getValues() == null) ? List.of() : f.getValues();
+
+            // ---- Cas spécial: recherche globale texte (attributeId = -1, LIKE) ----
+            if (attrId != null && attrId == -1L && "LIKE".equals(op)) {
+                if (!vals.isEmpty()) {
+                    String pattern = toPatternLike(vals.get(0));
+
+                    Subquery<Long> sq = cq.subquery(Long.class);
+                    Root<PersonAttributeEntity> pa = sq.from(PersonAttributeEntity.class);
+                    Join<PersonAttributeEntity, AttributeEntity> a = pa.join("attribute", JoinType.INNER);
+
+                    Predicate attrScope = cb.or(
+                            cb.isTrue(a.get("primaryField")),
+                            cb.isTrue(a.get("category")),
+                            cb.isTrue(a.get("filter")),
+                            cb.isTrue(a.get("sort")));
+
+                    sq.select(cb.literal(1L));
+                    sq.where(
+                            cb.equal(pa.get("person").get("id"), root.get("id")),
+                            attrScope,
+                            cb.like(cb.lower(pa.<String>get("value")), pattern));
+
+                    predicates.add(cb.exists(sq));
+                }
+                continue;
+            }
+
+            if (attrId == null)
+                continue;
+
+            Subquery<Long> sq = cq.subquery(Long.class);
+            Root<PersonAttributeEntity> pa = sq.from(PersonAttributeEntity.class);
+            Join<PersonAttributeEntity, AttributeEntity> a = pa.join("attribute", JoinType.INNER);
+
+            sq.select(cb.literal(1L));
+
+            Predicate base = cb.and(
+                    cb.equal(pa.get("person").get("id"), root.get("id")),
+                    cb.equal(a.get("id"), attrId));
+
+            Predicate valuePred = cb.conjunction();
+            switch (op) {
+                case "LIKE" -> {
+                    String pattern = toPatternLike(vals.isEmpty() ? "" : vals.get(0));
+                    valuePred = cb.like(cb.lower(pa.<String>get("value")), pattern);
+                }
+                case "RANGE" -> {
+                    String min = vals.size() > 0 ? vals.get(0) : null;
+                    String max = vals.size() > 1 ? vals.get(1) : null;
+                    if (min != null && !min.isBlank())
+                        valuePred = cb.and(valuePred, cb.greaterThanOrEqualTo(pa.<String>get("value"), min));
+                    if (max != null && !max.isBlank())
+                        valuePred = cb.and(valuePred, cb.lessThanOrEqualTo(pa.<String>get("value"), max));
+                }
+                default -> {
+                    if (!vals.isEmpty()) {
+                        CriteriaBuilder.In<String> in = cb.in(pa.<String>get("value"));
+                        for (String v : vals)
+                            in.value(v);
+                        valuePred = in;
+                    }
+                }
+            }
+
+            sq.where(cb.and(base, valuePred));
+            predicates.add(cb.exists(sq));
+        }
+        return predicates;
+    }
+
+    private <T> void applySortForAdmin(AdminPersonSearchCriteria criteria,
+            CriteriaBuilder cb,
+            CriteriaQuery<T> cq,
+            Root<PersonEntity> root) {
+        if (criteria == null || criteria.getSort() == null || criteria.getSort().isEmpty()) {
+            cq.orderBy(cb.asc(root.get("id")));
+            return;
+        }
+
+        List<Order> orders = new ArrayList<>();
+        for (var s : criteria.getSort()) {
+            String dir = (s.getDirection() == null ? "ASC" : s.getDirection().toUpperCase());
+
+            if ("ATTRIBUTE".equalsIgnoreCase(s.getKind()) && s.getAttributeId() != null) {
+                Subquery<String> sub = cq.subquery(String.class);
+                Root<PersonAttributeEntity> pa = sub.from(PersonAttributeEntity.class);
+                sub.select(cb.least(pa.<String>get("value")));
+                sub.where(
+                        cb.equal(pa.get("person").get("id"), root.get("id")),
+                        cb.equal(pa.get("attribute").get("id"), s.getAttributeId()));
+                orders.add("DESC".equals(dir) ? cb.desc(sub) : cb.asc(sub));
+            } else if ("FIELD".equalsIgnoreCase(s.getKind()) && s.getField() != null) {
+                switch (s.getField()) {
+                    case "id", "personId" ->
+                        orders.add("DESC".equals(dir) ? cb.desc(root.get("id")) : cb.asc(root.get("id")));
+                    default -> {
+                        /* champ ignoré */ }
+                }
+            }
+        }
+
+        if (orders.isEmpty()) {
+            orders.add(cb.asc(root.get("id")));
+        }
+        cq.orderBy(orders);
+    }
+
 }

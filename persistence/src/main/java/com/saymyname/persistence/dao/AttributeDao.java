@@ -40,4 +40,8 @@ public class AttributeDao {
     public List<Attribute> findAllSorts() {
         return attributeRepository.findBySortTrue().stream().map(attributeEntityMapper::toModel).toList();
     }
+
+    public long countAll() {
+        return attributeRepository.count();
+    }
 }

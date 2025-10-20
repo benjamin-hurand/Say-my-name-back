@@ -1,6 +1,7 @@
 package com.saymyname.webapp.mapper;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.saymyname.core.model.enums.CasingStrategy;
 import com.saymyname.core.model.enums.ConstraintKind;
 import com.saymyname.core.model.enums.EditPolicy;
 import com.saymyname.core.model.people.Attribute;
@@ -19,6 +20,8 @@ import com.saymyname.webapp.dto.constraint.EnumConstraintDto;
 import com.saymyname.webapp.dto.constraint.RangeConstraintDto;
 import com.saymyname.webapp.dto.constraint.RegexConstraintDto;
 import com.saymyname.webapp.dto.constraint.SetConstraintDto;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -27,6 +30,7 @@ import java.util.Map;
 @Component
 public class AttributeDtoMapper {
 
+    private static final Logger log = LoggerFactory.getLogger(AttributeDtoMapper.class);
     private static final ObjectMapper OM = new ObjectMapper();
 
     public AttributeDto toDto(final Attribute m) {
@@ -51,6 +55,7 @@ public class AttributeDtoMapper {
                 m.isRequired(),
                 m.getType() != null ? m.getType().name() : null,
                 m.getEditPolicy() != null ? m.getEditPolicy().name() : "FREE",
+                m.getCasingStrategy() != null ? m.getCasingStrategy().name() : null, // NEW
                 m.getConstraintKind() != null ? m.getConstraintKind().name() : "NONE",
                 m.getConstraintPayload(), // ou null si tu veux masquer le brut
                 constraint,
@@ -98,6 +103,8 @@ public class AttributeDtoMapper {
             };
         } catch (IllegalArgumentException ex) {
             // Payload mal formé -> renvoie juste le kind ; le back revalidera
+            log.warn("Invalid constraint payload for kind {}. Returning minimal ConstraintDto. Details: {}", kind,
+                    ex.getMessage(), ex);
             return new ConstraintDto(kind.name(), null, null, null, null);
         }
     }
@@ -108,6 +115,12 @@ public class AttributeDtoMapper {
         final EditPolicy policy = dto.editPolicy() != null ? EditPolicy.valueOf(dto.editPolicy()) : EditPolicy.FREE;
         final ConstraintKind ck = dto.constraintKind() != null ? ConstraintKind.valueOf(dto.constraintKind())
                 : ConstraintKind.NONE;
+
+        // Par défaut : si type TEXT et casingStrategy absent, on met TITLE_CASE
+        // (cohérent avec backfill & ancien comportement)
+        final CasingStrategy cs = dto.casingStrategy() != null
+                ? CasingStrategy.valueOf(dto.casingStrategy())
+                : (at == AttributeType.TEXT ? CasingStrategy.TITLE_CASE : CasingStrategy.NONE);
 
         return new Attribute.Builder()
                 .withId(dto.id())
@@ -122,6 +135,7 @@ public class AttributeDtoMapper {
                 .withRequired(Boolean.TRUE.equals(dto.required()))
                 .withType(at)
                 .withEditPolicy(policy)
+                .withCasingStrategy(cs) // NEW
                 .withConstraintKind(ck)
                 .withConstraintPayload(dto.constraintPayload())
                 .build();
