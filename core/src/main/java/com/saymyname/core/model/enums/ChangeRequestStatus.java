@@ -1,6 +1,6 @@
 package com.saymyname.core.model.enums;
 
-public enum ChangeStatus {
+public enum ChangeRequestStatus {
     PENDING,
     APPROVED,
     PARTIALLY_APPROVED,

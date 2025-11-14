@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.saymyname.core.model.enums.ChangeItemResolutionStatus;
+import com.saymyname.core.model.enums.ChangeRequestItemStatus;
 import com.saymyname.persistence.entity.organization.ChangeRequestItemEntity;
 import com.saymyname.persistence.repository.ChangeRequestItemRepository;
 
@@ -40,8 +40,8 @@ public class ChangeRequestItemDao {
     public int cancelAllPending(Long changeRequestId, String comment) {
         return repo.cancelAllPendingByCrId(
                 changeRequestId,
-                ChangeItemResolutionStatus.CANCELED,
-                ChangeItemResolutionStatus.PENDING,
+                ChangeRequestItemStatus.CANCELED,
+                ChangeRequestItemStatus.PENDING,
                 (comment == null ? "Canceled with envelope" : comment));
     }
 
@@ -74,9 +74,9 @@ public class ChangeRequestItemDao {
                 allIds,
                 a,
                 r,
-                ChangeItemResolutionStatus.APPROVED,
-                ChangeItemResolutionStatus.REJECTED,
-                ChangeItemResolutionStatus.PENDING,
+                ChangeRequestItemStatus.APPROVED,
+                ChangeRequestItemStatus.REJECTED,
+                ChangeRequestItemStatus.PENDING,
                 (comment == null ? "Resolved by admin" : comment));
     }
 
@@ -88,7 +88,7 @@ public class ChangeRequestItemDao {
     }
 
     @Transactional(readOnly = true)
-    public long countByCrAndStatus(Long changeRequestId, ChangeItemResolutionStatus status) {
+    public long countByCrAndStatus(Long changeRequestId, ChangeRequestItemStatus status) {
         return repo.countByCrAndStatus(changeRequestId, status);
     }
 
@@ -97,5 +97,10 @@ public class ChangeRequestItemDao {
         if (ids == null || ids.isEmpty())
             return List.of();
         return repo.findAllByCrAndIds(changeRequestId, ids);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Long> listPendingIdsByCr(Long changeRequestId) {
+        return repo.findPendingIdsByCr(changeRequestId, ChangeRequestItemStatus.PENDING);
     }
 }

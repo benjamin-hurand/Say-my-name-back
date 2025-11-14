@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import com.saymyname.core.model.people.Attribute;
 import com.saymyname.persistence.mapper.AttributeEntityMapper;
 import com.saymyname.persistence.repository.AttributeRepository;
+import com.saymyname.persistence.repository.AttributeRepository.AttributeMetaRow;
 
 @Repository
 public class AttributeDao {
@@ -43,5 +44,9 @@ public class AttributeDao {
 
     public long countAll() {
         return attributeRepository.count();
+    }
+
+    public List<AttributeMetaRow> findMetaByOrgId(Long orgId) {
+        return attributeRepository.findMetaByOrgId(orgId);
     }
 }

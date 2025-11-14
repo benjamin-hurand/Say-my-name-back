@@ -92,6 +92,7 @@ public class ChangeRequestItemDtoMapper {
                 it.getId(),
                 personAttributeDtoMapper.toMinimalDto(it.getPersonAttribute()),
                 it.getAction(),
-                it.getProposedValue());
+                it.getProposedValue(),
+                it.getResolutionStatus());
     }
 }

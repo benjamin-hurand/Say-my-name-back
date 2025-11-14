@@ -10,110 +10,111 @@ import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.saymyname.core.model.enums.ChangeStatus;
+import com.saymyname.core.model.enums.ChangeRequestStatus;
 import com.saymyname.persistence.entity.organization.ChangeRequestEntity;
 
 @Repository
-public interface ChangeRequestRepository extends JpaRepository<ChangeRequestEntity, Long> {
+public interface ChangeRequestRepository
+    extends JpaRepository<ChangeRequestEntity, Long>, ChangeRequestRepositoryCustom {
 
-    /* =================== Loads (org-scoped) =================== */
+  /* =================== Loads (org-scoped) =================== */
 
-    @Query("""
-                select cr
-                  from ChangeRequestEntity cr
-                  join fetch cr.person p
-                  join fetch cr.requester r
-                  join fetch cr.attribute a
-             left join fetch cr.items i
-             left join fetch i.personAttribute pa
-                 where cr.id = :id
-                   and cr.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
-            """)
-    Optional<ChangeRequestEntity> findByIdDeepOrgScoped(@Param("id") Long id);
+  @Query("""
+          select cr
+            from ChangeRequestEntity cr
+            join fetch cr.person p
+            join fetch cr.requester r
+            join fetch cr.attribute a
+       left join fetch cr.items i
+       left join fetch i.personAttribute pa
+           where cr.id = :id
+             and cr.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+      """)
+  Optional<ChangeRequestEntity> findByIdDeepOrgScoped(@Param("id") Long id);
 
-    @Query("""
-                select cr
-                  from ChangeRequestEntity cr
-                 where cr.id = :id
-                   and cr.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
-            """)
-    Optional<ChangeRequestEntity> findByIdOrgScoped(@Param("id") Long id);
+  @Query("""
+          select cr
+            from ChangeRequestEntity cr
+           where cr.id = :id
+             and cr.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+      """)
+  Optional<ChangeRequestEntity> findByIdOrgScoped(@Param("id") Long id);
 
-    /* =================== Open by triplet (org-scoped) =================== */
+  /* =================== Open by triplet (org-scoped) =================== */
 
-    @Query("""
-                select cr
-                  from ChangeRequestEntity cr
-                  join cr.person p
-                  join cr.requester r
-                  join cr.attribute a
-                 where p.id = :personId
-                   and r.id = :requesterId
-                   and a.id = :attributeId
-                   and cr.status in :openStatuses
-                   and cr.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
-              order by cr.createdAt desc
-            """)
-    Optional<ChangeRequestEntity> findFirstOpenByTripletOrgScoped(
-            @Param("personId") Long personId,
-            @Param("requesterId") Long requesterId,
-            @Param("attributeId") Long attributeId,
-            @Param("openStatuses") Collection<ChangeStatus> openStatuses);
+  @Query("""
+          select cr
+            from ChangeRequestEntity cr
+            join cr.person p
+            join cr.requester r
+            join cr.attribute a
+           where p.id = :personId
+             and r.id = :requesterId
+             and a.id = :attributeId
+             and cr.status in :openStatuses
+             and cr.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+        order by cr.createdAt desc
+      """)
+  Optional<ChangeRequestEntity> findFirstOpenByTripletOrgScoped(
+      @Param("personId") Long personId,
+      @Param("requesterId") Long requesterId,
+      @Param("attributeId") Long attributeId,
+      @Param("openStatuses") Collection<ChangeRequestStatus> openStatuses);
 
-    /* =================== Listings (org-scoped) =================== */
+  /* =================== Listings (org-scoped) =================== */
 
-    @Query("""
-                select distinct cr
-                  from ChangeRequestEntity cr
-                  join fetch cr.requester r
-                  join fetch cr.person p
-                  join fetch cr.attribute a
-             left join fetch cr.resolvedBy rb
-             left join fetch cr.items i
-             left join fetch i.personAttribute pa
-                 where r.id = :userId
-                   and cr.status in :statuses
-                   and cr.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
-              order by cr.createdAt desc
-            """)
-    List<ChangeRequestEntity> findByUserIdAndStatusesDeepOrgScoped(
-            @Param("userId") Long userId,
-            @Param("statuses") Collection<ChangeStatus> statuses);
+  @Query("""
+          select distinct cr
+            from ChangeRequestEntity cr
+            join fetch cr.requester r
+            join fetch cr.person p
+            join fetch cr.attribute a
+       left join fetch cr.resolvedBy rb
+       left join fetch cr.items i
+       left join fetch i.personAttribute pa
+           where r.id = :userId
+             and cr.status in :statuses
+             and cr.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+        order by cr.createdAt desc
+      """)
+  List<ChangeRequestEntity> findByUserIdAndStatusesDeepOrgScoped(
+      @Param("userId") Long userId,
+      @Param("statuses") Collection<ChangeRequestStatus> statuses);
 
-    @Query("""
-                select distinct cr
-                  from ChangeRequestEntity cr
-                  join fetch cr.requester r
-                  join fetch cr.person p
-                  join fetch cr.attribute a
-             left join fetch cr.resolvedBy rb
-             left join fetch cr.items i
-             left join fetch i.personAttribute pa
-                 where p.id = :personId
-                   and cr.status in :statuses
-                   and cr.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
-              order by cr.createdAt desc
-            """)
-    List<ChangeRequestEntity> findByPersonIdAndStatusesDeepOrgScoped(
-            @Param("personId") Long personId,
-            @Param("statuses") Collection<ChangeStatus> statuses);
+  @Query("""
+          select distinct cr
+            from ChangeRequestEntity cr
+            join fetch cr.requester r
+            join fetch cr.person p
+            join fetch cr.attribute a
+       left join fetch cr.resolvedBy rb
+       left join fetch cr.items i
+       left join fetch i.personAttribute pa
+           where p.id = :personId
+             and cr.status in :statuses
+             and cr.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+        order by cr.createdAt desc
+      """)
+  List<ChangeRequestEntity> findByPersonIdAndStatusesDeepOrgScoped(
+      @Param("personId") Long personId,
+      @Param("statuses") Collection<ChangeRequestStatus> statuses);
 
-    /* =================== Bulk update header (org-scoped) =================== */
+  /* =================== Bulk update header (org-scoped) =================== */
 
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("""
-                update ChangeRequestEntity cr
-                   set cr.status = :status,
-                       cr.resolvedAt = :resolvedAt,
-                       cr.resolvedBy.id = :resolvedById,
-                       cr.resolutionComment = :comment,
-                       cr.updatedAt = :resolvedAt
-                 where cr.id = :crId
-                   and cr.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
-            """)
-    int updateResolutionMetaOrgScoped(@Param("crId") Long crId,
-            @Param("status") ChangeStatus status,
-            @Param("resolvedAt") LocalDateTime resolvedAt,
-            @Param("resolvedById") Long resolvedById,
-            @Param("comment") String resolutionComment);
+  @Modifying(clearAutomatically = true, flushAutomatically = true)
+  @Query("""
+          update ChangeRequestEntity cr
+             set cr.status = :status,
+                 cr.resolvedAt = :resolvedAt,
+                 cr.resolvedBy.id = :resolvedById,
+                 cr.resolutionComment = :comment,
+                 cr.updatedAt = :resolvedAt
+           where cr.id = :crId
+             and cr.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+      """)
+  int updateResolutionMetaOrgScoped(@Param("crId") Long crId,
+      @Param("status") ChangeRequestStatus status,
+      @Param("resolvedAt") LocalDateTime resolvedAt,
+      @Param("resolvedById") Long resolvedById,
+      @Param("comment") String resolutionComment);
 }

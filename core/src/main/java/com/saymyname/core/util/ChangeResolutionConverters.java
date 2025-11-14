@@ -3,21 +3,21 @@ package com.saymyname.core.util;
 
 import org.springframework.stereotype.Component;
 
-import com.saymyname.core.model.enums.ChangeItemResolutionStatus;
+import com.saymyname.core.model.enums.ChangeRequestItemStatus;
 import com.saymyname.core.model.enums.ChangeResolutionDecision;
 
 /** Conversions entre la décision (commande) et le statut persistant. */
 @Component
 public class ChangeResolutionConverters {
 
-    public static ChangeItemResolutionStatus toStatus(ChangeResolutionDecision d) {
+    public static ChangeRequestItemStatus toStatus(ChangeResolutionDecision d) {
         return switch (d) {
-            case APPROVE -> ChangeItemResolutionStatus.APPROVED;
-            case REJECT -> ChangeItemResolutionStatus.REJECTED;
+            case APPROVE -> ChangeRequestItemStatus.APPROVED;
+            case REJECT -> ChangeRequestItemStatus.REJECTED;
         };
     }
 
-    public static ChangeResolutionDecision fromStatus(ChangeItemResolutionStatus s) {
+    public static ChangeResolutionDecision fromStatus(ChangeRequestItemStatus s) {
         return switch (s) {
             case APPROVED -> ChangeResolutionDecision.APPROVE;
             case REJECTED -> ChangeResolutionDecision.REJECT;

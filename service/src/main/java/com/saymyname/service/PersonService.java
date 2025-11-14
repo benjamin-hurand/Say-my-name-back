@@ -1,6 +1,8 @@
 // src/main/java/com/saymyname/service/PersonService.java
 package com.saymyname.service;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -84,13 +86,13 @@ public class PersonService {
     /**
      * Recherche “trombi” côté utilisateur (avec notion de suivi).
      * - Page de personnes (id + photo)
-     * - Attributs primaires groupés par personne
-     * - (optionnel) Attributs “contexte” (filtres/tri/catégories)
+     * - Attributs primaires + (optionnel) extras “contexte”
      * - Marquage “followed” sur le batch
+     * - ✅ Désormais on remplit une liste unique `attributes` (avec primaryField).
      */
     @Transactional(readOnly = true)
     public Page<PersonCard> searchPersons(PersonSearchCriteria criteria, Pageable pageable, Long userId) {
-        // 1) Page de lignes minimales (id + photo)
+        // 1) Page minimale (id + photo)
         Page<PagePersonRow> page = personDao.findPersonsPage(criteria, pageable, userId);
 
         List<Long> personIds = page.getContent().stream()
@@ -101,30 +103,23 @@ public class PersonService {
             return page.map(p -> new PersonCard.Builder()
                     .withIdPerson(p.getPersonId())
                     .withPhotoStorageKey(p.getPhotoStorageKey())
-                    .withPrimaryAttributes(List.of())
+                    .withAttributes(List.of())
                     .withFollowed(false)
-                    .withExtraAttributes(List.of())
                     .build());
         }
 
-        // 2) IDs suivis sur ce batch (si userId fourni)
+        // 2) IDs suivis pour ce batch (si userId fourni)
         final Set<Long> followedIds = (userId == null)
                 ? Set.of()
                 : personDao.findFollowedIdsForUserAndPersons(userId, personIds);
 
-        // 3) Attributs primaires de ce batch
-        // ⚠️ On suppose que tu exposes une méthode DAO qui renvoie des rows uniformes:
-        // List<AttributeValueRow> fetchPrimaryAttributeRows(List<Long> personIds)
-        // Si tu ne l’as pas encore, ajoute-la côté PersonDao (projection = personId,
-        // attributeId, value, displayOrder).
-        final Map<Long, List<AttributeValueView>> primaryByPerson = toViewListByPerson(
-                personDao.fetchPrimaryAttributeRows(personIds));
+        // 3) Primaires (marqués primaryField=true)
+        final Map<Long, List<AttributeValueView>> primaryByPerson = toViewListByPersonWithPrimary(
+                personDao.fetchPrimaryAttributeRows(personIds), true);
 
-        // 4) Attributs “contexte” si demandé (catégories + attributs utilisés pour
-        // filtrer/ trier)
+        // 4) Extras "contexte" si demandé (marqués primaryField=false)
         final Map<Long, List<AttributeValueView>> extrasByPerson;
         if (criteria != null && criteria.isIncludeContextAttributes()) {
-            // IDs d’attributs présents dans les filtres (exclure l’id spécial -1 et <=0)
             List<Long> filterIds = (criteria.getFilters() == null) ? List.of()
                     : criteria.getFilters().stream()
                             .map(f -> f.getAttributeId())
@@ -133,7 +128,6 @@ public class PersonService {
                             .distinct()
                             .toList();
 
-            // IDs d’attributs présents dans le tri (kind=ATTRIBUTE)
             List<Long> sortAttrIds = (criteria.getSort() == null) ? List.of()
                     : criteria.getSort().stream()
                             .filter(s -> "ATTRIBUTE".equalsIgnoreCase(s.getKind()))
@@ -147,54 +141,116 @@ public class PersonService {
                     .distinct()
                     .toList();
 
-            // includeCategories=true, includeFilterSortAttributes=true
             List<AttributeValueRow> ctxRows = personDao.fetchContextAttributes(
-                    personIds, contextAttrIds, true, true);
+                    personIds,
+                    contextAttrIds,
+                    /* includeCategories */ true,
+                    /* includeFilterSortAttributes */ true);
 
-            extrasByPerson = toViewListByPerson(ctxRows);
+            extrasByPerson = toViewListByPersonWithPrimary(ctxRows, false);
         } else {
             extrasByPerson = Map.of();
         }
 
-        // 5) Assemblage final
+        // 5) Fusion en une liste unique (primaires + extras)
+        final Map<Long, List<AttributeValueView>> allAttributesByPerson = new HashMap<>();
+        for (Long id : personIds) {
+            List<AttributeValueView> merged = new ArrayList<>();
+            merged.addAll(primaryByPerson.getOrDefault(id, List.of()));
+            merged.addAll(extrasByPerson.getOrDefault(id, List.of()));
+            allAttributesByPerson.put(id, merged);
+        }
+
+        // 6) Assemblage final
         return page.map(p -> new PersonCard.Builder()
                 .withIdPerson(p.getPersonId())
                 .withPhotoStorageKey(p.getPhotoStorageKey())
-                .withPrimaryAttributes(primaryByPerson.getOrDefault(p.getPersonId(), List.of()))
+                .withAttributes(allAttributesByPerson.getOrDefault(p.getPersonId(), List.of()))
                 .withFollowed(followedIds.contains(p.getPersonId()))
-                .withExtraAttributes(extrasByPerson.getOrDefault(p.getPersonId(), List.of()))
                 .build());
     }
 
     /**
      * Recherche “trombi” côté admin (pas de notion de suivi).
      * - Page de personnes (id + photo)
-     * - Attributs primaires
-     * - (Optionnel tant que non implémenté) hasPendingChangeRequests
+     * - Attributs primaires + (optionnel) extras “contexte”
+     * - (Optionnel) hasPendingChangeRequests
+     * - ✅ Désormais on remplit une liste unique `attributes` (avec primaryField).
      */
     @Transactional(readOnly = true)
     public Page<AdminPersonCard> searchPersonsForAdmin(AdminPersonSearchCriteria criteria, Pageable pageable) {
+        // 1) Page minimale (id + photo)
         Page<PagePersonRow> page = personDao.findPersonsPageForAdmin(criteria, pageable);
 
         List<Long> personIds = page.getContent().stream()
                 .map(PagePersonRow::getPersonId)
                 .toList();
 
-        final Map<Long, List<AttributeValueView>> primaryByPerson = toViewListByPerson(
-                personDao.fetchPrimaryAttributeRows(personIds));
+        if (personIds.isEmpty()) {
+            return page.map(p -> new AdminPersonCard.Builder()
+                    .withIdPerson(p.getPersonId())
+                    .withPhotoStorageKey(p.getPhotoStorageKey())
+                    .withAttributes(List.of())
+                    .withHasPendingChangeRequests(false)
+                    .build());
+        }
 
-        // Hook (facultatif) : si tu ajoutes un DAO/Repo qui renvoie les IDs des
-        // personnes
-        // avec CR en statut PENDING, mappe-les ici :
-        // final Set<Long> pendingCR =
-        // changeRequestDao.findPersonIdsWithPendingRequests(personIds);
-        final Set<Long> pendingCR = Set.of(); // par défaut: false partout
+        // 2) Primaires (primaryField=true)
+        final Map<Long, List<AttributeValueView>> primaryByPerson = toViewListByPersonWithPrimary(
+                personDao.fetchPrimaryAttributeRows(personIds), true);
 
+        // 3) Extras "contexte" si demandé (primaryField=false)
+        final Map<Long, List<AttributeValueView>> extrasByPerson;
+        if (criteria != null && criteria.isIncludeContextAttributes()) {
+            List<Long> filterIds = (criteria.getFilters() == null) ? List.of()
+                    : criteria.getFilters().stream()
+                            .map(f -> f.getAttributeId())
+                            .filter(Objects::nonNull)
+                            .filter(id -> id > 0)
+                            .distinct()
+                            .toList();
+
+            List<Long> sortAttrIds = (criteria.getSort() == null) ? List.of()
+                    : criteria.getSort().stream()
+                            .filter(s -> "ATTRIBUTE".equalsIgnoreCase(s.getKind()))
+                            .map(s -> s.getAttributeId())
+                            .filter(Objects::nonNull)
+                            .filter(id -> id > 0)
+                            .distinct()
+                            .toList();
+
+            List<Long> contextAttrIds = Stream.concat(filterIds.stream(), sortAttrIds.stream())
+                    .distinct()
+                    .toList();
+
+            List<AttributeValueRow> ctxRows = personDao.fetchContextAttributes(
+                    personIds,
+                    contextAttrIds,
+                    /* includeCategories */ true,
+                    /* includeFilterSortAttributes */ true);
+
+            extrasByPerson = toViewListByPersonWithPrimary(ctxRows, false);
+        } else {
+            extrasByPerson = Map.of();
+        }
+
+        // 4) (Facultatif) personnes avec CR en attente (placeholder)
+        final Set<Long> pendingCR = Set.of();
+
+        // 5) Fusion en une liste unique (primaires + extras)
+        final Map<Long, List<AttributeValueView>> allAttributesByPerson = new HashMap<>();
+        for (Long id : personIds) {
+            List<AttributeValueView> merged = new ArrayList<>();
+            merged.addAll(primaryByPerson.getOrDefault(id, List.of()));
+            merged.addAll(extrasByPerson.getOrDefault(id, List.of()));
+            allAttributesByPerson.put(id, merged);
+        }
+
+        // 6) Assemblage final
         return page.map(p -> new AdminPersonCard.Builder()
                 .withIdPerson(p.getPersonId())
                 .withPhotoStorageKey(p.getPhotoStorageKey())
-                .withPrimaryAttributes(primaryByPerson.getOrDefault(p.getPersonId(), List.of()))
-                .withExtraAttributes(List.of()) // tu peux aussi injecter un contexte si tu veux
+                .withAttributes(allAttributesByPerson.getOrDefault(p.getPersonId(), List.of()))
                 .withHasPendingChangeRequests(pendingCR.contains(p.getPersonId()))
                 .build());
     }
@@ -229,9 +285,12 @@ public class PersonService {
 
     /**
      * Regroupe des rows (personId, attributeId, value, displayOrder) par personne
-     * et les transforme en AttributeValueView (sans personId, sans PA id).
+     * et les transforme en AttributeValueView, en posant le flag primaryField.
      */
-    private static Map<Long, List<AttributeValueView>> toViewListByPerson(List<AttributeValueRow> rows) {
+    private static Map<Long, List<AttributeValueView>> toViewListByPersonWithPrimary(
+            List<AttributeValueRow> rows,
+            boolean primaryFlag) {
+
         if (rows == null || rows.isEmpty())
             return Map.of();
 
@@ -242,6 +301,7 @@ public class PersonService {
                                 .withAttributeId(r.getAttributeId())
                                 .withValue(r.getValue())
                                 .withDisplayOrder(r.getDisplayOrder())
+                                .withPrimaryField(primaryFlag) // ⬅️ important
                                 .build(),
                         Collectors.toList())));
     }

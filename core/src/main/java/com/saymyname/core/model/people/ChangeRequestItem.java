@@ -2,7 +2,7 @@
 package com.saymyname.core.model.people;
 
 import com.saymyname.core.model.enums.ChangeAction;
-import com.saymyname.core.model.enums.ChangeItemResolutionStatus;
+import com.saymyname.core.model.enums.ChangeRequestItemStatus;
 
 import java.util.Objects;
 
@@ -33,7 +33,7 @@ public class ChangeRequestItem {
     private String proposedValue;
 
     /** Statut de résolution (par item) — PENDING par défaut */
-    private ChangeItemResolutionStatus resolutionStatus = ChangeItemResolutionStatus.PENDING;
+    private ChangeRequestItemStatus resolutionStatus = ChangeRequestItemStatus.PENDING;
 
     /** Commentaire de résolution (facultatif, utile surtout pour REJECTED) */
     private String resolutionComment;
@@ -47,7 +47,7 @@ public class ChangeRequestItem {
         this.action = b.action;
         this.personAttribute = b.personAttribute;
         this.proposedValue = b.proposedValue;
-        this.resolutionStatus = (b.resolutionStatus != null ? b.resolutionStatus : ChangeItemResolutionStatus.PENDING);
+        this.resolutionStatus = (b.resolutionStatus != null ? b.resolutionStatus : ChangeRequestItemStatus.PENDING);
         this.resolutionComment = b.resolutionComment;
     }
 
@@ -72,7 +72,7 @@ public class ChangeRequestItem {
         return proposedValue;
     }
 
-    public ChangeItemResolutionStatus getResolutionStatus() {
+    public ChangeRequestItemStatus getResolutionStatus() {
         return resolutionStatus;
     }
 
@@ -101,7 +101,7 @@ public class ChangeRequestItem {
         this.proposedValue = proposedValue;
     }
 
-    public void setResolutionStatus(ChangeItemResolutionStatus resolutionStatus) {
+    public void setResolutionStatus(ChangeRequestItemStatus resolutionStatus) {
         this.resolutionStatus = resolutionStatus;
     }
 
@@ -116,7 +116,7 @@ public class ChangeRequestItem {
         private ChangeAction action;
         private PersonAttribute personAttribute;
         private String proposedValue;
-        private ChangeItemResolutionStatus resolutionStatus;
+        private ChangeRequestItemStatus resolutionStatus;
         private String resolutionComment;
 
         public Builder withId(Long id) {
@@ -144,7 +144,7 @@ public class ChangeRequestItem {
             return this;
         }
 
-        public Builder withResolutionStatus(ChangeItemResolutionStatus resolutionStatus) {
+        public Builder withResolutionStatus(ChangeRequestItemStatus resolutionStatus) {
             this.resolutionStatus = resolutionStatus;
             return this;
         }

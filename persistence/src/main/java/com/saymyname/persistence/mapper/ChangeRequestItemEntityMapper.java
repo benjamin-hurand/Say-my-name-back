@@ -4,7 +4,7 @@ package com.saymyname.persistence.mapper;
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.enums.ChangeAction;
-import com.saymyname.core.model.enums.ChangeItemResolutionStatus;
+import com.saymyname.core.model.enums.ChangeRequestItemStatus;
 import com.saymyname.core.model.people.ChangeRequest;
 import com.saymyname.core.model.people.ChangeRequestItem;
 import com.saymyname.core.model.people.PersonAttribute;
@@ -62,7 +62,7 @@ public class ChangeRequestItemEntityMapper {
 
         // Résolution par item
         e.setResolutionStatus(
-                m.getResolutionStatus() != null ? m.getResolutionStatus() : ChangeItemResolutionStatus.PENDING);
+                m.getResolutionStatus() != null ? m.getResolutionStatus() : ChangeRequestItemStatus.PENDING);
         e.setResolutionComment(m.getResolutionComment());
 
         return e;
@@ -95,7 +95,7 @@ public class ChangeRequestItemEntityMapper {
                 .withPersonAttribute(pa)
                 .withProposedValue(e.getProposedValue())
                 .withResolutionStatus(
-                        e.getResolutionStatus() != null ? e.getResolutionStatus() : ChangeItemResolutionStatus.PENDING)
+                        e.getResolutionStatus() != null ? e.getResolutionStatus() : ChangeRequestItemStatus.PENDING)
                 .withResolutionComment(e.getResolutionComment())
                 .build();
     }

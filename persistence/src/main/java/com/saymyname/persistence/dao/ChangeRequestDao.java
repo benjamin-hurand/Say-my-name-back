@@ -7,17 +7,18 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.saymyname.core.model.auth.User;
-import com.saymyname.core.model.enums.ChangeStatus;
+import com.saymyname.core.model.enums.ChangeRequestStatus;
 import com.saymyname.core.model.people.ChangeRequest;
 import com.saymyname.core.model.people.ChangeRequestItem;
-import com.saymyname.core.model.people.ChangeRequestResolution;
-import com.saymyname.core.model.people.ChangeRequestResolutionItem;
+import com.saymyname.core.model.people.ChangeRequestListQuery;
 import com.saymyname.persistence.entity.UserEntity;
 import com.saymyname.persistence.entity.organization.ChangeRequestEntity;
 import com.saymyname.persistence.entity.organization.ChangeRequestItemEntity;
@@ -48,7 +49,7 @@ public class ChangeRequestDao {
 
     @Transactional(readOnly = true)
     public ChangeRequest findOpenByTriplet(Long personId, Long requesterId, Long attributeId,
-            Set<ChangeStatus> openStatuses) {
+            Set<ChangeRequestStatus> openStatuses) {
         return crRepo.findFirstOpenByTripletOrgScoped(personId, requesterId, attributeId, openStatuses)
                 .map(crMapper::toModel)
                 .orElse(null);
@@ -90,7 +91,7 @@ public class ChangeRequestDao {
             e.setCreatedAt(now);
         e.setUpdatedAt(now);
         if (e.getStatus() == null)
-            e.setStatus(ChangeStatus.PENDING);
+            e.setStatus(ChangeRequestStatus.PENDING);
 
         ChangeRequestEntity saved = crRepo.save(e);
 
@@ -110,7 +111,7 @@ public class ChangeRequestDao {
         if (!Objects.equals(authorId, requesterId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Vous n'êtes pas l'auteur de cette demande.");
         }
-        if (env.getStatus() != ChangeStatus.PENDING) {
+        if (env.getStatus() != ChangeRequestStatus.PENDING) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Seules les enveloppes PENDING peuvent être modifiées (actuel: " + env.getStatus() + ")");
         }
@@ -149,15 +150,15 @@ public class ChangeRequestDao {
         if (!Objects.equals(authorId, requesterId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Vous n'êtes pas l'auteur de cette demande.");
         }
-        if (e.getStatus() == ChangeStatus.CANCELED)
+        if (e.getStatus() == ChangeRequestStatus.CANCELED)
             return;
-        if (e.getStatus() != ChangeStatus.PENDING) {
+        if (e.getStatus() != ChangeRequestStatus.PENDING) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Seules les enveloppes PENDING peuvent être annulées (actuel: " + e.getStatus() + ")");
         }
 
         LocalDateTime now = LocalDateTime.now();
-        e.setStatus(ChangeStatus.CANCELED);
+        e.setStatus(ChangeRequestStatus.CANCELED);
         e.setUpdatedAt(now);
         e.setResolvedAt(now);
         UserEntity rb = userRepository.getReferenceById(requesterId);
@@ -170,17 +171,23 @@ public class ChangeRequestDao {
     /* ---------- Listings ---------- */
 
     @Transactional(readOnly = true)
-    public List<ChangeRequest> findByUserIdAndStatuses(Long userId, Collection<ChangeStatus> statuses) {
+    public List<ChangeRequest> findByUserIdAndStatuses(Long userId, Collection<ChangeRequestStatus> statuses) {
         return crRepo.findByUserIdAndStatusesDeepOrgScoped(userId, statuses).stream()
                 .map(crMapper::toModel)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<ChangeRequest> findByPersonIdAndStatuses(Long personId, Collection<ChangeStatus> statuses) {
+    public List<ChangeRequest> findByPersonIdAndStatuses(Long personId, Collection<ChangeRequestStatus> statuses) {
         return crRepo.findByPersonIdAndStatusesDeepOrgScoped(personId, statuses).stream()
                 .map(crMapper::toModel)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ChangeRequest> list(ChangeRequestListQuery query, Pageable pageable) {
+        Page<ChangeRequestEntity> page = crRepo.searchAdmin(query, pageable);
+        return page.map(crMapper::toLargeModel);
     }
 
     /*
@@ -195,7 +202,7 @@ public class ChangeRequestDao {
      */
     @Transactional
     public void updateEnvelopeResolutionMeta(Long crId,
-            ChangeStatus status,
+            ChangeRequestStatus status,
             LocalDateTime resolvedAt,
             User resolvedBy,
             String resolutionComment) {

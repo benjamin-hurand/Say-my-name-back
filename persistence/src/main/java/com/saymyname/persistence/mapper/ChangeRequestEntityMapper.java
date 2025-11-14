@@ -1,7 +1,7 @@
 package com.saymyname.persistence.mapper;
 
 import com.saymyname.core.model.auth.User;
-import com.saymyname.core.model.enums.ChangeStatus;
+import com.saymyname.core.model.enums.ChangeRequestStatus;
 import com.saymyname.core.model.people.Attribute;
 import com.saymyname.core.model.people.ChangeRequest;
 import com.saymyname.core.model.people.ChangeRequestItem;
@@ -69,7 +69,7 @@ public class ChangeRequestEntityMapper {
         e.setRequestReason(m.getRequestReason());
 
         // Statut & audit
-        e.setStatus(m.getStatus() != null ? m.getStatus() : ChangeStatus.PENDING);
+        e.setStatus(m.getStatus() != null ? m.getStatus() : ChangeRequestStatus.PENDING);
         e.setCreatedAt(m.getCreatedAt()); // @PrePersist fera le défaut si null
         e.setUpdatedAt(m.getUpdatedAt());
         if (m.getResolvedBy() != null && m.getResolvedBy().getId() != null) {
@@ -131,7 +131,57 @@ public class ChangeRequestEntityMapper {
                 .withRequester(requesterModel)
                 .withAttribute(attributeModel)
                 .withRequestReason(e.getRequestReason())
-                .withStatus(e.getStatus() != null ? e.getStatus() : ChangeStatus.PENDING)
+                .withStatus(e.getStatus() != null ? e.getStatus() : ChangeRequestStatus.PENDING)
+                .withCreatedAt(e.getCreatedAt())
+                .withUpdatedAt(e.getUpdatedAt())
+                .withResolvedBy(resolvedByModel)
+                .withResolvedAt(e.getResolvedAt())
+                .withResolutionComment(e.getResolutionComment())
+                .withItems(items)
+                .build();
+    }
+
+    /*
+     * ===========================
+     * ENTITY -> MODEL
+     * ===========================
+     */
+    public ChangeRequest toLargeModel(ChangeRequestEntity e) {
+        if (e == null)
+            return null;
+
+        // Person complète (user + attributes(+attribute) + photos)
+        // -> ton repo initialise déjà ces collections via les 2 requêtes dédiées.
+        Person personModel = (e.getPerson() != null)
+                ? personEntityMapper.toModel(e.getPerson())
+                : null;
+
+        // Requester / ResolvedBy (public)
+        User requesterModel = (e.getRequester() != null)
+                ? userEntityMapper.toPublicModel(e.getRequester())
+                : null;
+
+        User resolvedByModel = (e.getResolvedBy() != null)
+                ? userEntityMapper.toPublicModel(e.getResolvedBy())
+                : null;
+
+        // Attribut ciblé par l’enveloppe (id + méta “légères” suffisent ici)
+        Attribute attributeModel = (e.getAttribute() != null)
+                ? attributeEntityMapper.toShortModel(e.getAttribute())
+                : null;
+
+        // Items (avec personAttribute.id/value/dates/attribute, selon ton mapper)
+        List<ChangeRequestItem> items = (e.getItems() != null)
+                ? e.getItems().stream().map(itemEntityMapper::toModel).toList()
+                : List.of();
+
+        return new ChangeRequest.Builder()
+                .withId(e.getId())
+                .withPerson(personModel)
+                .withRequester(requesterModel)
+                .withAttribute(attributeModel)
+                .withRequestReason(e.getRequestReason())
+                .withStatus(e.getStatus() != null ? e.getStatus() : ChangeRequestStatus.PENDING)
                 .withCreatedAt(e.getCreatedAt())
                 .withUpdatedAt(e.getUpdatedAt())
                 .withResolvedBy(resolvedByModel)

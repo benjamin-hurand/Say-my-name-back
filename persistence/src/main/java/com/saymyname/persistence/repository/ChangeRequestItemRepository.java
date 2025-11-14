@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.saymyname.core.model.enums.ChangeItemResolutionStatus;
+import com.saymyname.core.model.enums.ChangeRequestItemStatus;
 import com.saymyname.persistence.entity.organization.ChangeRequestItemEntity;
 
 @Repository
@@ -34,8 +34,8 @@ public interface ChangeRequestItemRepository extends JpaRepository<ChangeRequest
           AND i.resolutionStatus = :pending
       """)
   int cancelAllPendingByCrId(@Param("crId") Long changeRequestId,
-      @Param("canceled") ChangeItemResolutionStatus canceled,
-      @Param("pending") ChangeItemResolutionStatus pending,
+      @Param("canceled") ChangeRequestItemStatus canceled,
+      @Param("pending") ChangeRequestItemStatus pending,
       @Param("comment") String comment);
 
   /*
@@ -68,9 +68,9 @@ public interface ChangeRequestItemRepository extends JpaRepository<ChangeRequest
       @Param("allIds") Collection<Long> allIds,
       @Param("approvedIds") Collection<Long> approvedIds,
       @Param("rejectedIds") Collection<Long> rejectedIds,
-      @Param("approved") ChangeItemResolutionStatus approved,
-      @Param("rejected") ChangeItemResolutionStatus rejected,
-      @Param("pending") ChangeItemResolutionStatus pending,
+      @Param("approved") ChangeRequestItemStatus approved,
+      @Param("rejected") ChangeRequestItemStatus rejected,
+      @Param("pending") ChangeRequestItemStatus pending,
       @Param("comment") String comment);
 
   /*
@@ -91,7 +91,7 @@ public interface ChangeRequestItemRepository extends JpaRepository<ChangeRequest
              AND i.resolutionStatus = :status
       """)
   long countByCrAndStatus(@Param("crId") Long changeRequestId,
-      @Param("status") ChangeItemResolutionStatus status);
+      @Param("status") ChangeRequestItemStatus status);
 
   /*
    * == Chargements ciblés pour construire les listes à appliquer ==
@@ -135,4 +135,14 @@ public interface ChangeRequestItemRepository extends JpaRepository<ChangeRequest
       """, nativeQuery = true)
   int nullifyPersonAttributeFkForResolvedAndExpiredTombstones(
       @Param("cutoffExclusive") LocalDateTime cutoffExclusive);
+
+  @Query("""
+      SELECT i.id
+        FROM ChangeRequestItemEntity i
+       WHERE i.changeRequest.id = :crId
+         AND i.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+         AND i.resolutionStatus = :pending
+      """)
+  List<Long> findPendingIdsByCr(@Param("crId") Long changeRequestId,
+      @Param("pending") ChangeRequestItemStatus pending);
 }

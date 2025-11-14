@@ -4,23 +4,23 @@ package com.saymyname.webapp.dto.changerequest;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import com.saymyname.core.model.enums.ChangeStatus;
+import com.saymyname.core.model.enums.ChangeRequestStatus;
 
 /** Représentation de l’enveloppe + ses items. */
 public record ChangeRequestDto(
-        Long id,
-        Long personId,
-        Long requesterId,
-        Long attributeId,
-        String requestReason,
+                Long id,
+                Long personId,
+                Long requesterId,
+                Long attributeId,
+                String requestReason,
 
-        ChangeStatus status,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt,
+                ChangeRequestStatus status,
+                LocalDateTime createdAt,
+                LocalDateTime updatedAt,
 
-        Long resolvedById,
-        LocalDateTime resolvedAt,
-        String resolutionComment,
+                Long resolvedById,
+                LocalDateTime resolvedAt,
+                String resolutionComment,
 
-        List<ChangeRequestItemDto> items) {
+                List<ChangeRequestItemDto> items) {
 }

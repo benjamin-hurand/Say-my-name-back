@@ -1,7 +1,7 @@
 package com.saymyname.core.model.people;
 
 import com.saymyname.core.model.auth.User;
-import com.saymyname.core.model.enums.ChangeStatus;
+import com.saymyname.core.model.enums.ChangeRequestStatus;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -26,7 +26,7 @@ public class ChangeRequest {
     /** Motif global saisi par le demandeur (obligatoire au niveau API/DB) */
     private String requestReason;
 
-    private ChangeStatus status; // PENDING, APPROVED, REJECTED, CANCELED
+    private ChangeRequestStatus status; // PENDING, APPROVED, REJECTED, CANCELED
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -78,7 +78,7 @@ public class ChangeRequest {
         return requestReason;
     }
 
-    public ChangeStatus getStatus() {
+    public ChangeRequestStatus getStatus() {
         return status;
     }
 
@@ -127,7 +127,7 @@ public class ChangeRequest {
         this.requestReason = requestReason;
     }
 
-    public void setStatus(ChangeStatus status) {
+    public void setStatus(ChangeRequestStatus status) {
         this.status = status;
     }
 
@@ -162,7 +162,7 @@ public class ChangeRequest {
         private User requester;
         private Attribute attribute;
         private String requestReason;
-        private ChangeStatus status;
+        private ChangeRequestStatus status;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
         private User resolvedBy;
@@ -196,7 +196,7 @@ public class ChangeRequest {
             return this;
         }
 
-        public Builder withStatus(ChangeStatus status) {
+        public Builder withStatus(ChangeRequestStatus status) {
             this.status = status;
             return this;
         }

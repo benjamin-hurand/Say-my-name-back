@@ -13,7 +13,6 @@ public class Attribute {
     private Long id;
     private String name;
 
-    // NEW (aligné DB)
     private int displayOrder = 100;
     private boolean primaryField;
     private boolean category;

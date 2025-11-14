@@ -5,7 +5,7 @@ package com.saymyname.core.model.enums;
  * Statut de RÉSOLUTION d'un item de Change Request.
  * Différent du ChangeStatus de l'enveloppe.
  */
-public enum ChangeItemResolutionStatus {
+public enum ChangeRequestItemStatus {
     PENDING,
     APPROVED,
     REJECTED,

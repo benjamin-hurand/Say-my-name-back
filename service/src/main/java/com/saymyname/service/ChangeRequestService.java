@@ -13,7 +13,8 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,12 +22,13 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.enums.ChangeAction;
-import com.saymyname.core.model.enums.ChangeItemResolutionStatus;
 import com.saymyname.core.model.enums.ChangeResolutionDecision;
-import com.saymyname.core.model.enums.ChangeStatus;
+import com.saymyname.core.model.enums.ChangeRequestStatus;
 import com.saymyname.core.model.people.Attribute;
+import com.saymyname.core.model.people.BulkChangeRequestResolution;
 import com.saymyname.core.model.people.ChangeRequest;
 import com.saymyname.core.model.people.ChangeRequestItem;
+import com.saymyname.core.model.people.ChangeRequestListQuery;
 import com.saymyname.core.model.people.ChangeRequestResolution;
 import com.saymyname.core.model.people.ChangeRequestResolutionItem;
 import com.saymyname.core.model.people.Person;
@@ -48,7 +50,7 @@ public class ChangeRequestService {
     private final AttributeDao attributeDao; // pour normaliser/valider à la soumission
     private final PersonAttributeService personAttributeService; // applique les APPROVED (désactivé ici: simulation)
 
-    private static final Set<ChangeStatus> OPEN_STATUSES = EnumSet.of(ChangeStatus.PENDING);
+    private static final Set<ChangeRequestStatus> OPEN_STATUSES = EnumSet.of(ChangeRequestStatus.PENDING);
 
     public ChangeRequestService(ChangeRequestDao crDao,
             ChangeRequestItemDao itemDao,
@@ -102,7 +104,7 @@ public class ChangeRequestService {
                     existing.getRequester().getId(), requesterId);
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Vous n'êtes pas l'auteur de cette demande.");
         }
-        if (existing.getStatus() != ChangeStatus.PENDING) {
+        if (existing.getStatus() != ChangeRequestStatus.PENDING) {
             log.warn("[CR][REPLACE] Conflict: status must be PENDING, got={}", existing.getStatus());
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
@@ -153,21 +155,19 @@ public class ChangeRequestService {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "changeRequestId et resolver sont requis");
             }
 
-            // 1) Charger l'enveloppe (model) et vérifier l'état
             var crModel = crDao.getByIdOrThrowModel(crId);
             log.debug("[CR][RESOLVE][SIMU] crModel: id={}, status={}, personId={}, attributeId={}",
                     crModel.getId(), crModel.getStatus(),
                     (crModel.getPerson() != null ? crModel.getPerson().getId() : null),
                     (crModel.getAttribute() != null ? crModel.getAttribute().getId() : null));
 
-            if (crModel.getStatus() != ChangeStatus.PENDING) {
+            if (crModel.getStatus() != ChangeRequestStatus.PENDING) {
                 log.warn("[CR][RESOLVE][SIMU] Conflict: status must be PENDING, got={}", crModel.getStatus());
                 throw new ResponseStatusException(
                         HttpStatus.CONFLICT,
                         "Seules les enveloppes PENDING peuvent être résolues (actuel: " + crModel.getStatus() + ")");
             }
 
-            // 2) Partitionner les décisions (seulement APPROVE / REJECT)
             Map<Long, ChangeRequestResolutionItem> byId = Optional.ofNullable(resolution.getDecisions())
                     .orElse(List.of())
                     .stream()
@@ -199,7 +199,6 @@ public class ChangeRequestService {
             log.info("[CR][RESOLVE][SIMU] APPROVE ids   : {}", approveIds);
             log.info("[CR][RESOLVE][SIMU] REJECT  ids   : {}", rejectIds);
 
-            // 3) UPDATE ITEMS — SIMULATION (décommenter les lignes CALL pour activer)
             String who = " by " + resolver.getId();
             String baseComment = Optional.ofNullable(resolution.getResolutionComment()).orElse("");
             String approveRejectComment = (baseComment.isBlank() ? "Resolved" : baseComment) + who;
@@ -209,7 +208,6 @@ public class ChangeRequestService {
                         + "appelerait ChangeRequestItemDao.resolveMixedPendingOnly(crId={}, approveIds.size={}, rejectIds.size={}, comment='{}')",
                         crId, approveIds.size(), rejectIds.size(), approveRejectComment);
 
-                // === ACTIVER LES ÉCRITURES: décommenter ci-dessous ===
                 log.info(
                         "[CR][RESOLVE] CALLChangeRequestItemDao.resolveMixedPendingOnly(crId={}, approves={}, rejects={}, comment='{}')",
                         crId, approveIds.size(), rejectIds.size(), approveRejectComment);
@@ -221,12 +219,10 @@ public class ChangeRequestService {
                 log.info("[CR][RESOLVE][SIMU] Aucun item à mettre à jour en bulk (approve/reject) — skip");
             }
 
-            // 4) APPLY METIER — SIMULATION (lecture OK, écriture commentée)
             List<ChangeRequestItemEntity> approvedEntities = approveIds.isEmpty()
                     ? List.of()
-                    : itemDao.loadItemsByIds(crId, approveIds); // lecture OK
+                    : itemDao.loadItemsByIds(crId, approveIds);
 
-            // En simulation, on garde tel quel; en réel, on peut re-filtrer après bulk.
             List<ChangeRequestItemEntity> approvedEntitiesSimu = approvedEntities;
             log.debug("[CR][RESOLVE][SIMU] approvedEntities.loaded={}", approvedEntitiesSimu.size());
 
@@ -281,7 +277,6 @@ public class ChangeRequestService {
                         (crModel.getAttribute() != null ? crModel.getAttribute().getId() : null),
                         toCreate.size(), toUpdate.size(), toDelete.size());
 
-                // === ACTIVER LES ÉCRITURES: décommenter ci-dessous ===
                 log.info(
                         "[CR][RESOLVE] CALL PersonAttributeService.applyChangesForPerson(personId={}, attributeId={}, creates={}, updates={}, deletes={}, bypassRestricted=true)",
                         crModel.getPerson().getId(), crModel.getAttribute().getId(),
@@ -296,34 +291,31 @@ public class ChangeRequestService {
                 log.info("[CR][RESOLVE][SIMU] Aucun changement métier à appliquer — skip");
             }
 
-            // 5) STATUT ENVELOPPE — SIMULATION (basé sur décisions + total actuel)
-            long total = itemDao.countAllByCr(crId); // lecture OK
+            long total = itemDao.countAllByCr(crId);
             int nbApprove = approveIds.size();
             int nbReject = rejectIds.size();
             int decided = nbApprove + nbReject;
 
-            ChangeStatus newStatus;
+            ChangeRequestStatus newStatus;
             if (total > 0 && nbApprove == total && nbReject == 0) {
-                newStatus = ChangeStatus.APPROVED;
+                newStatus = ChangeRequestStatus.APPROVED;
             } else if (nbApprove > 0 && decided == total) {
-                newStatus = ChangeStatus.PARTIALLY_APPROVED;
+                newStatus = ChangeRequestStatus.PARTIALLY_APPROVED;
             } else if (nbApprove == 0 && nbReject == total) {
-                newStatus = ChangeStatus.REJECTED;
+                newStatus = ChangeRequestStatus.REJECTED;
             } else {
-                newStatus = ChangeStatus.PENDING; // il reste des PENDING non décidés
+                newStatus = ChangeRequestStatus.PENDING;
             }
 
             log.info(
                     "[CR][RESOLVE][SIMU] COMPUTE STATUS — totalItems={}, decisions.approve={}, decisions.reject={}, => newStatus(simulé)={}",
                     total, nbApprove, nbReject, newStatus);
 
-            // 6) UPDATE ENVELOPPE — SIMULATION (décommenter l'appel pour activer)
             String envComment = buildEnvelopeResolutionComment(baseComment, approveIds, rejectIds);
             log.info("[CR][RESOLVE][SIMU] ICI ON UPDATE L’ENVELOPPE — "
                     + "appelerait ChangeRequestDao.updateEnvelopeResolutionMeta(crId={}, status={}, resolvedAt=now, resolvedBy={}, comment='{}')",
                     crId, newStatus, resolver.getId(), envComment);
 
-            // === ACTIVER LES ÉCRITURES: décommenter ci-dessous ===
             log.info(
                     "[CR][RESOLVE] CALL ChangeRequestDao.updateEnvelopeResolutionMeta(crId={}, status={}, resolvedBy={}, comment='{}')",
                     crId, newStatus, resolver.getId(), envComment);
@@ -466,7 +458,6 @@ public class ChangeRequestService {
             switch (it.getAction()) {
                 case CREATE, UPDATE -> {
                     String v = it.getProposedValue();
-                    // NEW: normalisation contextualisée (type + casing strategy)
                     String normalized = TextNormalization.normalizeWithStrategy(
                             v, attr.getType(), attr.getCasingStrategy());
 
@@ -527,16 +518,12 @@ public class ChangeRequestService {
     /**
      * Annule l'enveloppe (contrôles d'auteur et statut gérés par le DAO enveloppe)
      * puis annule en bulk tous les items encore PENDING.
-     * (Ici on laisse l'implémentation réelle; si tu veux une version simulation,
-     * dis-le.)
      */
     @Transactional
     public void cancelEnvelope(Long changeRequestId, User requester) {
         log.info("[CR][CANCEL] cancelEnvelope() — crId={}, requesterId={}", changeRequestId,
                 (requester != null ? requester.getId() : null));
-        // 1) Annule l'enveloppe (et vérifications)
         crDao.cancelEnvelope(changeRequestId, requester);
-        // 2) Annule les items PENDING en bulk
         String comment = "Canceled with envelope by requester #" + requester.getId();
         itemDao.cancelAllPending(changeRequestId, comment);
         log.info("[CR][CANCEL] OK");
@@ -552,5 +539,44 @@ public class ChangeRequestService {
     public List<ChangeRequest> findOpenForPerson(Long personId) {
         log.debug("[CR][QUERY] findOpenForPerson personId={}", personId);
         return crDao.findByPersonIdAndStatuses(personId, OPEN_STATUSES);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ChangeRequest> list(ChangeRequestListQuery query, Pageable pageable) {
+        return crDao.list(query, pageable);
+    }
+
+    @Transactional
+    public void bulkResolve(BulkChangeRequestResolution bulk) {
+        Objects.requireNonNull(bulk, "bulk is null");
+        Objects.requireNonNull(bulk.getResolver(), "resolver is required");
+        Objects.requireNonNull(bulk.getChangeRequestIds(), "ids are required");
+        Objects.requireNonNull(bulk.getDecision(), "decision is required");
+
+        ChangeResolutionDecision dec = ChangeResolutionDecision.valueOf(bulk.getDecision());
+
+        for (Long crId : bulk.getChangeRequestIds()) {
+            List<Long> pendingIds = itemDao.listPendingIdsByCr(crId);
+            if (pendingIds == null || pendingIds.isEmpty()) {
+                continue;
+            }
+
+            List<ChangeRequestResolutionItem> decisions = pendingIds.stream()
+                    .map(id -> new ChangeRequestResolutionItem.Builder()
+                            .withItemId(id)
+                            .withDecision(dec)
+                            .withResolutionComment(null)
+                            .build())
+                    .toList();
+
+            ChangeRequestResolution cmd = new ChangeRequestResolution.Builder()
+                    .withChangeRequestId(crId)
+                    .withResolver(bulk.getResolver())
+                    .withResolutionComment(bulk.getResolutionComment())
+                    .withDecisions(decisions)
+                    .build();
+
+            resolve(cmd);
+        }
     }
 }

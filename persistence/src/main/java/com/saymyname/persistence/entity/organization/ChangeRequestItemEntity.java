@@ -2,7 +2,7 @@
 package com.saymyname.persistence.entity.organization;
 
 import com.saymyname.core.model.enums.ChangeAction;
-import com.saymyname.core.model.enums.ChangeItemResolutionStatus;
+import com.saymyname.core.model.enums.ChangeRequestItemStatus;
 import com.saymyname.persistence.multitenancy.BaseOrgScoped;
 
 import jakarta.persistence.*;
@@ -39,7 +39,7 @@ public class ChangeRequestItemEntity extends BaseOrgScoped {
     /** Statut de résolution (par item) */
     @Enumerated(EnumType.STRING)
     @Column(name = "resolution_status", nullable = false, length = 16)
-    private ChangeItemResolutionStatus resolutionStatus = ChangeItemResolutionStatus.PENDING;
+    private ChangeRequestItemStatus resolutionStatus = ChangeRequestItemStatus.PENDING;
 
     /** Commentaire de résolution (par item, optionnel) */
     @Column(name = "resolution_comment", length = 512)
@@ -55,14 +55,14 @@ public class ChangeRequestItemEntity extends BaseOrgScoped {
             ChangeAction action,
             PersonAttributeEntity personAttribute,
             String proposedValue,
-            ChangeItemResolutionStatus resolutionStatus,
+            ChangeRequestItemStatus resolutionStatus,
             String resolutionComment) {
         this.id = id;
         this.changeRequest = changeRequest;
         this.action = action;
         this.personAttribute = personAttribute;
         this.proposedValue = proposedValue;
-        this.resolutionStatus = (resolutionStatus != null ? resolutionStatus : ChangeItemResolutionStatus.PENDING);
+        this.resolutionStatus = (resolutionStatus != null ? resolutionStatus : ChangeRequestItemStatus.PENDING);
         this.resolutionComment = resolutionComment;
     }
 
@@ -107,11 +107,11 @@ public class ChangeRequestItemEntity extends BaseOrgScoped {
         this.proposedValue = proposedValue;
     }
 
-    public ChangeItemResolutionStatus getResolutionStatus() {
+    public ChangeRequestItemStatus getResolutionStatus() {
         return resolutionStatus;
     }
 
-    public void setResolutionStatus(ChangeItemResolutionStatus resolutionStatus) {
+    public void setResolutionStatus(ChangeRequestItemStatus resolutionStatus) {
         this.resolutionStatus = resolutionStatus;
     }
 

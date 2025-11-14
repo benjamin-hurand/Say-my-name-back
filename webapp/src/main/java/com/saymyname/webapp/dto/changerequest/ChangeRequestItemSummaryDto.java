@@ -2,6 +2,7 @@
 package com.saymyname.webapp.dto.changerequest;
 
 import com.saymyname.core.model.enums.ChangeAction;
+import com.saymyname.core.model.enums.ChangeRequestItemStatus;
 import com.saymyname.webapp.dto.person.PersonAttributeMinimalDto;
 
 /**
@@ -10,8 +11,9 @@ import com.saymyname.webapp.dto.person.PersonAttributeMinimalDto;
  * - On expose les IDs utiles à l’UI.
  */
 public record ChangeRequestItemSummaryDto(
-        Long id,
-        PersonAttributeMinimalDto personAttribute,
-        ChangeAction action,
-        String proposedValue) {
+                Long id,
+                PersonAttributeMinimalDto personAttribute,
+                ChangeAction action,
+                String proposedValue,
+                ChangeRequestItemStatus resolution) {
 }

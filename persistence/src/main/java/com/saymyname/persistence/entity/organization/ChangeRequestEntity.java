@@ -1,6 +1,6 @@
 package com.saymyname.persistence.entity.organization;
 
-import com.saymyname.core.model.enums.ChangeStatus;
+import com.saymyname.core.model.enums.ChangeRequestStatus;
 import com.saymyname.persistence.entity.UserEntity;
 import com.saymyname.persistence.entity.organization.attribute.AttributeEntity;
 import com.saymyname.persistence.multitenancy.BaseOrgScoped;
@@ -43,7 +43,7 @@ public class ChangeRequestEntity extends BaseOrgScoped {
     /** Statut de l'enveloppe (généralement calé sur l’agrégation des items) */
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 16)
-    private ChangeStatus status = ChangeStatus.PENDING;
+    private ChangeRequestStatus status = ChangeRequestStatus.PENDING;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -76,7 +76,7 @@ public class ChangeRequestEntity extends BaseOrgScoped {
             UserEntity requester,
             AttributeEntity attribute,
             String requestReason,
-            ChangeStatus status,
+            ChangeRequestStatus status,
             LocalDateTime createdAt,
             LocalDateTime updatedAt,
             UserEntity resolvedBy,
@@ -88,7 +88,7 @@ public class ChangeRequestEntity extends BaseOrgScoped {
         this.requester = requester;
         this.attribute = attribute;
         this.requestReason = requestReason;
-        this.status = (status != null ? status : ChangeStatus.PENDING);
+        this.status = (status != null ? status : ChangeRequestStatus.PENDING);
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.resolvedBy = resolvedBy;
@@ -166,11 +166,11 @@ public class ChangeRequestEntity extends BaseOrgScoped {
         this.requestReason = requestReason;
     }
 
-    public ChangeStatus getStatus() {
+    public ChangeRequestStatus getStatus() {
         return status;
     }
 
-    public void setStatus(ChangeStatus status) {
+    public void setStatus(ChangeRequestStatus status) {
         this.status = status;
     }
 

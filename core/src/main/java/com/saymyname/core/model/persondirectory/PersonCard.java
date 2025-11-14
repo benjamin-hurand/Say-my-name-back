@@ -2,22 +2,24 @@
 package com.saymyname.core.model.persondirectory;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class PersonCard {
 
     private Long idPerson;
     private String photoStorageKey;
 
-    /** Champs primaires (nom, prénom, etc.) */
-    private List<AttributeValueView> primaryAttributes = new ArrayList<>();
+    @JsonProperty("attributes")
+    private List<AttributeValueView> attributes = new ArrayList<>();
 
     /** Suivi (côté utilisateur non admin) */
     private boolean followed;
-
-    /** Attributs “contexte” (filtres/tri/catégories) */
-    private List<AttributeValueView> extraAttributes = new ArrayList<>();
 
     public PersonCard() {
     }
@@ -25,9 +27,8 @@ public class PersonCard {
     private PersonCard(Builder b) {
         this.idPerson = b.idPerson;
         this.photoStorageKey = b.photoStorageKey;
-        this.primaryAttributes = b.primaryAttributes;
+        this.attributes = b.attributes;
         this.followed = b.followed;
-        this.extraAttributes = b.extraAttributes;
     }
 
     public Long getIdPerson() {
@@ -38,16 +39,13 @@ public class PersonCard {
         return photoStorageKey;
     }
 
-    public List<AttributeValueView> getPrimaryAttributes() {
-        return primaryAttributes;
+    /** Accès direct à la liste unifiée (si tu veux aussi l’exposer côté JSON). */
+    public List<AttributeValueView> getAttributes() {
+        return attributes;
     }
 
     public boolean isFollowed() {
         return followed;
-    }
-
-    public List<AttributeValueView> getExtraAttributes() {
-        return extraAttributes;
     }
 
     public void setIdPerson(Long idPerson) {
@@ -58,24 +56,57 @@ public class PersonCard {
         this.photoStorageKey = photoStorageKey;
     }
 
-    public void setPrimaryAttributes(List<AttributeValueView> primaryAttributes) {
-        this.primaryAttributes = primaryAttributes;
+    public void setAttributes(List<AttributeValueView> attributes) {
+        this.attributes = attributes;
     }
 
     public void setFollowed(boolean followed) {
         this.followed = followed;
     }
 
-    public void setExtraAttributes(List<AttributeValueView> extraAttributes) {
-        this.extraAttributes = extraAttributes;
+    // --------- Rétro-compat JSON (legacy fields) ---------
+    // Tant que le front consomme encore primary/extra, on les expose en JSON,
+    // mais on les calcule à partir de la liste unifiée.
+
+    @JsonProperty("primaryAttributes")
+    public List<AttributeValueView> getPrimaryAttributes() {
+        return attributes.stream()
+                .filter(a -> Boolean.TRUE.equals(a.getPrimaryField()))
+                .sorted(ordering())
+                .collect(Collectors.toList());
+    }
+
+    @JsonProperty("extraAttributes")
+    public List<AttributeValueView> getExtraAttributes() {
+        return attributes.stream()
+                .filter(a -> !Boolean.TRUE.equals(a.getPrimaryField()))
+                .sorted(ordering())
+                .collect(Collectors.toList());
+    }
+
+    // On peut empêcher la désérialisation de setters legacy pour éviter les
+    // confusions.
+    @JsonIgnore
+    public void setPrimaryAttributes(List<AttributeValueView> ignored) {
+    }
+
+    @JsonIgnore
+    public void setExtraAttributes(List<AttributeValueView> ignored) {
+    }
+
+    private static Comparator<AttributeValueView> ordering() {
+        return Comparator
+                .comparing(
+                        (AttributeValueView v) -> v.getDisplayOrder() == null ? Integer.MAX_VALUE : v.getDisplayOrder())
+                .thenComparing(v -> v.getAttributeId() == null ? Long.MAX_VALUE : v.getAttributeId())
+                .thenComparing(v -> v.getValue() == null ? "" : v.getValue());
     }
 
     public static class Builder {
         private Long idPerson;
         private String photoStorageKey;
-        private List<AttributeValueView> primaryAttributes = new ArrayList<>();
+        private List<AttributeValueView> attributes = new ArrayList<>();
         private boolean followed;
-        private List<AttributeValueView> extraAttributes = new ArrayList<>();
 
         public Builder withIdPerson(Long v) {
             this.idPerson = v;
@@ -87,13 +118,13 @@ public class PersonCard {
             return this;
         }
 
-        public Builder withPrimaryAttributes(List<AttributeValueView> v) {
-            this.primaryAttributes = v;
+        public Builder withAttributes(List<AttributeValueView> v) {
+            this.attributes = v;
             return this;
         }
 
-        public Builder addPrimaryAttribute(AttributeValueView v) {
-            this.primaryAttributes.add(v);
+        public Builder addAttribute(AttributeValueView v) {
+            this.attributes.add(v);
             return this;
         }
 
@@ -102,13 +133,25 @@ public class PersonCard {
             return this;
         }
 
-        public Builder withExtraAttributes(List<AttributeValueView> v) {
-            this.extraAttributes = v;
+        // Helpers de compat : si du code legacy appelle encore ces méthodes, on mappe
+        // vers attributes
+        public Builder withPrimaryAttributes(List<AttributeValueView> primaries) {
+            if (primaries != null)
+                primaries.forEach(p -> {
+                    if (p.getPrimaryField() == null || !p.getPrimaryField())
+                        p.setPrimaryField(true);
+                });
+            this.attributes.addAll(primaries == null ? List.of() : primaries);
             return this;
         }
 
-        public Builder addExtraAttribute(AttributeValueView v) {
-            this.extraAttributes.add(v);
+        public Builder withExtraAttributes(List<AttributeValueView> extras) {
+            if (extras != null)
+                extras.forEach(e -> {
+                    if (e.getPrimaryField() == null || e.getPrimaryField())
+                        e.setPrimaryField(false);
+                });
+            this.attributes.addAll(extras == null ? List.of() : extras);
             return this;
         }
 
@@ -126,13 +169,12 @@ public class PersonCard {
         return followed == that.followed
                 && Objects.equals(idPerson, that.idPerson)
                 && Objects.equals(photoStorageKey, that.photoStorageKey)
-                && Objects.equals(primaryAttributes, that.primaryAttributes)
-                && Objects.equals(extraAttributes, that.extraAttributes);
+                && Objects.equals(attributes, that.attributes);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(idPerson, photoStorageKey, primaryAttributes, followed, extraAttributes);
+        return Objects.hash(idPerson, photoStorageKey, attributes, followed);
     }
 
     @Override
@@ -140,9 +182,8 @@ public class PersonCard {
         return "PersonCard{" +
                 "idPerson=" + idPerson +
                 ", photoStorageKey='" + photoStorageKey + '\'' +
-                ", primaryAttributes=" + primaryAttributes +
+                ", attributes=" + attributes +
                 ", followed=" + followed +
-                ", extraAttributes=" + extraAttributes +
                 '}';
     }
 }

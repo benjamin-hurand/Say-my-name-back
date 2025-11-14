@@ -7,12 +7,6 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.Tuple;
-import jakarta.persistence.TypedQuery;
-import jakarta.persistence.criteria.*;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -25,18 +19,29 @@ import com.saymyname.core.model.game.options.GameOptions;
 import com.saymyname.core.model.people.Person;
 import com.saymyname.core.model.persondirectory.AdminPersonSearchCriteria;
 import com.saymyname.core.model.persondirectory.AttributeValueRow;
-import com.saymyname.core.model.persondirectory.AttributeValueView;
 import com.saymyname.core.model.persondirectory.PagePersonRow;
 import com.saymyname.core.model.persondirectory.PersonSearchCriteria;
-import com.saymyname.persistence.entity.organization.attribute.AttributeEntity;
 import com.saymyname.persistence.entity.organization.PersonAttributeEntity;
 import com.saymyname.persistence.entity.organization.PersonEntity;
 import com.saymyname.persistence.entity.organization.PhotoEntity;
+import com.saymyname.persistence.entity.organization.attribute.AttributeEntity;
 import com.saymyname.persistence.entity.organization.subscription.UserSubscriptionEntity;
 import com.saymyname.persistence.mapper.PersonEntityMapper;
-import com.saymyname.persistence.repository.PersonAttributeRepository;
 import com.saymyname.persistence.repository.PersonRepository;
 import com.saymyname.persistence.repository.UserSubscriptionRepository;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Tuple;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Order;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 
 @Repository
 public class PersonDao {
@@ -46,7 +51,6 @@ public class PersonDao {
 
     private final PersonRepository personRepository;
     private final PersonEntityMapper personEntityMapper;
-    private final PersonAttributeRepository personAttributeRepository;
     private final UserSubscriptionRepository userSubscriptionRepository;
 
     @PersistenceContext
@@ -54,11 +58,9 @@ public class PersonDao {
 
     public PersonDao(PersonRepository personRepository,
             PersonEntityMapper personEntityMapper,
-            PersonAttributeRepository personAttributeRepository,
             UserSubscriptionRepository userSubscriptionRepository) {
         this.personRepository = personRepository;
         this.personEntityMapper = personEntityMapper;
-        this.personAttributeRepository = personAttributeRepository;
         this.userSubscriptionRepository = userSubscriptionRepository;
     }
 
@@ -370,7 +372,9 @@ public class PersonDao {
                 pa.get("person").get("id").alias("personId"),
                 a.get("id").alias("attributeId"),
                 pa.<String>get("value").alias("value"),
-                a.get("displayOrder").alias("displayOrder"))
+                a.get("displayOrder").alias("displayOrder"),
+                a.get("primaryField").alias("primaryField") // ⬅️ NEW
+        )
                 .where(cb.and(where.toArray(new Predicate[0])))
                 .orderBy(
                         cb.asc(pa.get("person").get("id")),
@@ -382,12 +386,15 @@ public class PersonDao {
                         t.get("personId", Long.class),
                         t.get("attributeId", Long.class),
                         t.get("value", String.class),
-                        t.get("displayOrder", Integer.class)))
+                        t.get("displayOrder", Integer.class),
+                        t.get("primaryField", Boolean.class) // ⬅️ NEW
+                ))
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<AttributeValueRow> fetchContextAttributes(List<Long> personIds,
+    public List<AttributeValueRow> fetchContextAttributes(
+            List<Long> personIds,
             List<Long> attributeIdsFromRequest,
             boolean includeCategories,
             boolean includeFilterSortAttributes) {
@@ -440,7 +447,9 @@ public class PersonDao {
                 pa.get("person").get("id").alias("personId"),
                 a.get("id").alias("attributeId"),
                 pa.<String>get("value").alias("value"),
-                a.get("displayOrder").alias("displayOrder"))
+                a.get("displayOrder").alias("displayOrder"),
+                a.get("primaryField").alias("primaryField") // ⬅️ NEW (sera false ici)
+        )
                 .where(
                         cb.and(where.toArray(new Predicate[0])),
                         cb.or(byIds, byCategory, byFilterSort))
@@ -454,7 +463,9 @@ public class PersonDao {
                         t.get("personId", Long.class),
                         t.get("attributeId", Long.class),
                         t.get("value", String.class),
-                        t.get("displayOrder", Integer.class)))
+                        t.get("displayOrder", Integer.class),
+                        t.get("primaryField", Boolean.class) // ⬅️ NEW
+                ))
                 .toList();
     }
 

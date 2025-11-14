@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -26,6 +28,7 @@ import com.saymyname.core.model.people.Person;
 import com.saymyname.core.model.people.PersonAttribute;
 import com.saymyname.core.model.persondirectory.AdminPersonCard;
 import com.saymyname.core.model.persondirectory.AdminPersonSearchCriteria;
+import com.saymyname.infra.mail.ConsoleMailer;
 import com.saymyname.persistence.projection.ChallengeCardProjection;
 import com.saymyname.service.AttributeService;
 import com.saymyname.service.ChallengeService;
@@ -66,6 +69,7 @@ public class AdminRestController {
     private final ChangeRequestService changeRequestService;
     private final ChangeRequestDtoMapper changeRequestDtoMapper;
     private final UserOrganizationService userOrganizationService;
+    private final Logger logger = LoggerFactory.getLogger(AdminRestController.class);
 
     public AdminRestController(PersonService personService,
             AttributeService attributeService,
@@ -111,6 +115,8 @@ public class AdminRestController {
             Pageable pageable) {
 
         AdminPersonSearchCriteria criteria = personDirectoryDtoMapper.toAdminModel(body);
+        logger.info("Admin person search criteria: {}", criteria);
+        logger.debug("Admin person search criteria: {}", criteria);
 
         Page<AdminPersonCard> page = personService.searchPersonsForAdmin(criteria, pageable);
         Page<AdminPersonCardDto> dtoPage = page.map(personDirectoryDtoMapper::toDto);
