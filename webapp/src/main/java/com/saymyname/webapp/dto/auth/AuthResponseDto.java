@@ -1,16 +1,14 @@
+// src/main/java/com/saymyname/webapp/dto/auth/AuthResponseDto.java
 package com.saymyname.webapp.dto.auth;
-
-import com.saymyname.core.model.enums.SrsAlgorithm;
-import com.saymyname.webapp.dto.organization.UserOrganizationDto;
 
 import java.util.List;
 
+import com.saymyname.webapp.dto.organization.UserOrganizationDto;
+
 public record AuthResponseDto(
-                String bearerToken,
-                Long userId,
-                String username,
-                String email,
-                String roles,
-                SrsAlgorithm srsAlgorithm,
-                List<UserOrganizationDto> organizations) {
+        String bearerToken,
+        String publicUserId,
+        String username,
+        boolean isAdmin,
+        List<UserOrganizationDto> organizations) {
 }

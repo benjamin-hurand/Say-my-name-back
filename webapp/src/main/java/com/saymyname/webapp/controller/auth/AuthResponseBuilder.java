@@ -1,3 +1,4 @@
+// src/main/java/com/saymyname/webapp/controller/auth/AuthResponseBuilder.java
 package com.saymyname.webapp.controller.auth;
 
 import com.saymyname.core.model.auth.User;
@@ -9,6 +10,7 @@ import com.saymyname.webapp.mapper.organization.UserOrganizationDtoMapper;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.UUID;
 
 @Component
 public class AuthResponseBuilder {
@@ -26,21 +28,22 @@ public class AuthResponseBuilder {
     }
 
     public AuthResponseDto build(User user) {
-        String token = jwtService.generateToken(user.getEmail(), user.getPasswordVersion());
+        // subject = publicId (UUID) — robuste si email/username changent
+        final UUID pubId = user.getPublicId();
+        final String subject = (pubId != null) ? pubId.toString() : String.valueOf(user.getId());
+
+        String token = jwtService.generateToken(subject, user.getPasswordVersion());
 
         List<UserOrganizationDto> orgDtos = userOrganizationService
                 .getOrganizationsForUser(user.getId())
                 .stream()
                 .map(userOrganizationDtoMapper::toDto)
                 .toList();
-
         return new AuthResponseDto(
                 token,
-                user.getId(),
+                (pubId != null ? pubId.toString() : null),
                 user.getUsername(),
-                user.getEmail(),
-                user.getRoles(),
-                user.getSrsAlgorithm(),
+                user.isAdmin(),
                 orgDtos);
     }
 }

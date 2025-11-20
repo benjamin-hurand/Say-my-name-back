@@ -3,6 +3,7 @@ package com.saymyname.webapp.mapper.course;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.saymyname.core.model.course.Course;
 import com.saymyname.core.model.course.CourseQuestionHistory;
 import com.saymyname.core.model.course.Knowledge;
 import com.saymyname.core.model.enums.DifficultyLevel;
@@ -60,7 +61,9 @@ public class CourseQuestionHistoryDtoMapper {
     public CourseQuestionHistory toModel(CourseAnswerDto dto) {
         return new CourseQuestionHistory.Builder()
                 .withId(dto.courseQuestionId())
-                .withCourse(courseDtoMapper.toModel(dto.courseId(), dto.userId()))
+                .withCourse(new Course.Builder()
+                        .withId(dto.courseId())
+                        .build())
                 .withUserAnswer(dto.answer())
                 .build();
     }

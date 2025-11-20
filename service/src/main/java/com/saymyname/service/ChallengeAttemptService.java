@@ -17,6 +17,7 @@ import com.saymyname.core.model.challenge.ChallengeEvaluation;
 import com.saymyname.core.model.challenge.ChallengeEvaluationRequest;
 import com.saymyname.core.model.challenge.ChallengeHistoryEntry;
 import com.saymyname.core.model.challenge.ChallengeQuestion;
+import com.saymyname.core.model.challenge.ChallengeVersion;
 import com.saymyname.core.model.challenge.CorrectionEntry;
 import com.saymyname.core.model.enums.AttemptStatus;
 import com.saymyname.core.model.game.options.GameMode;
@@ -31,16 +32,27 @@ public class ChallengeAttemptService {
 
     private final ChallengeAttemptDao challengeAttemptDao;
     private final PersonAttributeDao personAttributeDao;
+    private final UserService userService;
 
-    public ChallengeAttemptService(ChallengeAttemptDao challengeAttemptDao, PersonAttributeDao personAttributeDao) {
+    public ChallengeAttemptService(ChallengeAttemptDao challengeAttemptDao, PersonAttributeDao personAttributeDao,
+            UserService userService) {
         this.personAttributeDao = personAttributeDao;
         this.challengeAttemptDao = challengeAttemptDao;
+        this.userService = userService;
     }
 
     @Transactional
-    public ChallengeAttempt createChallengeAttempt(ChallengeAttempt challengeAttempt) {
+    public ChallengeAttempt createChallengeAttempt(Long challengeVersionId) {
+        // Ajouter l'utilisateur
+        User me = userService.getCurrentAuthenticatedUserOrThrow();
+        ChallengeAttempt attempt = new ChallengeAttempt.Builder()
+                .withUser(me)
+                .withChallengeVersion(new ChallengeVersion.Builder().withId(challengeVersionId).build())
+                .withStatus(AttemptStatus.IN_PROGRESS)
+                .build();
+
         // Sauvegarde de la nouvelle tentative
-        ChallengeAttempt savedAttempt = challengeAttemptDao.createChallengeAttempt(challengeAttempt);
+        ChallengeAttempt savedAttempt = challengeAttemptDao.createChallengeAttempt(attempt);
 
         return getChallengeAttemptById(savedAttempt.getId());
     }

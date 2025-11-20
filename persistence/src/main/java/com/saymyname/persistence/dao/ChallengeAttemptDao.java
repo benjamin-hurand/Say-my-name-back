@@ -59,7 +59,7 @@ public class ChallengeAttemptDao {
             throw new IllegalArgumentException("Failed to save ChallengeAttemptEntity");
         }
 
-        ChallengeAttempt savedChallengeAttempt = challengeAttemptEntityMapper.toModel(savedEntity);
+        ChallengeAttempt savedChallengeAttempt = challengeAttemptEntityMapper.toModelNoUser(savedEntity);
         if (savedChallengeAttempt == null) {
             throw new IllegalArgumentException("Saved ChallengeAttempt cannot be null");
         }
@@ -88,7 +88,7 @@ public class ChallengeAttemptDao {
                         Hibernate.initialize(q.getPerson().getAttributes());
                     });
         }
-        return challengeAttemptEntityMapper.toModel(challengeAttemptEntity);
+        return challengeAttemptEntityMapper.toModelNoUser(challengeAttemptEntity);
     }
 
     public ChallengeAttempt findByIdWithAll(Long id) {
@@ -99,7 +99,7 @@ public class ChallengeAttemptDao {
                 .stream()
                 .map(ChallengeQuestionEntity::getPerson)
                 .forEach(p -> Hibernate.initialize(p.getAttributes()));
-        return challengeAttemptEntityMapper.toModel(entity);
+        return challengeAttemptEntityMapper.toModelNoUser(entity);
     }
 
     @Transactional

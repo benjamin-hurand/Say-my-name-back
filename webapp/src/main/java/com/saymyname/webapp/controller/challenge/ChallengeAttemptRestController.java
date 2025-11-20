@@ -9,7 +9,6 @@ import com.saymyname.core.model.challenge.ChallengeAttempt;
 import com.saymyname.core.model.challenge.ChallengeEvaluation;
 import com.saymyname.core.model.challenge.ChallengeEvaluationRequest;
 import com.saymyname.service.ChallengeAttemptService;
-import com.saymyname.webapp.dto.challenge.AddChallengeAttemptDto;
 import com.saymyname.webapp.dto.challenge.CanAttemptDto;
 import com.saymyname.webapp.dto.challenge.ChallengeEvaluationDto;
 import com.saymyname.webapp.dto.challenge.ChallengeEvaluationRequestDto;
@@ -44,18 +43,14 @@ public class ChallengeAttemptRestController {
         this.challengeEvaluationRequestDtoMapper = challengeEvaluationRequestDtoMapper;
     }
 
-    @PostMapping("/create")
-    public ResponseEntity<?> createChallengeAttempt(@RequestBody AddChallengeAttemptDto addChallengeAttemptDto) {
+    @PostMapping("/create/{challengeVersionId}")
+    public ResponseEntity<?> createChallengeAttempt(@PathVariable("challengeVersionId") Long challengeVersionId) {
         try {
-            // Mapper le DTO d'entrée vers le modèle de domaine
-            ChallengeAttempt challengeAttempt = challengeAttemptDtoMapper.toModel(addChallengeAttemptDto);
             // Appeler le service pour créer la tentative et générer les questions associées
-            ChallengeAttempt createdAttempt = challengeAttemptService.createChallengeAttempt(challengeAttempt);
-
-            ChallengeAttempt fullAttempt = challengeAttemptService.getChallengeAttemptById(createdAttempt.getId());
+            ChallengeAttempt createdAttempt = challengeAttemptService.createChallengeAttempt(challengeVersionId);
             // Mapper le modèle créé vers le DTO de réponse
-            logger.info("Tentative de challenge créée : {}", fullAttempt);
-            CreatedChallengeAttemptDto createdAttemptDto = challengeAttemptDtoMapper.toDto(fullAttempt);
+            logger.info("Tentative de challenge créée : {}", createdAttempt);
+            CreatedChallengeAttemptDto createdAttemptDto = challengeAttemptDtoMapper.toDto(createdAttempt);
             logger.info("Tentative de challenge créée avec succès : {}", createdAttemptDto);
             return ResponseEntity.ok(createdAttemptDto);
         } catch (ChallengeAttemptException ex) {

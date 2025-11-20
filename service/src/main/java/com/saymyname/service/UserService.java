@@ -3,6 +3,7 @@ package com.saymyname.service;
 import java.security.Principal;
 import java.util.Optional;
 import java.util.Random;
+import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -13,6 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.saymyname.core.exception.common.UnauthorizedException;
 import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.enums.SrsAlgorithm;
 import com.saymyname.persistence.dao.UserDao;
@@ -89,7 +91,7 @@ public class UserService implements UserDetailsService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    // ============= Métier (inchangé) =================
+    // ============= Métier (utilitaires) =================
 
     public String generateUniqueUsername(String language) {
         String username;
@@ -157,67 +159,145 @@ public class UserService implements UserDetailsService {
     // ============= Sécurité ==========================
 
     /**
-     * Utilisé par Spring Security pour l’authentification (username=email ou
-     * username)
+     * Utilisé par Spring Security lors du login (identifiant = email ou username).
+     * Conserve la compat avec les anciens workflows.
      */
     @Override
     public UserDetails loadUserByUsername(String identifier) {
-        User user = userDao.findByEmailOrUsername(identifier);
+        String id = identifier == null ? null : identifier.trim();
+        User user = userDao.findByEmailOrUsername(id);
         return new CustomUserDetails(user);
     }
 
-    /**
-     * Essaie de récupérer le User (modèle) depuis le Principal/Auth courant,
-     * en privilégiant CustomUserDetails pour éviter une requête BDD.
-     */
+    /** Compat anciens tokens: subject = userId (Long). */
+    public UserDetails loadUserById(Long id) {
+        User user = userDao.findById(id);
+        return new CustomUserDetails(user);
+    }
+
+    /** ✅ Nouveau pour tokens/Principal: subject = publicId (UUID). */
+    public UserDetails loadUserByPublicId(UUID publicId) {
+        User user = userDao.findByPublicIdOrThrow(publicId);
+        return new CustomUserDetails(user);
+    }
+
+    // ---- Récupération de l'utilisateur courant via Principal / SecurityContext
+    // ----
+
     public Optional<User> getCurrentUser(Principal principal) {
         if (principal == null)
             return Optional.empty();
 
         if (principal instanceof Authentication auth) {
             Object p = auth.getPrincipal();
+
+            // Si CustomUserDetails est présent, on évite toute requête BDD
             if (p instanceof CustomUserDetails cud) {
-                // ⚠️ CustomUserDetails doit exposer le modèle User
                 return Optional.ofNullable(cud.getUser());
             }
-            // Fallback : nom du principal (email ou username) → lookup BDD
-            String identifier = auth.getName();
-            return Optional.ofNullable(findByEmailOrUsername(identifier));
+
+            // Sinon, auth.getName() = subject du JWT → UUID (nouveau) ou ancien identifiant
+            String name = safeTrim(auth.getName());
+            Optional<User> bySubject = findBySubjectFlexible(name);
+            if (bySubject.isPresent())
+                return bySubject;
+
+            return Optional.empty();
         }
 
-        // Dernier fallback si ce n’est pas une Authentication
-        return Optional.ofNullable(findByEmailOrUsername(principal.getName()));
+        // Cas (rare) où Principal n'est pas une Authentication
+        String name = safeTrim(principal.getName());
+        return findBySubjectFlexible(name);
     }
 
-    /** Variante qui lève 401 si absent. */
     public User getCurrentUserOrThrow(Principal principal) {
         return getCurrentUser(principal)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Utilisateur non trouvé"));
     }
 
-    /** Convenience: récupère depuis le SecurityContext (sans paramètre). */
     public Optional<User> getCurrentAuthenticatedUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null)
             return Optional.empty();
+
         Object p = auth.getPrincipal();
         if (p instanceof CustomUserDetails cud) {
             return Optional.ofNullable(cud.getUser());
         }
-        return Optional.ofNullable(findByEmailOrUsername(auth.getName()));
+
+        String name = safeTrim(auth.getName());
+        return findBySubjectFlexible(name);
     }
 
-    /** Variante sans Optional depuis le SecurityContext. */
     public User getCurrentAuthenticatedUserOrThrow() {
         return getCurrentAuthenticatedUser()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Utilisateur non trouvé"));
     }
 
+    public Long getCurrentIdOrThrow() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Not authenticated");
+        }
+
+        Object principal = auth.getPrincipal();
+
+        // Chemin rapide : notre CustomUserDetails expose l'id
+        if (principal instanceof CustomUserDetails cud) {
+            Long id = cud.getId();
+            if (id != null)
+                return id;
+        }
+
+        // Fallback : principal Spring 'User' avec subject = publicId (UUID)
+        if (principal instanceof org.springframework.security.core.userdetails.User ud) {
+            try {
+                UUID pub = UUID.fromString(ud.getUsername());
+                return userDao.findIdByPublicId(pub)
+                        .orElseThrow(() -> new UnauthorizedException("User id not found for publicId"));
+            } catch (IllegalArgumentException ignore) {
+                // subject non-UUID (legacy) → on retombe sur la charge complète
+            }
+        }
+
+        // Dernier recours : charger l'utilisateur courant et retourner son id
+        return getCurrentAuthenticatedUserOrThrow().getId();
+    }
+
     @Transactional
     public User updateSrsAlgorithm(User me, SrsAlgorithm newAlgo) {
         if (newAlgo == null || newAlgo.equals(me.getSrsAlgorithm())) {
-            return me; // rien à faire
+            return me;
         }
         return userDao.updateSrsAlgorithm(me, newAlgo);
+    }
+
+    // ============= Helpers privés =====================
+
+    private static String safeTrim(String s) {
+        return s == null ? null : s.trim();
+    }
+
+    /**
+     * Essaie d'interpréter le subject comme UUID (nouveau flux),
+     * sinon retombe sur email/username (ancien flux).
+     */
+    private Optional<User> findBySubjectFlexible(String subject) {
+        if (subject == null || subject.isBlank())
+            return Optional.empty();
+
+        // Nouveau: subject = UUID publicId
+        try {
+            UUID publicId = UUID.fromString(subject);
+            return Optional.of(userDao.findByPublicIdOrThrow(publicId));
+        } catch (IllegalArgumentException ignored) {
+            // pas un UUID → fallback legacy
+        }
+
+        try {
+            return Optional.ofNullable(findByEmailOrUsername(subject));
+        } catch (Exception e) {
+            return Optional.empty();
+        }
     }
 }

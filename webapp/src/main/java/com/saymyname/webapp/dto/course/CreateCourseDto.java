@@ -3,8 +3,7 @@ package com.saymyname.webapp.dto.course;
 import com.saymyname.core.model.enums.PopulationScope;
 
 public record CreateCourseDto(
-        Long userId,
-        Long gameModeId,
-        PopulationScope populationScope) {
+                Long gameModeId,
+                PopulationScope populationScope) {
 
 }

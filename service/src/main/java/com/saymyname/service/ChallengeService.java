@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.saymyname.core.exception.ChallengeAlreadyExistsException;
+import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.challenge.Challenge;
 import com.saymyname.core.model.challenge.ChallengeMenu;
 import com.saymyname.core.model.challenge.ChallengeSeason;
@@ -23,19 +24,30 @@ public class ChallengeService {
         private final ChallengeSeasonService challengeSeasonService;
         private final ChallengeVersionService challengeVersionService;
         private final PersonAttributeService personAttributeService;
+        private final UserService userService;
         private static final Logger logger = LoggerFactory.getLogger(ChallengeService.class);
 
         public ChallengeService(ChallengeDao challengeDao, ChallengeSeasonService challengeSeasonService,
                         ChallengeVersionService challengeVersionService,
-                        PersonAttributeService personAttributeService) {
+                        PersonAttributeService personAttributeService,
+                        UserService userService) {
                 this.challengeDao = challengeDao;
                 this.challengeSeasonService = challengeSeasonService;
                 this.challengeVersionService = challengeVersionService;
                 this.personAttributeService = personAttributeService;
+                this.userService = userService;
         }
 
         // Récupère la liste des challenges existants
         public List<ChallengeCardProjection> getChallengesList(ChallengeMenu challengeMenu) {
+                if (challengeMenu == null) {
+                        throw new IllegalArgumentException("challengeMenu cannot be null");
+                }
+
+                // ✅ Déduire le user depuis le JWT, ne jamais faire confiance au client
+                Long currentUserId = userService.getCurrentAuthenticatedUserOrThrow().getId();
+                challengeMenu.setUserId(currentUserId);
+
                 return challengeDao.getChallengeCards(challengeMenu);
         }
 
@@ -46,6 +58,10 @@ public class ChallengeService {
          */
         @Transactional
         public ChallengeVersion createNewChallenge(Challenge challenge) {
+                // 0. Ajouter le createur du challenge
+                User me = userService.getCurrentAuthenticatedUserOrThrow();
+                challenge.setCreator(me);
+
                 // 1. Vérifier l'existence du challenge
                 if (challengeExists(challenge)) {
                         throw new ChallengeAlreadyExistsException(

@@ -524,7 +524,12 @@ public class ChangeRequestService {
         log.info("[CR][CANCEL] cancelEnvelope() — crId={}, requesterId={}", changeRequestId,
                 (requester != null ? requester.getId() : null));
         crDao.cancelEnvelope(changeRequestId, requester);
-        String comment = "Canceled with envelope by requester #" + requester.getId();
+        String comment;
+        if (requester != null && requester.getId() != null) {
+            comment = "Canceled with envelope by requester #" + requester.getId();
+        } else {
+            comment = "Canceled with envelope (requester unknown)";
+        }
         itemDao.cancelAllPending(changeRequestId, comment);
         log.info("[CR][CANCEL] OK");
     }

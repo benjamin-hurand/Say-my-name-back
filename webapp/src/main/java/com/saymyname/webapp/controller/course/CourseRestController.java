@@ -4,10 +4,13 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.course.AnswerAndNextQuestion;
@@ -16,7 +19,6 @@ import com.saymyname.core.model.course.CourseQuestionHistory;
 import com.saymyname.core.model.course.CourseStats;
 import com.saymyname.core.model.enums.KnowledgeStatus;
 import com.saymyname.core.util.InitialCrafter;
-import com.saymyname.infra.mail.ConsoleMailer;
 import com.saymyname.service.UserService;
 import com.saymyname.service.course.CourseQuestionHistoryService;
 import com.saymyname.service.course.CourseService;
@@ -26,8 +28,8 @@ import com.saymyname.webapp.dto.QuizEntryDto;
 import com.saymyname.webapp.dto.course.CourseAnswerAndNextQuestionDto;
 import com.saymyname.webapp.dto.course.CourseAnswerDto;
 import com.saymyname.webapp.dto.course.CourseDto;
-import com.saymyname.webapp.dto.course.CourseStatsDto;
 import com.saymyname.webapp.dto.course.CourseQuestionDto;
+import com.saymyname.webapp.dto.course.CourseStatsDto;
 import com.saymyname.webapp.dto.course.CreateCourseDto;
 import com.saymyname.webapp.dto.course.StatusCountsDto;
 import com.saymyname.webapp.mapper.PersonAttributeDtoMapper;
@@ -52,7 +54,6 @@ public class CourseRestController {
         private final PersonAttributeDtoMapper personAttributeDtoMapper;
         private final QuizEntryDtoMapper quizEntryDtoMapper;
         private final InitialCrafter initialCrafter;
-        private final Logger logger = LoggerFactory.getLogger(CourseRestController.class);
 
         public CourseRestController(
                         CourseService courseService,
@@ -83,18 +84,17 @@ public class CourseRestController {
          * Renvoie le dernier cours focal (lastAccessedAt) parmi les actifs, sinon
          * fallback. 204 si rien.
          */
-        @GetMapping("/{userId}/current")
-        public ResponseEntity<CourseDto> currentCourse(@PathVariable("userId") Long userId) {
-                logger.info("userId pour current course: {}", userId);
-                Optional<Course> c = courseService.getLastUsedCourse(userId);
+        @GetMapping("/me/current")
+        public ResponseEntity<CourseDto> currentCourse() {
+                Optional<Course> c = courseService.getLastUsedCourse();
                 return c.map(course -> ResponseEntity.ok(courseDtoMapper.toDto(course)))
                                 .orElseGet(() -> ResponseEntity.noContent().build());
         }
 
         /** Tous les cours ACTIFS de l’utilisateur (IN_PROGRESS). */
-        @GetMapping("/user/{userId}")
-        public ResponseEntity<List<CourseDto>> listByUser(@PathVariable("userId") Long userId) {
-                var list = courseService.findAllByUser(userId).stream()
+        @GetMapping("/me")
+        public ResponseEntity<List<CourseDto>> listByUser() {
+                var list = courseService.findAllByUser().stream()
                                 .map(courseDtoMapper::toDto)
                                 .toList();
                 return ResponseEntity.ok(list);
@@ -190,9 +190,9 @@ public class CourseRestController {
                 return ResponseEntity.ok(courseStatsDtoMapper.toDto(cs));
         }
 
-        @GetMapping("/user/{userId}/stats")
-        public ResponseEntity<List<CourseStatsDto>> statsByUser(@PathVariable("userId") Long userId) {
-                var list = courseService.getStatsForUser(userId).stream()
+        @GetMapping("/me/stats")
+        public ResponseEntity<List<CourseStatsDto>> statsByUser() {
+                var list = courseService.getStatsForUser().stream()
                                 .map(courseStatsDtoMapper::toDto)
                                 .toList();
                 return ResponseEntity.ok(list);

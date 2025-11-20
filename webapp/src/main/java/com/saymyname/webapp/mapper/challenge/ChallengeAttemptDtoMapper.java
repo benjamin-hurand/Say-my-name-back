@@ -2,13 +2,9 @@ package com.saymyname.webapp.mapper.challenge;
 
 import org.springframework.stereotype.Component;
 
-import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.challenge.ChallengeAttempt;
-import com.saymyname.core.model.challenge.ChallengeVersion;
-import com.saymyname.core.model.enums.AttemptStatus;
 import com.saymyname.core.util.InitialCrafter;
 import com.saymyname.webapp.dto.QuizEntryDto;
-import com.saymyname.webapp.dto.challenge.AddChallengeAttemptDto;
 import com.saymyname.webapp.dto.challenge.CreatedChallengeAttemptDto;
 import com.saymyname.webapp.mapper.QuizEntryDtoMapper;
 
@@ -21,14 +17,6 @@ public class ChallengeAttemptDtoMapper {
     public ChallengeAttemptDtoMapper(QuizEntryDtoMapper quizEntryDtoMapper, InitialCrafter initialCrafter) {
         this.quizEntryDtoMapper = quizEntryDtoMapper;
         this.initialCrafter = initialCrafter;
-    }
-
-    public ChallengeAttempt toModel(AddChallengeAttemptDto dto) {
-        return new ChallengeAttempt.Builder()
-                .withUser(new User.Builder().withId(dto.userId()).build())
-                .withChallengeVersion(new ChallengeVersion.Builder().withId(dto.challengeVersionId()).build())
-                .withStatus(AttemptStatus.IN_PROGRESS)
-                .build();
     }
 
     public CreatedChallengeAttemptDto toDto(ChallengeAttempt attempt) {
@@ -48,7 +36,6 @@ public class ChallengeAttemptDtoMapper {
 
         return new CreatedChallengeAttemptDto(
                 attempt.getId(),
-                attempt.getUser().getId(),
                 attempt.getChallengeVersion().getId(),
                 questionDtos);
     }

@@ -42,8 +42,9 @@ public class AuthLoginController {
     // ——— LOGIN CLASSIQUE —————————————————————————————
     @PostMapping("/login")
     public ResponseEntity<AuthResponseDto> login(@Valid @RequestBody LoginDto dto) {
+        String identifier = dto.identifier() == null ? null : dto.identifier().trim();
         Authentication authentication = authManager.authenticate(
-                new UsernamePasswordAuthenticationToken(dto.identifier(), dto.password()));
+                new UsernamePasswordAuthenticationToken(identifier, dto.password()));
 
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         User user = userDetails.getUser();

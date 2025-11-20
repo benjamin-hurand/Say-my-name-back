@@ -1,10 +1,10 @@
-// com.saymyname.service.PasswordService
 package com.saymyname.service;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.OffsetDateTime;
 import java.util.Base64;
+import java.util.List;
 import java.util.Optional;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.saymyname.core.model.auth.PasswordResetToken;
 import com.saymyname.core.model.auth.User;
 import com.saymyname.persistence.dao.UserDao;
+import com.saymyname.persistence.dao.UserEmailDao;
 import com.saymyname.persistence.dao.auth.PasswordResetTokenDao;
 import com.saymyname.service.port.Mailer;
 
@@ -26,19 +27,22 @@ import com.saymyname.service.port.Mailer;
 public class PasswordService {
 
     private final UserDao userDao;
+    private final UserEmailDao userEmailDao;
     private final PasswordResetTokenDao tokenDao;
     private final PasswordEncoder encoder;
     private final Mailer mailer;
-    private final String frontendBaseUrl; // <-- injecté depuis app.frontend.base-url
+    private final String frontendBaseUrl;
 
     private static final java.security.SecureRandom SECURE_RANDOM = new java.security.SecureRandom();
 
     public PasswordService(UserDao userDao,
+            UserEmailDao userEmailDao,
             PasswordResetTokenDao tokenDao,
             PasswordEncoder encoder,
             Mailer mailer,
             @Value("${app.frontend.base-url:http://localhost:5173}") String frontendBaseUrl) {
         this.userDao = userDao;
+        this.userEmailDao = userEmailDao;
         this.tokenDao = tokenDao;
         this.encoder = encoder;
         this.mailer = mailer;
@@ -50,9 +54,10 @@ public class PasswordService {
     /** 1) Mot de passe oublié : émettre un lien (silencieux si email inconnu). */
     @Transactional
     public void issueResetToken(String email, HttpServletRequest req) {
-        var uOpt = userDao.findOptionalByEmailIgnoreCase(email);
+        String input = email == null ? null : email.trim();
+        var uOpt = userDao.findOptionalByEmailIgnoreCase(input);
         if (uOpt.isEmpty())
-            return; // ne révèle pas l’existence du compte
+            return;
 
         User user = uOpt.get();
         String raw = randomUrlSafeToken(32); // 256 bits
@@ -69,7 +74,7 @@ public class PasswordService {
         tokenDao.save(token);
 
         String link = frontendBaseUrl + "/reset-password?token=" + raw;
-        mailer.sendPasswordResetEmail(user.getEmail(), link);
+        mailer.sendPasswordResetEmail(input, link);
     }
 
     /** 2) Reset via lien : consommer le token et définir le nouveau mdp. */
@@ -90,8 +95,13 @@ public class PasswordService {
         user.setPasswordVersion(user.getPasswordVersion() + 1);
         userDao.save(user);
 
+        // Marque ce token comme utilisé…
         tokenDao.markUsed(token.getId());
-        mailer.sendPasswordChangedInfoEmail(user.getEmail());
+        // …et invalide tous les autres tokens actifs du même utilisateur.
+        tokenDao.invalidateAllForUser(user.getId());
+
+        userEmailDao.findPrimaryEmailAddress(user.getId())
+                .ifPresent(primary -> mailer.sendPasswordChangedInfoEmail(primary));
     }
 
     /** 3) Changement depuis le profil (auth requis). */
@@ -105,6 +115,12 @@ public class PasswordService {
         user.setPassword(encoder.encode(newPassword));
         user.setPasswordVersion(user.getPasswordVersion() + 1);
         userDao.save(user);
+
+        // Invalide tous les tokens de reset actifs pour ce user (sécurité)
+        tokenDao.invalidateAllForUser(user.getId());
+
+        userEmailDao.findPrimaryEmailAddress(user.getId())
+                .ifPresent(primary -> mailer.sendPasswordChangedInfoEmail(primary));
     }
 
     // ---------- helpers ----------
@@ -136,10 +152,17 @@ public class PasswordService {
         if (password == null || password.length() < 12) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mot de passe trop court (≥12)");
         }
-        if (user.getEmail() != null) {
-            String local = user.getEmail().split("@")[0].toLowerCase();
-            if (password.toLowerCase().contains(local)) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Évite d'utiliser ton email dans le mdp");
+        List<String> emails = userEmailDao.listLoginAllowedEmails(user.getId());
+        if (emails == null || emails.isEmpty())
+            return;
+
+        String pwLower = password.toLowerCase();
+        for (String em : emails) {
+            int at = em.indexOf('@');
+            String local = at > 0 ? em.substring(0, at).toLowerCase() : em.toLowerCase();
+            if (pwLower.contains(local)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Évite d'utiliser ton email dans le mot de passe");
             }
         }
     }

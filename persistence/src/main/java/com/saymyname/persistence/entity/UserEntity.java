@@ -1,23 +1,16 @@
+// src/main/java/com/saymyname/persistence/entity/UserEntity.java
 package com.saymyname.persistence.entity;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 import com.saymyname.core.model.enums.SrsAlgorithm;
 import com.saymyname.persistence.entity.organization.PersonEntity;
+import com.saymyname.persistence.jpa.UuidBytesConverter;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "users")
@@ -28,11 +21,16 @@ public class UserEntity {
     @Column(nullable = false)
     private Long id;
 
-    @Column(nullable = false, length = 50)
-    private String username;
+    /**
+     * Identifiant public stable, exposable au front (UUID v4),
+     * stocké en BINARY(16) pour compacité/perfs.
+     */
+    @Convert(converter = UuidBytesConverter.class)
+    @Column(name = "public_id", columnDefinition = "BINARY(16)", nullable = false, unique = true, updatable = false)
+    private UUID publicId;
 
-    @Column(nullable = false, length = 100)
-    private String email;
+    @Column(nullable = false, length = 50, unique = true)
+    private String username;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "srs_algorithm", nullable = false, length = 16)
@@ -42,7 +40,7 @@ public class UserEntity {
     private String password;
 
     @Column(name = "password_version", nullable = false)
-    private int passwordVersion = 0; // défaut
+    private int passwordVersion = 0;
 
     @Column(name = "roles", nullable = false)
     private String roles; // comma-separated
@@ -50,41 +48,73 @@ public class UserEntity {
     @Column(name = "active", nullable = false)
     private Boolean active;
 
+    /** Relation 1→N : les emails du compte. */
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OrderBy("primary DESC, verifiedAt DESC, id ASC") // propriété JPA (pas le nom de colonne)
+    private List<UserEmailEntity> emails = new ArrayList<>();
+
+    /** Relation optionnelle vers Person si tu la conserves. */
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = true)
     private PersonEntity person;
 
     public UserEntity() {
+        // requis par JPA
     }
 
-    public UserEntity(Long id, String username, String email, SrsAlgorithm srsAlgorithm,
-            String password, int passwordVersion, String roles, Boolean active, PersonEntity person) {
+    public UserEntity(Long id,
+            String username,
+            SrsAlgorithm srsAlgorithm,
+            String password,
+            int passwordVersion,
+            String roles,
+            Boolean active) {
         this.id = id;
         this.username = username;
-        this.email = email;
-        this.srsAlgorithm = srsAlgorithm;
+        this.srsAlgorithm = (srsAlgorithm != null ? srsAlgorithm : SrsAlgorithm.SM2);
         this.password = password;
         this.passwordVersion = passwordVersion;
         this.roles = roles;
         this.active = active;
-        this.person = person;
     }
 
-    public UserEntity(Long id, String username, String email, SrsAlgorithm srsAlgorithm,
-            String password, int passwordVersion, String roles, Boolean active) {
-        this(id, username, email, srsAlgorithm, password, passwordVersion, roles, active, null);
+    // -------- Génération du publicId côté Java --------
+    @PrePersist
+    protected void onPrePersist() {
+        if (this.publicId == null) {
+            this.publicId = UUID.randomUUID();
+        }
     }
 
-    // Getters
+    // -------- Helpers relationnels --------
+    public void addEmail(UserEmailEntity email) {
+        if (email == null)
+            return;
+        emails.add(email);
+        email.setUser(this);
+    }
+
+    public void removeEmail(UserEmailEntity email) {
+        if (email == null)
+            return;
+        emails.remove(email);
+        email.setUser(null);
+    }
+
+    // -------- Getters/Setters --------
     public Long getId() {
         return id;
     }
 
-    public String getUsername() {
-        return username;
+    public UUID getPublicId() {
+        return publicId;
     }
 
-    public String getEmail() {
-        return email;
+    public void setPublicId(UUID publicId) {
+        this.publicId = publicId;
+    }
+
+    public String getUsername() {
+        return username;
     }
 
     public SrsAlgorithm getSrsAlgorithm() {
@@ -103,25 +133,24 @@ public class UserEntity {
         return roles;
     }
 
-    public Boolean isActive() {
+    public Boolean getActive() {
         return active;
+    }
+
+    public List<UserEmailEntity> getEmails() {
+        return emails;
     }
 
     public PersonEntity getPerson() {
         return person;
     }
 
-    // Setters
     public void setId(Long id) {
         this.id = id;
     }
 
     public void setUsername(String username) {
         this.username = username;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
     }
 
     public void setSrsAlgorithm(SrsAlgorithm srsAlgorithm) {
@@ -144,53 +173,55 @@ public class UserEntity {
         this.active = active;
     }
 
+    public void setEmails(List<UserEmailEntity> emails) {
+        this.emails.clear();
+        if (emails != null) {
+            for (UserEmailEntity e : emails)
+                addEmail(e);
+        }
+    }
+
     public void setPerson(PersonEntity person) {
         this.person = person;
     }
 
-    // Roles helpers
-    public List<String> getRolesList() {
-        return Arrays.stream(roles.split(",")).toList();
+    /** Alias utilitaire : valeur de l’email primaire (ou null). */
+    @Transient
+    public String getPrimaryEmailValue() {
+        for (UserEmailEntity e : emails) {
+            if (e.isPrimary())
+                return e.getEmail();
+        }
+        return null;
     }
 
-    public void setRolesList(List<String> rolesList) {
-        this.roles = String.join(",", rolesList);
-    }
-
+    // equals/hashCode sur id uniquement (recommandé pour JPA)
     @Override
     public boolean equals(Object o) {
         if (this == o)
             return true;
         if (!(o instanceof UserEntity that))
             return false;
-        return passwordVersion == that.passwordVersion
-                && Objects.equals(id, that.id)
-                && Objects.equals(username, that.username)
-                && Objects.equals(email, that.email)
-                && srsAlgorithm == that.srsAlgorithm
-                && Objects.equals(password, that.password)
-                && Objects.equals(roles, that.roles)
-                && Objects.equals(active, that.active)
-                && Objects.equals(person, that.person);
+        return Objects.equals(id, that.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, username, email, srsAlgorithm, password, passwordVersion, roles, active, person);
+        return Objects.hash(id);
     }
 
     @Override
     public String toString() {
         return "UserEntity{" +
                 "id=" + id +
+                ", publicId=" + (publicId != null ? publicId : "null") +
                 ", username='" + username + '\'' +
-                ", email='" + email + '\'' +
+                ", primaryEmail='" + getPrimaryEmailValue() + '\'' +
                 ", srsAlgorithm=" + srsAlgorithm +
-                ", password='" + password + '\'' +
                 ", passwordVersion=" + passwordVersion +
                 ", roles='" + roles + '\'' +
                 ", active=" + active +
-                ", person=" + person +
+                ", emailsCount=" + (emails != null ? emails.size() : 0) +
                 '}';
     }
 }

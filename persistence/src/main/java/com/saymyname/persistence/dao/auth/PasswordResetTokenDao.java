@@ -43,6 +43,11 @@ public class PasswordResetTokenDao {
         return mapper.toModel(repository.save(e));
     }
 
+    /** Invalide tous les tokens actifs pour un utilisateur donné. */
+    public int invalidateAllForUser(Long userId) {
+        return repository.invalidateAllActiveForUser(userId, OffsetDateTime.now());
+    }
+
     /** Récupération simple par id (utile pour debug/tests). */
     public PasswordResetToken findById(Long id) {
         return repository.findById(id).map(mapper::toModel)

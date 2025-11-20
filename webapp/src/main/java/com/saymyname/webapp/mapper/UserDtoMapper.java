@@ -1,5 +1,7 @@
 package com.saymyname.webapp.mapper;
 
+import java.util.UUID;
+
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.auth.User;
@@ -9,6 +11,14 @@ import com.saymyname.webapp.dto.UserDto;
 
 @Component
 public class UserDtoMapper {
+
+    private final UserEmailDtoMapper emailMapper;
+
+    public UserDtoMapper(UserEmailDtoMapper emailMapper) {
+        this.emailMapper = emailMapper;
+    }
+
+    // ---- Reduced ----
     public ReducedUserDto toReducedDto(User model) {
         return new ReducedUserDto(model.getId(), model.getUsername());
     }
@@ -21,31 +31,37 @@ public class UserDtoMapper {
         return new User.Builder().withId(userId).build();
     }
 
+    // ---- Full DTO ----
     public UserDto toDto(User user, OrgRole organizationRole) {
-        if (user == null) {
+        if (user == null)
             return null;
-        }
         return new UserDto(
-                user.getId(),
+                user.getPublicId() != null ? user.getPublicId().toString() : null,
                 user.getUsername(),
-                user.getEmail(),
+                user.getPrimaryEmailValue(), // primaryEmail
+                emailMapper.toDtoList(user.getEmails()), // emails
                 user.getSrsAlgorithm(),
-                user.getRoles() != null ? String.join(",", user.getRoles()) : null,
-                user.isActive(),
+                user.getRoles(), // roles déjà en CSV
+                Boolean.TRUE.equals(user.isActive()),
                 organizationRole);
     }
 
     public UserDto toDto(User user) {
-        if (user == null) {
+        return toDto(user, null);
+    }
+
+    // (Optionnel) DTO -> Model (utile pour des écrans admin ou profil)
+    public User toModel(UserDto dto) {
+        if (dto == null)
             return null;
-        }
-        return new UserDto(
-                user.getId(),
-                user.getUsername(),
-                user.getEmail(),
-                user.getSrsAlgorithm(),
-                user.getRoles() != null ? String.join(",", user.getRoles()) : null,
-                user.isActive(),
-                null);
+        return new User.Builder()
+                .withPublicId(dto.publicId() != null ? UUID.fromString(dto.publicId()) : null)
+                .withUsername(dto.username())
+                .withSrsAlgorithm(dto.srsAlgorithm())
+                .withRoles(dto.roles())
+                .withActive(dto.active())
+                // On reconstruit la liste d'emails du modèle à partir des DTOs
+                .withEmails(emailMapper.toModelList(dto.emails()))
+                .build();
     }
 }

@@ -1,7 +1,6 @@
 package com.saymyname.security.jwt;
 
 import java.util.Date;
-
 import javax.crypto.SecretKey;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -23,17 +22,21 @@ public class JwtService {
         this.key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(props.getSecret()));
     }
 
-    public String generateToken(String subject, int passwordVersion) {
+    /**
+     * Génère un JWT avec subject = publicId (String) et la claim passwordVersion.
+     */
+    public String generateToken(String subjectPublicId, int passwordVersion) {
         long now = System.currentTimeMillis();
         return Jwts.builder()
-                .setSubject(subject)
-                .setIssuedAt(new Date(now))
-                .setExpiration(new Date(now + props.getExpirationMs()))
+                .subject(subjectPublicId) // (jjwt >= 0.12) API moderne
+                .issuedAt(new Date(now))
+                .expiration(new Date(now + props.getExpirationMs()))
                 .claim("passwordVersion", passwordVersion)
                 .signWith(key)
                 .compact();
     }
 
+    /** Extrait le subject tel qu’émis. */
     public String extractSubject(String token) {
         return Jwts.parser()
                 .verifyWith(key)
@@ -43,6 +46,7 @@ public class JwtService {
                 .getSubject();
     }
 
+    /** Vérifie signature + expiration. */
     public boolean isValid(String token) {
         try {
             Jwts.parser().verifyWith(key).build().parseSignedClaims(token);

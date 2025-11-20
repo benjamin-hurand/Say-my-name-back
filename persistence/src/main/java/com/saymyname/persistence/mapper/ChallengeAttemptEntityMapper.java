@@ -45,4 +45,19 @@ public class ChallengeAttemptEntityMapper {
                 .withCorrectAnswers(entity.getCorrectAnswers())
                 .build();
     }
+
+    public ChallengeAttempt toModelNoUser(ChallengeAttemptEntity entity) {
+        if (entity == null) {
+            return null;
+        }
+        return new ChallengeAttempt.Builder()
+                .withId(entity.getId())
+                .withUser(userEntityMapper.toShortModel(entity.getUser()))
+                .withChallengeVersion(challengeVersionEntityMapper.toModel(entity.getChallengeVersion()))
+                .withStatus(entity.getStatus())
+                .withAttemptStart(entity.getAttemptStart())
+                .withAttemptEnd(entity.getAttemptEnd())
+                .withCorrectAnswers(entity.getCorrectAnswers())
+                .build();
+    }
 }

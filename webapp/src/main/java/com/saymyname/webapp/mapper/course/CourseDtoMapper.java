@@ -52,7 +52,6 @@ public class CourseDtoMapper {
         /** CreateCourseDto -> Model pour la création */
         public Course toModel(CreateCourseDto dto) {
                 return new Course.Builder()
-                                .withUser(new User.Builder().withId(dto.userId()).build())
                                 .withGameMode(new GameMode.Builder().withId(dto.gameModeId()).build())
                                 .withStatus(CourseStatus.IN_PROGRESS)
                                 .withPopulationScope(dto.populationScope() != null ? dto.populationScope()

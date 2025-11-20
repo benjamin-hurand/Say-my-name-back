@@ -2,7 +2,6 @@ package com.saymyname.webapp.mapper.challenge;
 
 import org.springframework.stereotype.Component;
 
-import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.challenge.Challenge;
 import com.saymyname.core.model.game.options.GameMode;
 import com.saymyname.webapp.dto.challenge.AddChallengeDto;
@@ -56,7 +55,6 @@ public class ChallengeDtoMapper {
                 .withDescription(dto.description())
                 .withGameMode(new GameMode.Builder().withId(dto.gameModeId()).build())
                 .withFilterAttribute(reducedGameAttributeFilterDtoMapper.toModel(dto.attributeFilter()))
-                .withCreator(new User.Builder().withId(dto.creatorId()).build())
                 .build();
     }
 }

@@ -16,10 +16,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.UUID;
 
-/**
- * Filtre d’authentification JWT appliqué à chaque requête.
- */
+/** Filtre d’authentification JWT appliqué à chaque requête. */
 @Component
 public class JwtTokenFilter extends OncePerRequestFilter {
 
@@ -41,31 +40,38 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             FilterChain filterChain)
             throws ServletException, IOException {
         try {
-            // 1. Récupérer le token (Authorization: Bearer xxx)
             String jwt = jwtHttpSupport.resolveBearerToken(request);
 
             if (jwt != null && jwtService.isValid(jwt)) {
-                // 2. Extraire le username
-                String username = jwtService.extractSubject(jwt);
+                String subject = jwtService.extractSubject(jwt);
 
-                // 3. Charger les détails utilisateur
-                UserDetails userDetails = userService.loadUserByUsername(username);
+                UserDetails userDetails;
 
-                // 4. Créer un objet Authentication
+                // 1) Nouveau format: subject = publicId (UUID)
+                try {
+                    UUID publicId = UUID.fromString(subject);
+                    userDetails = userService.loadUserByPublicId(publicId);
+                } catch (IllegalArgumentException notUuid) {
+                    // 2) Compat: ancien subject = id numérique
+                    try {
+                        Long userId = Long.parseLong(subject);
+                        userDetails = userService.loadUserById(userId);
+                    } catch (NumberFormatException notLong) {
+                        // 3) Compat legacy: subject = email/username
+                        userDetails = userService.loadUserByUsername(subject);
+                    }
+                }
+
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null,
-                        userDetails.getAuthorities());
+                        userDetails, null, userDetails.getAuthorities());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                // 5. Sauvegarder dans le contexte de sécurité
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         } catch (Exception e) {
             logger.error("Erreur dans JwtTokenFilter", e);
         }
 
-        // Toujours poursuivre la chaîne
         filterChain.doFilter(request, response);
     }
 }

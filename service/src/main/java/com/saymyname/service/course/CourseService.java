@@ -18,6 +18,7 @@ import com.saymyname.core.exception.course.CourseAlreadyExistsException;
 import com.saymyname.core.exception.course.NextQuestionUnavailableException;
 import com.saymyname.core.exception.course.NoMoreQuestionsException;
 import com.saymyname.core.exception.course.QuestionAlreadyAnsweredException;
+import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.course.AnswerAndNextQuestion;
 import com.saymyname.core.model.course.AnswerValidationResult;
 import com.saymyname.core.model.course.Course;
@@ -30,6 +31,7 @@ import com.saymyname.core.model.enums.PoolType;
 import com.saymyname.core.model.enums.PopulationScope;
 import com.saymyname.persistence.dao.course.CourseDao;
 import com.saymyname.service.PersonService;
+import com.saymyname.service.UserService;
 import com.saymyname.service.UserSubscriptionService;
 
 @Service
@@ -40,6 +42,7 @@ public class CourseService {
     private final CourseQuestionHistoryService courseQuestionHistoryService;
     private final UserSubscriptionService userSubscriptionService;
     private final PersonService personService;
+    private final UserService userService;
 
     // Statuts actifs = uniquement IN_PROGRESS
     private static final List<CourseStatus> ACTIVE_STATUSES = List.of(CourseStatus.IN_PROGRESS);
@@ -53,46 +56,60 @@ public class CourseService {
 
     public CourseService(CourseDao courseDao, KnowledgeService knowledgeService,
             CourseQuestionHistoryService courseQuestionHistoryService, UserSubscriptionService userSubscriptionService,
-            PersonService personService) {
+            PersonService personService, UserService userService) {
         this.courseDao = courseDao;
         this.knowledgeService = knowledgeService;
         this.courseQuestionHistoryService = courseQuestionHistoryService;
         this.userSubscriptionService = userSubscriptionService;
         this.personService = personService;
-    }
-
-    /** Legacy: premier IN_PROGRESS si besoin. */
-    public Optional<Course> getCurrentCourse(Long userId) {
-        return courseDao.getCurrentCourse(userId);
+        this.userService = userService;
     }
 
     /** Dernier cours “focus” (lastAccessedAt) parmi les actifs, sinon fallback. */
     @Transactional(readOnly = true)
-    public Optional<Course> getLastUsedCourse(Long userId) {
+    public Optional<Course> getLastUsedCourse() {
+        Long userId = userService.getCurrentIdOrThrow();
+
+        // 1) Dernier cours “focus/last accessed” parmi les actifs
         Optional<Course> focused = courseDao.findLastAccessedFirstActive(userId, ACTIVE_STATUSES);
         if (focused.isPresent())
             return focused;
 
+        // 2) Sinon, premier actif par “updatedAt”
         var actives = courseDao.findAllByUserAndStatusesOrderedByUpdatedAt(userId, ACTIVE_STATUSES);
         if (!actives.isEmpty())
             return Optional.of(actives.get(0));
 
+        // 3) Sinon, éventuellement le “current course” (si ta notion diffère)
         return courseDao.getCurrentCourse(userId);
     }
 
     @Transactional
-    public Course createCourse(Course course) {
+    public Course createCourse(Course proto) {
+        // 🔐 Attache l’utilisateur courant (dérivé du JWT)
+        User me = userService.getCurrentAuthenticatedUserOrThrow();
+        proto.setUser(me);
+
+        // (Optionnel) garde-fous si jamais le mapper ne l’a pas déjà fait
+        if (proto.getPopulationScope() == null) {
+            proto.setPopulationScope(PopulationScope.FOLLOWED);
+        }
+        if (proto.getStatus() == null) {
+            proto.setStatus(CourseStatus.IN_PROGRESS);
+        }
+
+        // Unicité : (user, mode, scope) en IN_PROGRESS
         var existing = courseDao.findFirstByUserModeScopeAndStatus(
-                course.getUser().getId(),
-                course.getGameMode().getId(),
-                course.getPopulationScope(),
+                me.getId(),
+                proto.getGameMode().getId(),
+                proto.getPopulationScope(),
                 CourseStatus.IN_PROGRESS);
 
         if (existing.isPresent()) {
             throw new CourseAlreadyExistsException();
         }
 
-        Course created = courseDao.saveCourse(course);
+        Course created = courseDao.saveCourse(proto);
         knowledgeService.insertBatchOfTenKnowledges(created);
         return created;
     }
@@ -102,8 +119,19 @@ public class CourseService {
      */
     @Transactional
     public Course createOrResume(Course proto) {
+        // 🔐 Attache l’utilisateur courant (dérivé du JWT)
+        User me = userService.getCurrentAuthenticatedUserOrThrow();
+        proto.setUser(me);
+
+        if (proto.getPopulationScope() == null) {
+            proto.setPopulationScope(PopulationScope.FOLLOWED);
+        }
+        if (proto.getStatus() == null) {
+            proto.setStatus(CourseStatus.IN_PROGRESS);
+        }
+
         var existing = courseDao.findFirstByUserModeScopeAndStatus(
-                proto.getUser().getId(),
+                me.getId(),
                 proto.getGameMode().getId(),
                 proto.getPopulationScope(),
                 CourseStatus.IN_PROGRESS);
@@ -216,21 +244,22 @@ public class CourseService {
                 .build();
     }
 
-    /**
-     * Hub : ne renvoie que les cours actifs (IN_PROGRESS), triés par lastAccessedAt
-     * desc (fallback updatedAt).
-     */
     @Transactional(readOnly = true)
-    public List<Course> findAllByUser(Long userId) {
+    public List<Course> findAllByUser() {
+        Long userId = userService.getCurrentIdOrThrow();
+
+        // 1) Triés par “last access” si dispo
         var list = courseDao.findAllByUserAndStatusesOrderedByLastAccess(userId, ACTIVE_STATUSES);
         if (!list.isEmpty())
             return list;
+
+        // 2) Sinon, fallback sur “updatedAt”
         return courseDao.findAllByUserAndStatusesOrderedByUpdatedAt(userId, ACTIVE_STATUSES);
     }
 
     @Transactional(readOnly = true)
-    public List<CourseStats> getStatsForUser(Long userId) {
-        return findAllByUser(userId).stream()
+    public List<CourseStats> getStatsForUser() {
+        return findAllByUser().stream()
                 .map(c -> getStats(c.getId()))
                 .toList();
     }

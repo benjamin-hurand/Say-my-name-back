@@ -1,16 +1,13 @@
 package com.saymyname.webapp.mapper;
 
+import org.springframework.stereotype.Component;
+
 import com.saymyname.core.model.people.PersonAttribute;
 import com.saymyname.webapp.dto.PersonAttributeDto;
 import com.saymyname.webapp.dto.PersonAttributeLiteDto;
 import com.saymyname.webapp.dto.ReducedPersonAttributeDto;
-import com.saymyname.webapp.dto.changerequest.AttributePreviewDto;
 import com.saymyname.webapp.dto.person.PersonAttributeMinimalDto;
 import com.saymyname.webapp.dto.profile.PersonAttributePatch;
-
-import java.util.List;
-
-import org.springframework.stereotype.Component;
 
 @Component
 public class PersonAttributeDtoMapper {

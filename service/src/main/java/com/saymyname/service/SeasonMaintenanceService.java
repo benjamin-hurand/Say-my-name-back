@@ -73,7 +73,7 @@ public class SeasonMaintenanceService {
         // Si personAttributeService lit l’OrgContext, on sécurise :
         try (var __ = useOrg(orgId)) {
             // 1) DÉCROCHER d’abord les FK CR→PA vers les tombstones expirées
-            int nulled = changeRequestItemService.detachExpiredTombstoneLinksForResolved(cutoffExclusive);
+            changeRequestItemService.detachExpiredTombstoneLinksForResolved(cutoffExclusive);
             // 2) Purge des PA
             personAttributeService.hardDeleteExpiredPendingAttributes(cutoffExclusive);
         } catch (Exception e) {
