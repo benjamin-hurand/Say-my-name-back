@@ -25,7 +25,7 @@ public class OrgAccess {
     }
 
     public boolean canAdmin() {
-        return check(OrgRole.CLIENT_ADMIN);
+        return check(OrgRole.ADMIN);
     }
 
     private boolean check(OrgRole required) {

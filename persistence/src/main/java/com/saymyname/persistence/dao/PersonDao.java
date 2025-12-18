@@ -2,8 +2,10 @@ package com.saymyname.persistence.dao;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.saymyname.core.model.enums.EmailStatus;
 import com.saymyname.core.model.enums.PhotoStatus;
 import com.saymyname.core.model.game.options.GameOptions;
 import com.saymyname.core.model.people.Person;
@@ -27,6 +30,8 @@ import com.saymyname.persistence.entity.organization.PhotoEntity;
 import com.saymyname.persistence.entity.organization.attribute.AttributeEntity;
 import com.saymyname.persistence.entity.organization.subscription.UserSubscriptionEntity;
 import com.saymyname.persistence.mapper.PersonEntityMapper;
+import com.saymyname.persistence.repository.PersonEmailRepository;
+import com.saymyname.persistence.repository.PersonEmailRepository.PersonEmailStatusRow;
 import com.saymyname.persistence.repository.PersonRepository;
 import com.saymyname.persistence.repository.UserSubscriptionRepository;
 
@@ -52,16 +57,19 @@ public class PersonDao {
     private final PersonRepository personRepository;
     private final PersonEntityMapper personEntityMapper;
     private final UserSubscriptionRepository userSubscriptionRepository;
+    private final PersonEmailRepository personEmailRepository;
 
     @PersistenceContext
     private EntityManager em;
 
     public PersonDao(PersonRepository personRepository,
             PersonEntityMapper personEntityMapper,
-            UserSubscriptionRepository userSubscriptionRepository) {
+            UserSubscriptionRepository userSubscriptionRepository,
+            PersonEmailRepository personEmailRepository) {
         this.personRepository = personRepository;
         this.personEntityMapper = personEntityMapper;
         this.userSubscriptionRepository = userSubscriptionRepository;
+        this.personEmailRepository = personEmailRepository;
     }
 
     // ==================== Méthodes existantes ====================
@@ -103,11 +111,7 @@ public class PersonDao {
         if (personId == null)
             return Optional.empty();
 
-        // (facultatif) petit "guard" d'existence si tu as un existsById() scoped org.
-        // Sans ça, c'est OK de laisser le mapping retourner empty si rien n'est trouvé.
-        // if (!personRepository.existsById(personId)) return Optional.empty();
-
-        // 1) Précharges ciblées (tu les as déjà)
+        // 1) Précharges ciblées
         preloadAttributesGraph(personId);
         preloadPhotos(personId);
         preloadUser(personId);
@@ -163,13 +167,13 @@ public class PersonDao {
 
         List<Predicate> whereCount = buildAttributeFilters(criteria, cb, cqCount, rootC);
 
-        // --- Nouveau : FollowFilter tri-état ---
+        // FollowFilter tri-état
         if (criteria != null && criteria.getFollowFilter() != null) {
             switch (criteria.getFollowFilter()) {
                 case FOLLOWED -> whereCount.add(existsFollowed(cb, cqCount, rootC, userId));
                 case UNFOLLOWED -> whereCount.add(cb.not(existsFollowed(cb, cqCount, rootC, userId)));
                 case ALL -> {
-                    /* pas de prédicat supplémentaire */ }
+                    /* no-op */ }
             }
         }
 
@@ -185,17 +189,16 @@ public class PersonDao {
 
         List<Predicate> where = buildAttributeFilters(criteria, cb, cq, root);
 
-        // --- Nouveau : FollowFilter tri-état ---
         if (criteria != null && criteria.getFollowFilter() != null) {
             switch (criteria.getFollowFilter()) {
                 case FOLLOWED -> where.add(existsFollowed(cb, cq, root, userId));
                 case UNFOLLOWED -> where.add(cb.not(existsFollowed(cb, cq, root, userId)));
                 case ALL -> {
-                    /* pas de prédicat supplémentaire */ }
+                    /* no-op */ }
             }
         }
 
-        // Sous-requête: max(approvedAt) pour cette person avec status=APPROVED
+        // Sous-requête: max(approvedAt) pour status=APPROVED
         Subquery<LocalDateTime> maxApprovedAt = cq.subquery(LocalDateTime.class);
         Root<PhotoEntity> phMax = maxApprovedAt.from(PhotoEntity.class);
         maxApprovedAt.select(cb.greatest(phMax.<LocalDateTime>get("approvedAt")));
@@ -255,7 +258,7 @@ public class PersonDao {
 
         List<Predicate> where = buildAttributeFiltersForAdmin(criteria, cb, cq, root);
 
-        // Sous-requête: max(approvedAt) pour cette person avec status=APPROVED
+        // Sous-requête: max(approvedAt) pour status=APPROVED
         Subquery<LocalDateTime> maxApprovedAt = cq.subquery(LocalDateTime.class);
         Root<PhotoEntity> phMax = maxApprovedAt.from(PhotoEntity.class);
         maxApprovedAt.select(cb.greatest(phMax.<LocalDateTime>get("approvedAt")));
@@ -301,33 +304,30 @@ public class PersonDao {
         CriteriaQuery<Long> cq = cb.createQuery(Long.class);
         Root<PersonEntity> root = cq.from(PersonEntity.class);
 
-        // Filtres attributaires (y compris le cas spécial LIKE avec attributeId = -1)
+        // Filtres attributaires (y compris LIKE global)
         List<Predicate> where = buildAttributeFilters(criteria, cb, cq, root);
 
-        // --- Nouveau : FollowFilter tri-état (comme findPersonsPage) ---
+        // FollowFilter tri-état
         if (criteria != null && criteria.getFollowFilter() != null) {
             switch (criteria.getFollowFilter()) {
                 case FOLLOWED -> {
                     if (userId != null) {
                         where.add(existsFollowed(cb, cq, root, userId));
                     }
-                    // si userId est null, on ne peut pas appliquer FOLLOWED => on n'ajoute rien
                 }
                 case UNFOLLOWED -> {
                     if (userId != null) {
                         where.add(cb.not(existsFollowed(cb, cq, root, userId)));
                     }
-                    // si userId est null, on ne peut pas appliquer UNFOLLOWED => on n'ajoute rien
                 }
                 case ALL -> {
-                    /* aucun prédicat supplémentaire */ }
+                    /* no-op */ }
             }
         }
 
         cq.select(root.get("id")).distinct(true)
                 .where(where.toArray(new Predicate[0]));
 
-        // Tri identique à findPersonsPage
         applySort(criteria, cb, cq, root);
 
         return em.createQuery(cq).getResultList();
@@ -355,17 +355,13 @@ public class PersonDao {
         Root<PersonAttributeEntity> pa = cq.from(PersonAttributeEntity.class);
         Join<PersonAttributeEntity, AttributeEntity> a = pa.join("attribute", JoinType.INNER);
 
-        // ⏱️ now côté DB
         var now = cb.currentTimestamp();
 
         List<Predicate> where = new ArrayList<>();
-        // Batch de personnes
         where.add(pa.get("person").get("id").in(personIds));
-        // Actifs runtime
         where.add(cb.isFalse(pa.get("pendingDelete")));
         where.add(cb.lessThanOrEqualTo(pa.get("validFrom"), now));
         where.add(cb.or(cb.isNull(pa.get("validTo")), cb.greaterThan(pa.get("validTo"), now)));
-        // Attributs primaires uniquement
         where.add(cb.isTrue(a.get("primaryField")));
 
         cq.multiselect(
@@ -373,8 +369,7 @@ public class PersonDao {
                 a.get("id").alias("attributeId"),
                 pa.<String>get("value").alias("value"),
                 a.get("displayOrder").alias("displayOrder"),
-                a.get("primaryField").alias("primaryField") // ⬅️ NEW
-        )
+                a.get("primaryField").alias("primaryField"))
                 .where(cb.and(where.toArray(new Predicate[0])))
                 .orderBy(
                         cb.asc(pa.get("person").get("id")),
@@ -387,8 +382,7 @@ public class PersonDao {
                         t.get("attributeId", Long.class),
                         t.get("value", String.class),
                         t.get("displayOrder", Integer.class),
-                        t.get("primaryField", Boolean.class) // ⬅️ NEW
-                ))
+                        t.get("primaryField", Boolean.class)))
                 .toList();
     }
 
@@ -408,35 +402,26 @@ public class PersonDao {
         Root<PersonAttributeEntity> pa = cq.from(PersonAttributeEntity.class);
         Join<PersonAttributeEntity, AttributeEntity> a = pa.join("attribute", JoinType.INNER);
 
-        // ⏱️ now DB-side
         var now = cb.currentTimestamp();
 
         List<Predicate> where = new ArrayList<>();
-        // Batch de personnes
         where.add(pa.get("person").get("id").in(personIds));
-        // Actifs runtime
         where.add(cb.isFalse(pa.get("pendingDelete")));
         where.add(cb.lessThanOrEqualTo(pa.get("validFrom"), now));
         where.add(cb.or(cb.isNull(pa.get("validTo")), cb.greaterThan(pa.get("validTo"), now)));
-
-        // 🚫 exclure les attributs primaires des "extras"
         where.add(cb.isFalse(a.get("primaryField")));
 
-        // 1) attributs explicitement demandés dans la requête
         Predicate byIds = cb.disjunction();
         if (attributeIdsFromRequest != null && !attributeIdsFromRequest.isEmpty()) {
             byIds = a.get("id").in(attributeIdsFromRequest);
         }
 
-        // 2) catégories si demandé
         Predicate byCategory = includeCategories ? cb.isTrue(a.get("category")) : cb.disjunction();
 
-        // 3) attributs contextuels globaux (filter=true OR sort=true)
         Predicate byFilterSort = includeFilterSortAttributes
                 ? cb.or(cb.isTrue(a.get("filter")), cb.isTrue(a.get("sort")))
                 : cb.disjunction();
 
-        // si rien n’est demandé, on ne renvoie rien
         if (!includeCategories
                 && !includeFilterSortAttributes
                 && (attributeIdsFromRequest == null || attributeIdsFromRequest.isEmpty())) {
@@ -448,8 +433,7 @@ public class PersonDao {
                 a.get("id").alias("attributeId"),
                 pa.<String>get("value").alias("value"),
                 a.get("displayOrder").alias("displayOrder"),
-                a.get("primaryField").alias("primaryField") // ⬅️ NEW (sera false ici)
-        )
+                a.get("primaryField").alias("primaryField"))
                 .where(
                         cb.and(where.toArray(new Predicate[0])),
                         cb.or(byIds, byCategory, byFilterSort))
@@ -464,9 +448,41 @@ public class PersonDao {
                         t.get("attributeId", Long.class),
                         t.get("value", String.class),
                         t.get("displayOrder", Integer.class),
-                        t.get("primaryField", Boolean.class) // ⬅️ NEW
-                ))
+                        t.get("primaryField", Boolean.class)))
                 .toList();
+    }
+
+    // ==================== NEW: Email status batch ====================
+
+    /**
+     * Récupère le statut e-mail agrégé pour un batch de personnes (une requête par
+     * page).
+     * 
+     * @return Map personId -> EmailStatus
+     */
+    @Transactional(readOnly = true)
+    public Map<Long, EmailStatus> fetchEmailStatusForPersons(List<Long> personIds) {
+        if (personIds == null || personIds.isEmpty()) {
+            return Map.of();
+        }
+        List<PersonEmailStatusRow> rows = personEmailRepository.fetchEmailStatusBatch(personIds);
+
+        Map<Long, EmailStatus> out = new HashMap<>(rows.size());
+        for (PersonEmailStatusRow r : rows) {
+            out.put(r.getPersonId(), mapStatusCode(r.getStatus()));
+        }
+        return out;
+    }
+
+    private static EmailStatus mapStatusCode(Integer code) {
+        if (code == null)
+            return EmailStatus.NONE;
+        return switch (code.intValue()) {
+            case 3 -> EmailStatus.PRIMARY_VERIFIED;
+            case 2 -> EmailStatus.PRIMARY;
+            case 1 -> EmailStatus.HAS;
+            default -> EmailStatus.NONE;
+        };
     }
 
     // ==================== Helpers Criteria ====================
@@ -495,13 +511,10 @@ public class PersonDao {
             String op = f.getOperator() == null ? "IN" : f.getOperator().toUpperCase();
             List<String> vals = (f.getValues() == null) ? List.of() : f.getValues();
 
-            // ---- Cas spécial: recherche globale texte (attributeId = -1, LIKE) ----
+            // LIKE global (attributeId = -1)
             if (attrId != null && attrId == GLOBAL_TEXT_ATTR_ID && "LIKE".equals(op)) {
                 if (!vals.isEmpty()) {
                     String pattern = toPatternLike(vals.get(0));
-
-                    // EXISTS: attributs (primaires OU category OU filter OU sort) dont la valeur
-                    // matche
                     Subquery<Long> sq = cq.subquery(Long.class);
                     Root<PersonAttributeEntity> pa = sq.from(PersonAttributeEntity.class);
                     Join<PersonAttributeEntity, AttributeEntity> a = pa.join("attribute", JoinType.INNER);
@@ -520,10 +533,10 @@ public class PersonDao {
 
                     predicates.add(cb.exists(sq));
                 }
-                continue; // filtre traité
+                continue;
             }
 
-            // ---- Cas “classique” d'attribut spécifique ----
+            // Cas “classique”
             if (attrId == null)
                 continue;
 
@@ -580,7 +593,7 @@ public class PersonDao {
     private <T> void applySort(PersonSearchCriteria criteria, CriteriaBuilder cb, CriteriaQuery<T> cq,
             Root<PersonEntity> root) {
         if (criteria == null || criteria.getSort() == null || criteria.getSort().isEmpty()) {
-            cq.orderBy(cb.asc(root.get("id"))); // défaut
+            cq.orderBy(cb.asc(root.get("id")));
             return;
         }
         List<Order> orders = new ArrayList<>();
@@ -589,7 +602,6 @@ public class PersonDao {
             String dir = (s.getDirection() == null ? "ASC" : s.getDirection().toUpperCase());
 
             if ("ATTRIBUTE".equalsIgnoreCase(s.getKind()) && s.getAttributeId() != null) {
-                // sous-select valeur de tri (stratégie simple: LEAST sur les multiples)
                 Subquery<String> sub = cq.subquery(String.class);
                 Root<PersonAttributeEntity> pa = sub.from(PersonAttributeEntity.class);
                 sub.select(cb.least(pa.<String>get("value")));
@@ -627,7 +639,7 @@ public class PersonDao {
             String op = f.getOperator() == null ? "IN" : f.getOperator().toUpperCase();
             List<String> vals = (f.getValues() == null) ? List.of() : f.getValues();
 
-            // ---- Cas spécial: recherche globale texte (attributeId = -1, LIKE) ----
+            // LIKE global (attributeId = -1)
             if (attrId != null && attrId == -1L && "LIKE".equals(op)) {
                 if (!vals.isEmpty()) {
                     String pattern = toPatternLike(vals.get(0));

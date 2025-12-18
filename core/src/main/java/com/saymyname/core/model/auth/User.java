@@ -16,7 +16,7 @@ public class User {
     /** Identifiant public stable (UUID), exposable côté front. */
     private UUID publicId;
 
-    private String username;
+    private String displayName;
     private SrsAlgorithm srsAlgorithm = SrsAlgorithm.SM2;
     private String password;
     /** Version de mot de passe pour invalider les JWT existants. */
@@ -35,7 +35,7 @@ public class User {
     private User(Builder b) {
         this.id = b.id;
         this.publicId = b.publicId;
-        this.username = b.username;
+        this.displayName = b.displayName;
         this.srsAlgorithm = b.srsAlgorithm != null ? b.srsAlgorithm : SrsAlgorithm.SM2;
         this.password = b.password;
         this.passwordVersion = b.passwordVersion;
@@ -53,8 +53,8 @@ public class User {
         return publicId;
     }
 
-    public String getUsername() {
-        return username;
+    public String getDisplayName() {
+        return displayName;
     }
 
     public SrsAlgorithm getSrsAlgorithm() {
@@ -121,8 +121,8 @@ public class User {
         this.publicId = publicId;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
     public void setSrsAlgorithm(SrsAlgorithm srsAlgorithm) {
@@ -237,7 +237,7 @@ public class User {
     public static class Builder {
         private Long id;
         private UUID publicId;
-        private String username;
+        private String displayName;
         private SrsAlgorithm srsAlgorithm = SrsAlgorithm.SM2;
         private String password;
         private int passwordVersion = 0;
@@ -255,8 +255,8 @@ public class User {
             return this;
         }
 
-        public Builder withUsername(String username) {
-            this.username = username;
+        public Builder withDisplayName(String displayName) {
+            this.displayName = displayName;
             return this;
         }
 
@@ -316,7 +316,7 @@ public class User {
         return "User{" +
                 "id=" + id +
                 ", publicId=" + (publicId != null ? publicId : "null") +
-                ", username='" + username + '\'' +
+                ", displayName='" + displayName + '\'' +
                 ", srsAlgorithm=" + srsAlgorithm +
                 ", passwordVersion=" + passwordVersion +
                 ", roles='" + roles + '\'' +

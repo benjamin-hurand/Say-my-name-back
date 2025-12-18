@@ -27,7 +27,7 @@ public interface ChallengeQuestionRepository extends JpaRepository<ChallengeQues
         JOIN challenge_versions cv
           ON cv.challenge_id      = c.id
          AND cv.organization_id    = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
-        JOIN persons_attributes pa
+        JOIN person_attributes pa
           ON pa.attribute_id       = c.filter_id
          AND pa.organization_id    = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
         JOIN persons p

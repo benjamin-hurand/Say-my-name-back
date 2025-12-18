@@ -9,8 +9,11 @@ import com.saymyname.webapp.dto.changerequest.ChangeRequestSummaryDto;
  * Détails complet d’une personne côté Admin :
  * - person (avec photos + attributes déjà dans PersonDto)
  * - changeRequests (facultatif selon query param)
+ * - emails (liste des e-mails rattachés à la personne dans l’organisation
+ * courante)
  */
 public record AdminPersonDetailsDto(
         PersonDto person,
-        List<ChangeRequestSummaryDto> changeRequests) {
+        List<ChangeRequestSummaryDto> changeRequests,
+        List<PersonEmailDto> emails) {
 }

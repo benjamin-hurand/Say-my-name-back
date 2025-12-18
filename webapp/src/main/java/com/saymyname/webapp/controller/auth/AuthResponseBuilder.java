@@ -28,7 +28,7 @@ public class AuthResponseBuilder {
     }
 
     public AuthResponseDto build(User user) {
-        // subject = publicId (UUID) — robuste si email/username changent
+        // subject = publicId (UUID) — robuste si email change
         final UUID pubId = user.getPublicId();
         final String subject = (pubId != null) ? pubId.toString() : String.valueOf(user.getId());
 
@@ -42,7 +42,7 @@ public class AuthResponseBuilder {
         return new AuthResponseDto(
                 token,
                 (pubId != null ? pubId.toString() : null),
-                user.getUsername(),
+                user.getDisplayName(),
                 user.isAdmin(),
                 orgDtos);
     }

@@ -6,9 +6,9 @@ import java.util.List;
 import com.saymyname.webapp.dto.organization.UserOrganizationDto;
 
 public record AuthResponseDto(
-        String bearerToken,
-        String publicUserId,
-        String username,
-        boolean isAdmin,
-        List<UserOrganizationDto> organizations) {
+                String bearerToken,
+                String publicUserId,
+                String displayName,
+                boolean isAdmin,
+                List<UserOrganizationDto> organizations) {
 }

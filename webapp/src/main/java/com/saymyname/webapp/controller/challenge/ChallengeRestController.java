@@ -59,7 +59,7 @@ public class ChallengeRestController {
     }
 
     @PostMapping("/create")
-    @PreAuthorize("@orgSecurity.hasRole(null, 'EDITOR') or @orgSecurity.hasRole(null, 'CLIENT_ADMIN')")
+    @PreAuthorize("@orgSecurity.hasRole(null, 'EDITOR') or @orgSecurity.hasRole(null, 'ADMIN') or @orgSecurity.hasRole(null, 'OWNER')")
     public ResponseEntity<?> createChallenge(@RequestBody AddChallengeDto challengeDto) {
         try {
             // Mapper le DTO en modèle de domaine

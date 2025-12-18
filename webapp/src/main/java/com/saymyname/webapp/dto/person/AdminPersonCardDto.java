@@ -1,12 +1,17 @@
+// src/main/java/com/saymyname/webapp/dto/person/AdminPersonCardDto.java
 package com.saymyname.webapp.dto.person;
 
 import java.util.List;
 
+import com.saymyname.core.model.enums.EmailStatus;
+
 public record AdminPersonCardDto(
-                Long idPerson,
-                String photoSmallUrl,
-                String photoLargeUrl,
-                List<PersonAttributeExtraDto> primaryAttributes,
-                List<PersonAttributeExtraDto> extraAttributes,
-                boolean hasPendingChangeRequests) {
+        Long idPerson,
+        String photoSmallUrl,
+        String photoLargeUrl,
+        String displayName,
+        List<PersonAttributeExtraDto> primaryAttributes,
+        List<PersonAttributeExtraDto> extraAttributes,
+        EmailStatus emailStatus,
+        boolean hasPendingChangeRequests) {
 }

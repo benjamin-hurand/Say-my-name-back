@@ -4,19 +4,38 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 import com.saymyname.core.model.enums.OrgRole;
+import com.saymyname.core.model.people.Person;
 
 public class UserOrganization {
+
     private Long userId;
     private Long organizationId;
     private OrgRole role;
     private LocalDateTime createdAt;
-    private Organization organization; // optionnel si tu veux embarquer l’orga complète
+
+    /**
+     * Id de la Person liée à cet utilisateur dans cette organisation (nullable).
+     * Correspond à user_organizations.person_id.
+     */
+    private Long personId;
+
+    /**
+     * Agrégat optionnel si tu veux embarquer la Person complète.
+     */
+    private Person person;
+
+    /**
+     * Agrégat optionnel si tu veux embarquer l’Organisation complète.
+     */
+    private Organization organization;
 
     private UserOrganization(Builder builder) {
         this.userId = builder.userId;
         this.organizationId = builder.organizationId;
         this.role = builder.role;
         this.createdAt = builder.createdAt;
+        this.personId = builder.personId;
+        this.person = builder.person;
         this.organization = builder.organization;
     }
 
@@ -36,6 +55,14 @@ public class UserOrganization {
         return createdAt;
     }
 
+    public Long getPersonId() {
+        return personId;
+    }
+
+    public Person getPerson() {
+        return person;
+    }
+
     public Organization getOrganization() {
         return organization;
     }
@@ -45,10 +72,13 @@ public class UserOrganization {
     }
 
     public static class Builder {
+
         private Long userId;
         private Long organizationId;
         private OrgRole role;
         private LocalDateTime createdAt;
+        private Long personId;
+        private Person person;
         private Organization organization;
 
         public Builder userId(Long userId) {
@@ -68,6 +98,16 @@ public class UserOrganization {
 
         public Builder createdAt(LocalDateTime createdAt) {
             this.createdAt = createdAt;
+            return this;
+        }
+
+        public Builder personId(Long personId) {
+            this.personId = personId;
+            return this;
+        }
+
+        public Builder person(Person person) {
+            this.person = person;
             return this;
         }
 
@@ -103,6 +143,7 @@ public class UserOrganization {
                 ", organizationId=" + organizationId +
                 ", role='" + role + '\'' +
                 ", createdAt=" + createdAt +
+                ", personId=" + personId +
                 '}';
     }
 }

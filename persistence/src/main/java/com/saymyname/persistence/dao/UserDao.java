@@ -1,3 +1,4 @@
+// src/main/java/com/saymyname/persistence/dao/UserDao.java
 package com.saymyname.persistence.dao;
 
 import java.util.Optional;
@@ -18,6 +19,7 @@ import jakarta.transaction.Transactional;
 
 @Repository
 public class UserDao {
+
     private final UserRepository userRepository;
     private final UserEmailRepository userEmailRepository;
     private final UserEntityMapper userEntityMapper;
@@ -30,14 +32,15 @@ public class UserDao {
         this.userEntityMapper = userEntityMapper;
     }
 
+    // -------- Lecture --------
+
     public User findById(Long id) {
-        // charge les emails avec un fetch join pour éviter LAZY hors session
         return userRepository.findWithEmailsById(id)
                 .map(userEntityMapper::toModel)
                 .orElseThrow(() -> new EntityNotFoundException("Entity user not found with id " + id));
     }
 
-    // --- NEW: accès par publicId ---
+    /** Accès par UUID public (avec fetch des emails). */
     public Optional<User> findOptionalByPublicId(UUID publicId) {
         return userRepository.findWithEmailsByPublicId(publicId)
                 .map(userEntityMapper::toModel);
@@ -48,52 +51,50 @@ public class UserDao {
                 .orElseThrow(() -> new EntityNotFoundException("Entity user not found with publicId " + publicId));
     }
 
-    public User save(User user) {
-        UserEntity saved = userRepository.save(userEntityMapper.toEntity(user));
-        return userEntityMapper.toModel(saved);
-    }
-
+    /** Id technique à partir du publicId. */
     public Optional<Long> findIdByPublicId(UUID publicId) {
         return userRepository.findIdByPublicId(publicId);
     }
 
-    // ----- EMAIL (via user_emails) -----
-
-    public boolean checkIfEmailExists(String email) {
-        return userEmailRepository.existsByEmailIgnoreCase(email);
-    }
-
+    /**
+     * Accès par email (case-insensitive) via user_emails (avec fetch des emails).
+     */
     public Optional<User> findOptionalByEmailIgnoreCase(String email) {
-        // version robuste : user + emails via fetch join
         return userEmailRepository.findUserWithEmailsByEmailIgnoreCase(email)
                 .map(userEntityMapper::toModel);
     }
 
-    // ----- USERNAME -----
-
-    public boolean checkIfUsernameExists(String username) {
-        return userRepository.existsByUsername(username);
+    /** Vérifie l’existence d’un email (case-insensitive). */
+    public boolean checkIfEmailExists(String email) {
+        return userEmailRepository.existsByEmailIgnoreCase(email);
     }
 
-    public User findByEmailOrUsername(String identifier) {
-        return userEntityMapper.toModel(findEntityByEmailOrUsername(identifier));
-    }
-
-    private UserEntity findEntityByEmailOrUsername(String identifier) {
-        // 1) Username exact (avec emails)
-        Optional<UserEntity> byUsername = userRepository.findWithEmailsByUsername(identifier);
-        if (byUsername.isPresent()) {
-            return byUsername.get();
+    /**
+     * Résolution "principal" :
+     * - on tente d’abord un UUID (subject du JWT),
+     * - sinon on tente un email (legacy).
+     */
+    public User findByPrincipal(String principal) {
+        if (principal == null || principal.isBlank()) {
+            throw new UsernameNotFoundException("principal vide");
         }
-        // 2) Email (case-insensitive) via user_emails, avec fetch join des emails
-        return userEmailRepository.findUserWithEmailsByEmailIgnoreCase(identifier)
-                .orElseThrow(() -> new UsernameNotFoundException(
-                        "Entity user not found with email or username " + identifier));
+        // 1) UUID ?
+        try {
+            UUID pid = UUID.fromString(principal);
+            return findByPublicIdOrThrow(pid);
+        } catch (IllegalArgumentException ignore) {
+            // not a UUID
+        }
+        // 2) Email
+        return findOptionalByEmailIgnoreCase(principal)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found by publicId/email: " + principal));
     }
 
-    public User findByToken(String token) {
-        // à implémenter si tu stockes des refresh tokens ou autre
-        return null;
+    // -------- Écriture --------
+
+    public User save(User user) {
+        UserEntity saved = userRepository.save(userEntityMapper.toEntity(user));
+        return userEntityMapper.toModel(saved);
     }
 
     @Transactional
@@ -104,5 +105,10 @@ public class UserDao {
             throw new IllegalStateException("SRS update failed for userId=" + id);
         }
         return UserEntityMapper.toSrsUpdateModel(id, newAlgo);
+    }
+
+    // Placeholder si besoin plus tard (refresh tokens, etc.)
+    public User findByToken(String token) {
+        return null;
     }
 }

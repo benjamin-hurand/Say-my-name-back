@@ -89,9 +89,9 @@ public class ChangeRequestRepositoryImpl implements ChangeRequestRepositoryCusto
                 Join<Object, Object> a = root.join("attribute");
                 Predicate onAttr = cb.like(cb.lower(a.get("name")), like, '\\');
 
-                // requester.username LIKE
+                // requester.display_name LIKE
                 Join<Object, Object> r = root.join("requester");
-                Predicate onRequester = cb.like(cb.lower(r.get("username")), like, '\\');
+                Predicate onRequester = cb.like(cb.lower(r.get("display_name")), like, '\\');
 
                 // EXISTS item.proposedValue LIKE OR item.personAttribute.value LIKE
                 Subquery<Long> sq = idCq.subquery(Long.class);
@@ -172,7 +172,7 @@ public class ChangeRequestRepositoryImpl implements ChangeRequestRepositoryCusto
                 Join<Object, Object> a = countRoot.join("attribute");
                 Predicate onAttr = cb.like(cb.lower(a.get("name")), like, '\\');
                 Join<Object, Object> r = countRoot.join("requester");
-                Predicate onRequester = cb.like(cb.lower(r.get("username")), like, '\\');
+                Predicate onRequester = cb.like(cb.lower(r.get("display_name")), like, '\\');
 
                 Subquery<Long> sq = countCq.subquery(Long.class);
                 Root<ChangeRequestItemEntity> i = sq.from(ChangeRequestItemEntity.class);

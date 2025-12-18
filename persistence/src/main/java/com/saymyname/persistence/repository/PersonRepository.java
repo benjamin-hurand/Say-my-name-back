@@ -1,4 +1,3 @@
-// src/main/java/com/saymyname/persistence/repository/PersonRepository.java
 package com.saymyname.persistence.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -69,7 +68,7 @@ public interface PersonRepository extends JpaRepository<PersonEntity, Long>, Per
           JOIN game_modes_attributes gma
             ON gma.game_mode_id    = :gameModeId
            AND gma.organization_id  = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
-          LEFT JOIN persons_attributes pa
+          LEFT JOIN person_attributes pa
             ON pa.person_id         = p.id
            AND pa.attribute_id      = gma.attribute_id
            AND pa.organization_id   = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
@@ -93,7 +92,7 @@ public interface PersonRepository extends JpaRepository<PersonEntity, Long>, Per
         JOIN game_modes_attributes gma
           ON gma.game_mode_id    = :gameModeId
          AND gma.organization_id  = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
-        JOIN persons_attributes pa
+        JOIN person_attributes pa
           ON pa.person_id         = p.id
          AND pa.attribute_id      = gma.attribute_id
          AND pa.organization_id   = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}

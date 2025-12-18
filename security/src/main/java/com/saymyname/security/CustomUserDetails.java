@@ -47,7 +47,7 @@ public class CustomUserDetails implements UserDetails {
 
     /**
      * Identité “technique” vue par Spring Security.
-     * On choisit l’UUID public (stable) plutôt qu’un email/username (mutables).
+     * On choisit l’UUID public (stable) plutôt qu’un email (mutables).
      */
     @Override
     public String getUsername() {

@@ -8,7 +8,7 @@ import com.saymyname.persistence.entity.organization.attribute.AttributeEntity;
 import com.saymyname.persistence.multitenancy.BaseOrgScoped;
 
 @Entity
-@Table(name = "persons_attributes")
+@Table(name = "person_attributes")
 public class PersonAttributeEntity extends BaseOrgScoped {
 
     @Id

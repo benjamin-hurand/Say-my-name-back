@@ -122,7 +122,7 @@ public interface ChangeRequestItemRepository extends JpaRepository<ChangeRequest
       JOIN change_requests cr
         ON cr.id = cri.change_request_id
        AND cr.organization_id = cri.organization_id
-      JOIN persons_attributes pa
+      JOIN person_attributes pa
         ON pa.id = cri.person_attribute_id
        AND pa.organization_id = cri.organization_id
       SET cri.person_attribute_id = NULL

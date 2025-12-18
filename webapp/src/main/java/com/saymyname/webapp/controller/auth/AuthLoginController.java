@@ -10,7 +10,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import com.saymyname.core.model.auth.User; // ← ajuste si besoin
+import com.saymyname.core.model.auth.User;
 import com.saymyname.security.CustomUserDetails;
 import com.saymyname.security.google.GoogleAuthService;
 import com.saymyname.service.UserService;
@@ -42,16 +42,20 @@ public class AuthLoginController {
     // ——— LOGIN CLASSIQUE —————————————————————————————
     @PostMapping("/login")
     public ResponseEntity<AuthResponseDto> login(@Valid @RequestBody LoginDto dto) {
-        String identifier = dto.identifier() == null ? null : dto.identifier().trim();
+        String email = dto.email() == null ? null : dto.email().trim();
+        if (email == null || email.isBlank() || dto.password() == null || dto.password().isBlank()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+
         Authentication authentication = authManager.authenticate(
-                new UsernamePasswordAuthenticationToken(identifier, dto.password()));
+                new UsernamePasswordAuthenticationToken(email, dto.password()));
+        CustomUserDetails cud = (CustomUserDetails) authentication.getPrincipal();
+        User user = cud.getUser();
 
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        User user = userDetails.getUser();
-
-        if (!user.isActive()) {
+        if (!Boolean.TRUE.equals(user.isActive())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
+
         return ResponseEntity.ok(authResponseBuilder.build(user));
     }
 
@@ -59,12 +63,32 @@ public class AuthLoginController {
     @PostMapping("/google/login")
     public ResponseEntity<AuthResponseDto> loginWithGoogle(@Valid @RequestBody LoginGoogleDto dto)
             throws GeneralSecurityException, IOException {
+
         String email = googleAuthService.getEmail(dto.credential(), dto.clientId());
-        User user = userService.findByEmailOrUsername(email);
+        User user = userService.findByEmailIgnoreCaseOrThrow(email.trim());
 
         if (!user.isActive()) {
-            userService.setActive(user);
+            user = userService.setActive(user);
         }
+
+        return ResponseEntity.ok(authResponseBuilder.build(user));
+    }
+
+    // ——— SESSION COURANTE ————————————————————————————
+    /**
+     * Retourne la "session" courante au même format qu’un login,
+     * en se basant sur l’utilisateur authentifié (JWT / SecurityContext).
+     */
+    @GetMapping("/session")
+    public ResponseEntity<AuthResponseDto> getCurrentSession() {
+        // lèvera une 401 si personne n’est authentifié
+        User user = userService.getCurrentAuthenticatedUserOrThrow();
+
+        if (!Boolean.TRUE.equals(user.isActive())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        // même payload que login : bearerToken, displayName, organizations, etc.
         return ResponseEntity.ok(authResponseBuilder.build(user));
     }
 }

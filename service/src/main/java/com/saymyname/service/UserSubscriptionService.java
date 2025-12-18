@@ -6,6 +6,8 @@ import com.saymyname.core.model.people.SubscriptionBulkResult;
 import com.saymyname.core.model.people.UserSubscription;
 import com.saymyname.core.model.persondirectory.PersonSearchCriteria;
 import com.saymyname.persistence.dao.UserSubscriptionDao;
+import com.saymyname.service.person.PersonService;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;

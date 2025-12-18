@@ -26,7 +26,7 @@ public interface PersonAttributeRepository extends JpaRepository<PersonAttribute
       SELECT pa.attribute_id    AS attributeId,
              MIN(CAST(pa.value AS DECIMAL(20,6))) AS minVal,
              MAX(CAST(pa.value AS DECIMAL(20,6))) AS maxVal
-        FROM persons_attributes pa
+        FROM person_attributes pa
        WHERE pa.attribute_id IN (:attributeIds)
          AND pa.organization_id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
        GROUP BY pa.attribute_id
@@ -39,7 +39,7 @@ public interface PersonAttributeRepository extends JpaRepository<PersonAttribute
       SELECT pa.attribute_id AS attributeId,
              DATE_FORMAT(MIN(STR_TO_DATE(pa.value, '%Y-%m-%d')), '%Y-%m-%d') AS minVal,
              DATE_FORMAT(MAX(STR_TO_DATE(pa.value, '%Y-%m-%d')), '%Y-%m-%d') AS maxVal
-        FROM persons_attributes pa
+        FROM person_attributes pa
        WHERE pa.attribute_id IN (:attributeIds)
          AND pa.organization_id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
        GROUP BY pa.attribute_id
@@ -50,7 +50,7 @@ public interface PersonAttributeRepository extends JpaRepository<PersonAttribute
   // filtrage tenant
   @Query(value = """
       SELECT COUNT(DISTINCT pa.person_id)
-        FROM persons_attributes pa
+        FROM person_attributes pa
        WHERE pa.value >= ?1
          AND pa.value <  ?2
          AND pa.valid_from <= ?3
@@ -160,7 +160,7 @@ public interface PersonAttributeRepository extends JpaRepository<PersonAttribute
    */
   @Modifying
   @Query(value = """
-      DELETE FROM persons_attributes
+      DELETE FROM person_attributes
        WHERE is_pending_delete = 1
          AND valid_to IS NOT NULL
          AND valid_to < :cutoff

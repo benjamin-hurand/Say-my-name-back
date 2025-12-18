@@ -57,7 +57,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                         Long userId = Long.parseLong(subject);
                         userDetails = userService.loadUserById(userId);
                     } catch (NumberFormatException notLong) {
-                        // 3) Compat legacy: subject = email/username
+                        // 3) Compat legacy: subject = email
                         userDetails = userService.loadUserByUsername(subject);
                     }
                 }

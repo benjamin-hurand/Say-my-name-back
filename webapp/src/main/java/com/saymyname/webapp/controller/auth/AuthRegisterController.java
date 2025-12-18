@@ -32,7 +32,7 @@ public class AuthRegisterController {
     @PostMapping("/register")
     public ResponseEntity<AuthResponseDto> register(@Valid @RequestBody RegisterFormDto dto) {
         User saved = registrationService.registerClassic(
-                dto.username().trim(),
+                dto.displayName().trim(),
                 dto.email().trim(),
                 dto.password());
         return ResponseEntity.status(HttpStatus.CREATED).body(authResponseBuilder.build(saved));

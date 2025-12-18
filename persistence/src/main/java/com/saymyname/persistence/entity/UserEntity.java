@@ -30,7 +30,7 @@ public class UserEntity {
     private UUID publicId;
 
     @Column(nullable = false, length = 50, unique = true)
-    private String username;
+    private String displayName;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "srs_algorithm", nullable = false, length = 16)
@@ -62,14 +62,14 @@ public class UserEntity {
     }
 
     public UserEntity(Long id,
-            String username,
+            String displayName,
             SrsAlgorithm srsAlgorithm,
             String password,
             int passwordVersion,
             String roles,
             Boolean active) {
         this.id = id;
-        this.username = username;
+        this.displayName = displayName;
         this.srsAlgorithm = (srsAlgorithm != null ? srsAlgorithm : SrsAlgorithm.SM2);
         this.password = password;
         this.passwordVersion = passwordVersion;
@@ -113,8 +113,8 @@ public class UserEntity {
         this.publicId = publicId;
     }
 
-    public String getUsername() {
-        return username;
+    public String getDisplayName() {
+        return displayName;
     }
 
     public SrsAlgorithm getSrsAlgorithm() {
@@ -149,8 +149,8 @@ public class UserEntity {
         this.id = id;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
     public void setSrsAlgorithm(SrsAlgorithm srsAlgorithm) {
@@ -215,7 +215,7 @@ public class UserEntity {
         return "UserEntity{" +
                 "id=" + id +
                 ", publicId=" + (publicId != null ? publicId : "null") +
-                ", username='" + username + '\'' +
+                ", displayName='" + displayName + '\'' +
                 ", primaryEmail='" + getPrimaryEmailValue() + '\'' +
                 ", srsAlgorithm=" + srsAlgorithm +
                 ", passwordVersion=" + passwordVersion +

@@ -31,14 +31,16 @@ import com.saymyname.service.ChallengeService;
 import com.saymyname.service.ChangeRequestService;
 import com.saymyname.service.GameModeService;
 import com.saymyname.service.PersonAttributeService;
-import com.saymyname.service.PersonService;
 import com.saymyname.service.UserOrganizationService;
+import com.saymyname.service.person.PersonEmailService;
+import com.saymyname.service.person.PersonService;
 import com.saymyname.webapp.dto.PersonAttributeDto;
 import com.saymyname.webapp.dto.PersonDto;
 import com.saymyname.webapp.dto.changerequest.ChangeRequestSummaryDto;
 import com.saymyname.webapp.dto.person.AdminPersonCardDto;
 import com.saymyname.webapp.dto.person.AdminPersonDetailsDto;
 import com.saymyname.webapp.dto.person.AdminPersonSearchRequestDto;
+import com.saymyname.webapp.dto.person.PersonEmailDto;
 import com.saymyname.webapp.dto.profile.AttributeValuesResponseDto;
 import com.saymyname.webapp.dto.profile.BulkPersonAttributeRequest;
 import com.saymyname.webapp.mapper.BulkPersonAttributeDtoMapper;
@@ -46,8 +48,9 @@ import com.saymyname.webapp.mapper.ChangeRequestDtoMapper;
 import com.saymyname.webapp.mapper.PersonAttributeDtoMapper;
 import com.saymyname.webapp.mapper.PersonDtoMapper;
 import com.saymyname.webapp.mapper.person.PersonDirectoryDtoMapper;
+import com.saymyname.webapp.mapper.person.PersonEmailDtoMapper;
 
-@PreAuthorize("@orgSecurity.hasRole(null, 'CLIENT_ADMIN')")
+@PreAuthorize("@orgSecurity.hasRole(null, 'ADMIN') or @orgSecurity.hasRole(null, 'OWNER')")
 @RestController
 @RequestMapping("/api/admin")
 public class AdminRestController {
@@ -60,6 +63,8 @@ public class AdminRestController {
     private final BulkPersonAttributeDtoMapper bulkPersonAttributeDtoMapper;
     private final PersonAttributeService personAttributeService;
     private final PersonAttributeDtoMapper personAttributeDtoMapper;
+    private final PersonEmailService personEmailService;
+    private final PersonEmailDtoMapper personEmailDtoMapper;
     private final PersonDtoMapper personDtoMapper;
     private final ChangeRequestService changeRequestService;
     private final ChangeRequestDtoMapper changeRequestDtoMapper;
@@ -73,6 +78,8 @@ public class AdminRestController {
             BulkPersonAttributeDtoMapper bulkPersonAttributeDtoMapper,
             PersonAttributeService personAttributeService,
             PersonAttributeDtoMapper personAttributeDtoMapper,
+            PersonEmailService personEmailService,
+            PersonEmailDtoMapper personEmailDtoMapper,
             PersonDtoMapper personDtoMapper,
             ChangeRequestService changeRequestService,
             ChangeRequestDtoMapper changeRequestDtoMapper,
@@ -85,6 +92,8 @@ public class AdminRestController {
         this.bulkPersonAttributeDtoMapper = bulkPersonAttributeDtoMapper;
         this.personAttributeService = personAttributeService;
         this.personAttributeDtoMapper = personAttributeDtoMapper;
+        this.personEmailService = personEmailService;
+        this.personEmailDtoMapper = personEmailDtoMapper;
         this.personDtoMapper = personDtoMapper;
         this.changeRequestService = changeRequestService;
         this.changeRequestDtoMapper = changeRequestDtoMapper;
@@ -150,8 +159,13 @@ public class AdminRestController {
                         .toList()
                 : List.of();
 
-        // 3) Réponse
-        AdminPersonDetailsDto response = new AdminPersonDetailsDto(personDto, crDtos);
+        // 3) Emails de la personne dans l’orga courante
+        List<PersonEmailDto> emailDtos = personEmailService.listByPerson(personId).stream()
+                .map(personEmailDtoMapper::toResponse)
+                .toList();
+
+        // 4) Réponse
+        AdminPersonDetailsDto response = new AdminPersonDetailsDto(personDto, crDtos, emailDtos);
         return ResponseEntity.ok(response);
     }
 

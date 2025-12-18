@@ -29,29 +29,29 @@ public class RegistrationService {
     }
 
     /**
-     * Inscription classique (email + username + password).
+     * Inscription classique (displayName OBLIGATOIRE + email + password).
      * Transactionnelle : crée l'utilisateur puis attache l'email primaire.
      */
     @Transactional
-    public User registerClassic(String username, String email, String rawPassword) {
-        String u = username == null ? null : username.trim();
-        String e = email == null ? null : email.trim();
+    public User registerClassic(String displayName, String email, String rawPassword) {
+        final String e = email == null ? null : email.trim();
+        final String dn = sanitizeDisplayName(displayName);
 
+        if (dn == null || dn.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Display name requis");
+        }
         if (e == null || e.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email requis");
+        }
+        if (rawPassword == null || rawPassword.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mot de passe requis");
         }
         if (userService.checkIfAccountExistsWithEmail(e)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email déjà utilisé");
         }
 
-        if (u == null || u.isBlank()) {
-            u = userService.generateUniqueUsername("french");
-        } else if (userService.checkIfAccountExistsWithUsername(u)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Username indisponible");
-        }
-
         User newUser = new User.Builder()
-                .withUsername(u)
+                .withDisplayName(dn)
                 .withPassword(rawPassword)
                 .withRoles("ROLE_USER")
                 .withActive(true)
@@ -68,7 +68,7 @@ public class RegistrationService {
     }
 
     /**
-     * Inscription via Google OAuth (credential + clientId).
+     * Inscription / connexion via Google OAuth (credential + clientId).
      * Transactionnelle : crée l'utilisateur si nécessaire puis attache l'email
      * (vérifié).
      */
@@ -80,24 +80,21 @@ public class RegistrationService {
         if (email == null || email.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email Google introuvable");
         }
-        String e = email.trim();
+        final String e = email.trim();
 
-        final boolean existed = userService.checkIfAccountExistsWithEmail(e);
-
-        if (existed) {
-            User user = userService.findByEmailOrUsername(e);
-            if (!user.isActive()) {
+        if (userService.checkIfAccountExistsWithEmail(e)) {
+            // 👉 lookup par email
+            User user = userService.findByEmailIgnoreCaseOrThrow(e);
+            if (!Boolean.TRUE.equals(user.isActive())) {
                 user = userService.setActive(user);
             }
             return user;
         } else {
             String randomPassword = googleAuthService.generateRandomPasswordForNewUser();
-
-            // Username fun et unique
-            String username = userService.generateUniqueUsername("french");
+            String dn = deriveDisplayNameFromEmail(e); // propose quelque chose de présentable
 
             User user = new User.Builder()
-                    .withUsername(username)
+                    .withDisplayName(dn)
                     .withPassword(randomPassword)
                     .withRoles("ROLE_USER")
                     .withActive(true)
@@ -106,10 +103,33 @@ public class RegistrationService {
 
             user = userService.save(user);
 
-            // Email primaire, considéré "vérifié" (possession prouvée par Google)
+            // Email primaire vérifié (preuve via Google)
             userEmailDao.attachPrimaryOnRegister(user.getId(), e, true);
 
             return user;
         }
+    }
+
+    // -------------------- helpers --------------------
+
+    /** Trim + coupe à 50 caractères. Null safe. */
+    private static String sanitizeDisplayName(String provided) {
+        if (provided == null)
+            return null;
+        String s = provided.trim();
+        return s.length() > 50 ? s.substring(0, 50) : s;
+    }
+
+    /** Fallback pour OAuth : partie locale de l'email, trim + max 50. */
+    private static String deriveDisplayNameFromEmail(String email) {
+        String base = "User";
+        if (email != null) {
+            String t = email.trim();
+            int at = t.indexOf('@');
+            base = (at > 0) ? t.substring(0, at) : t;
+            if (base.isBlank())
+                base = "User";
+        }
+        return base.length() > 50 ? base.substring(0, 50) : base;
     }
 }

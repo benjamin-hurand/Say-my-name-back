@@ -36,7 +36,7 @@ public class UserEntityMapper {
         return new User.Builder()
                 .withId(e.getId())
                 .withPublicId(e.getPublicId())
-                .withUsername(e.getUsername())
+                .withDisplayName(e.getDisplayName())
                 .withSrsAlgorithm(e.getSrsAlgorithm())
                 .withPassword(e.getPassword())
                 .withPasswordVersion(e.getPasswordVersion())
@@ -53,7 +53,7 @@ public class UserEntityMapper {
         return new User.Builder()
                 .withId(e.getId())
                 .withPublicId(e.getPublicId())
-                .withUsername(e.getUsername())
+                .withDisplayName(e.getDisplayName())
                 .withEmails(e.getEmails().stream()
                         .filter(Objects::nonNull)
                         .map(emailMapper::toModel)
@@ -80,7 +80,7 @@ public class UserEntityMapper {
         return new User.Builder()
                 .withId(e.getId())
                 .withPublicId(e.getPublicId())
-                .withUsername(e.getUsername())
+                .withDisplayName(e.getDisplayName())
                 .build();
     }
 
@@ -99,7 +99,7 @@ public class UserEntityMapper {
 
         UserEntity e = new UserEntity(
                 m.getId(),
-                m.getUsername(),
+                m.getDisplayName(),
                 m.getSrsAlgorithm(),
                 m.getPassword(),
                 m.getPasswordVersion(),

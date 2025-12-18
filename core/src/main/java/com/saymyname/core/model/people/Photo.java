@@ -208,9 +208,9 @@ public class Photo {
                 ", storageKey='" + storageKey + '\'' +
                 ", status=" + status +
                 ", submittedAt=" + submittedAt +
-                ", submittedBy=" + (submittedBy != null ? submittedBy.getUsername() : null) +
+                ", submittedBy=" + (submittedBy != null ? submittedBy.getDisplayName() : null) +
                 ", approvedAt=" + approvedAt +
-                ", approvedBy=" + (approvedBy != null ? approvedBy.getUsername() : null) +
+                ", approvedBy=" + (approvedBy != null ? approvedBy.getDisplayName() : null) +
                 ", person=" + (person != null ? person.getId() : null) +
                 '}';
     }

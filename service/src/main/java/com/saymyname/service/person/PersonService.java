@@ -1,5 +1,5 @@
 // src/main/java/com/saymyname/service/PersonService.java
-package com.saymyname.service;
+package com.saymyname.service.person;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,6 +29,7 @@ import com.saymyname.core.model.persondirectory.PagePersonRow;
 import com.saymyname.core.model.persondirectory.PersonCard;
 import com.saymyname.core.model.persondirectory.PersonSearchCriteria;
 import com.saymyname.persistence.dao.PersonDao;
+import com.saymyname.service.PersonAttributeService;
 
 @Service
 @Transactional

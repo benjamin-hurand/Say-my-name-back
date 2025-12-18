@@ -77,7 +77,7 @@ public class PhotoEntityMapper {
         if (e.getSubmittedBy() != null && e.getSubmittedBy().getId() != null) {
             User submitter = new User();
             submitter.setId(e.getSubmittedBy().getId());
-            submitter.setUsername(e.getSubmittedBy().getUsername()); // si dispo
+            submitter.setDisplayName(e.getSubmittedBy().getDisplayName()); // si dispo
             b.withSubmittedBy(submitter);
         }
 
@@ -85,7 +85,7 @@ public class PhotoEntityMapper {
         if (e.getApprovedBy() != null && e.getApprovedBy().getId() != null) {
             User approver = new User();
             approver.setId(e.getApprovedBy().getId());
-            approver.setUsername(e.getApprovedBy().getUsername()); // si dispo
+            approver.setDisplayName(e.getApprovedBy().getDisplayName()); // si dispo
             b.withApprovedBy(approver);
         }
 

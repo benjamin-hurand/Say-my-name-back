@@ -64,7 +64,7 @@ public interface UserSubscriptionRepository extends JpaRepository<UserSubscripti
           JOIN game_modes_attributes gma
             ON gma.game_mode_id    = :gameModeId
            AND gma.organization_id  = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
-          LEFT JOIN persons_attributes pa
+          LEFT JOIN person_attributes pa
             ON pa.person_id         = s.person_id
            AND pa.attribute_id      = gma.attribute_id
            AND pa.organization_id   = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
@@ -92,7 +92,7 @@ public interface UserSubscriptionRepository extends JpaRepository<UserSubscripti
         JOIN game_modes_attributes gma
           ON gma.game_mode_id    = :gameModeId
          AND gma.organization_id  = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
-        JOIN persons_attributes pa
+        JOIN person_attributes pa
           ON pa.person_id         = s.person_id
          AND pa.attribute_id      = gma.attribute_id
          AND pa.organization_id   = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}

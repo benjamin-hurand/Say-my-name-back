@@ -322,7 +322,7 @@ public class ChallengeRepositoryCustomImpl implements ChallengeRepositoryCustom 
                 gmJoin.get("gameModeTitle").alias("game_mode_title"),
                 gmJoin.get("gameModeDescription").alias("game_mode_description"),
                 challenge.get("creator").get("id").alias("creator_id"),
-                challenge.get("creator").get("username").alias("creator_username"),
+                challenge.get("creator").get("displayName").alias("creator_display_name"),
                 bestAttemptStartSubquery.alias("attempt_start_date"));
 
         List<Tuple> tuples = entityManager.createQuery(cq).getResultList();
@@ -430,8 +430,8 @@ public class ChallengeRepositoryCustomImpl implements ChallengeRepositoryCustom 
                 }
 
                 @Override
-                public String getCreatorUsername() {
-                    return tuple.get("creator_username", String.class);
+                public String getCreatorDisplayName() {
+                    return tuple.get("creator_display_name", String.class);
                 }
 
                 @Override

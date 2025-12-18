@@ -30,9 +30,9 @@ import com.saymyname.core.model.enums.KnowledgeStatus;
 import com.saymyname.core.model.enums.PoolType;
 import com.saymyname.core.model.enums.PopulationScope;
 import com.saymyname.persistence.dao.course.CourseDao;
-import com.saymyname.service.PersonService;
 import com.saymyname.service.UserService;
 import com.saymyname.service.UserSubscriptionService;
+import com.saymyname.service.person.PersonService;
 
 @Service
 public class CourseService {

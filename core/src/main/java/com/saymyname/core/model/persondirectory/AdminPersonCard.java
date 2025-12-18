@@ -9,16 +9,21 @@ import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.saymyname.core.model.enums.EmailStatus;
 
 public class AdminPersonCard {
 
     private Long idPerson;
     private String photoStorageKey;
+
     @JsonProperty("attributes")
     private List<AttributeValueView> attributes = new ArrayList<>();
 
     /** Change requests en attente ? */
     private boolean hasPendingChangeRequests;
+
+    /** Nouveau : état synthétique des e-mails de la personne */
+    private EmailStatus emailStatus = EmailStatus.NONE;
 
     public AdminPersonCard() {
     }
@@ -28,6 +33,7 @@ public class AdminPersonCard {
         this.photoStorageKey = b.photoStorageKey;
         this.attributes = b.attributes;
         this.hasPendingChangeRequests = b.hasPendingChangeRequests;
+        this.emailStatus = b.emailStatus;
     }
 
     public Long getIdPerson() {
@@ -46,6 +52,10 @@ public class AdminPersonCard {
         return hasPendingChangeRequests;
     }
 
+    public EmailStatus getEmailStatus() {
+        return emailStatus;
+    }
+
     public void setIdPerson(Long idPerson) {
         this.idPerson = idPerson;
     }
@@ -60,6 +70,10 @@ public class AdminPersonCard {
 
     public void setHasPendingChangeRequests(boolean v) {
         this.hasPendingChangeRequests = v;
+    }
+
+    public void setEmailStatus(EmailStatus emailStatus) {
+        this.emailStatus = (emailStatus != null ? emailStatus : EmailStatus.NONE);
     }
 
     // --------- Rétro-compat JSON (legacy fields) ---------
@@ -100,6 +114,7 @@ public class AdminPersonCard {
         private String photoStorageKey;
         private List<AttributeValueView> attributes = new ArrayList<>();
         private boolean hasPendingChangeRequests;
+        private EmailStatus emailStatus = EmailStatus.NONE;
 
         public Builder withIdPerson(Long v) {
             this.idPerson = v;
@@ -123,6 +138,11 @@ public class AdminPersonCard {
 
         public Builder withHasPendingChangeRequests(boolean v) {
             this.hasPendingChangeRequests = v;
+            return this;
+        }
+
+        public Builder withEmailStatus(EmailStatus v) {
+            this.emailStatus = (v != null ? v : EmailStatus.NONE);
             return this;
         }
 
@@ -161,12 +181,13 @@ public class AdminPersonCard {
         return hasPendingChangeRequests == that.hasPendingChangeRequests
                 && Objects.equals(idPerson, that.idPerson)
                 && Objects.equals(photoStorageKey, that.photoStorageKey)
-                && Objects.equals(attributes, that.attributes);
+                && Objects.equals(attributes, that.attributes)
+                && emailStatus == that.emailStatus;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(idPerson, photoStorageKey, attributes, hasPendingChangeRequests);
+        return Objects.hash(idPerson, photoStorageKey, attributes, hasPendingChangeRequests, emailStatus);
     }
 
     @Override
@@ -176,6 +197,7 @@ public class AdminPersonCard {
                 ", photoStorageKey='" + photoStorageKey + '\'' +
                 ", attributes=" + attributes +
                 ", hasPendingChangeRequests=" + hasPendingChangeRequests +
+                ", emailStatus=" + emailStatus +
                 '}';
     }
 }

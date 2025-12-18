@@ -1,10 +1,14 @@
 package com.saymyname.infra.mail;
 
+import java.util.Locale;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Profile;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 
+import com.saymyname.core.model.enums.OrgRole;
 import com.saymyname.service.port.Mailer;
 
 @Component
@@ -21,5 +25,12 @@ public class ConsoleMailer implements Mailer {
     @Override
     public void sendPasswordChangedInfoEmail(String to) {
         logger.info("[DEV MAIL] To={} | Password changed.", to);
+    }
+
+    @Override
+    public void sendInvitationEmail(String to, String acceptUrl, @Nullable OrgRole role, Locale locale,
+            @Nullable String message) {
+        logger.info("[DEV MAIL] Invitation | To={} | Url={} | Role={} | Locale={} | Message={}",
+                to, acceptUrl, role, locale, message);
     }
 }

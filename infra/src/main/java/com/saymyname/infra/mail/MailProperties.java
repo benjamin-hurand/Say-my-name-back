@@ -1,3 +1,4 @@
+// src/main/java/com/saymyname/infra/mail/MailProperties.java
 package com.saymyname.infra.mail;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -6,12 +7,13 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class MailProperties {
     /** Adresse expéditrice (ex: "no-reply@tondomaine.com"). */
     private String from;
-    /** Nom de marque pour l’objet et le template (ex: "Say My Name"). */
+    /** Nom de marque (ex: "Say My Name"). */
     private String brand = "Say My Name";
-    /** Sujet pour le reset. */
+    /** Sujets existants */
     private String resetSubject = "Réinitialisation de votre mot de passe";
-    /** Sujet pour confirmation de changement. */
     private String changedSubject = "Votre mot de passe a été modifié";
+    /** ➕ Sujet pour les invitations */
+    private String inviteSubject = "Votre invitation";
 
     // getters/setters
     public String getFrom() {
@@ -44,5 +46,13 @@ public class MailProperties {
 
     public void setChangedSubject(String changedSubject) {
         this.changedSubject = changedSubject;
+    }
+
+    public String getInviteSubject() {
+        return inviteSubject;
+    }
+
+    public void setInviteSubject(String inviteSubject) {
+        this.inviteSubject = inviteSubject;
     }
 }

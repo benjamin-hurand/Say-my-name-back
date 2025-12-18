@@ -49,9 +49,16 @@ public class UserEmailEntity {
     public UserEmailEntity() {
     }
 
-    public UserEmailEntity(Long id, UserEntity user, String email, boolean primary, boolean loginAllowed,
-            boolean recoveryAllowed, LocalDateTime verifiedAt, LocalDateTime addedAt,
-            LocalDateTime updatedAt, LocalDateTime recoveryEligibleAt) {
+    public UserEmailEntity(Long id,
+            UserEntity user,
+            String email,
+            boolean primary,
+            boolean loginAllowed,
+            boolean recoveryAllowed,
+            LocalDateTime verifiedAt,
+            LocalDateTime addedAt,
+            LocalDateTime updatedAt,
+            LocalDateTime recoveryEligibleAt) {
         this.id = id;
         this.user = user;
         this.email = email;
@@ -64,7 +71,26 @@ public class UserEmailEntity {
         this.recoveryEligibleAt = recoveryEligibleAt;
     }
 
-    // Getters
+    // ===== Callbacks JPA pour timestamps =====
+
+    @PrePersist
+    protected void onCreate() {
+        LocalDateTime now = LocalDateTime.now();
+        if (this.addedAt == null) {
+            this.addedAt = now;
+        }
+        if (this.updatedAt == null) {
+            this.updatedAt = now;
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // ===== Getters
+
     public Long getId() {
         return id;
     }
@@ -105,7 +131,8 @@ public class UserEmailEntity {
         return recoveryEligibleAt;
     }
 
-    // Setters
+    // ===== Setters
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -146,14 +173,16 @@ public class UserEmailEntity {
         this.recoveryEligibleAt = recoveryEligibleAt;
     }
 
+    // ===== equals / hashCode
+
     @Override
     public boolean equals(Object o) {
         if (this == o)
             return true;
         if (!(o instanceof UserEmailEntity that))
             return false;
-        return Objects.equals(id, that.id)
-                && Objects.equals(email, that.email);
+        return Objects.equals(id, that.id) &&
+                Objects.equals(email, that.email);
     }
 
     @Override

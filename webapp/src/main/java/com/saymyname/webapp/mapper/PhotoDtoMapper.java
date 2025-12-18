@@ -35,11 +35,11 @@ public class PhotoDtoMapper {
                 photo.getStatus(),
                 photo.getSubmittedAt(),
                 photo.getSubmittedBy() != null
-                        ? new ReducedUserDto(photo.getSubmittedBy().getId(), photo.getSubmittedBy().getUsername())
+                        ? new ReducedUserDto(photo.getSubmittedBy().getId(), photo.getSubmittedBy().getDisplayName())
                         : null,
                 photo.getApprovedAt(),
                 photo.getApprovedBy() != null
-                        ? new ReducedUserDto(photo.getApprovedBy().getId(), photo.getApprovedBy().getUsername())
+                        ? new ReducedUserDto(photo.getApprovedBy().getId(), photo.getApprovedBy().getDisplayName())
                         : null);
     }
 }

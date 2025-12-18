@@ -24,7 +24,7 @@ import com.saymyname.persistence.storage.PhotoStorageReadable;
 import com.saymyname.persistence.storage.SmallPhotoStorage;
 import com.saymyname.security.CustomUserDetails;
 import com.saymyname.security.Roles;
-import com.saymyname.service.PersonService;
+import com.saymyname.service.person.PersonService;
 
 @Service
 public class PhotoService {

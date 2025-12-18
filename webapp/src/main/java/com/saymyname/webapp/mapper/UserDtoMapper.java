@@ -20,11 +20,11 @@ public class UserDtoMapper {
 
     // ---- Reduced ----
     public ReducedUserDto toReducedDto(User model) {
-        return new ReducedUserDto(model.getId(), model.getUsername());
+        return new ReducedUserDto(model.getId(), model.getDisplayName());
     }
 
     public User toModel(ReducedUserDto dto) {
-        return new User.Builder().withId(dto.id()).withUsername(dto.username()).build();
+        return new User.Builder().withId(dto.id()).withDisplayName(dto.displayName()).build();
     }
 
     public User toModel(Long userId) {
@@ -37,7 +37,7 @@ public class UserDtoMapper {
             return null;
         return new UserDto(
                 user.getPublicId() != null ? user.getPublicId().toString() : null,
-                user.getUsername(),
+                user.getDisplayName(),
                 user.getPrimaryEmailValue(), // primaryEmail
                 emailMapper.toDtoList(user.getEmails()), // emails
                 user.getSrsAlgorithm(),
@@ -56,7 +56,7 @@ public class UserDtoMapper {
             return null;
         return new User.Builder()
                 .withPublicId(dto.publicId() != null ? UUID.fromString(dto.publicId()) : null)
-                .withUsername(dto.username())
+                .withDisplayName(dto.displayName())
                 .withSrsAlgorithm(dto.srsAlgorithm())
                 .withRoles(dto.roles())
                 .withActive(dto.active())

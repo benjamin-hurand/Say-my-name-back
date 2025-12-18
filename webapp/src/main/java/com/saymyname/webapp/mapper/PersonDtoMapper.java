@@ -10,6 +10,7 @@ import com.saymyname.core.model.enums.OrgRole;
 import com.saymyname.core.model.people.Person;
 import com.saymyname.core.model.people.PersonAttribute;
 import com.saymyname.service.attribute.AttributeMetaCache;
+import com.saymyname.service.person.PersonDisplayNameBuilder;
 import com.saymyname.service.photo.PhotoUrlResolver;
 import com.saymyname.webapp.dto.PersonDto;
 import com.saymyname.webapp.dto.changerequest.PersonSummaryDto;
@@ -22,10 +23,12 @@ public class PersonDtoMapper {
         private final PhotoDtoMapper photoDtoMapper;
         private final PhotoUrlResolver photoUrlResolver;
         private final AttributeMetaCache attributeMetaCache;
+        private final PersonDisplayNameBuilder displayNameBuilder;
 
         public PersonDtoMapper(PersonAttributeDtoMapper personAttributeDtoMapper, UserDtoMapper userDtoMapper,
                         PhotoDtoMapper photoDtoMapper, PhotoUrlResolver photoUrlResolver,
-                        AttributeMetaCache attributeMetaCache) {
+                        AttributeMetaCache attributeMetaCache, PersonDisplayNameBuilder displayNameBuilder) {
+                this.displayNameBuilder = displayNameBuilder;
                 this.personAttributeDtoMapper = personAttributeDtoMapper;
                 this.userDtoMapper = userDtoMapper;
                 this.photoUrlResolver = photoUrlResolver;
@@ -67,38 +70,10 @@ public class PersonDtoMapper {
 
         /** Résumé léger (displayName actuel + photo approved si dispo). */
         public PersonSummaryDto toSummaryDto(Person person) {
-                String displayName = buildCurrentDisplayName(person);
+                String displayName = displayNameBuilder.build(person);
                 String photoUrl = person.getApprovedPhoto()
                                 .map(p -> photoUrlResolver.smallUrl(p.getStorageKey()))
                                 .orElse(null);
                 return new PersonSummaryDto(displayName, photoUrl);
-        }
-
-        /** Actif si validFrom ≤ date < validTo et non pendingDelete. */
-        private static boolean isActiveAt(PersonAttribute a, LocalDateTime at) {
-                if (a == null || a.isPendingDelete())
-                        return false;
-                var from = a.getValidFrom();
-                var to = a.getValidTo();
-                if (from != null && at.isBefore(from))
-                        return false;
-                if (to != null && !at.isBefore(to))
-                        return false;
-                return true;
-        }
-
-        /** Construit le displayName à partir des primaires actifs maintenant. */
-        private String buildCurrentDisplayName(Person person) {
-                LocalDateTime now = LocalDateTime.now();
-                return person.getAttributes().stream()
-                                .filter(a -> a.getAttribute() != null && a.getAttribute().getId() != null)
-                                .filter(a -> isActiveAt(a, now))
-                                .filter(a -> attributeMetaCache.isPrimary(a.getAttribute().getId()))
-                                .sorted(Comparator.comparingInt(
-                                                a -> attributeMetaCache.displayOrder(a.getAttribute().getId())))
-                                .map(PersonAttribute::getValue)
-                                .filter(v -> v != null && !v.isBlank())
-                                .collect(Collectors.joining(" "))
-                                .trim();
         }
 }

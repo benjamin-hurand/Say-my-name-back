@@ -18,7 +18,7 @@ public class ChallengeCardDtoMapper {
                 // Création du DTO pour le créateur
                 ChallengeCreatorDto creator = new ChallengeCreatorDto(
                                 projection.getCreatorId(),
-                                projection.getCreatorUsername());
+                                projection.getCreatorDisplayName());
 
                 // Création du DTO pour le filtre (attribut)
                 ChallengeFilterDto filter = new ChallengeFilterDto(

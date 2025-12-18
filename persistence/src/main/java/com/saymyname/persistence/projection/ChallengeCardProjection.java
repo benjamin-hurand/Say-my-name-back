@@ -51,7 +51,7 @@ public interface ChallengeCardProjection {
     // Champs du creator (ajoutés)
     Long getCreatorId();
 
-    String getCreatorUsername();
+    String getCreatorDisplayName();
 
     // Champs de l'attempt
     LocalDateTime getAttemptStartDate();
