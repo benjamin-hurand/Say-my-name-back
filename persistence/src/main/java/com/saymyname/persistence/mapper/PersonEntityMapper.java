@@ -13,15 +13,12 @@ import com.saymyname.persistence.entity.organization.PersonEntity;
 public class PersonEntityMapper {
 
         private final PhotoEntityMapper photoEntityMapper;
-        private final UserEntityMapper userEntityMapper;
         private final PersonAttributeEntityMapper personAttributeEntityMapper;
 
         @Autowired
         public PersonEntityMapper(PhotoEntityMapper photoEntityMapper,
-                        UserEntityMapper userEntityMapper,
                         PersonAttributeEntityMapper personAttributeEntityMapper) {
                 this.photoEntityMapper = photoEntityMapper;
-                this.userEntityMapper = userEntityMapper;
                 this.personAttributeEntityMapper = personAttributeEntityMapper;
         }
 
@@ -30,9 +27,9 @@ public class PersonEntityMapper {
                 if (person == null) {
                         return null;
                 }
+
                 PersonEntity personEntity = new PersonEntity();
                 personEntity.setId(person.getId());
-                personEntity.setUser(userEntityMapper.toEntity(person.getUser()));
 
                 // Attributes
                 if (person.getAttributes() != null) {
@@ -58,31 +55,9 @@ public class PersonEntityMapper {
                 if (personEntity == null) {
                         return null;
                 }
-                return new Person.Builder()
-                                .withId(personEntity.getId())
-                                .withUser(userEntityMapper.toShortModel(personEntity.getUser()))
-                                .withAttributes(
-                                                personEntity.getAttributes() != null
-                                                                ? personEntity.getAttributes().stream()
-                                                                                .map(personAttributeEntityMapper::toModel)
-                                                                                .collect(Collectors.toList())
-                                                                : List.of())
-                                .withPhotos(
-                                                personEntity.getPhotos() != null
-                                                                ? personEntity.getPhotos().stream()
-                                                                                .map(photoEntityMapper::toModel)
-                                                                                .collect(Collectors.toList())
-                                                                : List.of())
-                                .build();
-        }
 
-        public Person toModelWithMediumUser(PersonEntity personEntity) {
-                if (personEntity == null) {
-                        return null;
-                }
                 return new Person.Builder()
                                 .withId(personEntity.getId())
-                                .withUser(userEntityMapper.toMediumModel(personEntity.getUser()))
                                 .withAttributes(
                                                 personEntity.getAttributes() != null
                                                                 ? personEntity.getAttributes().stream()

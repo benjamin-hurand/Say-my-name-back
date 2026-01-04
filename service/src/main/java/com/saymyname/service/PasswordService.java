@@ -1,3 +1,4 @@
+// src/main/java/com/saymyname/service/PasswordService.java
 package com.saymyname.service;
 
 import java.nio.charset.StandardCharsets;
@@ -7,21 +8,23 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 
-import jakarta.servlet.http.HttpServletRequest;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.saymyname.core.model.auth.PasswordResetToken;
 import com.saymyname.core.model.auth.User;
+import com.saymyname.core.model.auth.UserEmail;
 import com.saymyname.persistence.dao.UserDao;
 import com.saymyname.persistence.dao.UserEmailDao;
 import com.saymyname.persistence.dao.auth.PasswordResetTokenDao;
+import com.saymyname.service.auth.AuthInvalidationService;
+import com.saymyname.service.auth.UserIdentityService;
 import com.saymyname.service.port.Mailer;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @Service
 public class PasswordService {
@@ -29,23 +32,31 @@ public class PasswordService {
     private final UserDao userDao;
     private final UserEmailDao userEmailDao;
     private final PasswordResetTokenDao tokenDao;
-    private final PasswordEncoder encoder;
     private final Mailer mailer;
     private final String frontendBaseUrl;
 
+    private final UserIdentityService userIdentityService;
+    private final UserService userService;
+    private final AuthInvalidationService authInvalidationService;
+
     private static final java.security.SecureRandom SECURE_RANDOM = new java.security.SecureRandom();
 
-    public PasswordService(UserDao userDao,
+    public PasswordService(
+            UserDao userDao,
             UserEmailDao userEmailDao,
             PasswordResetTokenDao tokenDao,
-            PasswordEncoder encoder,
             Mailer mailer,
+            UserIdentityService userIdentityService,
+            UserService userService,
+            AuthInvalidationService authInvalidationService,
             @Value("${app.frontend.base-url:http://localhost:5173}") String frontendBaseUrl) {
         this.userDao = userDao;
         this.userEmailDao = userEmailDao;
         this.tokenDao = tokenDao;
-        this.encoder = encoder;
         this.mailer = mailer;
+        this.userIdentityService = userIdentityService;
+        this.userService = userService;
+        this.authInvalidationService = authInvalidationService;
         this.frontendBaseUrl = frontendBaseUrl.endsWith("/")
                 ? frontendBaseUrl.substring(0, frontendBaseUrl.length() - 1)
                 : frontendBaseUrl;
@@ -55,12 +66,17 @@ public class PasswordService {
     @Transactional
     public void issueResetToken(String email, HttpServletRequest req) {
         String input = email == null ? null : email.trim();
-        var uOpt = userDao.findOptionalByEmailIgnoreCase(input);
-        if (uOpt.isEmpty())
+        if (input == null || input.isBlank())
             return;
 
-        User user = uOpt.get();
-        String raw = randomUrlSafeToken(32); // 256 bits
+        Optional<UserEmail> ueOpt = userEmailDao.findRecoveryEligibleByEmailIgnoreCase(input);
+        if (ueOpt.isEmpty())
+            return;
+
+        Long userId = ueOpt.get().getUserId();
+        User user = userDao.findById(userId);
+
+        String raw = randomUrlSafeToken(32);
         String hash = sha256Base64(raw);
 
         PasswordResetToken token = new PasswordResetToken.Builder()
@@ -77,9 +93,16 @@ public class PasswordService {
         mailer.sendPasswordResetEmail(input, link);
     }
 
-    /** 2) Reset via lien : consommer le token et définir le nouveau mdp. */
+    /**
+     * 2) Reset via lien : consommer le token et définir le nouveau mdp
+     * (crée/replace LOCAL identity).
+     */
     @Transactional
     public void resetWithToken(String rawToken, String newPassword) {
+        if (rawToken == null || rawToken.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token invalide");
+        }
+
         String hash = sha256Base64(rawToken);
         PasswordResetToken token = tokenDao.findActiveByHash(hash)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token invalide"));
@@ -91,34 +114,17 @@ public class PasswordService {
         User user = userDao.findById(token.getUserId());
         ensurePolicy(newPassword, user);
 
-        user.setPassword(encoder.encode(newPassword));
-        user.setPasswordVersion(user.getPasswordVersion() + 1);
-        userDao.save(user);
+        // 1) Set LOCAL password (user_identities)
+        userIdentityService.setLocalPassword(user.getId(), newPassword);
 
-        // Marque ce token comme utilisé…
+        // 2) Consume this reset token + invalidate all reset tokens for user
         tokenDao.markUsed(token.getId());
-        // …et invalide tous les autres tokens actifs du même utilisateur.
         tokenDao.invalidateAllForUser(user.getId());
 
-        userEmailDao.findPrimaryEmailAddress(user.getId())
-                .ifPresent(primary -> mailer.sendPasswordChangedInfoEmail(primary));
-    }
+        // 3) Invalidate sessions (refresh revoke + bump auth_version)
+        authInvalidationService.invalidateAllSessions(user.getId(), "PASSWORD_RESET");
 
-    /** 3) Changement depuis le profil (auth requis). */
-    @Transactional
-    public void changePassword(User user, String currentPassword, String newPassword) {
-        if (!encoder.matches(currentPassword, user.getPassword())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Mot de passe actuel incorrect");
-        }
-        ensurePolicy(newPassword, user);
-
-        user.setPassword(encoder.encode(newPassword));
-        user.setPasswordVersion(user.getPasswordVersion() + 1);
-        userDao.save(user);
-
-        // Invalide tous les tokens de reset actifs pour ce user (sécurité)
-        tokenDao.invalidateAllForUser(user.getId());
-
+        // 4) Notify primary email
         userEmailDao.findPrimaryEmailAddress(user.getId())
                 .ifPresent(primary -> mailer.sendPasswordChangedInfoEmail(primary));
     }

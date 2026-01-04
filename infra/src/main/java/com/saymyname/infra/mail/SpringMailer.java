@@ -1,3 +1,4 @@
+// src/main/java/com/saymyname/infra/mail/SpringMailer.java
 package com.saymyname.infra.mail;
 
 import jakarta.mail.internet.MimeMessage;
@@ -11,11 +12,12 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Component;
 
+import com.saymyname.core.model.enums.EmailVerificationPurpose;
 import com.saymyname.core.model.enums.OrgRole;
 import com.saymyname.service.port.Mailer;
 
 @Component
-@Profile("!dev") // actif en prod, préprod, etc.
+@Profile("!dev")
 @EnableConfigurationProperties(MailProperties.class)
 public class SpringMailer implements Mailer {
 
@@ -40,9 +42,17 @@ public class SpringMailer implements Mailer {
   @Override
   public void sendInvitationEmail(String to, String acceptUrl, @Nullable OrgRole role, Locale locale,
       @Nullable String message) {
-    // Tu peux varier le template selon locale si tu veux.
     String subject = props.getInviteSubject();
     String html = buildInviteHtml(props.getBrand(), acceptUrl, role, message);
+    sendHtml(to, subject, html);
+  }
+
+  @Override
+  public void sendEmailVerificationOtp(String to, String code, EmailVerificationPurpose purpose,
+      @Nullable String verificationLink, Locale locale) {
+    // Tu peux i18n plus tard via locale
+    String subject = props.getBrand() + " — Vérification email";
+    String html = buildEmailVerificationHtml(props.getBrand(), code, purpose, verificationLink);
     sendHtml(to, subject, html);
   }
 
@@ -56,9 +66,33 @@ public class SpringMailer implements Mailer {
       helper.setText(html, true);
       mailSender.send(msg);
     } catch (Exception e) {
-      // À toi de voir: logger/metrics; éventuellement rethrow custom
       throw new IllegalStateException("Unable to send email", e);
     }
+  }
+
+  private static String buildEmailVerificationHtml(String brand, String code, EmailVerificationPurpose purpose,
+      @Nullable String link) {
+
+    String purposeLine = (purpose == null) ? "" : "<p>Type : <strong>" + escape(purpose.name()) + "</strong></p>";
+    String linkLine = (link == null || link.isBlank())
+        ? ""
+        : """
+              <p>Lien direct (optionnel) :</p>
+              <p><a href="%s">%s</a></p>
+            """.formatted(escape(link), escape(link));
+
+    return """
+          <div style="font-family:Arial,sans-serif;line-height:1.5">
+            <h2>%s — Vérification d'email</h2>
+            %s
+            <p>Voici votre code de vérification (valable quelques minutes) :</p>
+            <p style="font-size:24px;letter-spacing:2px"><strong>%s</strong></p>
+            %s
+            <p>Si vous n'êtes pas à l'origine de cette demande, ignorez ce message.</p>
+            <hr/>
+            <small>© %s</small>
+          </div>
+        """.formatted(escape(brand), purposeLine, escape(code), linkLine, escape(brand));
   }
 
   private static String buildResetHtml(String brand, String link) {
@@ -117,6 +151,8 @@ public class SpringMailer implements Mailer {
   }
 
   private static String escape(String s) {
+    if (s == null)
+      return "";
     return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
   }
 }

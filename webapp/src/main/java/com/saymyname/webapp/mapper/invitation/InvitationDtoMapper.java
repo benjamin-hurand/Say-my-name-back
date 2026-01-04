@@ -54,9 +54,11 @@ public class InvitationDtoMapper {
     public InvitationPreviewDto toPreview(Invitation m) {
         boolean expired = m.isExpired(LocalDateTime.now());
         boolean revoked = m.isRevoked();
+        boolean pinRequired = m.getPinHashPhc() != null && !m.getPinHashPhc().isBlank();
         return new InvitationPreviewDto(
                 m.getId(),
                 m.getType(),
+                pinRequired,
                 m.getLabel(),
                 m.getNote(),
                 m.getRole(),

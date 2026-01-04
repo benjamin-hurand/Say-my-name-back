@@ -1,13 +1,20 @@
+// src/main/java/com/saymyname/service/UserOrganizationService.java
 package com.saymyname.service;
 
+import com.saymyname.core.model.enums.MembershipStatus;
 import com.saymyname.core.model.enums.OrgRole;
+import com.saymyname.core.model.enums.PersonLinkStatus;
 import com.saymyname.core.model.organization.OrgMemberRow;
 import com.saymyname.core.model.organization.UserOrganization;
 import com.saymyname.core.model.persondirectory.AttributeValueRow;
 import com.saymyname.persistence.dao.PersonDao;
 import com.saymyname.persistence.dao.organization.UserOrganizationDao;
+
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import jakarta.persistence.EntityNotFoundException;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -37,24 +44,34 @@ public class UserOrganizationService {
         return dao.findRoleForCurrentOrg(userId);
     }
 
-    /**
-     * Projection des membres pour l'organisation courante,
-     * enrichie avec un personLabel calculé à partir des attributs primaires (EAV).
-     *
-     * Pipeline :
-     * - DAO : liste des membres (user + personId)
-     * - PersonDao : fetch des attributs primaires pour tous les personIds
-     * - buildDisplayNameFromPrimaries(...) : joint les valeurs primaires triées
-     * - reconstruction des OrgMemberRow avec personLabel enrichi
-     */
+    public Optional<Long> findPersonIdByUserId(Long userId) {
+        if (userId == null) {
+            return Optional.empty();
+        }
+        return dao.findPersonIdByUserId(userId);
+    }
+
+    public Optional<UserOrganization> findMembershipForCurrentOrg(Long userId) {
+        if (userId == null)
+            return Optional.empty();
+        return dao.findMembershipForUserInCurrentOrg(userId);
+    }
+
+    public Optional<Long> findUserIdByPersonId(Long personId) {
+        if (personId == null) {
+            return Optional.empty();
+        }
+        return dao.findUserIdByPersonId(personId);
+    }
+
+    // ---------------- Lecture / Listing ----------------
+
     public List<OrgMemberRow> listMembersForCurrentOrg() {
-        // 1) Projection brute depuis le DAO
         List<OrgMemberRow> baseRows = dao.findMembersForCurrentOrg();
         if (baseRows.isEmpty()) {
             return baseRows;
         }
 
-        // 2) Collecte des personIds non nuls
         List<Long> personIds = baseRows.stream()
                 .map(OrgMemberRow::getPersonId)
                 .filter(Objects::nonNull)
@@ -62,15 +79,11 @@ public class UserOrganizationService {
                 .toList();
 
         if (personIds.isEmpty()) {
-            // Aucun lien Person -> on retourne tel quel
             return baseRows;
         }
 
-        // 3) Récupération en batch des attributs primaires
         List<AttributeValueRow> primaryRows = personDao.fetchPrimaryAttributeRows(personIds);
 
-        // 4) Groupement par personId (sans groupingBy pour éviter les génériques
-        // tordus)
         Map<Long, List<AttributeValueRow>> primariesByPerson = new HashMap<>();
         for (AttributeValueRow avr : primaryRows) {
             primariesByPerson
@@ -78,7 +91,6 @@ public class UserOrganizationService {
                     .add(avr);
         }
 
-        // 5) Calcul du displayName par personId
         Map<Long, String> labelByPersonId = new HashMap<>();
         for (Map.Entry<Long, List<AttributeValueRow>> entry : primariesByPerson.entrySet()) {
             Long personId = entry.getKey();
@@ -88,7 +100,6 @@ public class UserOrganizationService {
             }
         }
 
-        // 6) On reconstruit la liste en enrichissant personLabel
         return baseRows.stream()
                 .map(row -> {
                     Long personId = row.getPersonId();
@@ -98,7 +109,6 @@ public class UserOrganizationService {
                         personLabel = labelByPersonId.get(personId);
                     }
 
-                    // Fallback si aucun attribut primaire : on retombe sur le displayName User
                     if (personLabel == null || personLabel.isBlank()) {
                         personLabel = row.getDisplayName();
                     }
@@ -106,11 +116,11 @@ public class UserOrganizationService {
                     return OrgMemberRow.builder()
                             .userId(row.getUserId())
                             .organizationId(row.getOrganizationId())
-                            .displayName(row.getDisplayName()) // nom “compte” (User)
+                            .displayName(row.getDisplayName())
                             .email(row.getEmail())
                             .role(row.getRole())
                             .personId(row.getPersonId())
-                            .personLabel(personLabel) // nom “personne” (EAV)
+                            .personLabel(personLabel)
                             .status(row.getStatus())
                             .joinedAt(row.getJoinedAt())
                             .build();
@@ -118,17 +128,11 @@ public class UserOrganizationService {
                 .toList();
     }
 
-    /**
-     * Construit un displayName à partir des attributs primaires :
-     * - tri par displayOrder, puis attributeId, puis value
-     * - concaténation des valeurs non vides avec un espace
-     */
     private String buildDisplayNameFromPrimaries(List<AttributeValueRow> rows) {
         if (rows == null || rows.isEmpty()) {
             return "";
         }
 
-        // On travaille sur une copie pour ne pas modifier la liste d'origine
         List<AttributeValueRow> sorted = new ArrayList<>(rows);
 
         sorted.sort((a, b) -> {
@@ -156,15 +160,150 @@ public class UserOrganizationService {
                 .trim();
     }
 
-    /**
-     * Garantit qu'il existe une entrée user_organizations pour (user, org).
-     * - Si aucune entrée : on crée avec le rôle de l'invitation (ou VIEWER par
-     * défaut).
-     * - Si une entrée existe déjà : on n'abaisse jamais le rôle, on garde le plus
-     * élevé.
-     */
+    // ---------------- Admin actions (write) ----------------
+
+    @Transactional
+    public OrgMemberRow changeRole(Long actorUserId, Long targetUserId, OrgRole newRole) {
+        if (actorUserId == null || targetUserId == null) {
+            throw new IllegalArgumentException("actorUserId/targetUserId required");
+        }
+        if (newRole == null) {
+            throw new IllegalArgumentException("role required");
+        }
+        if (newRole == OrgRole.OWNER) {
+            throw new IllegalArgumentException("Use transfer-ownership endpoint to set OWNER");
+        }
+
+        OrgRole actorRole = dao.findRoleForCurrentOrg(actorUserId)
+                .orElseThrow(() -> new AccessDeniedException("Not a member of current org"));
+
+        OrgMemberRow target = dao.findMemberRowForCurrentOrg(targetUserId)
+                .orElseThrow(() -> new EntityNotFoundException("Target user not in org"));
+
+        OrgRole targetRole = target.getRole();
+
+        // Self-change is generally undesirable; keep strict
+        if (actorUserId.equals(targetUserId)) {
+            throw new AccessDeniedException("Cannot change your own role here");
+        }
+
+        // ADMIN permissions: can only manage MEMBER/VIEWER, and can only set
+        // MEMBER/VIEWER
+        if (actorRole == OrgRole.ADMIN) {
+            if (targetRole == OrgRole.ADMIN || targetRole == OrgRole.OWNER) {
+                throw new AccessDeniedException("Admin cannot modify ADMIN/OWNER");
+            }
+            if (newRole == OrgRole.ADMIN) {
+                throw new AccessDeniedException("Admin cannot promote to ADMIN");
+            }
+        }
+
+        // OWNER permissions: can manage ADMIN/MEMBER/VIEWER, but do not allow touching
+        // OWNER via role change
+        if (actorRole != OrgRole.OWNER && actorRole != OrgRole.ADMIN) {
+            throw new AccessDeniedException("Insufficient permissions");
+        }
+        if (targetRole == OrgRole.OWNER) {
+            throw new AccessDeniedException("Cannot change OWNER role here");
+        }
+
+        dao.updateRoleForUserInCurrentOrg(targetUserId, newRole);
+        return dao.findMemberRowForCurrentOrg(targetUserId)
+                .orElseThrow(() -> new EntityNotFoundException("Target user not in org (after update)"));
+    }
+
+    @Transactional
+    public void removeMember(Long actorUserId, Long targetUserId) {
+        if (actorUserId == null || targetUserId == null) {
+            throw new IllegalArgumentException("actorUserId/targetUserId required");
+        }
+        if (actorUserId.equals(targetUserId)) {
+            throw new AccessDeniedException("Cannot remove yourself here");
+        }
+
+        OrgRole actorRole = dao.findRoleForCurrentOrg(actorUserId)
+                .orElseThrow(() -> new AccessDeniedException("Not a member of current org"));
+
+        OrgMemberRow target = dao.findMemberRowForCurrentOrg(targetUserId)
+                .orElseThrow(() -> new EntityNotFoundException("Target user not in org"));
+
+        OrgRole targetRole = target.getRole();
+
+        if (actorRole == OrgRole.ADMIN) {
+            if (targetRole == OrgRole.ADMIN || targetRole == OrgRole.OWNER) {
+                throw new AccessDeniedException("Admin cannot remove ADMIN/OWNER");
+            }
+        } else if (actorRole == OrgRole.OWNER) {
+            if (targetRole == OrgRole.OWNER) {
+                throw new AccessDeniedException("Cannot remove an OWNER (transfer ownership first)");
+            }
+        } else {
+            throw new AccessDeniedException("Insufficient permissions");
+        }
+
+        dao.deleteMembershipForUserInCurrentOrg(targetUserId);
+    }
+
+    @Transactional
+    public TransferOwnershipResult transferOwnership(Long actorUserId, Long newOwnerUserId) {
+        if (actorUserId == null || newOwnerUserId == null) {
+            throw new IllegalArgumentException("actorUserId/newOwnerUserId required");
+        }
+        if (actorUserId.equals(newOwnerUserId)) {
+            throw new IllegalArgumentException("newOwnerUserId must be different from actor");
+        }
+
+        OrgRole actorRole = dao.findRoleForCurrentOrg(actorUserId)
+                .orElseThrow(() -> new AccessDeniedException("Not a member of current org"));
+
+        if (actorRole != OrgRole.OWNER) {
+            throw new AccessDeniedException("Only OWNER can transfer ownership");
+        }
+
+        OrgMemberRow currentOwner = dao.findMemberRowForCurrentOrg(actorUserId)
+                .orElseThrow(() -> new EntityNotFoundException("Current owner not in org"));
+
+        OrgMemberRow nextOwner = dao.findMemberRowForCurrentOrg(newOwnerUserId)
+                .orElseThrow(() -> new EntityNotFoundException("New owner not in org"));
+
+        // Apply transfer: new owner -> OWNER; old owner -> ADMIN
+        dao.transferOwnershipInCurrentOrg(actorUserId, newOwnerUserId);
+
+        OrgMemberRow updatedOld = dao.findMemberRowForCurrentOrg(actorUserId)
+                .orElseThrow(() -> new EntityNotFoundException("Old owner not in org (after transfer)"));
+
+        OrgMemberRow updatedNew = dao.findMemberRowForCurrentOrg(newOwnerUserId)
+                .orElseThrow(() -> new EntityNotFoundException("New owner not in org (after transfer)"));
+
+        return new TransferOwnershipResult(updatedOld, updatedNew);
+    }
+
+    // --- Existing methods (membership ensure) unchanged ---
+
     @Transactional
     public void ensureMembership(Long userId, Long orgId, OrgRole invitedRole) {
         dao.ensureMembership(userId, orgId, invitedRole);
+    }
+
+    @Transactional
+    public void ensureMembershipFromInvitation(
+            Long userId,
+            Long orgId,
+            OrgRole role,
+            MembershipStatus status,
+            Long personId,
+            PersonLinkStatus personLinkStatus,
+            boolean canPickPerson,
+            boolean canCreatePerson,
+            boolean pickRequiresApproval,
+            boolean createRequiresApproval) {
+        dao.ensureMembershipFromInvitation(
+                userId, orgId, role, status, personId, personLinkStatus,
+                canPickPerson, canCreatePerson, pickRequiresApproval, createRequiresApproval);
+    }
+
+    // ---------------- Result model (service-level, not DTO) ----------------
+
+    public record TransferOwnershipResult(OrgMemberRow oldOwnerRow, OrgMemberRow newOwnerRow) {
     }
 }

@@ -5,6 +5,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Objects;
+
 import javax.imageio.ImageIO;
 
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ import com.saymyname.persistence.storage.PhotoStorageReadable;
 import com.saymyname.persistence.storage.SmallPhotoStorage;
 import com.saymyname.security.CustomUserDetails;
 import com.saymyname.security.Roles;
+import com.saymyname.service.UserOrganizationService;
 import com.saymyname.service.person.PersonService;
 
 @Service
@@ -31,8 +33,10 @@ public class PhotoService {
 
     private final PhotoDao photoDao;
     private final PhotoStorage photoStorage;
-    private final PersonService personService;
     private final SmallPhotoStorage smallPhotoStorage;
+
+    private final PersonService personService;
+    private final UserOrganizationService userOrganizationService;
 
     // Si disponible, permet de lire l’original pour régénérer les miniatures
     private final PhotoStorageReadable readableStorage; // peut être null
@@ -48,10 +52,13 @@ public class PhotoService {
             PhotoDao photoDao,
             PhotoStorage photoStorage,
             PersonService personService,
+            UserOrganizationService userOrganizationService,
             SmallPhotoStorage smallPhotoStorage) {
+
         this.photoDao = photoDao;
         this.photoStorage = photoStorage;
         this.personService = personService;
+        this.userOrganizationService = userOrganizationService;
         this.smallPhotoStorage = smallPhotoStorage;
         this.readableStorage = (photoStorage instanceof PhotoStorageReadable psr) ? psr : null;
     }
@@ -118,7 +125,7 @@ public class PhotoService {
     /**
      * Tente de (ré)générer la miniature pour la storageKey donnée s’il en manque
      * une.
-     * 
+     *
      * @return true si la miniature existe (déjà ou régénérée), false sinon (ex: pas
      *         de lecture dispo).
      */
@@ -152,12 +159,21 @@ public class PhotoService {
     }
 
     private void checkAuthorization(CustomUserDetails principal, Long personId) {
-        if (principal.hasRole(Roles.ADMIN))
+        if (principal.hasRole(Roles.ADMIN)) {
             return;
+        }
 
-        Person person = personService.findById(personId)
+        // 1) La personne doit exister dans l'orga courante (filtre tenant Hibernate)
+        personService.findById(personId)
                 .orElseThrow(() -> new NotFoundException("Person introuvable"));
-        if (!Objects.equals(person.getUser().getId(), principal.getId())) {
+
+        // 2) Le user connecté doit être lié à CE personId via
+        // user_organizations.person_id (orga courante)
+        Long myPersonId = userOrganizationService.findPersonIdByUserId(principal.getId())
+                .orElseThrow(() -> new ForbiddenException(
+                        "Aucun profil (person) n'est lié à votre compte dans cette organisation"));
+
+        if (!Objects.equals(myPersonId, personId)) {
             throw new ForbiddenException("Vous n'avez pas le droit de soumettre une photo pour cette personne");
         }
     }

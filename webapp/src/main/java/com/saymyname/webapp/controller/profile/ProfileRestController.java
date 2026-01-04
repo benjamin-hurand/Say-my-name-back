@@ -1,3 +1,4 @@
+// src/main/java/com/saymyname/webapp/controller/profile/ProfileRestController.java
 package com.saymyname.webapp.controller.profile;
 
 import java.security.Principal;
@@ -10,21 +11,29 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.saymyname.core.model.auth.User;
+import com.saymyname.core.model.enums.OrgRole;
 import com.saymyname.core.model.people.Person;
 import com.saymyname.core.model.people.PersonAttribute;
 import com.saymyname.service.ChangeRequestService;
+import com.saymyname.service.UserOrganizationService;
 import com.saymyname.service.UserService;
 import com.saymyname.service.person.PersonService;
 import com.saymyname.webapp.dto.PersonAttributeDto;
 import com.saymyname.webapp.dto.PersonDto;
+import com.saymyname.webapp.dto.UserDto;
 import com.saymyname.webapp.dto.changerequest.ChangeRequestSummaryDto;
 import com.saymyname.webapp.dto.profile.AttributeValuesResponseDto;
 import com.saymyname.webapp.dto.profile.BulkPersonAttributeRequest;
+import com.saymyname.webapp.dto.profile.ProfileOnboardingDto;
 import com.saymyname.webapp.dto.profile.ProfileResponseDto;
+import com.saymyname.webapp.dto.profile.UpdateDisplayNameRequestDto;
+import com.saymyname.webapp.dto.profile.UpdateDisplayNameResponseDto;
 import com.saymyname.webapp.mapper.BulkPersonAttributeDtoMapper;
 import com.saymyname.webapp.mapper.ChangeRequestDtoMapper;
 import com.saymyname.webapp.mapper.PersonAttributeDtoMapper;
 import com.saymyname.webapp.mapper.PersonDtoMapper;
+import com.saymyname.webapp.mapper.ProfileOnboardingDtoMapper;
+import com.saymyname.webapp.mapper.UserDtoMapper;
 
 @RestController
 @RequestMapping("/api/profile")
@@ -36,17 +45,26 @@ public class ProfileRestController {
         private final PersonDtoMapper personDtoMapper;
         private final BulkPersonAttributeDtoMapper bulkPersonAttributeDtoMapper;
         private final PersonAttributeDtoMapper personAttributeDtoMapper;
+
         private final UserService userService;
+        private final UserOrganizationService userOrganizationService;
+        private final UserDtoMapper userDtoMapper;
+        private final ProfileOnboardingDtoMapper profileOnboardingDtoMapper;
 
         private static final Logger logger = LoggerFactory.getLogger(ProfileRestController.class);
 
-        public ProfileRestController(PersonService personService,
+        public ProfileRestController(
+                        PersonService personService,
                         ChangeRequestService changeRequestService,
                         ChangeRequestDtoMapper changeRequestDtoMapper,
                         PersonDtoMapper personDtoMapper,
                         BulkPersonAttributeDtoMapper bulkPersonAttributeDtoMapper,
                         PersonAttributeDtoMapper personAttributeDtoMapper,
-                        UserService userService) {
+                        UserService userService,
+                        UserOrganizationService userOrganizationService,
+                        UserDtoMapper userDtoMapper,
+                        ProfileOnboardingDtoMapper profileOnboardingDtoMapper) {
+
                 this.personService = personService;
                 this.changeRequestService = changeRequestService;
                 this.changeRequestDtoMapper = changeRequestDtoMapper;
@@ -54,6 +72,9 @@ public class ProfileRestController {
                 this.bulkPersonAttributeDtoMapper = bulkPersonAttributeDtoMapper;
                 this.personAttributeDtoMapper = personAttributeDtoMapper;
                 this.userService = userService;
+                this.userOrganizationService = userOrganizationService;
+                this.userDtoMapper = userDtoMapper;
+                this.profileOnboardingDtoMapper = profileOnboardingDtoMapper;
         }
 
         /**
@@ -63,32 +84,53 @@ public class ProfileRestController {
          */
         @GetMapping
         public ResponseEntity<ProfileResponseDto> getProfile(Principal principal) {
-                // 0) User courant
-                User user = userService.getCurrentUserOrThrow(principal);
+                User me = userService.getCurrentUserOrThrow(principal);
+                User user = userService.findByIdWithEmails(me.getId()).orElse(me);
 
-                // 1) Person + graph (attributs, photos)
+                OrgRole orgRole = userOrganizationService.findRoleForCurrentOrg(user.getId()).orElse(null);
+                UserDto userDto = userDtoMapper.toDto(user, orgRole);
+
                 Optional<Person> optPerson = personService.getPersonByUserWithAllAttributes(user);
                 PersonDto personDto = optPerson.map(personDtoMapper::toDto).orElse(null);
 
-                // 2) ChangeRequests (choix: “open” ou “all”)
                 List<ChangeRequestSummaryDto> crDtos = optPerson.isPresent()
                                 ? changeRequestService.findOpenForUser(user.getId()).stream()
                                                 .map(changeRequestDtoMapper::toSummaryDto)
                                                 .toList()
                                 : List.of();
 
-                // 3) Réponse
-                ProfileResponseDto response = new ProfileResponseDto(personDto, crDtos);
+                ProfileOnboardingDto onboarding = null;
+                if (optPerson.isEmpty()) {
+                        onboarding = userOrganizationService.findMembershipForCurrentOrg(user.getId())
+                                        .map(profileOnboardingDtoMapper::toDto)
+                                        .orElse(null);
+                }
+
+                ProfileResponseDto response = new ProfileResponseDto(userDto, personDto, crDtos, onboarding);
                 return ResponseEntity.ok(response);
+        }
+
+        /**
+         * PATCH /api/profile/display-name
+         * Met à jour le displayName du compte (User).
+         */
+        @PatchMapping("/display-name")
+        public ResponseEntity<UpdateDisplayNameResponseDto> updateMyDisplayName(
+                        @RequestBody UpdateDisplayNameRequestDto body,
+                        Principal principal) {
+
+                User me = userService.getCurrentUserOrThrow(principal);
+
+                String newDisplayName = body != null ? body.displayName() : null;
+                User updated = userService.updateDisplayName(me, newDisplayName);
+
+                return ResponseEntity.ok(new UpdateDisplayNameResponseDto(updated.getDisplayName()));
         }
 
         // ---------- BULK multi-valeurs pour un attribut ----------
         /**
          * POST /api/profile/attributes/{attributeId}/bulk
          * Applique en une fois create/update/delete pour l’attribut {attributeId}.
-         * On s’appuie sur l’utilisateur courant (Principal) pour identifier la Person.
-         * Retourne l'état canonique de l'attribut (liste de PersonAttribute) après
-         * normalisation.
          */
         @PostMapping("/attributes/{attributeId}/bulk")
         public ResponseEntity<AttributeValuesResponseDto> applyAttributeChanges(
@@ -99,14 +141,17 @@ public class ProfileRestController {
                 logger.info("Applying bulk attribute changes for attributeId: {}", attributeId);
 
                 // 0) User courant (→ person)
-                User user = userService.getCurrentUserOrThrow(principal);
+                User me = userService.getCurrentUserOrThrow(principal);
+
+                // (optionnel) sécurise emails si ton pipeline en dépend ailleurs
+                User user = userService.findByIdWithEmails(me.getId()).orElse(me);
 
                 // 1) Map DTO -> modèles (delta)
                 var toCreate = bulkPersonAttributeDtoMapper.toCreateModels(body.create());
                 var toUpdate = bulkPersonAttributeDtoMapper.toUpdateModels(body.update());
                 var toDelete = bulkPersonAttributeDtoMapper.toDeleteModels(body.delete());
 
-                // 2) Orchestration via PersonService (référence “profil” = person de l'user)
+                // 2) Orchestration via PersonService
                 List<PersonAttribute> updatedAttributes = personService.applyAttributeChangesForUser(
                                 user,
                                 attributeId,

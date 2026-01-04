@@ -1,14 +1,9 @@
 package com.saymyname.webapp.mapper;
 
-import java.time.LocalDateTime;
-import java.util.Comparator;
-import java.util.stream.Collectors;
-
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.enums.OrgRole;
 import com.saymyname.core.model.people.Person;
-import com.saymyname.core.model.people.PersonAttribute;
 import com.saymyname.service.attribute.AttributeMetaCache;
 import com.saymyname.service.person.PersonDisplayNameBuilder;
 import com.saymyname.service.photo.PhotoUrlResolver;
@@ -19,18 +14,16 @@ import com.saymyname.webapp.dto.changerequest.PersonSummaryDto;
 public class PersonDtoMapper {
 
         private final PersonAttributeDtoMapper personAttributeDtoMapper;
-        private final UserDtoMapper userDtoMapper;
         private final PhotoDtoMapper photoDtoMapper;
         private final PhotoUrlResolver photoUrlResolver;
         private final AttributeMetaCache attributeMetaCache;
         private final PersonDisplayNameBuilder displayNameBuilder;
 
-        public PersonDtoMapper(PersonAttributeDtoMapper personAttributeDtoMapper, UserDtoMapper userDtoMapper,
+        public PersonDtoMapper(PersonAttributeDtoMapper personAttributeDtoMapper,
                         PhotoDtoMapper photoDtoMapper, PhotoUrlResolver photoUrlResolver,
                         AttributeMetaCache attributeMetaCache, PersonDisplayNameBuilder displayNameBuilder) {
                 this.displayNameBuilder = displayNameBuilder;
                 this.personAttributeDtoMapper = personAttributeDtoMapper;
-                this.userDtoMapper = userDtoMapper;
                 this.photoUrlResolver = photoUrlResolver;
                 this.photoDtoMapper = photoDtoMapper;
                 this.attributeMetaCache = attributeMetaCache;
@@ -45,7 +38,6 @@ public class PersonDtoMapper {
         public PersonDto toDto(Person person, OrgRole organizationRole) {
                 return new PersonDto(
                                 person.getId(),
-                                userDtoMapper.toDto(person.getUser(), organizationRole),
                                 person.getAttributes() != null
                                                 ? person.getAttributes().stream().map(personAttributeDtoMapper::toDto)
                                                                 .toList()
@@ -58,7 +50,6 @@ public class PersonDtoMapper {
         public PersonDto toDto(Person person) {
                 return new PersonDto(
                                 person.getId(),
-                                userDtoMapper.toDto(person.getUser()),
                                 person.getAttributes() != null
                                                 ? person.getAttributes().stream().map(personAttributeDtoMapper::toDto)
                                                                 .toList()

@@ -8,8 +8,9 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.*;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -25,17 +26,14 @@ import jakarta.transaction.Transactional;
 public class UserService implements UserDetailsService {
 
     private final UserDao userDao;
-    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserDao userDao, PasswordEncoder passwordEncoder) {
+    public UserService(UserDao userDao) {
         this.userDao = userDao;
-        this.passwordEncoder = passwordEncoder;
     }
 
     // ===================== Métier basique =====================
 
     public User save(User user) {
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
         return userDao.save(user);
     }
 
@@ -52,6 +50,10 @@ public class UserService implements UserDetailsService {
         return userDao.findById(id);
     }
 
+    public Optional<User> findByIdWithEmails(Long userId) {
+        return userDao.findByIdWithGraph(userId);
+    }
+
     /** Lookup email insensible à la casse (Optional). */
     public Optional<User> findOptionalByEmailIgnoreCase(String email) {
         return userDao.findOptionalByEmailIgnoreCase(email);
@@ -63,34 +65,72 @@ public class UserService implements UserDetailsService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Utilisateur introuvable"));
     }
 
-    // ===================== Sécurité (Spring Security) =====================
+    @Transactional
+    public User updateDisplayName(User me, String newDisplayName) {
+        if (me == null || me.getId() == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Utilisateur non trouvé");
+        }
+
+        String trimmed = newDisplayName == null ? "" : newDisplayName.trim();
+
+        if (trimmed.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Le nom du compte est requis");
+        }
+        if (trimmed.length() > 50) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Le nom du compte est trop long (50 caractères max)");
+        }
+
+        if (trimmed.equals(me.getDisplayName())) {
+            return me;
+        }
+
+        if (userDao.existsByDisplayNameIgnoreCase(trimmed)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Ce nom de compte est déjà utilisé");
+        }
+
+        return userDao.updateDisplayName(me.getId(), trimmed);
+    }
+
+    public boolean hasVerifiedEmail(Long userId, String email) {
+        return userDao.hasVerifiedEmail(userId, email);
+    }
+
+    // ===================== Auth invalidation =====================
 
     /**
-     * Requise par Spring Security.
-     * On interprète le "username" passé par Spring comme:
-     * - d'abord un UUID (publicId) venant du subject du JWT (nouveau flux),
-     * - sinon un e-mail (legacy).
+     * Invalide globalement les sessions en bumpant users.auth_version (+ audit
+     * auth_updated_at).
+     * À appeler à chaque action security-sensitive (reset password, set local
+     * password, etc.).
      */
+    @Transactional
+    public void bumpAuthVersionOrThrow(Long userId) {
+        if (userId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "userId requis");
+        }
+        userDao.bumpAuthVersionOrThrow(userId);
+    }
+
+    // ===================== Sécurité (Spring Security) =====================
+
     @Override
     public UserDetails loadUserByUsername(String identifier) throws UsernameNotFoundException {
-        User user = userDao.findByPrincipal(identifier); // UUID publicId -> user, sinon email -> user
+        User user = userDao.findByPrincipal(identifier);
         return new CustomUserDetails(user);
     }
 
-    /** Compat anciens tokens: subject = userId (Long). */
     public UserDetails loadUserById(Long id) {
         User user = userDao.findById(id);
         return new CustomUserDetails(user);
     }
 
-    /** ✅ Nouveau flux: subject = publicId (UUID). */
     public UserDetails loadUserByPublicId(UUID publicId) {
         User user = userDao.findByPublicIdOrThrow(publicId);
         return new CustomUserDetails(user);
     }
 
-    // ---------- Récupération du user courant via Principal / SecurityContext
-    // ----------
+    // ---------- Current user helpers ----------
 
     public Optional<User> getCurrentUser(Principal principal) {
         if (principal == null)
@@ -99,12 +139,10 @@ public class UserService implements UserDetailsService {
         if (principal instanceof Authentication auth) {
             Object p = auth.getPrincipal();
 
-            // Chemin rapide si CustomUserDetails
             if (p instanceof CustomUserDetails cud) {
                 return Optional.ofNullable(cud.getUser());
             }
 
-            // Sinon, auth.getName() = subject → UUID (nouveau) ou email (legacy)
             String name = safeTrim(auth.getName());
             return findBySubjectFlexible(name);
         }
@@ -145,25 +183,22 @@ public class UserService implements UserDetailsService {
 
         Object principal = auth.getPrincipal();
 
-        // Chemin rapide : notre CustomUserDetails expose l'id
         if (principal instanceof CustomUserDetails cud) {
             Long id = cud.getId();
             if (id != null)
                 return id;
         }
 
-        // Fallback : subject = publicId (UUID) sur un Principal "User" Spring
         if (principal instanceof org.springframework.security.core.userdetails.User ud) {
             try {
                 UUID pub = UUID.fromString(ud.getUsername());
                 return userDao.findIdByPublicId(pub)
                         .orElseThrow(() -> new UnauthorizedException("User id not found for publicId"));
             } catch (IllegalArgumentException ignore) {
-                // subject non-UUID (legacy) → on retombe sur la charge complète
+                // legacy
             }
         }
 
-        // Dernier recours
         return getCurrentAuthenticatedUserOrThrow().getId();
     }
 
@@ -181,20 +216,15 @@ public class UserService implements UserDetailsService {
         return s == null ? null : s.trim();
     }
 
-    /**
-     * Essaie d'interpréter le subject comme UUID (nouveau flux),
-     * sinon retombe sur e-mail (legacy).
-     */
     private Optional<User> findBySubjectFlexible(String subject) {
         if (subject == null || subject.isBlank())
             return Optional.empty();
 
-        // Nouveau: subject = UUID publicId
         try {
             UUID publicId = UUID.fromString(subject);
             return Optional.of(userDao.findByPublicIdOrThrow(publicId));
         } catch (IllegalArgumentException ignored) {
-            // pas un UUID → fallback legacy (e-mail)
+            // not a UUID
         }
 
         try {

@@ -1,14 +1,10 @@
 package com.saymyname.persistence.entity.organization;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
-import com.saymyname.persistence.entity.UserEntity;
 import com.saymyname.persistence.multitenancy.BaseOrgScoped;
 
 @Entity
@@ -18,10 +14,6 @@ public class PersonEntity extends BaseOrgScoped {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false, unique = true)
-    private UserEntity user;
 
     @OneToMany(mappedBy = "person", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PersonAttributeEntity> attributes = new ArrayList<>();
@@ -34,13 +26,7 @@ public class PersonEntity extends BaseOrgScoped {
     public PersonEntity() {
     }
 
-    public PersonEntity(UserEntity user) {
-        this.user = user;
-    }
-
-    public PersonEntity(UserEntity user, List<PersonAttributeEntity> attributes,
-            List<PhotoEntity> photos) {
-        this.user = user;
+    public PersonEntity(List<PersonAttributeEntity> attributes, List<PhotoEntity> photos) {
         this.attributes = attributes != null ? attributes : new ArrayList<>();
         this.photos = photos != null ? photos : new ArrayList<>();
     }
@@ -53,14 +39,6 @@ public class PersonEntity extends BaseOrgScoped {
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public UserEntity getUser() {
-        return user;
-    }
-
-    public void setUser(UserEntity user) {
-        this.user = user;
     }
 
     public List<PersonAttributeEntity> getAttributes() {
@@ -102,7 +80,6 @@ public class PersonEntity extends BaseOrgScoped {
     public String toString() {
         return "PersonEntity{" +
                 "id=" + id +
-                ", userId=" + (user != null ? user.getId() : null) +
                 ", attributesCount=" + (attributes != null ? attributes.size() : 0) +
                 ", photosCount=" + (photos != null ? photos.size() : 0) +
                 '}';

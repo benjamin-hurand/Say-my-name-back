@@ -1,3 +1,4 @@
+// src/main/java/com/saymyname/webapp/controller/admin/AdminRestController.java
 package com.saymyname.webapp.controller.admin;
 
 import java.util.List;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.enums.OrgRole;
 import com.saymyname.core.model.game.options.GameMode;
 import com.saymyname.core.model.people.Attribute;
@@ -32,10 +34,12 @@ import com.saymyname.service.ChangeRequestService;
 import com.saymyname.service.GameModeService;
 import com.saymyname.service.PersonAttributeService;
 import com.saymyname.service.UserOrganizationService;
+import com.saymyname.service.UserService;
 import com.saymyname.service.person.PersonEmailService;
 import com.saymyname.service.person.PersonService;
 import com.saymyname.webapp.dto.PersonAttributeDto;
 import com.saymyname.webapp.dto.PersonDto;
+import com.saymyname.webapp.dto.UserDto;
 import com.saymyname.webapp.dto.changerequest.ChangeRequestSummaryDto;
 import com.saymyname.webapp.dto.person.AdminPersonCardDto;
 import com.saymyname.webapp.dto.person.AdminPersonDetailsDto;
@@ -47,6 +51,7 @@ import com.saymyname.webapp.mapper.BulkPersonAttributeDtoMapper;
 import com.saymyname.webapp.mapper.ChangeRequestDtoMapper;
 import com.saymyname.webapp.mapper.PersonAttributeDtoMapper;
 import com.saymyname.webapp.mapper.PersonDtoMapper;
+import com.saymyname.webapp.mapper.UserDtoMapper;
 import com.saymyname.webapp.mapper.person.PersonDirectoryDtoMapper;
 import com.saymyname.webapp.mapper.person.PersonEmailDtoMapper;
 
@@ -59,22 +64,34 @@ public class AdminRestController {
     private final AttributeService attributeService;
     private final GameModeService gameModeService;
     private final ChallengeService challengeService;
+
     private final PersonDirectoryDtoMapper personDirectoryDtoMapper;
     private final BulkPersonAttributeDtoMapper bulkPersonAttributeDtoMapper;
+
     private final PersonAttributeService personAttributeService;
     private final PersonAttributeDtoMapper personAttributeDtoMapper;
+
     private final PersonEmailService personEmailService;
     private final PersonEmailDtoMapper personEmailDtoMapper;
+
     private final PersonDtoMapper personDtoMapper;
+
     private final ChangeRequestService changeRequestService;
     private final ChangeRequestDtoMapper changeRequestDtoMapper;
+
     private final UserOrganizationService userOrganizationService;
+
+    private final UserService userService;
+    private final UserDtoMapper userDtoMapper;
+
     private final Logger logger = LoggerFactory.getLogger(AdminRestController.class);
 
-    public AdminRestController(PersonService personService,
+    public AdminRestController(
+            PersonService personService,
             AttributeService attributeService,
             GameModeService gameModeService,
-            ChallengeService challengeService, PersonDirectoryDtoMapper personDirectoryDtoMapper,
+            ChallengeService challengeService,
+            PersonDirectoryDtoMapper personDirectoryDtoMapper,
             BulkPersonAttributeDtoMapper bulkPersonAttributeDtoMapper,
             PersonAttributeService personAttributeService,
             PersonAttributeDtoMapper personAttributeDtoMapper,
@@ -83,21 +100,33 @@ public class AdminRestController {
             PersonDtoMapper personDtoMapper,
             ChangeRequestService changeRequestService,
             ChangeRequestDtoMapper changeRequestDtoMapper,
-            UserOrganizationService userOrganizationService) {
+            UserOrganizationService userOrganizationService,
+            UserService userService,
+            UserDtoMapper userDtoMapper) {
+
         this.personService = personService;
         this.attributeService = attributeService;
         this.gameModeService = gameModeService;
         this.challengeService = challengeService;
+
         this.personDirectoryDtoMapper = personDirectoryDtoMapper;
         this.bulkPersonAttributeDtoMapper = bulkPersonAttributeDtoMapper;
+
         this.personAttributeService = personAttributeService;
         this.personAttributeDtoMapper = personAttributeDtoMapper;
+
         this.personEmailService = personEmailService;
         this.personEmailDtoMapper = personEmailDtoMapper;
+
         this.personDtoMapper = personDtoMapper;
+
         this.changeRequestService = changeRequestService;
         this.changeRequestDtoMapper = changeRequestDtoMapper;
+
         this.userOrganizationService = userOrganizationService;
+
+        this.userService = userService;
+        this.userDtoMapper = userDtoMapper;
     }
 
     // === 1) Dashboard KPIs ===
@@ -132,24 +161,34 @@ public class AdminRestController {
     public ResponseEntity<AdminPersonDetailsDto> getAdminPersonDetails(
             @PathVariable("id") Long personId,
             @RequestParam(name = "includeChangeRequests", defaultValue = "false") boolean includeChangeRequests,
-            @RequestParam(name = "includeFuture", defaultValue = "true") boolean includeFuture // accepté pour compat
-                                                                                               // front ; non nécessaire
-                                                                                               // si les PA ont leurs
-                                                                                               // dates
+            @RequestParam(name = "includeFuture", defaultValue = "true") boolean includeFuture // compat front
     ) {
         // 1) Person + graph (attributs, photos)
-        Optional<Person> opt = personService.getPersonByIdWithAllAttributes(personId);
-        Person person = opt.orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
-                org.springframework.http.HttpStatus.NOT_FOUND, "Person not found"));
+        Person person = personService.getPersonByIdWithAllAttributes(personId)
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.NOT_FOUND, "Person not found"));
 
-        PersonDto personDto;
-        if (person.getUser() != null) {
-            Long userId = person.getUser().getId();
+        // 1bis) DTO Person (sans user dedans maintenant)
+        PersonDto personDto = personDtoMapper.toDto(person);
+
+        // 1ter) Si une entrée user_organizations existe (org courante) pour cette
+        // Person :
+        // on récupère le User + emails et on le mappe en UserDto (avec orgRole)
+        UserDto userDto = null;
+
+        Optional<Long> linkedUserIdOpt = userOrganizationService.findUserIdByPersonId(personId);
+        if (linkedUserIdOpt.isPresent()) {
+            Long userId = linkedUserIdOpt.get();
+
             OrgRole orgRole = userOrganizationService.findRoleForCurrentOrg(userId).orElse(null);
 
-            personDto = personDtoMapper.toDto(person, orgRole);
-        } else {
-            personDto = personDtoMapper.toDto(person);
+            Optional<User> userOpt = userService.findByIdWithEmails(userId);
+            if (userOpt.isPresent()) {
+                userDto = userDtoMapper.toDto(userOpt.get(), orgRole);
+            } else {
+                // Cas DB incohérent : lien uo.person_id -> user_id mais user introuvable
+                logger.warn("Linked userId={} for personId={} not found (current org).", userId, personId);
+            }
         }
 
         // 2) ChangeRequests (optionnel)
@@ -165,7 +204,7 @@ public class AdminRestController {
                 .toList();
 
         // 4) Réponse
-        AdminPersonDetailsDto response = new AdminPersonDetailsDto(personDto, crDtos, emailDtos);
+        AdminPersonDetailsDto response = new AdminPersonDetailsDto(personDto, userDto, crDtos, emailDtos);
         return ResponseEntity.ok(response);
     }
 
@@ -196,38 +235,30 @@ public class AdminRestController {
     // === 5) Challenges (lecture simple pour l’admin) ===
     @GetMapping("/challenges")
     public List<ChallengeCardProjection> listChallenges() {
-        // Pour l’instant, on passe un ChallengeMenu null → renverra tout.
-        // Plus tard: exposer ChallengeMenuDto en paramètre.
         return challengeService.getChallengesList(null);
     }
 
     /**
      * POST /api/admin/persons/{personId}/attributes/{attributeId}/bulk
-     * Applique en une fois create/update/delete sur l’attribut {attributeId} pour
-     * la personne {personId}.
-     * Ignore la policy RESTRICTED (admin bypass).
-     * Conserve les règles de typage, required, multiplicité et déduplication.
      */
     @PostMapping("/persons/{personId}/attributes/{attributeId}/bulk")
     public ResponseEntity<AttributeValuesResponseDto> applyAttributeChangesForPersonAsAdmin(
             @PathVariable("personId") Long personId,
             @PathVariable("attributeId") Long attributeId,
             @RequestBody BulkPersonAttributeRequest body) {
-        // 1) DTO -> modèles (delta)
+
         var toCreate = bulkPersonAttributeDtoMapper.toCreateModels(body.create());
         var toUpdate = bulkPersonAttributeDtoMapper.toUpdateModels(body.update());
         var toDelete = bulkPersonAttributeDtoMapper.toDeleteModels(body.delete());
 
-        // 2) Orchestration via service en bypassant RESTRICTED
         List<PersonAttribute> updated = personAttributeService.applyChangesForPerson(
                 personId,
                 attributeId,
                 toCreate,
                 toUpdate,
                 toDelete,
-                /* bypassRestricted */ true);
+                true);
 
-        // 3) Models -> DTO
         List<PersonAttributeDto> updatedDtos = updated.stream()
                 .map(personAttributeDtoMapper::toDto)
                 .toList();

@@ -94,11 +94,6 @@ public class PersonDao {
         return personEntityMapper.toModelList(personRepository.findByOptions(options, userId));
     }
 
-    @Transactional(readOnly = true)
-    public Optional<Long> findPersonIdByUserId(Long userId) {
-        return personRepository.findIdByUserId(userId);
-    }
-
     /**
      * Charge une Person par id en préchargeant (1) le graphe d'attributs et (2) les
      * photos,
@@ -114,7 +109,6 @@ public class PersonDao {
         // 1) Précharges ciblées
         preloadAttributesGraph(personId);
         preloadPhotos(personId);
-        preloadUser(personId);
 
         // 2) Mappe l'entité managée vers le modèle
         return mapManagedToModel(personId);
@@ -132,14 +126,9 @@ public class PersonDao {
     }
 
     @Transactional(propagation = Propagation.MANDATORY, readOnly = true)
-    public void preloadUser(Long personId) {
-        personRepository.fetchUser(personId);
-    }
-
-    @Transactional(propagation = Propagation.MANDATORY, readOnly = true)
     public Optional<Person> mapManagedToModel(Long personId) {
         Optional<PersonEntity> pOpt = personRepository.findById(personId);
-        return pOpt.map(personEntityMapper::toModelWithMediumUser);
+        return pOpt.map(personEntityMapper::toModel);
     }
 
     public long countUniverseEligibleAND(Long gameModeId) {

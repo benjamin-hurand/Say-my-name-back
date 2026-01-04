@@ -24,7 +24,8 @@ public class UserDao {
     private final UserEmailRepository userEmailRepository;
     private final UserEntityMapper userEntityMapper;
 
-    public UserDao(UserRepository userRepository,
+    public UserDao(
+            UserRepository userRepository,
             UserEmailRepository userEmailRepository,
             UserEntityMapper userEntityMapper) {
         this.userRepository = userRepository;
@@ -35,14 +36,34 @@ public class UserDao {
     // -------- Lecture --------
 
     public User findById(Long id) {
-        return userRepository.findWithEmailsById(id)
+        return userRepository.findWithGraphById(id)
                 .map(userEntityMapper::toModel)
                 .orElseThrow(() -> new EntityNotFoundException("Entity user not found with id " + id));
     }
 
-    /** Accès par UUID public (avec fetch des emails). */
+    public Optional<User> findByIdWithGraph(Long userId) {
+        if (userId == null)
+            return Optional.empty();
+        return userRepository.findWithGraphById(userId).map(userEntityMapper::toModel);
+    }
+
+    public Optional<User> findOptionalByLoginEmailIgnoreCase(String email) {
+        if (email == null)
+            return Optional.empty();
+        String trimmed = email.trim();
+        if (trimmed.isBlank())
+            return Optional.empty();
+
+        // ✅ Query côté UserEmailRepository doit fetch emails + identities (ok si
+        // identities = Set)
+        return userEmailRepository.findUserWithEmailsByLoginEmailIgnoreCase(trimmed)
+                .map(userEntityMapper::toModel);
+    }
+
     public Optional<User> findOptionalByPublicId(UUID publicId) {
-        return userRepository.findWithEmailsByPublicId(publicId)
+        if (publicId == null)
+            return Optional.empty();
+        return userRepository.findWithGraphByPublicId(publicId)
                 .map(userEntityMapper::toModel);
     }
 
@@ -51,43 +72,78 @@ public class UserDao {
                 .orElseThrow(() -> new EntityNotFoundException("Entity user not found with publicId " + publicId));
     }
 
-    /** Id technique à partir du publicId. */
+    public boolean existsByDisplayNameIgnoreCase(String displayName) {
+        if (displayName == null)
+            return false;
+        String trimmed = displayName.trim();
+        if (trimmed.isBlank())
+            return false;
+        return userRepository.existsByDisplayNameIgnoreCase(trimmed);
+    }
+
+    @Transactional
+    public User updateDisplayName(Long userId, String newDisplayName) {
+        int updated = userRepository.updateDisplayNameById(userId, newDisplayName);
+        if (updated != 1) {
+            throw new IllegalStateException("DisplayName update failed for userId=" + userId);
+        }
+        return userEntityMapper.toDisplayNameUpdateModel(userId, newDisplayName);
+    }
+
     public Optional<Long> findIdByPublicId(UUID publicId) {
+        if (publicId == null)
+            return Optional.empty();
         return userRepository.findIdByPublicId(publicId);
     }
 
-    /**
-     * Accès par email (case-insensitive) via user_emails (avec fetch des emails).
-     */
     public Optional<User> findOptionalByEmailIgnoreCase(String email) {
-        return userEmailRepository.findUserWithEmailsByEmailIgnoreCase(email)
+        if (email == null)
+            return Optional.empty();
+        String trimmed = email.trim();
+        if (trimmed.isBlank())
+            return Optional.empty();
+
+        return userEmailRepository.findUserWithEmailsByEmailIgnoreCase(trimmed)
                 .map(userEntityMapper::toModel);
     }
 
-    /** Vérifie l’existence d’un email (case-insensitive). */
     public boolean checkIfEmailExists(String email) {
-        return userEmailRepository.existsByEmailIgnoreCase(email);
+        if (email == null)
+            return false;
+        String trimmed = email.trim();
+        if (trimmed.isBlank())
+            return false;
+        return userEmailRepository.existsByEmailIgnoreCase(trimmed);
     }
 
-    /**
-     * Résolution "principal" :
-     * - on tente d’abord un UUID (subject du JWT),
-     * - sinon on tente un email (legacy).
-     */
+    public boolean hasVerifiedEmail(Long userId, String email) {
+        if (userId == null)
+            return false;
+        if (email == null)
+            return false;
+        String trimmed = email.trim();
+        if (trimmed.isBlank())
+            return false;
+        return userEmailRepository.existsVerifiedEmailForUserIgnoreCase(userId, trimmed);
+    }
+
     public User findByPrincipal(String principal) {
         if (principal == null || principal.isBlank()) {
             throw new UsernameNotFoundException("principal vide");
         }
-        // 1) UUID ?
+
+        String trimmed = principal.trim();
+
         try {
-            UUID pid = UUID.fromString(principal);
+            UUID pid = UUID.fromString(trimmed);
             return findByPublicIdOrThrow(pid);
         } catch (IllegalArgumentException ignore) {
             // not a UUID
         }
-        // 2) Email
-        return findOptionalByEmailIgnoreCase(principal)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found by publicId/email: " + principal));
+
+        return findOptionalByLoginEmailIgnoreCase(trimmed)
+                .orElseThrow(() -> new UsernameNotFoundException(
+                        "User not found or email not verified/loginAllowed: " + trimmed));
     }
 
     // -------- Écriture --------
@@ -104,11 +160,18 @@ public class UserDao {
         if (updated != 1) {
             throw new IllegalStateException("SRS update failed for userId=" + id);
         }
-        return UserEntityMapper.toSrsUpdateModel(id, newAlgo);
+        return userEntityMapper.toSrsUpdateModel(id, newAlgo);
     }
 
-    // Placeholder si besoin plus tard (refresh tokens, etc.)
-    public User findByToken(String token) {
-        return null;
+    // ✅ NEW: bump auth_version (atomic)
+    @Transactional
+    public void bumpAuthVersionOrThrow(Long userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("userId requis");
+        }
+        int updated = userRepository.bumpAuthVersionById(userId);
+        if (updated != 1) {
+            throw new EntityNotFoundException("User not found for auth bump userId=" + userId);
+        }
     }
 }

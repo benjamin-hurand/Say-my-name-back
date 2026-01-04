@@ -3,6 +3,7 @@ package com.saymyname.webapp.dto.person;
 import java.util.List;
 
 import com.saymyname.webapp.dto.PersonDto;
+import com.saymyname.webapp.dto.UserDto;
 import com.saymyname.webapp.dto.changerequest.ChangeRequestSummaryDto;
 
 /**
@@ -13,7 +14,8 @@ import com.saymyname.webapp.dto.changerequest.ChangeRequestSummaryDto;
  * courante)
  */
 public record AdminPersonDetailsDto(
-        PersonDto person,
-        List<ChangeRequestSummaryDto> changeRequests,
-        List<PersonEmailDto> emails) {
+                PersonDto person,
+                UserDto linkedUser,
+                List<ChangeRequestSummaryDto> changeRequests,
+                List<PersonEmailDto> emails) {
 }

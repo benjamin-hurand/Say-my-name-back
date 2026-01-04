@@ -1,12 +1,13 @@
 package com.saymyname.webapp.controller.auth;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import com.saymyname.core.model.auth.User; // ← ajuste si besoin
 import com.saymyname.service.PasswordService;
 import com.saymyname.service.UserService;
-import com.saymyname.webapp.dto.auth.ChangePasswordRequestDto;
 import com.saymyname.webapp.dto.auth.ForgotPasswordRequestDto;
 import com.saymyname.webapp.dto.auth.ResetPasswordRequestDto;
 
@@ -17,11 +18,9 @@ import jakarta.servlet.http.HttpServletRequest;
 public class AuthPasswordController {
 
     private final PasswordService passwordService;
-    private final UserService userService;
 
-    public AuthPasswordController(PasswordService passwordService, UserService userService) {
+    public AuthPasswordController(PasswordService passwordService) {
         this.passwordService = passwordService;
-        this.userService = userService;
     }
 
     @PostMapping("/forgot-password")
@@ -39,10 +38,4 @@ public class AuthPasswordController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/change-password")
-    public ResponseEntity<Void> changePassword(@RequestBody ChangePasswordRequestDto dto) {
-        User user = userService.getCurrentAuthenticatedUserOrThrow();
-        passwordService.changePassword(user, dto.currentPassword(), dto.newPassword());
-        return ResponseEntity.noContent().build();
-    }
 }

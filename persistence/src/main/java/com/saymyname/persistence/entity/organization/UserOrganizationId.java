@@ -1,5 +1,6 @@
 package com.saymyname.persistence.entity.organization;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 
 import java.io.Serializable;
@@ -7,7 +8,13 @@ import java.util.Objects;
 
 @Embeddable
 public class UserOrganizationId implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    @Column(name = "user_id", nullable = false)
     private Long userId;
+
+    @Column(name = "organization_id", nullable = false)
     private Long organizationId;
 
     public UserOrganizationId() {
@@ -40,8 +47,8 @@ public class UserOrganizationId implements Serializable {
             return true;
         if (!(o instanceof UserOrganizationId that))
             return false;
-        return Objects.equals(userId, that.userId) &&
-                Objects.equals(organizationId, that.organizationId);
+        return Objects.equals(userId, that.userId)
+                && Objects.equals(organizationId, that.organizationId);
     }
 
     @Override

@@ -1,49 +1,41 @@
-// src/main/java/com/saymyname/webapp/controller/auth/AuthResponseBuilder.java
 package com.saymyname.webapp.controller.auth;
+
+import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.auth.User;
 import com.saymyname.security.jwt.JwtService;
-import com.saymyname.service.UserOrganizationService;
 import com.saymyname.webapp.dto.auth.AuthResponseDto;
-import com.saymyname.webapp.dto.organization.UserOrganizationDto;
-import com.saymyname.webapp.mapper.organization.UserOrganizationDtoMapper;
-import org.springframework.stereotype.Component;
-
-import java.util.List;
-import java.util.UUID;
+import com.saymyname.webapp.dto.auth.SessionDto;
 
 @Component
 public class AuthResponseBuilder {
 
     private final JwtService jwtService;
-    private final UserOrganizationService userOrganizationService;
-    private final UserOrganizationDtoMapper userOrganizationDtoMapper;
+    private final SessionDtoAssembler sessionDtoAssembler;
 
-    public AuthResponseBuilder(JwtService jwtService,
-            UserOrganizationService userOrganizationService,
-            UserOrganizationDtoMapper userOrganizationDtoMapper) {
+    public AuthResponseBuilder(
+            JwtService jwtService,
+            SessionDtoAssembler sessionDtoAssembler) {
         this.jwtService = jwtService;
-        this.userOrganizationService = userOrganizationService;
-        this.userOrganizationDtoMapper = userOrganizationDtoMapper;
+        this.sessionDtoAssembler = sessionDtoAssembler;
     }
 
+    /**
+     * Construit la réponse auth:
+     * - accessToken (JWT court)
+     * - session (publicUserId, displayName, isAdmin, orgs)
+     *
+     * IMPORTANT: le refresh token n'est jamais dans le body (cookie HttpOnly côté
+     * controller).
+     */
     public AuthResponseDto build(User user) {
-        // subject = publicId (UUID) — robuste si email change
-        final UUID pubId = user.getPublicId();
-        final String subject = (pubId != null) ? pubId.toString() : String.valueOf(user.getId());
+        if (user == null) {
+            throw new IllegalArgumentException("user requis");
+        }
 
-        String token = jwtService.generateToken(subject, user.getPasswordVersion());
+        String accessToken = jwtService.generateAccessToken(user);
+        SessionDto session = sessionDtoAssembler.toSession(user);
 
-        List<UserOrganizationDto> orgDtos = userOrganizationService
-                .getOrganizationsForUser(user.getId())
-                .stream()
-                .map(userOrganizationDtoMapper::toDto)
-                .toList();
-        return new AuthResponseDto(
-                token,
-                (pubId != null ? pubId.toString() : null),
-                user.getDisplayName(),
-                user.isAdmin(),
-                orgDtos);
+        return new AuthResponseDto(accessToken, session);
     }
 }

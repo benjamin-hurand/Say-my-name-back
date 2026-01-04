@@ -1,3 +1,4 @@
+// src/main/java/com/saymyname/infra/mail/ConsoleMailer.java
 package com.saymyname.infra.mail;
 
 import java.util.Locale;
@@ -8,6 +9,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 
+import com.saymyname.core.model.enums.EmailVerificationPurpose;
 import com.saymyname.core.model.enums.OrgRole;
 import com.saymyname.service.port.Mailer;
 
@@ -32,5 +34,12 @@ public class ConsoleMailer implements Mailer {
             @Nullable String message) {
         logger.info("[DEV MAIL] Invitation | To={} | Url={} | Role={} | Locale={} | Message={}",
                 to, acceptUrl, role, locale, message);
+    }
+
+    @Override
+    public void sendEmailVerificationOtp(String to, String code, EmailVerificationPurpose purpose,
+            @Nullable String verificationLink, Locale locale) {
+        logger.info("[DEV MAIL] EmailVerification | To={} | Purpose={} | Locale={} | OTP={} | Link={}",
+                to, purpose, locale, code, verificationLink);
     }
 }

@@ -5,6 +5,7 @@ import java.util.Locale;
 import org.springframework.lang.Nullable;
 
 import com.saymyname.core.model.enums.OrgRole;
+import com.saymyname.core.model.enums.EmailVerificationPurpose;
 
 public interface Mailer {
 
@@ -12,11 +13,17 @@ public interface Mailer {
 
     void sendPasswordChangedInfoEmail(String to);
 
-    // ➕ Nouveau : envoi d’une invitation
     void sendInvitationEmail(
             String to,
             String acceptUrl,
             @Nullable OrgRole role,
             Locale locale,
             @Nullable String message);
+
+    void sendEmailVerificationOtp(
+            String to,
+            String code,
+            EmailVerificationPurpose purpose,
+            @Nullable String verificationLink,
+            Locale locale);
 }

@@ -1,6 +1,5 @@
 package com.saymyname.core.model.people;
 
-import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.enums.PhotoStatus;
 
 import java.util.ArrayList;
@@ -13,11 +12,14 @@ import java.util.Optional;
  * Modèle "plat" côté core.
  * - Listes toujours non null (vide par défaut).
  * - equals/hashCode basés uniquement sur id.
+ *
+ * NOTE:
+ * Le lien User <-> Person est désormais porté par user_organizations.person_id,
+ * donc Person ne contient plus de champ "user".
  */
 public class Person {
 
     private Long id;
-    private User user;
 
     private List<PersonAttribute> attributes = Collections.emptyList();
     private List<Photo> photos = Collections.emptyList();
@@ -28,7 +30,6 @@ public class Person {
 
     private Person(Builder builder) {
         this.id = builder.id;
-        this.user = builder.user;
         setAttributes(builder.attributes);
         setPhotos(builder.photos);
     }
@@ -36,10 +37,6 @@ public class Person {
     // --- Getters
     public Long getId() {
         return id;
-    }
-
-    public User getUser() {
-        return user;
     }
 
     public List<PersonAttribute> getAttributes() {
@@ -67,10 +64,6 @@ public class Person {
         this.id = id;
     }
 
-    public void setUser(User user) {
-        this.user = user;
-    }
-
     public void setAttributes(List<PersonAttribute> attributes) {
         this.attributes = attributes != null ? new ArrayList<>(attributes) : Collections.emptyList();
     }
@@ -82,17 +75,11 @@ public class Person {
     // --- Builder
     public static class Builder {
         private Long id;
-        private User user;
         private List<PersonAttribute> attributes;
         private List<Photo> photos;
 
         public Builder withId(Long id) {
             this.id = id;
-            return this;
-        }
-
-        public Builder withUser(User user) {
-            this.user = user;
             return this;
         }
 
@@ -131,7 +118,6 @@ public class Person {
     public String toString() {
         return "Person{" +
                 "id=" + id +
-                ", user=" + user +
                 ", attributes=" + (attributes != null ? attributes.size() : 0) + " items" +
                 ", photos=" + (photos != null ? photos.size() : 0) + " items" +
                 '}';

@@ -16,8 +16,34 @@ import com.saymyname.security.util.PasswordGenerator;
 public class GoogleAuthService {
 
     public String getEmail(String credential, String clientId) throws GeneralSecurityException, IOException {
+        GoogleIdToken idToken = verifyOrThrow(credential, clientId);
+        return idToken.getPayload().getEmail();
+    }
+
+    /**
+     * OIDC "sub" : identifiant stable du compte Google.
+     * C'est la valeur à stocker dans user_identities.provider_subject.
+     */
+    public String getSubject(String credential, String clientId) throws GeneralSecurityException, IOException {
+        GoogleIdToken idToken = verifyOrThrow(credential, clientId);
+        // En OIDC, "sub" est accessible via getSubject() sur le payload
+        return idToken.getPayload().getSubject();
+    }
+
+    public String generateRandomPasswordForNewUser() {
+        return PasswordGenerator.generatePassword();
+    }
+
+    // -------------------- internal --------------------
+
+    private GoogleIdToken verifyOrThrow(String credential, String clientId)
+            throws GeneralSecurityException, IOException {
+
         if (credential == null || credential.isEmpty()) {
             throw new IllegalArgumentException("Credential cannot be null or empty");
+        }
+        if (clientId == null || clientId.isBlank()) {
+            throw new IllegalArgumentException("clientId cannot be null or empty");
         }
 
         GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
@@ -26,14 +52,9 @@ public class GoogleAuthService {
                 .build();
 
         GoogleIdToken idToken = verifier.verify(credential);
-        if (idToken != null) {
-            return idToken.getPayload().getEmail();
-        } else {
+        if (idToken == null) {
             throw new RuntimeException("Invalid Google ID token.");
         }
-    }
-
-    public String generateRandomPasswordForNewUser() {
-        return PasswordGenerator.generatePassword();
+        return idToken;
     }
 }

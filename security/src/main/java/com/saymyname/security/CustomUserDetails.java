@@ -9,6 +9,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import com.saymyname.core.model.auth.User;
+import com.saymyname.core.model.enums.AuthProvider;
 
 public class CustomUserDetails implements UserDetails {
 
@@ -18,7 +19,6 @@ public class CustomUserDetails implements UserDetails {
         this.user = user;
     }
 
-    // --- Authorities / rôles ---
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return user.getRolesList().stream()
@@ -26,7 +26,6 @@ public class CustomUserDetails implements UserDetails {
                 .collect(Collectors.toList());
     }
 
-    // --- Accès pratiques ---
     public Long getId() {
         return user.getId();
     }
@@ -39,23 +38,30 @@ public class CustomUserDetails implements UserDetails {
         return user;
     }
 
-    // --- Credentials ---
+    /**
+     * IMPORTANT:
+     * DaoAuthenticationProvider a besoin d'un "password" = hash.
+     * Ici, on renvoie le password_hash de l'identité LOCAL (si elle existe),
+     * sinon null (ce qui fera échouer un login local).
+     */
     @Override
     public String getPassword() {
-        return user.getPassword();
+        if (user == null || user.getIdentities() == null) {
+            return null;
+        }
+        return user.getIdentities().stream()
+                .filter(i -> i != null && i.getProvider() == AuthProvider.LOCAL && Boolean.TRUE.equals(i.isEnabled()))
+                .map(i -> i.getPasswordHash())
+                .filter(h -> h != null && !h.isBlank())
+                .findFirst()
+                .orElse(null);
     }
 
-    /**
-     * Identité “technique” vue par Spring Security.
-     * On choisit l’UUID public (stable) plutôt qu’un email (mutables).
-     */
     @Override
     public String getUsername() {
         if (user.getPublicId() != null) {
             return user.getPublicId().toString();
         }
-        // Fallbacks de sécurité (ne devraient pas être nécessaires si publicId généré
-        // partout)
         if (user.getId() != null) {
             return String.valueOf(user.getId());
         }
@@ -66,7 +72,6 @@ public class CustomUserDetails implements UserDetails {
         return "unknown";
     }
 
-    // --- Flags de compte ---
     @Override
     public boolean isAccountNonExpired() {
         return true;
@@ -87,7 +92,6 @@ public class CustomUserDetails implements UserDetails {
         return Boolean.TRUE.equals(user.isActive());
     }
 
-    // --- Utilitaire ---
     public boolean hasRole(String role) {
         return getAuthorities().stream().anyMatch(a -> a.getAuthority().equals(role));
     }

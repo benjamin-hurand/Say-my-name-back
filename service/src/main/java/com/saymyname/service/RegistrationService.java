@@ -1,3 +1,4 @@
+// src/main/java/com/saymyname/service/RegistrationService.java
 package com.saymyname.service;
 
 import java.io.IOException;
@@ -8,10 +9,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.saymyname.core.model.auth.EmailVerificationChallenge;
+import com.saymyname.core.model.auth.RegisterClassicResult;
 import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.enums.SrsAlgorithm;
 import com.saymyname.persistence.dao.UserEmailDao;
 import com.saymyname.security.google.GoogleAuthService;
+import com.saymyname.service.auth.UserIdentityService;
+import com.saymyname.service.email.EmailVerificationService;
 
 @Service
 public class RegistrationService {
@@ -19,21 +24,29 @@ public class RegistrationService {
     private final UserService userService;
     private final UserEmailDao userEmailDao;
     private final GoogleAuthService googleAuthService;
+    private final EmailVerificationService emailVerificationService;
+    private final UserIdentityService userIdentityService;
 
-    public RegistrationService(UserService userService,
+    public RegistrationService(
+            UserService userService,
             UserEmailDao userEmailDao,
-            GoogleAuthService googleAuthService) {
+            GoogleAuthService googleAuthService,
+            EmailVerificationService emailVerificationService,
+            UserIdentityService userIdentityService) {
         this.userService = userService;
         this.userEmailDao = userEmailDao;
         this.googleAuthService = googleAuthService;
+        this.emailVerificationService = emailVerificationService;
+        this.userIdentityService = userIdentityService;
     }
 
     /**
-     * Inscription classique (displayName OBLIGATOIRE + email + password).
-     * Transactionnelle : crée l'utilisateur puis attache l'email primaire.
+     * Inscription classique : crée l'utilisateur + email primaire NON vérifié,
+     * crée l'identité LOCAL (password_hash), puis retourne le challenge OTP
+     * REGISTER_EMAIL.
      */
     @Transactional
-    public User registerClassic(String displayName, String email, String rawPassword) {
+    public RegisterClassicResult registerClassic(String displayName, String email, String rawPassword) {
         final String e = email == null ? null : email.trim();
         final String dn = sanitizeDisplayName(displayName);
 
@@ -52,67 +65,89 @@ public class RegistrationService {
 
         User newUser = new User.Builder()
                 .withDisplayName(dn)
-                .withPassword(rawPassword)
                 .withRoles("ROLE_USER")
                 .withActive(true)
                 .withSrsAlgorithm(SrsAlgorithm.SM2)
                 .build();
 
-        // encode + save
         User saved = userService.save(newUser);
 
-        // Attache l’email primaire (non vérifié ici)
+        // Email primaire (non vérifié ici)
         userEmailDao.attachPrimaryOnRegister(saved.getId(), e, false);
 
-        return saved;
+        // Identité LOCAL (password_hash) — pas de password dans users
+        userIdentityService.setLocalPassword(saved.getId(), rawPassword);
+
+        // Challenge OTP
+        EmailVerificationChallenge challenge = emailVerificationService.requestRegisterEmailVerification(saved.getId(),
+                e);
+
+        return new RegisterClassicResult(saved, challenge);
     }
 
     /**
-     * Inscription / connexion via Google OAuth (credential + clientId).
-     * Transactionnelle : crée l'utilisateur si nécessaire puis attache l'email
-     * (vérifié).
+     * Google OAuth : email primaire vérifié, identité GOOGLE attachée.
+     * Si l'email existe déjà (compte local), on autorise Google login en attachant
+     * l'identité.
      */
     @Transactional
     public User registerWithGoogle(String credential, String clientId)
             throws GeneralSecurityException, IOException {
 
+        // Tu dois pouvoir récupérer email + subject (sub).
+        // Si ton GoogleAuthService ne l’expose pas encore, c’est la seule partie à
+        // ajouter.
         String email = googleAuthService.getEmail(credential, clientId);
+        String subject = googleAuthService.getSubject(credential, clientId);
+
         if (email == null || email.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email Google introuvable");
         }
-        final String e = email.trim();
+        if (subject == null || subject.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Subject Google introuvable");
+        }
 
+        final String e = email.trim();
+        final String sub = subject.trim();
+
+        // Si email existe => on récupère le user et on attache identité GOOGLE
         if (userService.checkIfAccountExistsWithEmail(e)) {
-            // 👉 lookup par email
             User user = userService.findByEmailIgnoreCaseOrThrow(e);
             if (!Boolean.TRUE.equals(user.isActive())) {
                 user = userService.setActive(user);
             }
-            return user;
-        } else {
-            String randomPassword = googleAuthService.generateRandomPasswordForNewUser();
-            String dn = deriveDisplayNameFromEmail(e); // propose quelque chose de présentable
 
-            User user = new User.Builder()
-                    .withDisplayName(dn)
-                    .withPassword(randomPassword)
-                    .withRoles("ROLE_USER")
-                    .withActive(true)
-                    .withSrsAlgorithm(SrsAlgorithm.SM2)
-                    .build();
+            // Attache identité Google (idempotent + collision subject gérée)
+            userIdentityService.attachGoogleIdentityIfMissing(user.getId(), sub);
 
-            user = userService.save(user);
-
-            // Email primaire vérifié (preuve via Google)
-            userEmailDao.attachPrimaryOnRegister(user.getId(), e, true);
+            // Optionnel: si tu veux marquer l'email verified (preuve Google)
+            // userEmailDao.markVerifiedIfMatches(user.getId(), e);
 
             return user;
         }
+
+        String dn = deriveDisplayNameFromEmail(e);
+
+        User user = new User.Builder()
+                .withDisplayName(dn)
+                .withRoles("ROLE_USER")
+                .withActive(true)
+                .withSrsAlgorithm(SrsAlgorithm.SM2)
+                .build();
+
+        user = userService.save(user);
+
+        // Email primaire vérifié (preuve via Google)
+        userEmailDao.attachPrimaryOnRegister(user.getId(), e, true);
+
+        // Identité GOOGLE (pas de password)
+        userIdentityService.attachGoogleIdentityIfMissing(user.getId(), sub);
+
+        return user;
     }
 
     // -------------------- helpers --------------------
 
-    /** Trim + coupe à 50 caractères. Null safe. */
     private static String sanitizeDisplayName(String provided) {
         if (provided == null)
             return null;
@@ -120,7 +155,6 @@ public class RegistrationService {
         return s.length() > 50 ? s.substring(0, 50) : s;
     }
 
-    /** Fallback pour OAuth : partie locale de l'email, trim + max 50. */
     private static String deriveDisplayNameFromEmail(String email) {
         String base = "User";
         if (email != null) {

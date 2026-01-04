@@ -14,42 +14,62 @@ import com.saymyname.persistence.entity.UserEntity;
 @Repository
 public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
-        // --- Accès par identifiant public (UUID) ---
         Optional<UserEntity> findByPublicId(UUID publicId);
 
         @Query("select u.id from UserEntity u where u.publicId = :publicId")
         Optional<Long> findIdByPublicId(@Param("publicId") UUID publicId);
 
-        // --- Charger un user + ses emails (fetch join) par id ---
+        /**
+         * ✅ Charger user + emails (List) + identities (Set)
+         * DISTINCT indispensable à cause du JOIN FETCH sur emails (sinon doublons).
+         */
         @Query("""
-                        SELECT DISTINCT u
-                        FROM UserEntity u
-                        LEFT JOIN FETCH u.emails
-                        WHERE u.id = :id
+                        select distinct u
+                        from UserEntity u
+                        left join fetch u.emails
+                        left join fetch u.identities
+                        where u.id = :id
                         """)
-        Optional<UserEntity> findWithEmailsById(@Param("id") Long id);
+        Optional<UserEntity> findWithGraphById(@Param("id") Long id);
 
-        // --- Charger un user + ses emails (fetch join) par publicId ---
         @Query("""
-                        SELECT DISTINCT u
-                        FROM UserEntity u
-                        LEFT JOIN FETCH u.emails
-                        WHERE u.publicId = :publicId
+                        select distinct u
+                        from UserEntity u
+                        left join fetch u.emails
+                        left join fetch u.identities
+                        where u.publicId = :publicId
                         """)
-        Optional<UserEntity> findWithEmailsByPublicId(@Param("publicId") UUID publicId);
+        Optional<UserEntity> findWithGraphByPublicId(@Param("publicId") UUID publicId);
 
-        // --- Update ciblé SRS ---
+        boolean existsByDisplayNameIgnoreCase(String displayName);
+
         @Modifying(clearAutomatically = true, flushAutomatically = true)
-        @Query("UPDATE UserEntity u SET u.srsAlgorithm = :algo WHERE u.id = :id")
+        @Query("update UserEntity u set u.displayName = :displayName where u.id = :id")
+        int updateDisplayNameById(@Param("id") Long id, @Param("displayName") String displayName);
+
+        @Modifying(clearAutomatically = true, flushAutomatically = true)
+        @Query("update UserEntity u set u.srsAlgorithm = :algo where u.id = :id")
         int updateSrsAlgorithmById(@Param("id") Long id, @Param("algo") SrsAlgorithm algo);
 
-        // --- (Optionnel) projection minimaliste ---
+        /**
+         * ✅ Bump auth_version (atomic).
+         * On laisse la DB mettre à jour auth_updated_at via ON UPDATE
+         * CURRENT_TIMESTAMP.
+         */
+        @Modifying(clearAutomatically = true, flushAutomatically = true)
+        @Query("""
+                        update UserEntity u
+                           set u.authVersion = u.authVersion + 1
+                         where u.id = :id
+                        """)
+        int bumpAuthVersionById(@Param("id") Long id);
+
         interface UserSrsView {
                 Long getId();
 
                 SrsAlgorithm getSrsAlgorithm();
         }
 
-        @Query("SELECT u.id AS id, u.srsAlgorithm AS srsAlgorithm FROM UserEntity u WHERE u.id = :id")
+        @Query("select u.id as id, u.srsAlgorithm as srsAlgorithm from UserEntity u where u.id = :id")
         Optional<UserSrsView> findSrsById(@Param("id") Long id);
 }

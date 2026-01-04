@@ -1,5 +1,7 @@
 package com.saymyname.persistence.repository;
 
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -7,23 +9,8 @@ import org.springframework.stereotype.Repository;
 
 import com.saymyname.persistence.entity.organization.PersonEntity;
 
-import java.util.List;
-import java.util.Optional;
-
 @Repository
 public interface PersonRepository extends JpaRepository<PersonEntity, Long>, PersonRepositoryCustom {
-
-  // Bénéficie du filtre tenant Hibernate (org) automatiquement
-  List<PersonEntity> findByUserIsNull();
-
-  // JPQL → org auto via filtre Hibernate
-  // ID only (léger, pas d’ENTITY côté service)
-  @Query("""
-      select p.id
-      from PersonEntity p
-      where p.user.id = :userId
-      """)
-  Optional<Long> findIdByUserId(@Param("userId") Long userId);
 
   // JPQL → org auto
   // 1) p.attributes + pa.attribute (ManyToOne)
@@ -45,15 +32,6 @@ public interface PersonRepository extends JpaRepository<PersonEntity, Long>, Per
       where p.id = :personId
       """)
   Optional<PersonEntity> fetchPhotos(@Param("personId") Long personId);
-
-  // 3) p.user (linked account)
-  @Query("""
-      select distinct p
-      from PersonEntity p
-      left join fetch p.user u
-      where p.id = :personId
-      """)
-  Optional<PersonEntity> fetchUser(@Param("personId") Long personId);
 
   /**
    * UNIVERSE + AND :
