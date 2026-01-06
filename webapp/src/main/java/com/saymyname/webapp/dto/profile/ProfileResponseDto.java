@@ -8,9 +8,9 @@ import com.saymyname.webapp.dto.UserDto;
 import com.saymyname.webapp.dto.changerequest.ChangeRequestSummaryDto;
 
 public record ProfileResponseDto(
-        UserDto user,
-        PersonDto person,
-        List<ChangeRequestSummaryDto> changeRequests,
-        ProfileOnboardingDto onboarding // null si person != null
-) {
+                UserDto user,
+                PersonDto person,
+                List<ChangeRequestSummaryDto> changeRequests,
+                ProfileOnboardingDto onboarding, // null si person != null
+                ProfileXpSummaryDto xpSummary) {
 }

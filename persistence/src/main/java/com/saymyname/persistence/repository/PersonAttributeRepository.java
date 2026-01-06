@@ -1,3 +1,4 @@
+// src/main/java/com/saymyname/persistence/repository/PersonAttributeRepository.java
 package com.saymyname.persistence.repository;
 
 import java.time.LocalDateTime;
@@ -21,7 +22,6 @@ import jakarta.persistence.QueryHint;
 public interface PersonAttributeRepository extends JpaRepository<PersonAttributeEntity, Long> {
 
   // MIN/MAX pour attributs numériques (valeurs stockées en texte)
-  // SQL natif conservé + filtrage tenant (organization_id)
   @Query(value = """
       SELECT pa.attribute_id    AS attributeId,
              MIN(CAST(pa.value AS DECIMAL(20,6))) AS minVal,
@@ -34,7 +34,6 @@ public interface PersonAttributeRepository extends JpaRepository<PersonAttribute
   List<Object[]> findNumberMinMaxByAttributeIds(@Param("attributeIds") Collection<Long> attributeIds);
 
   // MIN/MAX pour attributs date (format 'YYYY-MM-DD' côté DB)
-  // SQL natif conservé + filtrage tenant
   @Query(value = """
       SELECT pa.attribute_id AS attributeId,
              DATE_FORMAT(MIN(STR_TO_DATE(pa.value, '%Y-%m-%d')), '%Y-%m-%d') AS minVal,
@@ -46,22 +45,20 @@ public interface PersonAttributeRepository extends JpaRepository<PersonAttribute
       """, nativeQuery = true)
   List<Object[]> findDateMinMaxByAttributeIds(@Param("attributeIds") Collection<Long> attributeIds);
 
-  // Comptage par intervalle (string range) + validité — SQL natif conservé +
-  // filtrage tenant
+  // Comptage par intervalle + validité
   @Query(value = """
       SELECT COUNT(DISTINCT pa.person_id)
         FROM person_attributes pa
        WHERE pa.value >= ?1
          AND pa.value <  ?2
          AND pa.valid_from <= ?3
-         AND (pa.valid_to IS NULL OR pa.valid_to >= ?3)
+         AND (pa.valid_to IS NULL OR pa.valid_to > ?3)
          AND pa.attribute_id = ?4
          AND pa.organization_id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
       """, nativeQuery = true)
   long countPersonsMatchingFilter(String minValue, String nextValue, LocalDateTime validFor, Long attributeId);
 
-  // Actifs “runtime” : exclude pending_delete — ordre déterministe (JPQL → org
-  // auto)
+  // Actifs “runtime” : exclude pending_delete — ordre déterministe
   @Query("""
       SELECT pa FROM PersonAttributeEntity pa JOIN pa.attribute a
       WHERE pa.person.id = :personId
@@ -72,91 +69,48 @@ public interface PersonAttributeRepository extends JpaRepository<PersonAttribute
       """)
   List<PersonAttributeEntity> findAttributesByPersonIdActive(@Param("personId") Long personId);
 
-  // Actifs par attribut, hors pending_delete — ordre déterministe (JPQL → org
-  // auto)
+  /**
+   * Actifs à un instant (now ∈ [validFrom, validTo)), hors pending_delete.
+   * (Version paramétrée, utile au service pour rester cohérent sur "now".)
+   */
   @Query("""
       SELECT pa FROM PersonAttributeEntity pa
       WHERE pa.person.id = :personId
         AND pa.attribute.id = :attributeId
         AND pa.pendingDelete = false
-        AND pa.validFrom <= CURRENT_TIMESTAMP
-        AND (pa.validTo IS NULL OR pa.validTo > CURRENT_TIMESTAMP)
-      ORDER BY pa.validFrom ASC, pa.id ASC
-      """)
-  List<PersonAttributeEntity> findActiveByPersonAndAttributeExcludingPending(
-      @Param("personId") Long personId,
-      @Param("attributeId") Long attributeId);
-
-  // NON-pending à partir de NOW (actives + futures) — ordre déterministe (JPQL →
-  // org auto)
-  @Query("""
-      SELECT pa FROM PersonAttributeEntity pa
-      WHERE pa.person.id = :personId
-        AND pa.attribute.id = :attributeId
-        AND pa.pendingDelete = false
+        AND pa.validFrom <= :now
         AND (pa.validTo IS NULL OR pa.validTo > :now)
       ORDER BY pa.validFrom ASC, pa.id ASC
       """)
-  List<PersonAttributeEntity> findNonPendingFromNowByPersonAndAttribute(
+  List<PersonAttributeEntity> findActiveAtByPersonAndAttributeExcludingPending(
       @Param("personId") Long personId,
       @Param("attributeId") Long attributeId,
       @Param("now") LocalDateTime now);
 
   /**
-   * SOFT-CLOSE en lot : set pending_delete=true, valid_to = :seasonEnd (seulement
-   * sur les lignes actives au :now)
-   * JPQL conservé (filtre tenant appliqué par Hibernate).
+   * SOFT-CLOSE immédiat : pending_delete=true, valid_to = :now
+   * uniquement sur les lignes actives au :now.
    */
   @Modifying
   @Query("""
       UPDATE PersonAttributeEntity pa
          SET pa.pendingDelete = true,
-             pa.validTo = :seasonEnd
+             pa.validTo = :now
        WHERE pa.person.id = :personId
          AND pa.id IN (:ids)
          AND pa.pendingDelete = false
          AND pa.validFrom <= :now
          AND (pa.validTo IS NULL OR pa.validTo > :now)
       """)
-  int softCloseAllByIdsAndPersonId(@Param("personId") Long personId,
-      @Param("ids") List<Long> ids,
-      @Param("seasonEnd") LocalDateTime seasonEnd,
-      @Param("now") LocalDateTime now);
-
-  @Modifying(clearAutomatically = true, flushAutomatically = true)
-  @Query("""
-          update PersonAttributeEntity pa
-             set pa.pendingDelete = true,
-                 pa.validTo = pa.validFrom
-           where pa.person.id = :personId
-             and pa.id in :ids
-             and pa.pendingDelete = false
-             and pa.validFrom > CURRENT_TIMESTAMP
-             and pa.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
-      """)
-  int softCloseFutureByIdsAndPersonId(@Param("personId") Long personId,
-      @Param("ids") Collection<Long> ids);
-
-  /**
-   * Hard delete des lignes FUTURES non-pending (valid_from > :now)
-   * JPQL conservé (filtre tenant appliqué par Hibernate).
-   */
-  @Modifying
-  @Query("""
-      DELETE FROM PersonAttributeEntity pa
-       WHERE pa.person.id = :personId
-         AND pa.id IN (:ids)
-         AND pa.pendingDelete = false
-         AND pa.validFrom > :now
-      """)
-  int hardDeleteFutureByIdsAndPersonId(@Param("personId") Long personId,
+  int softCloseActiveByIdsAndPersonId(
+      @Param("personId") Long personId,
       @Param("ids") List<Long> ids,
       @Param("now") LocalDateTime now);
 
   /**
    * Hard delete en une requête : toutes les lignes marquées is_pending_delete=1
    * et expirées.
-   * SQL natif conservé + filtrage tenant explicite (sécurité cross-tenant).
+   * SQL natif + filtrage tenant explicite.
    */
   @Modifying
   @Query(value = """
@@ -171,7 +125,6 @@ public interface PersonAttributeRepository extends JpaRepository<PersonAttribute
   /**
    * 🔎 Valeurs des attributs primaires (primaryField=true) pour un batch de
    * personnes.
-   * NB: on ne remonte plus personAttributeId ici.
    */
   @org.springframework.data.jpa.repository.QueryHints({
       @QueryHint(name = HINT_READ_ONLY, value = "true"),

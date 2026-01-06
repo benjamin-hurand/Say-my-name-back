@@ -1,11 +1,9 @@
 package com.saymyname.webapp.mapper;
 
-import com.saymyname.core.model.game.options.GameAttributeFilter;
-import com.saymyname.core.model.people.Attribute;
-import com.saymyname.webapp.dto.GameAttributeFilterDto;
-import com.saymyname.webapp.dto.challenge.ChallengeAttributeFilterDto;
-
 import org.springframework.stereotype.Component;
+
+import com.saymyname.core.model.game.options.GameAttributeFilter;
+import com.saymyname.webapp.dto.GameAttributeFilterDto;
 
 @Component
 public class GameAttributeFilterDtoMapper {
@@ -20,14 +18,6 @@ public class GameAttributeFilterDtoMapper {
         return new GameAttributeFilter.Builder()
                 .withId(dto.id())
                 .withAttribute(attributeDtoMapper.toModel(dto.attribute()))
-                .withMinValue(dto.minValue())
-                .withMaxValue(dto.maxValue())
-                .build();
-    }
-
-    public GameAttributeFilter toModel(ChallengeAttributeFilterDto dto) {
-        return new GameAttributeFilter.Builder()
-                .withAttribute(new Attribute.Builder().withId(dto.attributeId()).build())
                 .withMinValue(dto.minValue())
                 .withMaxValue(dto.maxValue())
                 .build();

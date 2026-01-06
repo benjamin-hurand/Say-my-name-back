@@ -33,14 +33,11 @@ public class PersonAttributeService {
 
     private final PersonAttributeDao personAttributeDao;
     private final AttributeDao attributeDao;
-    private final ChallengeSeasonService challengeSeasonService;
 
     public PersonAttributeService(PersonAttributeDao personAttributeDao,
-            AttributeDao attributeDao,
-            ChallengeSeasonService challengeSeasonService) {
+            AttributeDao attributeDao) {
         this.personAttributeDao = personAttributeDao;
         this.attributeDao = attributeDao;
-        this.challengeSeasonService = challengeSeasonService;
     }
 
     public List<PersonAttribute> getAttributesByPersonId(Long personId) {
@@ -76,6 +73,10 @@ public class PersonAttributeService {
         return out;
     }
 
+    /**
+     * Conservé tel quel : ton repository compte en tenant compte de
+     * valid_from/valid_to.
+     */
     public Long countPersonsMatchingFilter(String minValue, String maxValue, LocalDateTime validFor,
             Long attributeId) {
         return personAttributeDao.countPersonsMatchingFilter(
@@ -99,20 +100,20 @@ public class PersonAttributeService {
     }
 
     /**
-     * Applique en 1 transaction :
-     * - DELETE :
-     * * si ACTIVE ⇒ soft-close (valid_to = fin_saison, pending_delete = true)
-     * * si FUTURE ⇒ hard delete immédiat
-     * - UPDATE :
-     * * si ACTIVE ⇒ soft-close + create à valid_from = début_saison_n+1
-     * * si FUTURE ⇒ delete future + create à la même date (in-place)
-     * - CREATE :
-     * * toujours create à valid_from = début_saison_n+1
+     * OPTION A (sans saisons) :
+     * - On garde validFrom/validTo pour l'historique.
+     * - Toute modif s'applique immédiatement (now).
+     * - On ne gère plus de "future planning" : si une ligne future existe en base,
+     * elle est ignorée côté modif (et on peut choisir de la nettoyer plus tard).
      *
-     * Les contrôles (RESTRICTED, required, multiplicité via maxValues, doublons,
-     * type)
-     * sont évalués sur le snapshot simulé à nextSeasonStart en tenant compte des PA
-     * déjà planifiées.
+     * Règles :
+     * - DELETE active => soft-close immédiat (pendingDelete=true, validTo=now)
+     * - UPDATE active => soft-close immédiat + create immédiat (validFrom=now)
+     * - CREATE => create immédiat (validFrom=now)
+     *
+     * Les contraintes (required / maxValues / doublons) sont évaluées sur le
+     * snapshot
+     * simulé à now (après application des opérations).
      */
     @Transactional
     public List<PersonAttribute> applyChangesForPerson(
@@ -122,16 +123,14 @@ public class PersonAttributeService {
             List<PersonAttribute> toUpdate,
             List<PersonAttribute> toDelete,
             boolean bypassRestricted,
-            boolean avoidHardDelete) {
+            boolean avoidHardDelete // conservé pour compat, ignoré ici
+    ) {
 
         if (personId == null || attributeId == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "personId ou attributeId manquant");
         }
 
-        // === Bornes saisonnières ===
         final LocalDateTime now = LocalDateTime.now();
-        final LocalDateTime seasonEnd = challengeSeasonService.getCurrentSeasonOrThrow().getEndDate();
-        final LocalDateTime nextSeasonStart = challengeSeasonService.getNextSeasonOrThrow().getStartDate();
 
         // 1) Attribut (policy/type/required/maxValues)
         Attribute attr = attributeDao.findById(attributeId)
@@ -141,163 +140,130 @@ public class PersonAttributeService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Modifications soumises à approbation");
         }
 
-        // 2) Charger toutes les PA non-pending à partir de maintenant (actives +
-        // futures)
-        List<PersonAttribute> nonPendingFromNow = personAttributeDao
-                .findNonPendingFromNowByPersonAndAttribute(personId, attributeId, now);
+        // 2) Charger les PA ACTIVES à NOW uniquement (on ignore le futur)
+        List<PersonAttribute> activeNow = personAttributeDao.findActiveAtByPersonAndAttribute(personId, attributeId,
+                now);
 
         // Index par id
-        Map<Long, PersonAttribute> byId = nonPendingFromNow.stream()
+        Map<Long, PersonAttribute> byId = activeNow.stream()
+                .filter(pa -> pa.getId() != null)
                 .collect(Collectors.toMap(PersonAttribute::getId, Function.identity()));
 
-        // Partition active/future (à NOW)
-        List<PersonAttribute> activeNow = new ArrayList<>();
-        List<PersonAttribute> futureNow = new ArrayList<>();
-        for (PersonAttribute pa : nonPendingFromNow) {
-            boolean isActive = (!pa.isPendingDelete()) &&
-                    (!pa.getValidFrom().isAfter(now)) &&
-                    (pa.getValidTo() == null || pa.getValidTo().isAfter(now));
-            if (isActive)
-                activeNow.add(pa);
-            else
-                futureNow.add(pa);
-        }
+        Set<Long> activeIds = activeNow.stream()
+                .map(PersonAttribute::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
 
-        Set<Long> activeIds = activeNow.stream().map(PersonAttribute::getId).collect(Collectors.toSet());
-        Set<Long> futureIds = futureNow.stream().map(PersonAttribute::getId).collect(Collectors.toSet());
-
-        // 3) Normalisation & validation des entrées + classification par état visé
+        // 3) Normalisation / validation des entrées + classification
 
         // --- UPDATE
         record UpdActive(Long id, String newValue) {
         }
-        record UpdFuture(Long id, String newValue, LocalDateTime originalValidFrom) {
-        }
-
         List<UpdActive> updActive = new ArrayList<>();
-        List<UpdFuture> updFuture = new ArrayList<>();
 
         if (toUpdate != null) {
             for (var u : toUpdate) {
+                if (u == null || u.getId() == null) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Update: id manquant");
+                }
+
                 var curr = byId.get(u.getId());
-                if (curr == null)
+                if (curr == null) {
                     throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Attribut à mettre à jour introuvable");
-
-                if (curr.isPendingDelete())
+                }
+                if (!activeIds.contains(curr.getId())) {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "Update non autorisé: ligne non active");
+                }
+                if (curr.isPendingDelete()) {
                     throw new ResponseStatusException(HttpStatus.CONFLICT, "Ligne en cours de suppression");
+                }
 
-                // NEW: normalisation contextualisée (type + casing strategy)
                 String normalized = TextNormalization.normalizeWithStrategy(
                         u.getValue(), attr.getType(), attr.getCasingStrategy());
-                if (normalized == null || normalized.isBlank())
+                if (normalized == null || normalized.isBlank()) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Valeur de mise à jour vide");
-
-                if (!AttributeValueValidator.isValid(normalized, attr.getType()))
+                }
+                if (!AttributeValueValidator.isValid(normalized, attr.getType())) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                             "Valeur invalide pour le type " + attr.getType());
+                }
 
-                // Filtrer no-op (même valeur après normalisation)
                 String currNorm = TextNormalization.normalizeWithStrategy(
                         curr.getValue(), attr.getType(), attr.getCasingStrategy());
                 if (Objects.equals(currNorm, normalized)) {
                     continue; // no-op
                 }
 
-                if (activeIds.contains(curr.getId())) {
-                    updActive.add(new UpdActive(curr.getId(), normalized));
-                } else if (futureIds.contains(curr.getId())) {
-                    updFuture.add(new UpdFuture(curr.getId(), normalized, curr.getValidFrom()));
-                } else {
-                    throw new ResponseStatusException(HttpStatus.CONFLICT, "État de ligne non géré");
-                }
+                updActive.add(new UpdActive(curr.getId(), normalized));
             }
         }
 
         // --- DELETE
         List<Long> delActiveIds = new ArrayList<>();
-        List<Long> delFutureIds = new ArrayList<>();
         if (toDelete != null) {
             for (var d : toDelete) {
-                var curr = byId.get(d.getId());
-                if (curr == null)
-                    throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Attribut à supprimer introuvable");
-
-                if (curr.isPendingDelete()) {
-                    // déjà en suppression : on ignore
-                    continue;
+                if (d == null || d.getId() == null) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Delete: id manquant");
                 }
-                if (activeIds.contains(curr.getId()))
-                    delActiveIds.add(curr.getId());
-                else if (futureIds.contains(curr.getId()))
-                    delFutureIds.add(curr.getId());
+                var curr = byId.get(d.getId());
+                if (curr == null) {
+                    throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Attribut à supprimer introuvable");
+                }
+                if (curr.isPendingDelete()) {
+                    continue; // déjà en suppression : ignore
+                }
+                if (!activeIds.contains(curr.getId())) {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "Delete non autorisé: ligne non active");
+                }
+                delActiveIds.add(curr.getId());
             }
         }
 
         // --- CREATE
-        List<String> createNextSeasonValues = new ArrayList<>();
+        List<String> createNowValues = new ArrayList<>();
         if (toCreate != null) {
             for (var c : toCreate) {
-                // NEW: normalisation contextualisée (type + casing strategy)
+                if (c == null)
+                    continue;
+
                 String normalized = TextNormalization.normalizeWithStrategy(
                         c.getValue(), attr.getType(), attr.getCasingStrategy());
-                if (normalized == null || normalized.isBlank())
+                if (normalized == null || normalized.isBlank()) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Valeur de création vide");
-
-                if (!AttributeValueValidator.isValid(normalized, attr.getType()))
+                }
+                if (!AttributeValueValidator.isValid(normalized, attr.getType())) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                             "Valeur invalide pour le type " + attr.getType());
-
-                createNextSeasonValues.add(normalized);
+                }
+                createNowValues.add(normalized);
             }
         }
 
-        // 4) Simulation à nextSeasonStart (état APRÈS opérations)
-        List<SnapshotItem> snapshotBeforeOps = nonPendingFromNow.stream()
-                .filter(pa -> isValidAt(pa, nextSeasonStart))
-                // NEW: normalisation contextualisée (type + casing strategy)
-                .map(pa -> new SnapshotItem(pa.getId(),
+        // 4) Simulation du snapshot à NOW (état APRÈS opérations)
+        // Snapshot = valeurs normalisées des actifs à now
+        List<SnapshotItem> snapshotBeforeOps = activeNow.stream()
+                .filter(pa -> isActiveAt(pa, now))
+                .map(pa -> new SnapshotItem(
+                        pa.getId(),
                         TextNormalization.normalizeWithStrategy(pa.getValue(), attr.getType(),
                                 attr.getCasingStrategy())))
                 .collect(Collectors.toCollection(ArrayList::new));
 
         List<SnapshotItem> snapshotAfterOps = new ArrayList<>(snapshotBeforeOps);
 
-        // DELETE active : retirer si visible à nextSeasonStart
+        // DELETE active : retirer
         for (Long id : delActiveIds) {
             removeOneOccurrenceById(snapshotAfterOps, id);
         }
 
-        // DELETE future : retirer si sa date ≤ nextSeasonStart
-        for (Long id : delFutureIds) {
-            var f = byId.get(id);
-            if (f != null && !f.getValidFrom().isAfter(nextSeasonStart)) {
-                removeOneOccurrenceById(snapshotAfterOps, id);
-            }
-        }
-
-        // UPDATE active : remplacer (si visible à nextSeasonStart)
+        // UPDATE active : retirer l'ancienne occurrence + ajouter nouvelle valeur
         for (var u : updActive) {
-            var curr = byId.get(u.id());
-            boolean visibleAtNext = isValidAt(curr, nextSeasonStart);
-            if (visibleAtNext) {
-                removeOneOccurrenceById(snapshotAfterOps, u.id());
-                snapshotAfterOps.add(new SnapshotItem(null, u.newValue())); // nouvelle ligne (id inconnu)
-            } else {
-                snapshotAfterOps.add(new SnapshotItem(null, u.newValue()));
-            }
+            removeOneOccurrenceById(snapshotAfterOps, u.id());
+            snapshotAfterOps.add(new SnapshotItem(null, u.newValue()));
         }
 
-        // UPDATE future : si future ≤ nextSeasonStart, remplacer dans le snapshot
-        for (var u : updFuture) {
-            var curr = byId.get(u.id());
-            if (!curr.getValidFrom().isAfter(nextSeasonStart)) {
-                removeOneOccurrenceById(snapshotAfterOps, u.id());
-                snapshotAfterOps.add(new SnapshotItem(null, u.newValue()));
-            }
-        }
-
-        // CREATE : ajoutées à nextSeasonStart
-        for (String v : createNextSeasonValues) {
+        // CREATE : ajoutées maintenant
+        for (String v : createNowValues) {
             snapshotAfterOps.add(new SnapshotItem(null, v));
         }
 
@@ -321,48 +287,29 @@ public class PersonAttributeService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Valeur dupliquée non autorisée");
         }
 
-        // 6) Exécution ordonnée (actives vs futures)
-        // a) DELETE
+        // 6) Exécution en base (immédiat)
+
+        // a) DELETE (soft-close)
         if (!delActiveIds.isEmpty()) {
-            personAttributeDao.softCloseAllByIdsAndPersonId(personId, delActiveIds, seasonEnd, now);
-        }
-        if (!delFutureIds.isEmpty()) {
-            if (avoidHardDelete) {
-                // tombstone: ligne conserve son id, plus visible, FK CR conservée
-                personAttributeDao.softCloseFutureByIdsAndPersonId(personId, delFutureIds);
-            } else {
-                personAttributeDao.hardDeleteFutureByIdsAndPersonId(personId, delFutureIds, now);
-            }
+            personAttributeDao.softCloseActiveByIdsAndPersonId(personId, delActiveIds, now);
         }
 
-        // b) UPDATE
+        // b) UPDATE (soft-close + create)
         if (!updActive.isEmpty()) {
             var ids = updActive.stream().map(UpdActive::id).toList();
             var newValues = updActive.stream().map(UpdActive::newValue).toList();
 
-            personAttributeDao.softCloseAllByIdsAndPersonId(personId, ids, seasonEnd, now);
-            personAttributeDao.createAllForPersonAt(personId, attributeId, newValues, nextSeasonStart);
-        }
-        if (!updFuture.isEmpty()) {
-            var ids = updFuture.stream().map(UpdFuture::id).toList();
-            if (avoidHardDelete) {
-                personAttributeDao.softCloseFutureByIdsAndPersonId(personId, ids);
-            } else {
-                personAttributeDao.hardDeleteFutureByIdsAndPersonId(personId, ids, now);
-            }
-            // puis recreate aux dates d'origine (inchangé)
-            var items = updFuture.stream()
-                    .map(u -> new PersonAttributeDao.ValueAtDate(u.newValue(), u.originalValidFrom()))
-                    .toList();
-            personAttributeDao.createAllForPersonAtDates(personId, attributeId, items);
+            personAttributeDao.softCloseActiveByIdsAndPersonId(personId, ids, now);
+            personAttributeDao.createAllForPersonAt(personId, attributeId, newValues, now);
         }
 
         // c) CREATE
-        if (!createNextSeasonValues.isEmpty()) {
-            personAttributeDao.createAllForPersonAt(personId, attributeId, createNextSeasonValues, nextSeasonStart);
+        if (!createNowValues.isEmpty()) {
+            personAttributeDao.createAllForPersonAt(personId, attributeId, createNowValues, now);
         }
 
-        return personAttributeDao.findNonPendingFromNowByPersonAndAttribute(personId, attributeId, now);
+        // 7) Retourner la vue "active" (runtime) après modifs
+        return personAttributeDao.findActiveAtByPersonAndAttribute(personId, attributeId, now);
     }
 
     @Transactional
@@ -373,12 +320,13 @@ public class PersonAttributeService {
             List<PersonAttribute> toUpdate,
             List<PersonAttribute> toDelete,
             boolean bypassRestricted) {
-        // appelle la version étendue avec avoidHardDelete=false
         return applyChangesForPerson(
-                personId, attributeId, toCreate, toUpdate, toDelete, bypassRestricted, /* avoidHardDelete= */false);
+                personId, attributeId, toCreate, toUpdate, toDelete, bypassRestricted, /* avoidHardDelete= */ false);
     }
 
-    private static boolean isValidAt(PersonAttribute pa, LocalDateTime instant) {
+    private static boolean isActiveAt(PersonAttribute pa, LocalDateTime instant) {
+        if (pa == null)
+            return false;
         if (pa.isPendingDelete())
             return false;
         boolean startsOk = !pa.getValidFrom().isAfter(instant); // validFrom ≤ instant
@@ -387,6 +335,8 @@ public class PersonAttributeService {
     }
 
     private static void removeOneOccurrenceById(List<SnapshotItem> list, Long id) {
+        if (id == null)
+            return;
         for (int i = 0; i < list.size(); i++) {
             SnapshotItem it = list.get(i);
             if (Objects.equals(it.id(), id)) {
@@ -400,8 +350,8 @@ public class PersonAttributeService {
     }
 
     /**
-     * Hard delete des attributs expirés (pending_delete=true et valid_to <
-     * cutoffExclusive)
+     * Tu peux garder ce cleanup si tu continues à utiliser pendingDelete + validTo.
+     * Ici on soft-close avec pendingDelete=true, donc c'est toujours utile.
      */
     @Transactional
     public long hardDeleteExpiredPendingAttributes(LocalDateTime cutoffExclusive) {

@@ -13,10 +13,11 @@ import org.springframework.web.bind.annotation.*;
 import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.enums.OrgRole;
 import com.saymyname.core.model.people.Person;
-import com.saymyname.core.model.people.PersonAttribute;
 import com.saymyname.service.ChangeRequestService;
 import com.saymyname.service.UserOrganizationService;
 import com.saymyname.service.UserService;
+import com.saymyname.service.leaderboard.LeaderboardService; // ✅
+import com.saymyname.core.model.leaderboard.LeaderboardEntry; // ✅
 import com.saymyname.service.person.PersonService;
 import com.saymyname.webapp.dto.PersonAttributeDto;
 import com.saymyname.webapp.dto.PersonDto;
@@ -26,6 +27,7 @@ import com.saymyname.webapp.dto.profile.AttributeValuesResponseDto;
 import com.saymyname.webapp.dto.profile.BulkPersonAttributeRequest;
 import com.saymyname.webapp.dto.profile.ProfileOnboardingDto;
 import com.saymyname.webapp.dto.profile.ProfileResponseDto;
+import com.saymyname.webapp.dto.profile.ProfileXpSummaryDto; // ✅
 import com.saymyname.webapp.dto.profile.UpdateDisplayNameRequestDto;
 import com.saymyname.webapp.dto.profile.UpdateDisplayNameResponseDto;
 import com.saymyname.webapp.mapper.BulkPersonAttributeDtoMapper;
@@ -51,6 +53,8 @@ public class ProfileRestController {
         private final UserDtoMapper userDtoMapper;
         private final ProfileOnboardingDtoMapper profileOnboardingDtoMapper;
 
+        private final LeaderboardService leaderboardService; // ✅
+
         private static final Logger logger = LoggerFactory.getLogger(ProfileRestController.class);
 
         public ProfileRestController(
@@ -63,8 +67,9 @@ public class ProfileRestController {
                         UserService userService,
                         UserOrganizationService userOrganizationService,
                         UserDtoMapper userDtoMapper,
-                        ProfileOnboardingDtoMapper profileOnboardingDtoMapper) {
-
+                        ProfileOnboardingDtoMapper profileOnboardingDtoMapper,
+                        LeaderboardService leaderboardService // ✅
+        ) {
                 this.personService = personService;
                 this.changeRequestService = changeRequestService;
                 this.changeRequestDtoMapper = changeRequestDtoMapper;
@@ -75,12 +80,12 @@ public class ProfileRestController {
                 this.userOrganizationService = userOrganizationService;
                 this.userDtoMapper = userDtoMapper;
                 this.profileOnboardingDtoMapper = profileOnboardingDtoMapper;
+                this.leaderboardService = leaderboardService; // ✅
         }
 
         /**
          * GET /api/profile
-         * Récupère le profil (user + person + changeRequests).
-         * Si aucune Person n'est associée, renvoie person=null et changeRequests=[].
+         * Récupère le profil (user + person + changeRequests + onboarding + xpSummary).
          */
         @GetMapping
         public ResponseEntity<ProfileResponseDto> getProfile(Principal principal) {
@@ -106,13 +111,30 @@ public class ProfileRestController {
                                         .orElse(null);
                 }
 
-                ProfileResponseDto response = new ProfileResponseDto(userDto, personDto, crDtos, onboarding);
+                // ✅ XP summary (cheap read)
+                ProfileXpSummaryDto xpSummary = null;
+                LeaderboardEntry my = leaderboardService.getMeEntry(user);
+                if (my != null) {
+                        xpSummary = new ProfileXpSummaryDto(
+                                        my.getXp(),
+                                        my.getRank(),
+                                        my.getLastEventAt());
+                } else {
+                        xpSummary = new ProfileXpSummaryDto(0, 0, null);
+                }
+
+                ProfileResponseDto response = new ProfileResponseDto(
+                                userDto,
+                                personDto,
+                                crDtos,
+                                onboarding,
+                                xpSummary);
+
                 return ResponseEntity.ok(response);
         }
 
         /**
          * PATCH /api/profile/display-name
-         * Met à jour le displayName du compte (User).
          */
         @PatchMapping("/display-name")
         public ResponseEntity<UpdateDisplayNameResponseDto> updateMyDisplayName(
@@ -127,10 +149,8 @@ public class ProfileRestController {
                 return ResponseEntity.ok(new UpdateDisplayNameResponseDto(updated.getDisplayName()));
         }
 
-        // ---------- BULK multi-valeurs pour un attribut ----------
         /**
          * POST /api/profile/attributes/{attributeId}/bulk
-         * Applique en une fois create/update/delete pour l’attribut {attributeId}.
          */
         @PostMapping("/attributes/{attributeId}/bulk")
         public ResponseEntity<AttributeValuesResponseDto> applyAttributeChanges(
@@ -140,26 +160,20 @@ public class ProfileRestController {
 
                 logger.info("Applying bulk attribute changes for attributeId: {}", attributeId);
 
-                // 0) User courant (→ person)
                 User me = userService.getCurrentUserOrThrow(principal);
-
-                // (optionnel) sécurise emails si ton pipeline en dépend ailleurs
                 User user = userService.findByIdWithEmails(me.getId()).orElse(me);
 
-                // 1) Map DTO -> modèles (delta)
                 var toCreate = bulkPersonAttributeDtoMapper.toCreateModels(body.create());
                 var toUpdate = bulkPersonAttributeDtoMapper.toUpdateModels(body.update());
                 var toDelete = bulkPersonAttributeDtoMapper.toDeleteModels(body.delete());
 
-                // 2) Orchestration via PersonService
-                List<PersonAttribute> updatedAttributes = personService.applyAttributeChangesForUser(
+                var updatedAttributes = personService.applyAttributeChangesForUser(
                                 user,
                                 attributeId,
                                 toCreate,
                                 toUpdate,
                                 toDelete);
 
-                // 3) Model -> DTO
                 List<PersonAttributeDto> updatedDtos = updatedAttributes.stream()
                                 .map(personAttributeDtoMapper::toDto)
                                 .toList();

@@ -1,3 +1,4 @@
+// src/main/java/com/saymyname/persistence/dao/PersonAttributeDao.java
 package com.saymyname.persistence.dao;
 
 import java.time.LocalDateTime;
@@ -74,7 +75,7 @@ public class PersonAttributeDao {
         return personAttributeRepository.countPersonsMatchingFilter(minValue, nextValue, validFor, attributeId);
     }
 
-    // Exclut pending_delete (actifs “runtime”)
+    // Exclut pending_delete (actifs “runtime” via CURRENT_TIMESTAMP côté repo)
     public List<PersonAttribute> findAttributesByPersonId(Long personId) {
         return personAttributeRepository
                 .findAttributesByPersonIdActive(personId)
@@ -84,42 +85,29 @@ public class PersonAttributeDao {
     }
 
     /**
-     * NON-pending à partir de NOW (actives + futures), pour une personne +
-     * attribut.
+     * Actifs à une date donnée : now ∈ [validFrom, validTo), hors pendingDelete.
+     * (Sans saison, c'est la méthode principale utilisée par le service.)
      */
-    public List<PersonAttribute> findNonPendingFromNowByPersonAndAttribute(Long personId,
-            Long attributeId,
-            LocalDateTime now) {
+    @Transactional(readOnly = true)
+    public List<PersonAttribute> findActiveAtByPersonAndAttribute(Long personId, Long attributeId, LocalDateTime now) {
         return personAttributeRepository
-                .findNonPendingFromNowByPersonAndAttribute(personId, attributeId, now)
+                .findActiveAtByPersonAndAttributeExcludingPending(personId, attributeId, now)
                 .stream()
                 .map(personAttributeEntityMapper::toFullModel)
                 .toList();
     }
 
     /**
-     * Actifs (now ∈ [validFrom, validTo]) pour une personne + attribut, hors
-     * pendingDelete
-     * (laisse en place si utilisé ailleurs).
-     */
-    public List<PersonAttribute> findActiveByPersonAndAttribute(Long personId, Long attributeId) {
-        return personAttributeRepository
-                .findActiveByPersonAndAttributeExcludingPending(personId, attributeId)
-                .stream()
-                .map(personAttributeEntityMapper::toFullModel)
-                .toList();
-    }
-
-    /**
-     * SOFT-CLOSE en lot : set pending_delete=true, valid_to = seasonEnd (lignes
-     * actives uniquement).
+     * SOFT-CLOSE immédiat en lot :
+     * - pending_delete=true
+     * - valid_to = now
+     * uniquement sur les lignes actives au now.
      */
     @Transactional
-    public void softCloseAllByIdsAndPersonId(Long personId, List<Long> ids, LocalDateTime seasonEnd,
-            LocalDateTime now) {
+    public void softCloseActiveByIdsAndPersonId(Long personId, List<Long> ids, LocalDateTime now) {
         if (ids == null || ids.isEmpty())
             return;
-        personAttributeRepository.softCloseAllByIdsAndPersonId(personId, ids, seasonEnd, now);
+        personAttributeRepository.softCloseActiveByIdsAndPersonId(personId, ids, now);
     }
 
     /** Insert en lot à une date donnée (valid_from = provided). */
@@ -145,64 +133,11 @@ public class PersonAttributeDao {
         personAttributeRepository.saveAll(entities);
     }
 
-    /** Insert en lot à des dates variées (pour UPDATE de futures in-place). */
-    @Transactional
-    public void createAllForPersonAtDates(Long personId, Long attributeId, List<ValueAtDate> items) {
-        if (items == null || items.isEmpty())
-            return;
-
-        var personRef = personRepository.getReferenceById(personId);
-        var attributeRef = attributeRepository.getReferenceById(attributeId);
-
-        List<PersonAttributeEntity> entities = new ArrayList<>(items.size());
-        for (ValueAtDate it : items) {
-            var e = new PersonAttributeEntity();
-            e.setPerson(personRef);
-            e.setAttribute(attributeRef);
-            e.setValue(it.value());
-            e.setValidFrom(it.validFrom());
-            e.setValidTo(null);
-            e.setPendingDelete(false);
-            entities.add(e);
-        }
-        personAttributeRepository.saveAll(entities);
-    }
-
-    /** Hard delete des futures (non-pending) par ids (valid_from > now). */
-    @Transactional
-    public void hardDeleteFutureByIdsAndPersonId(Long personId, List<Long> ids, LocalDateTime now) {
-        if (ids == null || ids.isEmpty())
-            return;
-        personAttributeRepository.hardDeleteFutureByIdsAndPersonId(personId, ids, now);
-    }
-
     /**
      * Hard delete en base des PA en attente de suppression et expirés (job de
      * nettoyage).
      */
     public int hardDeleteExpiredPendingAttributes(LocalDateTime cutoffExclusive) {
         return personAttributeRepository.hardDeleteExpiredPendingAttributes(cutoffExclusive);
-    }
-
-    // Helper pour créations à dates variées
-    public record ValueAtDate(String value, LocalDateTime validFrom) {
-    }
-
-    /**
-     * "Tombstone" des PA futures : pending_delete = true et valid_to = valid_from
-     * pour les lignes correspondant à personId + ids.
-     * Ne fait rien si la liste est vide.
-     *
-     * @return nombre de lignes mises à jour
-     */
-    @Transactional
-    public int softCloseFutureByIdsAndPersonId(Long personId, List<Long> ids) {
-        if (personId == null) {
-            throw new IllegalArgumentException("personId ne peut pas être null");
-        }
-        if (ids == null || ids.isEmpty()) {
-            return 0;
-        }
-        return personAttributeRepository.softCloseFutureByIdsAndPersonId(personId, ids);
     }
 }

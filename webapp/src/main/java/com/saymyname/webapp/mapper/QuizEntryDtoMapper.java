@@ -3,7 +3,6 @@ package com.saymyname.webapp.mapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.saymyname.core.model.challenge.ChallengeQuestion;
 import com.saymyname.core.model.course.Knowledge;
 import com.saymyname.core.model.game.QuizEntry;
 import com.saymyname.core.model.people.Person;
@@ -18,15 +17,6 @@ public class QuizEntryDtoMapper {
     public QuizEntryDto toDto(QuizEntry quizEntry) {
         String fullUrl = toPublicUrl(quizEntry.getStorageKey());
         return new QuizEntryDto(quizEntry.getPersonId(), fullUrl, quizEntry.getInitials());
-    }
-
-    public QuizEntryDto toDto(ChallengeQuestion challengeQuestion, String initials) {
-        Person person = challengeQuestion.getPerson();
-        String fullUrl = person.getApprovedPhoto()
-                .map(photo -> toPublicUrl(photo.getStorageKey()))
-                .orElse(null);
-
-        return new QuizEntryDto(person.getId(), fullUrl, initials);
     }
 
     public QuizEntryDto toDto(Knowledge knowledge, String initials) {

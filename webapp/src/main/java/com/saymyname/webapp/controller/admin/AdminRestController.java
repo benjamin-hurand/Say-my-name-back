@@ -27,9 +27,7 @@ import com.saymyname.core.model.people.Person;
 import com.saymyname.core.model.people.PersonAttribute;
 import com.saymyname.core.model.persondirectory.AdminPersonCard;
 import com.saymyname.core.model.persondirectory.AdminPersonSearchCriteria;
-import com.saymyname.persistence.projection.ChallengeCardProjection;
 import com.saymyname.service.AttributeService;
-import com.saymyname.service.ChallengeService;
 import com.saymyname.service.ChangeRequestService;
 import com.saymyname.service.GameModeService;
 import com.saymyname.service.PersonAttributeService;
@@ -63,7 +61,6 @@ public class AdminRestController {
     private final PersonService personService;
     private final AttributeService attributeService;
     private final GameModeService gameModeService;
-    private final ChallengeService challengeService;
 
     private final PersonDirectoryDtoMapper personDirectoryDtoMapper;
     private final BulkPersonAttributeDtoMapper bulkPersonAttributeDtoMapper;
@@ -90,7 +87,6 @@ public class AdminRestController {
             PersonService personService,
             AttributeService attributeService,
             GameModeService gameModeService,
-            ChallengeService challengeService,
             PersonDirectoryDtoMapper personDirectoryDtoMapper,
             BulkPersonAttributeDtoMapper bulkPersonAttributeDtoMapper,
             PersonAttributeService personAttributeService,
@@ -107,7 +103,6 @@ public class AdminRestController {
         this.personService = personService;
         this.attributeService = attributeService;
         this.gameModeService = gameModeService;
-        this.challengeService = challengeService;
 
         this.personDirectoryDtoMapper = personDirectoryDtoMapper;
         this.bulkPersonAttributeDtoMapper = bulkPersonAttributeDtoMapper;
@@ -134,11 +129,9 @@ public class AdminRestController {
     public Map<String, Long> getKpis() {
         long persons = personService.countAll();
         long attributes = attributeService.countAll();
-        long challenges = challengeService.countAll();
         return Map.of(
                 "persons", persons,
-                "attributes", attributes,
-                "challenges", challenges);
+                "attributes", attributes);
     }
 
     // === 2) Persons — recherche filtrée/triée/paginée (admin)
@@ -230,12 +223,6 @@ public class AdminRestController {
     @GetMapping("/game-modes")
     public List<GameMode> listGameModes() {
         return gameModeService.getAllGameModes();
-    }
-
-    // === 5) Challenges (lecture simple pour l’admin) ===
-    @GetMapping("/challenges")
-    public List<ChallengeCardProjection> listChallenges() {
-        return challengeService.getChallengesList(null);
     }
 
     /**
