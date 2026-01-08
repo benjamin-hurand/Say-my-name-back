@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import com.saymyname.core.model.enums.quiz.QuizDecisionReasonCode;
 import com.saymyname.core.model.enums.quiz.QuizFormat;
 
 public class CourseQuestionPlan {
@@ -14,7 +15,8 @@ public class CourseQuestionPlan {
     private int targetCount;
     private List<Long> targetKnowledgeIds = new ArrayList<>();
     private String paramsJson;
-    private String reason;
+    private QuizDecisionReasonCode reasonCode;
+    private String reasonDetailsJson;
 
     public CourseQuestionPlan() {
     }
@@ -26,7 +28,8 @@ public class CourseQuestionPlan {
         this.targetCount = b.targetCount;
         this.targetKnowledgeIds = b.targetKnowledgeIds != null ? b.targetKnowledgeIds : new ArrayList<>();
         this.paramsJson = b.paramsJson;
-        this.reason = b.reason;
+        this.reasonCode = b.reasonCode;
+        this.reasonDetailsJson = b.reasonDetailsJson;
         validateInvariants();
     }
 
@@ -46,6 +49,9 @@ public class CourseQuestionPlan {
         }
         if (targetKnowledgeIds.size() != targetCount) {
             throw new IllegalStateException("CourseQuestionPlan.targetCount must match targetKnowledgeIds size");
+        }
+        if (reasonCode == null) {
+            throw new IllegalStateException("CourseQuestionPlan.reasonCode is required");
         }
     }
 
@@ -73,8 +79,12 @@ public class CourseQuestionPlan {
         return paramsJson;
     }
 
-    public String getReason() {
-        return reason;
+    public QuizDecisionReasonCode getReasonCode() {
+        return reasonCode;
+    }
+
+    public String getReasonDetailsJson() {
+        return reasonDetailsJson;
     }
 
     public void setFormat(QuizFormat format) {
@@ -101,8 +111,12 @@ public class CourseQuestionPlan {
         this.paramsJson = paramsJson;
     }
 
-    public void setReason(String reason) {
-        this.reason = reason;
+    public void setReasonCode(QuizDecisionReasonCode reasonCode) {
+        this.reasonCode = reasonCode;
+    }
+
+    public void setReasonDetailsJson(String reasonDetailsJson) {
+        this.reasonDetailsJson = reasonDetailsJson;
     }
 
     public static class Builder {
@@ -112,7 +126,8 @@ public class CourseQuestionPlan {
         private int targetCount;
         private List<Long> targetKnowledgeIds;
         private String paramsJson;
-        private String reason;
+        private QuizDecisionReasonCode reasonCode;
+        private String reasonDetailsJson;
 
         public Builder withFormat(QuizFormat format) {
             this.format = format;
@@ -144,8 +159,13 @@ public class CourseQuestionPlan {
             return this;
         }
 
-        public Builder withReason(String reason) {
-            this.reason = reason;
+        public Builder withReasonCode(QuizDecisionReasonCode reasonCode) {
+            this.reasonCode = reasonCode;
+            return this;
+        }
+
+        public Builder withReasonDetailsJson(String reasonDetailsJson) {
+            this.reasonDetailsJson = reasonDetailsJson;
             return this;
         }
 
@@ -167,11 +187,13 @@ public class CourseQuestionPlan {
                 && Objects.equals(timeLimitMs, that.timeLimitMs)
                 && Objects.equals(targetKnowledgeIds, that.targetKnowledgeIds)
                 && Objects.equals(paramsJson, that.paramsJson)
-                && Objects.equals(reason, that.reason);
+                && Objects.equals(reasonCode, that.reasonCode)
+                && Objects.equals(reasonDetailsJson, that.reasonDetailsJson);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(format, timed, timeLimitMs, targetCount, targetKnowledgeIds, paramsJson, reason);
+        return Objects.hash(format, timed, timeLimitMs, targetCount, targetKnowledgeIds, paramsJson,
+                reasonCode, reasonDetailsJson);
     }
 }

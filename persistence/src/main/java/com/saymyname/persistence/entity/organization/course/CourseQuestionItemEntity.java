@@ -36,10 +36,7 @@ public class CourseQuestionItemEntity extends BaseOrgScoped {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumns({
-            @JoinColumn(name = "history_id", referencedColumnName = "id", nullable = false),
-            @JoinColumn(name = "organization_id", referencedColumnName = "organization_id", nullable = false, insertable = false, updatable = false)
-    })
+    @JoinColumn(name = "history_id", referencedColumnName = "id", nullable = false)
     private CourseQuestionHistoryEntity history;
 
     @Column(name = "position", nullable = false)
@@ -50,17 +47,11 @@ public class CourseQuestionItemEntity extends BaseOrgScoped {
     private Role role;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumns({
-            @JoinColumn(name = "knowledge_id", referencedColumnName = "id"),
-            @JoinColumn(name = "organization_id", referencedColumnName = "organization_id", insertable = false, updatable = false)
-    })
+    @JoinColumn(name = "knowledge_id", referencedColumnName = "id")
     private KnowledgeEntity knowledge;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumns({
-            @JoinColumn(name = "person_id", referencedColumnName = "id"),
-            @JoinColumn(name = "organization_id", referencedColumnName = "organization_id", insertable = false, updatable = false)
-    })
+    @JoinColumn(name = "person_id", referencedColumnName = "id")
     private PersonEntity person;
 
     @Column(name = "answered", nullable = false)

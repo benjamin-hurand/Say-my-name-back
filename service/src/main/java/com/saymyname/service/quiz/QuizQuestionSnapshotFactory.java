@@ -26,7 +26,7 @@ import com.saymyname.persistence.dao.PersonAttributeDao;
 @Component
 public class QuizQuestionSnapshotFactory {
 
-    private static final int SNAPSHOT_SCHEMA_VERSION = 3;
+    private static final int SNAPSHOT_SCHEMA_VERSION = 4;
     private static final String GENERATOR_VERSION = "quiz-pipeline-v1";
     private static final String NORMALIZER_VERSION = "normalizer-v1";
 
@@ -105,6 +105,8 @@ public class QuizQuestionSnapshotFactory {
             throw new IllegalStateException("QuizQuestion.operator is required");
         if (q.getPersonId() == null)
             throw new IllegalStateException("QuizQuestion.personId is required (single-target model)");
+        if (q.getReasonCode() == null)
+            throw new IllegalStateException("QuizQuestion.reasonCode is required");
 
         QuizQuestionTruth truth = buildTruth(q, frozenTargetValues);
 
@@ -152,6 +154,8 @@ public class QuizQuestionSnapshotFactory {
                 .withFollowUp(q.getFollowUp())
                 .withTimed(timed)
                 .withTimeLimitMs(timeLimitMs)
+                .withReasonCode(q.getReasonCode())
+                .withReasonDetailsJson(q.getReasonDetailsJson())
 
                 // truth
                 .withTruth(truth)

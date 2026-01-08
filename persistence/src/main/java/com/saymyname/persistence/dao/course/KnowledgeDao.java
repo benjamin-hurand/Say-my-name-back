@@ -211,6 +211,45 @@ public class KnowledgeDao {
                 knowledgeRepository.save(knowledgeEntityMapper.toEntity(knowledge));
         }
 
+        public List<Knowledge> findNextDueMulti(
+                        Course course,
+                        Long primaryPersonId,
+                        Long lastPersonId,
+                        int limit,
+                        int maxErrorStreak,
+                        double maxAvgRtMs,
+                        double maxHelpRecent,
+                        double minAttemptsRecent,
+                        int fetchFactor) {
+                if (course == null || limit <= 0)
+                        return List.of();
+
+                var scope = course.getPopulationScope() != null ? course.getPopulationScope()
+                                : PopulationScope.FOLLOWED;
+                var userId = course.getUser().getId();
+                var gameModeId = course.getGameMode().getId();
+                boolean followed = scope == PopulationScope.FOLLOWED;
+
+                int fetchLimit = Math.max(limit, limit * Math.max(1, fetchFactor));
+                List<String> statuses = List.of(KnowledgeStatus.LEARNED.name(), KnowledgeStatus.MASTERED.name());
+
+                return knowledgeRepository.findNextDueMulti(
+                                userId,
+                                gameModeId,
+                                primaryPersonId,
+                                lastPersonId,
+                                statuses,
+                                followed,
+                                maxErrorStreak,
+                                maxAvgRtMs,
+                                maxHelpRecent,
+                                minAttemptsRecent,
+                                fetchLimit)
+                                .stream()
+                                .map(knowledgeEntityMapper::toModel)
+                                .toList();
+        }
+
         public List<Knowledge> findAllByCourse(Course course) {
                 return knowledgeRepository
                                 .findByGameModeIdAndUserIdAndStatusNot(

@@ -28,10 +28,7 @@ public class CourseQuestionHistoryEntity extends BaseOrgScoped {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumns({
-            @JoinColumn(name = "course_id", referencedColumnName = "id", nullable = false),
-            @JoinColumn(name = "organization_id", referencedColumnName = "organization_id", nullable = false, insertable = false, updatable = false)
-    })
+    @JoinColumn(name = "course_id", referencedColumnName = "id", nullable = false)
     private CourseEntity course;
 
     @Column(name = "question_round", nullable = false)
@@ -109,6 +106,13 @@ public class CourseQuestionHistoryEntity extends BaseOrgScoped {
     @Lob
     @Column(name = "planned_params_json", columnDefinition = "LONGTEXT")
     private String plannedParamsJson;
+
+    @Column(name = "planned_reason_code", length = 64)
+    private String plannedReasonCode;
+
+    @Lob
+    @Column(name = "planned_reason_details_json", columnDefinition = "LONGTEXT")
+    private String plannedReasonDetailsJson;
 
     @Column(name = "planned_reason", length = 255)
     private String plannedReason;
@@ -306,6 +310,22 @@ public class CourseQuestionHistoryEntity extends BaseOrgScoped {
 
     public void setPlannedParamsJson(String plannedParamsJson) {
         this.plannedParamsJson = plannedParamsJson;
+    }
+
+    public String getPlannedReasonCode() {
+        return plannedReasonCode;
+    }
+
+    public void setPlannedReasonCode(String plannedReasonCode) {
+        this.plannedReasonCode = plannedReasonCode;
+    }
+
+    public String getPlannedReasonDetailsJson() {
+        return plannedReasonDetailsJson;
+    }
+
+    public void setPlannedReasonDetailsJson(String plannedReasonDetailsJson) {
+        this.plannedReasonDetailsJson = plannedReasonDetailsJson;
     }
 
     public String getPlannedReason() {

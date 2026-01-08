@@ -62,4 +62,32 @@ public interface CourseQuestionHistoryRepository extends JpaRepository<CourseQue
              and c.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
       """)
   LocalDateTime findLastAnsweredAt(@Param("courseId") Long courseId);
+
+  @Modifying
+  @Query("""
+        UPDATE CourseQuestionHistoryEntity c
+           SET c.helpUsed = true
+         WHERE c.id = :id
+           AND c.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+      """)
+  int markHelpUsed(@Param("id") Long id);
+
+  @Modifying
+  @Query("""
+        UPDATE CourseQuestionHistoryEntity c
+           SET c.answeredAt = :answeredAt,
+               c.responseTimeMs = :rt,
+               c.rawSubmission = :raw,
+               c.normalizedSubmission = :norm,
+               c.globalCorrect = :globalCorrect
+         WHERE c.id = :id
+           AND c.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+      """)
+  int updateAnswerMeta(
+      @Param("id") Long id,
+      @Param("answeredAt") LocalDateTime answeredAt,
+      @Param("rt") Integer rt,
+      @Param("raw") String raw,
+      @Param("norm") String norm,
+      @Param("globalCorrect") boolean globalCorrect);
 }

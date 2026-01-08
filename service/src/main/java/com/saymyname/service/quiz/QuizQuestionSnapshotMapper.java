@@ -20,6 +20,8 @@ public final class QuizQuestionSnapshotMapper {
                 .withHints(s.getHints())
                 .withDisplay(s.getDisplay())
                 .withFollowUp(s.getFollowUp())
+                .withReasonCode(s.getReasonCode())
+                .withReasonDetailsJson(s.getReasonDetailsJson())
                 .build();
     }
 }

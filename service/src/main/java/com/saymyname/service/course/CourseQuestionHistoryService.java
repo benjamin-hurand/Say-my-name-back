@@ -37,13 +37,8 @@ public class CourseQuestionHistoryService {
     }
 
     public CourseQuestionHistory findByIdAndMarkHelpUsed(Long questionId) {
-        CourseQuestionHistory question = findById(questionId);
-        if (question == null)
-            return null;
-
-        question.setHelpUsed(true);
-        update(question);
-        return question;
+        dao.markHelpUsed(questionId);
+        return findById(questionId);
     }
 
     public void deleteAllByCourse(Course course) {
@@ -136,5 +131,10 @@ public class CourseQuestionHistoryService {
 
     public LocalDateTime findLastAnsweredAt(Course course) {
         return dao.findLastAnsweredAt(course);
+    }
+
+    @Transactional
+    public void markHelpUsed(Long id) {
+        dao.markHelpUsed(id);
     }
 }

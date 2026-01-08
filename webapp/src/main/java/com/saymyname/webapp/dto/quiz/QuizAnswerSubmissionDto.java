@@ -4,11 +4,11 @@ package com.saymyname.webapp.dto.quiz;
 import java.util.List;
 
 public record QuizAnswerSubmissionDto(
-        String userAnswer,
-        Long selectedChoiceId,
-        List<Long> selectedChoiceIds,
-        Boolean swipeRight,
-        List<Long> orderingIds,
-        List<QuizAssociationPairDto> pairs,
-        Integer timeMs) {
+                String userAnswer,
+                Long selectedChoiceId,
+                List<Long> selectedChoiceIds,
+                Boolean swipeRight,
+                List<Long> orderingIds,
+                List<QuizAssociationPairDto> pairs,
+                Integer timeMs) {
 }

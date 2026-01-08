@@ -86,7 +86,7 @@ public interface KnowledgeRepository extends JpaRepository<KnowledgeEntity, Long
         'UNKNOWN'      AS status,
         CURRENT_TIMESTAMP AS next_review_date,
         NULL           AS last_review_date,
-        0, 0, 0, 0,
+        0, 0, 0, 0, 0,
         :initialEf, :initialDiff, :initialStab
       FROM user_subscriptions s
       WHERE s.user_id = :userId
@@ -125,7 +125,7 @@ public interface KnowledgeRepository extends JpaRepository<KnowledgeEntity, Long
         :userId, :gameModeId, p.id,
         :#{T(com.saymyname.core.multitenancy.OrgContext).get()},
         'UNKNOWN', CURRENT_TIMESTAMP, NULL,
-        0,0,0,0, :initialEf, :initialDiff, :initialStab
+        0,0,0,0,0, :initialEf, :initialDiff, :initialStab
       FROM persons p
       WHERE p.organization_id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
         AND NOT EXISTS (
@@ -375,6 +375,60 @@ public interface KnowledgeRepository extends JpaRepository<KnowledgeEntity, Long
       Pageable page);
 
   // ---- LISTE / STATS ---------------------------------------------
+
+  // ---- MULTI-TARGET (dedicated selection) ------------------------
+
+  @Query(value = """
+      SELECT k.*
+      FROM knowledges k
+      JOIN (
+        SELECT
+          k2.id,
+          COALESCE(ks2.last_answer_at, '1970-01-01') AS last_answer_sort,
+          ROW_NUMBER() OVER (
+            PARTITION BY k2.person_id
+            ORDER BY k2.next_review_date ASC, COALESCE(ks2.last_answer_at, '1970-01-01') ASC, k2.id ASC
+          ) AS rn
+        FROM knowledges k2
+        LEFT JOIN knowledge_stats ks2
+          ON ks2.organization_id = k2.organization_id
+         AND ks2.user_id = k2.user_id
+         AND ks2.game_mode_id = k2.game_mode_id
+         AND ks2.knowledge_id = k2.id
+        WHERE k2.organization_id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+          AND k2.user_id = :userId
+          AND k2.game_mode_id = :gameModeId
+          AND k2.status IN (:statuses)
+          AND (:primaryPersonId IS NULL OR k2.person_id <> :primaryPersonId)
+          AND (:lastPersonId IS NULL OR k2.person_id <> :lastPersonId)
+          AND ( :followed = false OR EXISTS (
+              SELECT 1
+              FROM user_subscriptions s
+              WHERE s.organization_id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+                AND s.user_id = :userId
+                AND s.person_id = k2.person_id
+          ))
+          AND COALESCE(ks2.error_streak, 0) <= :maxErrorStreak
+          AND COALESCE(ks2.avg_rt_recent, 0) <= :maxAvgRtMs
+          AND COALESCE(ks2.help_recent, 0) <= :maxHelpRecent
+          AND COALESCE(ks2.attempts_recent, 0) >= :minAttemptsRecent
+      ) ranked ON ranked.id = k.id
+      WHERE ranked.rn = 1
+      ORDER BY k.next_review_date ASC, ranked.last_answer_sort ASC, k.id ASC
+      LIMIT :limit
+      """, nativeQuery = true)
+  List<KnowledgeEntity> findNextDueMulti(
+      @Param("userId") Long userId,
+      @Param("gameModeId") Long gameModeId,
+      @Param("primaryPersonId") Long primaryPersonId,
+      @Param("lastPersonId") Long lastPersonId,
+      @Param("statuses") List<String> statuses,
+      @Param("followed") boolean followed,
+      @Param("maxErrorStreak") int maxErrorStreak,
+      @Param("maxAvgRtMs") double maxAvgRtMs,
+      @Param("maxHelpRecent") double maxHelpRecent,
+      @Param("minAttemptsRecent") double minAttemptsRecent,
+      @Param("limit") int limit);
 
   List<KnowledgeEntity> findByGameModeIdAndUserIdAndStatusNot(
       Long gameModeId,

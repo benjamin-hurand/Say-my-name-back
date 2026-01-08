@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Random;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -31,13 +30,16 @@ import com.saymyname.core.model.course.CourseQuestionHistory;
 import com.saymyname.core.model.course.CourseQuestionItem;
 import com.saymyname.core.model.course.CourseQuestionPlan;
 import com.saymyname.core.model.course.CourseStats;
+import com.saymyname.core.model.course.CourseRecentStats;
 import com.saymyname.core.model.course.Knowledge;
 import com.saymyname.core.model.course.KnowledgeResultEvent;
+import com.saymyname.core.model.course.KnowledgeStats;
 import com.saymyname.core.model.enums.CourseStatus;
 import com.saymyname.core.model.enums.KnowledgeStatus;
 import com.saymyname.core.model.enums.PoolType;
 import com.saymyname.core.model.enums.PopulationScope;
 import com.saymyname.core.model.enums.course.CourseQuestionItemRole;
+import com.saymyname.core.model.enums.quiz.QuizDecisionReasonCode;
 import com.saymyname.core.model.enums.quiz.QuizFormat;
 import com.saymyname.core.model.enums.quiz.QuizPreferredFormat;
 import com.saymyname.core.model.quiz.QuizAnswerSubmission;
@@ -57,6 +59,9 @@ public class CourseService {
 
     private final CourseDao courseDao;
     private final KnowledgeService knowledgeService;
+    private final KnowledgeStatsService knowledgeStatsService;
+    private final CourseRecentStatsService courseRecentStatsService;
+    private final KnowledgeSelectionService knowledgeSelectionService;
     private final CourseQuestionHistoryService courseQuestionHistoryService;
     private final UserSubscriptionService userSubscriptionService;
     private final PersonService personService;
@@ -82,10 +87,18 @@ public class CourseService {
     private static final double WEIGHT_NEW = 3;
     private static final double WEIGHT_REVISION = 0;
     private static final int MULTI_TARGET_MIN = 4;
+    private static final int MULTI_TARGET_MAX_ERROR_STREAK = 0;
+    private static final int MULTI_TARGET_MAX_AVG_RT_MS = 9000;
+    private static final double MULTI_TARGET_MAX_HELP_RECENT = 1.0;
+    private static final double MULTI_TARGET_MIN_ATTEMPTS_RECENT = 0.0;
+    private static final int MULTI_TARGET_FETCH_FACTOR = 3;
 
     public CourseService(
             CourseDao courseDao,
             KnowledgeService knowledgeService,
+            KnowledgeStatsService knowledgeStatsService,
+            CourseRecentStatsService courseRecentStatsService,
+            KnowledgeSelectionService knowledgeSelectionService,
             CourseQuestionHistoryService courseQuestionHistoryService,
             UserSubscriptionService userSubscriptionService,
             PersonService personService,
@@ -98,6 +111,9 @@ public class CourseService {
 
         this.courseDao = courseDao;
         this.knowledgeService = knowledgeService;
+        this.knowledgeStatsService = knowledgeStatsService;
+        this.courseRecentStatsService = courseRecentStatsService;
+        this.knowledgeSelectionService = knowledgeSelectionService;
         this.courseQuestionHistoryService = courseQuestionHistoryService;
         this.userSubscriptionService = userSubscriptionService;
         this.personService = personService;
@@ -233,6 +249,7 @@ public class CourseService {
             Boolean timed,
             Integer timeLimitMs) {
         CourseQuestionHistory nextHistory = continueCourseHistory(courseId, preferredFormat, timed, timeLimitMs);
+        ensureSnapshotCourseQuestionId(nextHistory);
         return QuizQuestionSnapshotMapper.toQuestion(nextHistory.getSnapshot());
     }
 
@@ -291,6 +308,9 @@ public class CourseService {
 
         // 7) Persist history
         CourseQuestionHistory persisted = courseQuestionHistoryService.create(history);
+
+        ensureSnapshotCourseQuestionId(persisted);
+        courseQuestionHistoryService.update(persisted);
 
         // 7) Update course round ONLY after successful emission (same TX => atomic)
         course.setCurrentRound(nextRound);
@@ -377,66 +397,43 @@ public class CourseService {
                 PoolType.DISCOVERED, WEIGHT_NOT_SO_NEW,
                 PoolType.REVISION, WEIGHT_REVISION));
 
-        Random rnd = new Random();
-        while (!weights.isEmpty()) {
-            double sum = weights.values().stream().mapToDouble(Double::doubleValue).sum();
-            double r = rnd.nextDouble() * sum;
+        KnowledgeSelectionService.SelectionResult selection = knowledgeSelectionService.findNextDueSingleTarget(
+                course,
+                lastPersonId,
+                allowRepeat,
+                weights);
 
-            PoolType selected = null;
-            for (var e : weights.entrySet()) {
-                r -= e.getValue();
-                if (r <= 0) {
-                    selected = e.getKey();
-                    break;
-                }
-            }
-            if (selected == null)
-                selected = weights.keySet().iterator().next();
-
-            Knowledge k;
-            switch (selected) {
-                case ERROR_RECENT -> k = knowledgeService.findFirstRecentError(course, lastPersonId, allowRepeat);
-                case SRS_DUE -> k = knowledgeService.findFirstSRS(course, lastPersonId, allowRepeat);
-                case DISCOVERED -> k = knowledgeService.findFirstDiscovered(course, lastPersonId, allowRepeat);
-                case NEW -> k = knowledgeService.findFirstNew(course, lastPersonId, allowRepeat);
-                default -> k = knowledgeService.findRevision(course, lastPersonId, allowRepeat);
-            }
-
-            if (k != null) {
-                CourseQuestionItem target = new CourseQuestionItem.Builder()
-                        .withPosition(0)
-                        .withRole(CourseQuestionItemRole.TARGET)
-                        .withKnowledge(k)
-                        .withPerson(k.getPerson())
-                        .withAnswered(false)
-                        .withCorrect(null)
-                        .withNormalizedAnswer(null)
-                        .build();
-
-                // NOTE:
-                // questionRound is enforced by the caller (continueCourseHistory / answer).
-                // This value is a placeholder only.
-                return new CourseQuestionHistory.Builder()
-                        .withCourse(course)
-                        .withQuestionRound(course.getCurrentRound() + 1)
-                        .withAskedAt(LocalDateTime.now())
-                        .withAnsweredAt(null)
-                        .withResponseTimeMs(0)
-                        .withRawSubmission(null)
-                        .withNormalizedSubmission(null)
-                        .withGlobalCorrect(false)
-                        .withPoolType(selected)
-                        .withHelpUsed(false)
-                        .withItems(List.of(target))
-                        .build();
-            }
-
-            weights.remove(selected);
+        if (selection == null || selection.knowledge() == null) {
+            return null;
         }
 
-        if (allowRepeat)
-            throw new NoMoreQuestionsException(course.getId());
-        return findNextDue(course, lastPersonId, correct, feedback, true);
+        Knowledge k = selection.knowledge();
+        CourseQuestionItem target = new CourseQuestionItem.Builder()
+                .withPosition(0)
+                .withRole(CourseQuestionItemRole.TARGET)
+                .withKnowledge(k)
+                .withPerson(k.getPerson())
+                .withAnswered(false)
+                .withCorrect(null)
+                .withNormalizedAnswer(null)
+                .build();
+
+        // NOTE:
+        // questionRound is enforced by the caller (continueCourseHistory / answer).
+        // This value is a placeholder only.
+        return new CourseQuestionHistory.Builder()
+                .withCourse(course)
+                .withQuestionRound(course.getCurrentRound() + 1)
+                .withAskedAt(LocalDateTime.now())
+                .withAnsweredAt(null)
+                .withResponseTimeMs(0)
+                .withRawSubmission(null)
+                .withNormalizedSubmission(null)
+                .withGlobalCorrect(false)
+                .withPoolType(selection.poolType())
+                .withHelpUsed(false)
+                .withItems(List.of(target))
+                .build();
     }
 
     private static String getFeedbackMessage(Boolean correct) {
@@ -573,6 +570,8 @@ public class CourseService {
             knowledgeService.recordBatchResults(course.getUser(), srsEvents);
         }
 
+        updateRecentStatsAfterAnswer(course, previous);
+
         // 5) Prepare next question history (no round mutation yet)
         Long lastPersonId = lastTargetPersonId(previous);
 
@@ -613,24 +612,101 @@ public class CourseService {
 
         // 8) Persist next history
         courseQuestionHistoryService.create(nextHistory);
+        ensureSnapshotCourseQuestionId(nextHistory);
+        courseQuestionHistoryService.update(nextHistory);
 
         // 9) Update course round ONLY after successful emission (same TX => atomic)
         course.setCurrentRound(nextRound);
         updateCourse(course);
+
+        QuizQuestion nextQuestionFromSnapshot = QuizQuestionSnapshotMapper.toQuestion(nextHistory.getSnapshot());
 
         return new CourseAnswerResult.Builder()
                 .withCorrect(allTargetsCorrect)
                 .withRawSubmission(previous.getRawSubmission())
                 .withNormalizedSubmission(previous.getNormalizedSubmission())
                 .withFeedbackMessage(getFeedbackMessage(allTargetsCorrect))
-                .withNextQuestion(nextQuizQuestionRuntime)
+                .withNextQuestion(nextQuestionFromSnapshot)
                 .withItemResults(itemResults)
                 .build();
+    }
+
+    private void ensureSnapshotCourseQuestionId(CourseQuestionHistory history) {
+        if (history == null || history.getId() == null || history.getSnapshot() == null) {
+            return;
+        }
+        if (history.getSnapshot().getContext() == null) {
+            return;
+        }
+        if (history.getSnapshot().getContext().getCourseQuestionId() == null) {
+            history.getSnapshot().getContext().setCourseQuestionId(history.getId());
+        }
     }
 
     // ---------------------------------------------------------------------
     // helpers (targets)
     // ---------------------------------------------------------------------
+
+    private void updateRecentStatsAfterAnswer(Course course, CourseQuestionHistory history) {
+        if (course == null || history == null) {
+            return;
+        }
+
+        LocalDateTime answeredAt = history.getAnsweredAt();
+        int responseTimeMs = Math.max(0, history.getResponseTimeMs());
+        boolean helpUsed = history.isHelpUsed();
+        boolean globalCorrect = history.isGlobalCorrect();
+
+        QuizFormat format = null;
+        if (history.getPlan() != null) {
+            format = history.getPlan().getFormat();
+        } else if (history.getSnapshot() != null) {
+            format = history.getSnapshot().getFormat();
+        }
+
+        courseRecentStatsService.upsertOnAnswer(
+                course.getId(),
+                format,
+                globalCorrect,
+                helpUsed,
+                responseTimeMs,
+                answeredAt);
+
+        Long userId = course.getUser() != null ? course.getUser().getId() : null;
+        Long gameModeId = course.getGameMode() != null ? course.getGameMode().getId() : null;
+        if (userId == null || gameModeId == null) {
+            return;
+        }
+
+        List<CourseQuestionItem> items = history.getItems();
+        if (items == null || items.isEmpty()) {
+            return;
+        }
+
+        for (CourseQuestionItem item : items) {
+            if (item.getRole() != CourseQuestionItemRole.TARGET) {
+                continue;
+            }
+            Knowledge knowledge = item.getKnowledge();
+            Long knowledgeId = knowledge != null ? knowledge.getId() : null;
+            Long personId = item.getPerson() != null ? item.getPerson().getId()
+                    : (knowledge != null && knowledge.getPerson() != null ? knowledge.getPerson().getId() : null);
+
+            if (knowledgeId == null || personId == null) {
+                continue;
+            }
+
+            knowledgeStatsService.upsertOnAnswer(
+                    userId,
+                    gameModeId,
+                    knowledgeId,
+                    personId,
+                    Boolean.TRUE.equals(item.getCorrect()),
+                    helpUsed,
+                    responseTimeMs,
+                    answeredAt);
+        }
+    }
 
     private CourseQuestionPlan buildPlan(
             Course course,
@@ -640,13 +716,40 @@ public class CourseService {
             Boolean timed,
             Integer timeLimitMs) {
         Knowledge knowledge = targetKnowledge(nextHistory);
-        List<Knowledge> extraTargets = findMultiTargetCandidates(course, knowledge, MULTI_TARGET_MIN - 1);
+        Long lastPersonId = previousHistory != null ? lastTargetPersonId(previousHistory) : null;
+        List<Knowledge> extraTargets = findMultiTargetCandidates(course, knowledge, lastPersonId,
+                MULTI_TARGET_MIN - 1);
         boolean multiTargetAvailable = extraTargets.size() >= Math.max(0, MULTI_TARGET_MIN - 1);
+
+        CourseRecentStats courseStats = courseRecentStatsService.getStatsForCourse(course.getId());
+
+        List<Long> statsKnowledgeIds = new ArrayList<>();
+        if (knowledge != null && knowledge.getId() != null) {
+            statsKnowledgeIds.add(knowledge.getId());
+        }
+        for (Knowledge extra : extraTargets) {
+            if (extra != null && extra.getId() != null) {
+                statsKnowledgeIds.add(extra.getId());
+            }
+        }
+
+        Map<Long, KnowledgeStats> statsByKnowledgeId = knowledgeStatsService.getStatsForKnowledgeIds(
+                course.getUser() != null ? course.getUser().getId() : null,
+                course.getGameMode() != null ? course.getGameMode().getId() : null,
+                statsKnowledgeIds);
+
+        KnowledgeStats primaryStats = knowledge != null ? statsByKnowledgeId.get(knowledge.getId()) : null;
+        List<KnowledgeStats> extraStats = extraTargets.stream()
+                .map(k -> k != null ? statsByKnowledgeId.get(k.getId()) : null)
+                .toList();
 
         CourseQuizPlanPolicy.Plan decision = courseQuizPlanPolicy.decide(
                 course,
                 previousHistory,
                 knowledge,
+                primaryStats,
+                extraStats,
+                courseStats,
                 preferredFormat,
                 timed,
                 timeLimitMs,
@@ -655,7 +758,8 @@ public class CourseService {
         int needed = decision.targetCount() - 1;
         if (needed > 0) {
             if (extraTargets.size() < needed) {
-                decision = fallbackToMcq(decision, "MULTI_TARGET_SHORTFALL");
+                decision = fallbackToMcq(decision, QuizDecisionReasonCode.FALLBACK_MULTI_TARGET_SHORTFALL,
+                        shortfallDetailsJson(decision, needed, extraTargets.size()));
             } else {
                 applyAdditionalTargets(nextHistory, extraTargets.subList(0, needed));
             }
@@ -664,7 +768,8 @@ public class CourseService {
         List<Long> targetKnowledgeIds = targetKnowledgeIds(nextHistory);
         if (targetKnowledgeIds.size() != decision.targetCount()) {
             throw new IllegalStateException("Plan targetCount mismatch: expected=" + decision.targetCount()
-                    + " actual=" + targetKnowledgeIds.size());
+                    + " actual=" + targetKnowledgeIds.size()
+                    + " reasonCode=" + decision.reasonCode().name());
         }
 
         return new CourseQuestionPlan.Builder()
@@ -674,33 +779,60 @@ public class CourseService {
                 .withTargetCount(decision.targetCount())
                 .withTargetKnowledgeIds(targetKnowledgeIds)
                 .withParamsJson(decision.paramsJson())
-                .withReason(decision.reason())
+                .withReasonCode(decision.reasonCode())
+                .withReasonDetailsJson(decision.reasonDetailsJson())
                 .build();
     }
 
-    private CourseQuizPlanPolicy.Plan fallbackToMcq(CourseQuizPlanPolicy.Plan base, String reason) {
+    private CourseQuizPlanPolicy.Plan fallbackToMcq(
+            CourseQuizPlanPolicy.Plan base,
+            QuizDecisionReasonCode reasonCode,
+            String reasonDetailsJson) {
         return new CourseQuizPlanPolicy.Plan(
                 QuizFormat.MCQ,
                 base.timed(),
                 base.timeLimitMs(),
                 1,
                 "{\"nbChoices\":4}",
-                reason);
+                reasonCode,
+                reasonDetailsJson);
     }
 
-    private List<Knowledge> findMultiTargetCandidates(Course course, Knowledge primary, int limit) {
+    private static String shortfallDetailsJson(
+            CourseQuizPlanPolicy.Plan base,
+            int neededExtras,
+            int availableExtras) {
+        StringBuilder sb = new StringBuilder(128);
+        sb.append('{');
+        sb.append("\"base_reason_code\":\"").append(base.reasonCode().name()).append('"');
+        sb.append(",\"requested_target_count\":").append(base.targetCount());
+        sb.append(",\"needed_extras\":").append(neededExtras);
+        sb.append(",\"available_extras\":").append(availableExtras);
+        sb.append('}');
+        return sb.toString();
+    }
+
+    private List<Knowledge> findMultiTargetCandidates(
+            Course course,
+            Knowledge primary,
+            Long lastPersonId,
+            int limit) {
         if (course == null || limit <= 0) {
             return List.of();
         }
-        Long primaryPersonId = primary != null && primary.getPerson() != null ? primary.getPerson().getId() : null;
-        return knowledgeService.findAllByCourse(course).stream()
-                .filter(Objects::nonNull)
-                .filter(k -> k.getPerson() != null && k.getPerson().getId() != null)
-                .filter(k -> k.getStatus() == KnowledgeStatus.LEARNED)
-                .filter(CourseService::hasLowErrorRate)
-                .filter(k -> primaryPersonId == null || !primaryPersonId.equals(k.getPerson().getId()))
-                .limit(limit)
-                .toList();
+        KnowledgeSelectionService.MultiTargetConstraints constraints = new KnowledgeSelectionService.MultiTargetConstraints(
+                MULTI_TARGET_MAX_ERROR_STREAK,
+                MULTI_TARGET_MAX_AVG_RT_MS,
+                MULTI_TARGET_MAX_HELP_RECENT,
+                MULTI_TARGET_MIN_ATTEMPTS_RECENT,
+                MULTI_TARGET_FETCH_FACTOR);
+
+        return knowledgeSelectionService.findNextDueMultiTargets(
+                course,
+                primary,
+                limit,
+                lastPersonId,
+                constraints);
     }
 
     private void applyAdditionalTargets(CourseQuestionHistory history, List<Knowledge> extraTargets) {
@@ -725,17 +857,6 @@ public class CourseService {
                     .build());
         }
         history.setItems(items);
-    }
-
-    private static boolean hasLowErrorRate(Knowledge knowledge) {
-        int failures = Math.max(0, knowledge.getFailureCount());
-        int successes = Math.max(0, knowledge.getSuccessCount());
-        int total = failures + successes;
-        if (total <= 0) {
-            return true;
-        }
-        double rate = (double) failures / (double) total;
-        return rate <= 0.2;
     }
 
     private Knowledge targetKnowledge(CourseQuestionHistory h) {

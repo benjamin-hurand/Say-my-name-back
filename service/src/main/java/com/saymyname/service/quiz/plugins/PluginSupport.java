@@ -101,6 +101,8 @@ final class PluginSupport {
                 .withHints(hints)
                 .withDisplay(resolvedDisplay)
                 .withFollowUp(followUp)
+                .withReasonCode(spec.getReasonCode())
+                .withReasonDetailsJson(spec.getReasonDetailsJson())
                 .build();
     }
 

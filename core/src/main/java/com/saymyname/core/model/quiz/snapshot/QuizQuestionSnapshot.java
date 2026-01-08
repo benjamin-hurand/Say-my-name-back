@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import com.saymyname.core.model.enums.quiz.QuizDecisionReasonCode;
 import com.saymyname.core.model.enums.quiz.QuizFormat;
 import com.saymyname.core.model.quiz.QuizFollowUp;
 import com.saymyname.core.model.quiz.QuizQuestionContext;
@@ -57,6 +58,10 @@ public class QuizQuestionSnapshot {
     private Boolean timed;
     private Integer timeLimitMs;
 
+    // ---- reason ----
+    private QuizDecisionReasonCode reasonCode;
+    private String reasonDetailsJson;
+
     // ---- truth ----
     private QuizQuestionTruth truth;
 
@@ -87,6 +92,8 @@ public class QuizQuestionSnapshot {
         this.followUp = b.followUp;
         this.timed = b.timed;
         this.timeLimitMs = b.timeLimitMs;
+        this.reasonCode = b.reasonCode;
+        this.reasonDetailsJson = b.reasonDetailsJson;
 
         this.truth = b.truth;
         this.targetPersonIds = b.targetPersonIds != null ? b.targetPersonIds : new ArrayList<>();
@@ -273,6 +280,14 @@ public class QuizQuestionSnapshot {
         return timeLimitMs;
     }
 
+    public QuizDecisionReasonCode getReasonCode() {
+        return reasonCode;
+    }
+
+    public String getReasonDetailsJson() {
+        return reasonDetailsJson;
+    }
+
     public void setFollowUp(QuizFollowUp followUp) {
         this.followUp = followUp;
     }
@@ -283,6 +298,14 @@ public class QuizQuestionSnapshot {
 
     public void setTimeLimitMs(Integer timeLimitMs) {
         this.timeLimitMs = timeLimitMs;
+    }
+
+    public void setReasonCode(QuizDecisionReasonCode reasonCode) {
+        this.reasonCode = reasonCode;
+    }
+
+    public void setReasonDetailsJson(String reasonDetailsJson) {
+        this.reasonDetailsJson = reasonDetailsJson;
     }
 
     public QuizQuestionTruth getTruth() {
@@ -323,6 +346,8 @@ public class QuizQuestionSnapshot {
         private QuizFollowUp followUp;
         private Boolean timed;
         private Integer timeLimitMs;
+        private QuizDecisionReasonCode reasonCode;
+        private String reasonDetailsJson;
 
         private QuizQuestionTruth truth;
         private List<Long> targetPersonIds;
@@ -407,6 +432,16 @@ public class QuizQuestionSnapshot {
             return this;
         }
 
+        public Builder withReasonCode(QuizDecisionReasonCode v) {
+            this.reasonCode = v;
+            return this;
+        }
+
+        public Builder withReasonDetailsJson(String v) {
+            this.reasonDetailsJson = v;
+            return this;
+        }
+
         public Builder withTruth(QuizQuestionTruth v) {
             this.truth = v;
             return this;
@@ -449,6 +484,8 @@ public class QuizQuestionSnapshot {
                 && Objects.equals(followUp, that.followUp)
                 && Objects.equals(timed, that.timed)
                 && Objects.equals(timeLimitMs, that.timeLimitMs)
+                && Objects.equals(reasonCode, that.reasonCode)
+                && Objects.equals(reasonDetailsJson, that.reasonDetailsJson)
                 && Objects.equals(truth, that.truth)
                 && Objects.equals(targetPersonIds, that.targetPersonIds);
     }
@@ -472,6 +509,8 @@ public class QuizQuestionSnapshot {
                 followUp,
                 timed,
                 timeLimitMs,
+                reasonCode,
+                reasonDetailsJson,
                 truth,
                 targetPersonIds);
     }

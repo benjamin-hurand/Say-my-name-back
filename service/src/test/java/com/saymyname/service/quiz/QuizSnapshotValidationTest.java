@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
+import com.saymyname.core.model.enums.quiz.QuizDecisionReasonCode;
 import com.saymyname.core.model.enums.quiz.QuizFormat;
 import com.saymyname.core.model.enums.quiz.QuizPreferredFormat;
 import com.saymyname.core.model.enums.quiz.QuizQuestionSource;
@@ -42,7 +43,7 @@ class QuizSnapshotValidationTest {
                 .build();
 
         QuizQuestionSnapshot snap = new QuizQuestionSnapshot.Builder()
-                .withSnapshotSchemaVersion(3)
+                .withSnapshotSchemaVersion(4)
                 .withGeneratorVersion("test-gen")
                 .withNormalizerVersion("test-norm")
                 .withFormat(QuizFormat.TEXT_INPUT)
@@ -61,7 +62,7 @@ class QuizSnapshotValidationTest {
                 .build();
 
         assertNotNull(snap);
-        assertEquals(3, snap.getSnapshotSchemaVersion());
+        assertEquals(4, snap.getSnapshotSchemaVersion());
 
         NormalizedSubmission norm = new NormalizedText("John", "john");
         assertEquals("john", norm.auditString());
@@ -96,7 +97,7 @@ class QuizSnapshotValidationTest {
                 .build();
 
         QuizQuestionSnapshot snapshot = new QuizQuestionSnapshot.Builder()
-                .withSnapshotSchemaVersion(3)
+                .withSnapshotSchemaVersion(4)
                 .withGeneratorVersion("test-gen")
                 .withNormalizerVersion("test-norm")
                 .withFormat(question.getFormat())
@@ -175,7 +176,7 @@ class QuizSnapshotValidationTest {
                 .build();
 
         assertThrows(IllegalStateException.class, () -> new QuizQuestionSnapshot.Builder()
-                .withSnapshotSchemaVersion(3)
+                .withSnapshotSchemaVersion(4)
                 .withGeneratorVersion("test-gen")
                 .withNormalizerVersion("test-norm")
                 .withFormat(QuizFormat.TEXT_INPUT)
@@ -210,6 +211,7 @@ class QuizSnapshotValidationTest {
                 .withGameModeId(1L)
                 .withTargetAttributeIds(List.of(1L))
                 .withOperator("AND")
-                .withContext(new QuizQuestionContext.Builder().withSource(QuizQuestionSource.TRAINING).build());
+                .withContext(new QuizQuestionContext.Builder().withSource(QuizQuestionSource.TRAINING).build())
+                .withReasonCode(QuizDecisionReasonCode.TRAINING_AUTO_DEFAULT);
     }
 }

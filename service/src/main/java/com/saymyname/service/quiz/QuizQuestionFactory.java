@@ -31,6 +31,13 @@ public class QuizQuestionFactory {
                 return plugin(fmt).build(spec);
         }
 
+        public QuizQuestion build(QuizQuestionSpec spec, QuizFormat format) {
+                if (format == null) {
+                        throw new IllegalArgumentException("format is required");
+                }
+                return plugin(format).build(spec);
+        }
+
         public QuizQuestionPlugin pluginFor(QuizFormat fmt) {
                 return plugin(fmt);
         }

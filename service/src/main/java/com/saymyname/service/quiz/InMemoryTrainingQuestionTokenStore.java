@@ -14,7 +14,7 @@ import com.saymyname.core.model.quiz.snapshot.QuizQuestionSnapshot;
 @Component
 public class InMemoryTrainingQuestionTokenStore implements TrainingQuestionTokenStore {
 
-    private record Entry(Long userId, QuizQuestionSnapshot snapshot, Instant expiresAt) {
+    private record Entry(Long userId, QuizQuestionSnapshot snapshot, Instant askedAt, Instant expiresAt) {
     }
 
     private final Map<String, Entry> map = new ConcurrentHashMap<>();
@@ -32,7 +32,8 @@ public class InMemoryTrainingQuestionTokenStore implements TrainingQuestionToken
         }
 
         String token = UUID.randomUUID().toString();
-        map.put(token, new Entry(userId, snapshot, Instant.now().plusSeconds(ttlSeconds)));
+        Instant now = Instant.now();
+        map.put(token, new Entry(userId, snapshot, now, now.plusSeconds(ttlSeconds)));
         return token;
     }
 
@@ -63,6 +64,7 @@ public class InMemoryTrainingQuestionTokenStore implements TrainingQuestionToken
         return Optional.of(new StoredTrainingQuestion(
                 e.userId(),
                 e.snapshot(),
+                e.askedAt().toEpochMilli(),
                 e.expiresAt().getEpochSecond()));
     }
 }

@@ -9,6 +9,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.saymyname.core.model.course.CourseAnswerResult;
+import com.saymyname.core.model.course.Knowledge;
+import com.saymyname.core.model.course.KnowledgeResultEvent;
+import com.saymyname.core.model.course.KnowledgeStats;
 import com.saymyname.core.model.enums.PhotoStatus;
 import com.saymyname.core.model.enums.quiz.QuizPreferredFormat;
 import com.saymyname.core.model.enums.quiz.QuizQuestionSource;
@@ -24,9 +27,10 @@ import com.saymyname.core.model.quiz.snapshot.QuizQuestionSnapshot;
 import com.saymyname.core.model.quiz.snapshot.TruthAttributeValue;
 import com.saymyname.core.util.InitialCrafter;
 import com.saymyname.persistence.dao.PersonDao;
-import com.saymyname.service.GameModeService;
 import com.saymyname.service.UserService;
 import com.saymyname.service.course.CourseService;
+import com.saymyname.service.course.KnowledgeService;
+import com.saymyname.service.course.KnowledgeStatsService;
 
 @Service
 public class QuizEngine {
@@ -34,7 +38,6 @@ public class QuizEngine {
         private static final int DEFAULT_TRAINING_LIMIT = 10;
         private static final int MAX_TRAINING_LIMIT = 50;
         private static final int DEFAULT_POOL_SIZE = 30;
-        private static final int DEFAULT_TIME_LIMIT_MS = 8000;
 
         private final PersonDao personDao;
         private final QuizCandidateProvider candidateProvider;
@@ -46,8 +49,10 @@ public class QuizEngine {
         private final TrainingQuestionTokenStore tokenStore;
 
         private final CourseService courseService;
+        private final KnowledgeService knowledgeService;
+        private final KnowledgeStatsService knowledgeStatsService;
+        private final TrainingQuizPlanPolicy trainingQuizPlanPolicy;
         private final UserService userService;
-        private final GameModeService gameModeService;
 
         public QuizEngine(
                         PersonDao personDao,
@@ -58,8 +63,10 @@ public class QuizEngine {
                         QuizQuestionSnapshotFactory snapshotFactory,
                         TrainingQuestionTokenStore tokenStore,
                         CourseService courseService,
-                        UserService userService,
-                        GameModeService gameModeService) {
+                        KnowledgeService knowledgeService,
+                        KnowledgeStatsService knowledgeStatsService,
+                        TrainingQuizPlanPolicy trainingQuizPlanPolicy,
+                        UserService userService) {
 
                 this.personDao = Objects.requireNonNull(personDao);
                 this.candidateProvider = Objects.requireNonNull(candidateProvider);
@@ -71,8 +78,10 @@ public class QuizEngine {
                 this.tokenStore = Objects.requireNonNull(tokenStore);
 
                 this.courseService = Objects.requireNonNull(courseService);
+                this.knowledgeService = Objects.requireNonNull(knowledgeService);
+                this.knowledgeStatsService = Objects.requireNonNull(knowledgeStatsService);
+                this.trainingQuizPlanPolicy = Objects.requireNonNull(trainingQuizPlanPolicy);
                 this.userService = Objects.requireNonNull(userService);
-                this.gameModeService = Objects.requireNonNull(gameModeService);
         }
 
         // ------------------------------------------------------------------
@@ -116,11 +125,44 @@ public class QuizEngine {
 
                 List<QuizQuestion> out = new ArrayList<>(persons.size());
 
-                Timing timing = resolveTiming(preferredFormat, requestedTimed, requestedTimeLimitMs);
+                Long gameModeId = options.getGameMode().getId();
+
+                var knowledgeByPersonId = new java.util.HashMap<Long, Knowledge>();
+                var knowledgeIds = new ArrayList<Long>();
+                for (Person person : persons) {
+                        if (person == null || person.getId() == null) {
+                                continue;
+                        }
+                        Knowledge knowledge = knowledgeService.findByUserGameModeAndPerson(
+                                        userId,
+                                        gameModeId,
+                                        person.getId());
+                        if (knowledge != null && knowledge.getId() != null) {
+                                knowledgeByPersonId.put(person.getId(), knowledge);
+                                knowledgeIds.add(knowledge.getId());
+                        }
+                }
+
+                var statsByKnowledgeId = knowledgeStatsService.getStatsForKnowledgeIds(
+                                userId,
+                                gameModeId,
+                                knowledgeIds);
 
                 for (Person person : persons) {
                         String storageKey = approvedStorageKeyOrThrow(person);
                         String initials = initialCrafter.computeInitials(person, options.getGameMode());
+
+                        Knowledge knowledge = knowledgeByPersonId.get(person.getId());
+                        KnowledgeStats stats = (knowledge != null && knowledge.getId() != null)
+                                        ? statsByKnowledgeId.get(knowledge.getId())
+                                        : null;
+
+                        TrainingQuizPlanPolicy.Plan plan = trainingQuizPlanPolicy.decide(
+                                        knowledge,
+                                        stats,
+                                        preferredFormat,
+                                        requestedTimed,
+                                        requestedTimeLimitMs);
 
                         QuizQuestionContext ctx = new QuizQuestionContext.Builder()
                                         .withSource(QuizQuestionSource.TRAINING)
@@ -137,12 +179,14 @@ public class QuizEngine {
                                         .withContext(ctx)
                                         .withInitials(initials)
                                         .withCandidatePoolPersonIds(poolIds)
-                                        .withTimed(timing.timed())
-                                        .withTimeLimitMs(timing.timeLimitMs())
+                                        .withTimed(plan.timed())
+                                        .withTimeLimitMs(plan.timeLimitMs())
+                                        .withReasonCode(plan.reasonCode())
+                                        .withReasonDetailsJson(plan.reasonDetailsJson())
                                         .build();
 
                         // dans emitTraining(...) — boucle for
-                        QuizQuestion q = questionFactory.build(spec, preferredFormat);
+                        QuizQuestion q = questionFactory.build(spec, plan.format());
 
                         // freeze truth centralisé
                         List<TruthAttributeValue> frozenTruth = snapshotFactory.freezeTruthForQuestion(q);
@@ -182,6 +226,46 @@ public class QuizEngine {
                 QuizQuestionSnapshot snapshot = stored.snapshot();
 
                 QuizValidationResult validation = answerValidator.validateFromSnapshot(snapshot, submission);
+
+                long nowEpochMs = System.currentTimeMillis();
+                long responseTimeMs = Math.max(0, nowEpochMs - stored.askedAtEpochMs());
+                java.time.LocalDateTime answeredAt = java.time.LocalDateTime.now();
+
+                Long gameModeId = snapshot.getGameModeId();
+                Long personId = snapshot.getPersonId();
+                if (personId == null && snapshot.getTargetPersonIds() != null
+                                && !snapshot.getTargetPersonIds().isEmpty()) {
+                        personId = snapshot.getTargetPersonIds().get(0);
+                }
+
+                if (gameModeId != null && personId != null) {
+                        var user = userService.getCurrentAuthenticatedUserOrThrow();
+                        KnowledgeResultEvent event = new KnowledgeResultEvent.Builder()
+                                        .withGameModeId(gameModeId)
+                                        .withPersonId(personId)
+                                        .withCorrect(validation.isCorrect())
+                                        .withHelpUsed(helpUsed)
+                                        .withOccurredAt(answeredAt)
+                                        .build();
+
+                        knowledgeService.recordBatchResults(user, List.of(event));
+
+                        Knowledge knowledge = knowledgeService.findByUserGameModeAndPerson(
+                                        userId,
+                                        gameModeId,
+                                        personId);
+                        if (knowledge != null && knowledge.getId() != null) {
+                                knowledgeStatsService.upsertOnAnswer(
+                                                userId,
+                                                gameModeId,
+                                                knowledge.getId(),
+                                                personId,
+                                                validation.isCorrect(),
+                                                helpUsed,
+                                                (int) responseTimeMs,
+                                                answeredAt);
+                        }
+                }
 
                 return new QuizAnswerResult.Builder()
                                 .withCorrect(validation.isCorrect())
@@ -236,35 +320,6 @@ public class QuizEngine {
                 if (limit == null || limit <= 0)
                         return DEFAULT_TRAINING_LIMIT;
                 return Math.min(limit, MAX_TRAINING_LIMIT);
-        }
-
-        private Timing resolveTiming(
-                        QuizPreferredFormat preferredFormat,
-                        Boolean requestedTimed,
-                        Integer requestedTimeLimitMs) {
-                boolean timed = requestedTimed != null ? requestedTimed.booleanValue()
-                                : autoTimedForTraining(preferredFormat);
-
-                Integer timeLimitMs = requestedTimeLimitMs;
-                if (timed) {
-                        if (timeLimitMs == null || timeLimitMs < 1000) {
-                                timeLimitMs = DEFAULT_TIME_LIMIT_MS;
-                        }
-                } else {
-                        timeLimitMs = null;
-                }
-
-                return new Timing(timed, timeLimitMs);
-        }
-
-        private boolean autoTimedForTraining(QuizPreferredFormat preferredFormat) {
-                if (preferredFormat == null || preferredFormat == QuizPreferredFormat.AUTO) {
-                        return false;
-                }
-                return false;
-        }
-
-        private record Timing(boolean timed, Integer timeLimitMs) {
         }
 
         private static String approvedStorageKeyOrThrow(Person person) {

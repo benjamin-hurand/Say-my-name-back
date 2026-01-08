@@ -16,6 +16,7 @@ public interface TrainingQuestionTokenStore {
     record StoredTrainingQuestion(
             Long userId,
             QuizQuestionSnapshot snapshot,
+            long askedAtEpochMs,
             long expiresAtEpochSec) {
     }
 

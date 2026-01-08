@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.saymyname.core.model.course.CourseQuestionHistory;
 import com.saymyname.core.model.course.CourseQuestionItem;
 import com.saymyname.core.model.course.CourseQuestionPlan;
+import com.saymyname.core.model.enums.quiz.QuizDecisionReasonCode;
 import com.saymyname.core.model.quiz.snapshot.QuizQuestionSnapshot;
 
 import com.saymyname.persistence.entity.organization.course.CourseQuestionHistoryEntity;
@@ -76,7 +77,9 @@ public class CourseQuestionHistoryEntityMapper {
         entity.setPlannedTargetCount(plan.getTargetCount());
         entity.setPlannedTargetKnowledgeIdsJson(writeJsonList(plan.getTargetKnowledgeIds()));
         entity.setPlannedParamsJson(plan.getParamsJson());
-        entity.setPlannedReason(plan.getReason());
+        entity.setPlannedReasonCode(plan.getReasonCode() != null ? plan.getReasonCode().name() : null);
+        entity.setPlannedReasonDetailsJson(plan.getReasonDetailsJson());
+        entity.setPlannedReason(plan.getReasonCode() != null ? plan.getReasonCode().name() : null);
 
         // Items: maintenir relation bidirectionnelle
         entity.getItems().clear();
@@ -101,6 +104,11 @@ public class CourseQuestionHistoryEntityMapper {
         }
 
         QuizQuestionSnapshot snapshot = readSnapshotJson(entity.getQuestionSnapshotJson());
+        String reasonCode = entity.getPlannedReasonCode() != null
+                ? entity.getPlannedReasonCode()
+                : entity.getPlannedReason();
+        QuizDecisionReasonCode resolvedReason = QuizDecisionReasonCode.fromString(reasonCode);
+
         CourseQuestionPlan plan = new CourseQuestionPlan.Builder()
                 .withFormat(entity.getPlannedFormat())
                 .withTimed(entity.isPlannedTimed())
@@ -108,7 +116,8 @@ public class CourseQuestionHistoryEntityMapper {
                 .withTargetCount(entity.getPlannedTargetCount())
                 .withTargetKnowledgeIds(readJsonList(entity.getPlannedTargetKnowledgeIdsJson()))
                 .withParamsJson(entity.getPlannedParamsJson())
-                .withReason(entity.getPlannedReason())
+                .withReasonCode(resolvedReason)
+                .withReasonDetailsJson(entity.getPlannedReasonDetailsJson())
                 .build();
 
         // Filet de sécurité : cohérence format/version entre colonnes et JSON

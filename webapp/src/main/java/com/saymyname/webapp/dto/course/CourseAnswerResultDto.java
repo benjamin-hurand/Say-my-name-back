@@ -6,11 +6,11 @@ import java.util.List;
 import com.saymyname.webapp.dto.quiz.QuizQuestionDto;
 
 public record CourseAnswerResultDto(
-                Boolean correct,
-                String rawSubmission,
-                String normalizedSubmission,
-                String feedbackMessage,
-                QuizQuestionDto nextQuestion,
-                List<CourseAnswerItemResultDto> itemResults,
-                StatusCountsDto statusCounts) {
+        Boolean correct,
+        String rawSubmission,
+        String normalizedSubmission,
+        String feedbackMessage,
+        QuizQuestionDto nextQuestion,
+        List<CourseAnswerItemResultDto> itemResults,
+        StatusCountsDto statusCounts) {
 }

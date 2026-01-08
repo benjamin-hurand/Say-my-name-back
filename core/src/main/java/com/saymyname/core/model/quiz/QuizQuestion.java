@@ -4,6 +4,7 @@ package com.saymyname.core.model.quiz;
 import java.util.List;
 import java.util.Objects;
 
+import com.saymyname.core.model.enums.quiz.QuizDecisionReasonCode;
 import com.saymyname.core.model.enums.quiz.QuizFormat;
 
 public class QuizQuestion {
@@ -25,6 +26,8 @@ public class QuizQuestion {
     private QuizQuestionHints hints;
     private QuizQuestionDisplay display;
     private QuizFollowUp followUp;
+    private QuizDecisionReasonCode reasonCode;
+    private String reasonDetailsJson;
 
     public QuizQuestion() {
     }
@@ -42,6 +45,8 @@ public class QuizQuestion {
         this.hints = b.hints;
         this.display = b.display;
         this.followUp = b.followUp;
+        this.reasonCode = b.reasonCode;
+        this.reasonDetailsJson = b.reasonDetailsJson;
     }
 
     public String getQuestionToken() {
@@ -96,6 +101,14 @@ public class QuizQuestion {
         return followUp;
     }
 
+    public QuizDecisionReasonCode getReasonCode() {
+        return reasonCode;
+    }
+
+    public String getReasonDetailsJson() {
+        return reasonDetailsJson;
+    }
+
     public void setPersonId(Long personId) {
         this.personId = personId;
     }
@@ -140,6 +153,14 @@ public class QuizQuestion {
         this.followUp = followUp;
     }
 
+    public void setReasonCode(QuizDecisionReasonCode reasonCode) {
+        this.reasonCode = reasonCode;
+    }
+
+    public void setReasonDetailsJson(String reasonDetailsJson) {
+        this.reasonDetailsJson = reasonDetailsJson;
+    }
+
     public static class Builder {
         private String questionToken;
 
@@ -155,6 +176,8 @@ public class QuizQuestion {
         private QuizQuestionHints hints;
         private QuizQuestionDisplay display;
         private QuizFollowUp followUp;
+        private QuizDecisionReasonCode reasonCode;
+        private String reasonDetailsJson;
 
         public Builder withQuestionToken(String v) {
             this.questionToken = v;
@@ -216,6 +239,16 @@ public class QuizQuestion {
             return this;
         }
 
+        public Builder withReasonCode(QuizDecisionReasonCode v) {
+            this.reasonCode = v;
+            return this;
+        }
+
+        public Builder withReasonDetailsJson(String v) {
+            this.reasonDetailsJson = v;
+            return this;
+        }
+
         public QuizQuestion build() {
             return new QuizQuestion(this);
         }
@@ -239,7 +272,9 @@ public class QuizQuestion {
                 && Objects.equals(payload, that.payload)
                 && Objects.equals(hints, that.hints)
                 && Objects.equals(display, that.display)
-                && Objects.equals(followUp, that.followUp);
+                && Objects.equals(followUp, that.followUp)
+                && Objects.equals(reasonCode, that.reasonCode)
+                && Objects.equals(reasonDetailsJson, that.reasonDetailsJson);
     }
 
     @Override
@@ -256,7 +291,9 @@ public class QuizQuestion {
                 payload,
                 hints,
                 display,
-                followUp);
+                followUp,
+                reasonCode,
+                reasonDetailsJson);
     }
 
     @Override
@@ -274,6 +311,8 @@ public class QuizQuestion {
                 ", hints=" + hints +
                 ", display=" + display +
                 ", followUp=" + followUp +
+                ", reasonCode='" + reasonCode + '\'' +
+                ", reasonDetailsJson='" + reasonDetailsJson + '\'' +
                 '}';
     }
 }

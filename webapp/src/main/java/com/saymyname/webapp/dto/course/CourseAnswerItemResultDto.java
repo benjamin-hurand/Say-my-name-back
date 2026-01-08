@@ -6,12 +6,12 @@ import java.util.List;
 import com.saymyname.core.model.enums.course.CourseQuestionItemRole;
 
 public record CourseAnswerItemResultDto(
-                Integer position,
-                CourseQuestionItemRole role,
-                Long knowledgeId,
-                Long personId,
-                Boolean correct,
-                String userAnswerNormalized,
-                String correctAnswer,
-                List<ResultAttributeDto> resultAttributes) {
+        Integer position,
+        CourseQuestionItemRole role,
+        Long knowledgeId,
+        Long personId,
+        Boolean correct,
+        String userAnswerNormalized,
+        String correctAnswer,
+        List<ResultAttributeDto> resultAttributes) {
 }

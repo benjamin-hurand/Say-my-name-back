@@ -4,6 +4,7 @@ package com.saymyname.core.model.quiz;
 import java.util.List;
 import java.util.Objects;
 
+import com.saymyname.core.model.enums.quiz.QuizDecisionReasonCode;
 import com.saymyname.core.model.enums.quiz.QuizQuestionSource;
 
 public class QuizQuestionSpec {
@@ -26,6 +27,8 @@ public class QuizQuestionSpec {
     private Boolean timed; // explicit timing toggle
     private Integer timeLimitMs; // required when timed=true
     private Integer maxErrorsOverride; // optional (for HANGMAN)
+    private QuizDecisionReasonCode reasonCode;
+    private String reasonDetailsJson;
 
     public QuizQuestionSpec() {
     }
@@ -43,6 +46,8 @@ public class QuizQuestionSpec {
         this.timed = b.timed;
         this.timeLimitMs = b.timeLimitMs;
         this.maxErrorsOverride = b.maxErrorsOverride;
+        this.reasonCode = b.reasonCode;
+        this.reasonDetailsJson = b.reasonDetailsJson;
     }
 
     public QuizQuestionSource getSource() {
@@ -93,6 +98,14 @@ public class QuizQuestionSpec {
         return maxErrorsOverride;
     }
 
+    public QuizDecisionReasonCode getReasonCode() {
+        return reasonCode;
+    }
+
+    public String getReasonDetailsJson() {
+        return reasonDetailsJson;
+    }
+
     public void setSource(QuizQuestionSource source) {
         this.source = source;
     }
@@ -141,6 +154,14 @@ public class QuizQuestionSpec {
         this.maxErrorsOverride = maxErrorsOverride;
     }
 
+    public void setReasonCode(QuizDecisionReasonCode reasonCode) {
+        this.reasonCode = reasonCode;
+    }
+
+    public void setReasonDetailsJson(String reasonDetailsJson) {
+        this.reasonDetailsJson = reasonDetailsJson;
+    }
+
     public static class Builder {
         private QuizQuestionSource source;
         private Long personId;
@@ -154,6 +175,8 @@ public class QuizQuestionSpec {
         private Boolean timed;
         private Integer timeLimitMs;
         private Integer maxErrorsOverride;
+        private QuizDecisionReasonCode reasonCode;
+        private String reasonDetailsJson;
 
         public Builder withSource(QuizQuestionSource v) {
             this.source = v;
@@ -215,6 +238,16 @@ public class QuizQuestionSpec {
             return this;
         }
 
+        public Builder withReasonCode(QuizDecisionReasonCode v) {
+            this.reasonCode = v;
+            return this;
+        }
+
+        public Builder withReasonDetailsJson(String v) {
+            this.reasonDetailsJson = v;
+            return this;
+        }
+
         public QuizQuestionSpec build() {
             Objects.requireNonNull(source, "source");
             Objects.requireNonNull(personId, "personId");
@@ -244,13 +277,15 @@ public class QuizQuestionSpec {
                 && Objects.equals(candidatePoolPersonIds, that.candidatePoolPersonIds)
                 && Objects.equals(timed, that.timed)
                 && Objects.equals(timeLimitMs, that.timeLimitMs)
-                && Objects.equals(maxErrorsOverride, that.maxErrorsOverride);
+                && Objects.equals(maxErrorsOverride, that.maxErrorsOverride)
+                && Objects.equals(reasonCode, that.reasonCode)
+                && Objects.equals(reasonDetailsJson, that.reasonDetailsJson);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(source, personId, storageKey, gameModeId, targetAttributeIds, operator, context, initials,
-                candidatePoolPersonIds, timed, timeLimitMs, maxErrorsOverride);
+                candidatePoolPersonIds, timed, timeLimitMs, maxErrorsOverride, reasonCode, reasonDetailsJson);
     }
 
     @Override
@@ -268,6 +303,8 @@ public class QuizQuestionSpec {
                 ", timed=" + timed +
                 ", timeLimitMs=" + timeLimitMs +
                 ", maxErrorsOverride=" + maxErrorsOverride +
+                ", reasonCode='" + reasonCode + '\'' +
+                ", reasonDetailsJson='" + reasonDetailsJson + '\'' +
                 '}';
     }
 }

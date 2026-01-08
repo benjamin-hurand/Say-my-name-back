@@ -108,7 +108,9 @@ public class CourseQuizQuestionBuilder {
                                 .withInitials(null)
                                 .withCandidatePoolPersonIds(candidatePoolIds)
                                 .withTimed(plan.isTimed())
-                                .withTimeLimitMs(plan.getTimeLimitMs());
+                                .withTimeLimitMs(plan.getTimeLimitMs())
+                                .withReasonCode(plan.getReasonCode())
+                                .withReasonDetailsJson(plan.getReasonDetailsJson());
 
                 QuizQuestionSpec spec = specBuilder.build();
 

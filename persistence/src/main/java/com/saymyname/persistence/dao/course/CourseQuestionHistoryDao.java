@@ -109,4 +109,11 @@ public class CourseQuestionHistoryDao {
             return null;
         return repo.findLastAnsweredAt(course.getId());
     }
+
+    @Transactional
+    public void markHelpUsed(Long id) {
+        int n = repo.markHelpUsed(id);
+        if (n == 0)
+            throw new IllegalArgumentException("Question not found: " + id);
+    }
 }

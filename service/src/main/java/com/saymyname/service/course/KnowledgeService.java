@@ -77,6 +77,13 @@ public class KnowledgeService {
         return knowledgeDao.countByCourseAndStatus(course, status);
     }
 
+    public Knowledge findByUserGameModeAndPerson(Long userId, Long gameModeId, Long personId) {
+        if (userId == null || gameModeId == null || personId == null) {
+            return null;
+        }
+        return knowledgeDao.findByUserGameModeAndPerson(userId, gameModeId, personId).orElse(null);
+    }
+
     // ---------------------------------------------------------------------
     // ✅ NEW: Validation pure, basée sur la vérité figée dans le snapshot
     // ---------------------------------------------------------------------
@@ -353,6 +360,28 @@ public class KnowledgeService {
 
     public Knowledge findRevision(Course course, Long lastPersonId, boolean allowRepeat) {
         return knowledgeDao.findRevision(course, lastPersonId, allowRepeat);
+    }
+
+    public List<Knowledge> findNextDueMulti(
+            Course course,
+            Long primaryPersonId,
+            Long lastPersonId,
+            int limit,
+            int maxErrorStreak,
+            double maxAvgRtMs,
+            double maxHelpRecent,
+            double minAttemptsRecent,
+            int fetchFactor) {
+        return knowledgeDao.findNextDueMulti(
+                course,
+                primaryPersonId,
+                lastPersonId,
+                limit,
+                maxErrorStreak,
+                maxAvgRtMs,
+                maxHelpRecent,
+                minAttemptsRecent,
+                fetchFactor);
     }
 
     public long countDueNow(Course course) {
