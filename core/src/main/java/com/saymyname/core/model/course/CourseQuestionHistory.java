@@ -1,25 +1,56 @@
+// src/main/java/com/saymyname/core/model/course/CourseQuestionHistory.java
 package com.saymyname.core.model.course;
 
 import com.saymyname.core.model.enums.PoolType;
+import com.saymyname.core.model.quiz.snapshot.QuizQuestionSnapshot;
+
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
- * Historique d'une question posée dans un cours.
- * Contient uniquement les données d'interaction (asked/answered) et de pool.
+ * Historique d'une question posée dans un cours (event root).
+ * Contient :
+ * - données d'interaction globales
+ * - snapshot immuable de la question posée (Option B)
+ * - liste d'items (candidates targets/distractors) pour pool tracking
  */
 public class CourseQuestionHistory {
+
     private Long id;
     private Course course;
-    private Knowledge knowledge;
+
     private int questionRound;
+
     private LocalDateTime askedAt;
     private LocalDateTime answeredAt;
     private int responseTimeMs;
-    private String userAnswer;
-    private boolean correct;
+
+    private String rawSubmission;
+    private String normalizedSubmission;
+
+    private boolean globalCorrect;
+
     private PoolType poolType;
     private boolean helpUsed;
+
+    /**
+     * Snapshot complet et immuable de la question posée (affichage + payload +
+     * truth).
+     * Source de vérité pour audit/replay/revalidation.
+     */
+    private QuizQuestionSnapshot snapshot;
+
+    /**
+     * Plan fige (format/params/timing/targets) pour garantir la coherence.
+     */
+    private CourseQuestionPlan plan;
+
+    /**
+     * Candidates (targets/distractors) pour pool tracking et analytics.
+     */
+    private List<CourseQuestionItem> items = new ArrayList<>();
 
     public CourseQuestionHistory() {
     }
@@ -27,18 +58,50 @@ public class CourseQuestionHistory {
     private CourseQuestionHistory(Builder b) {
         this.id = b.id;
         this.course = b.course;
-        this.knowledge = b.knowledge;
         this.questionRound = b.questionRound;
         this.askedAt = b.askedAt;
         this.answeredAt = b.answeredAt;
         this.responseTimeMs = b.responseTimeMs;
-        this.userAnswer = b.userAnswer;
-        this.correct = b.correct;
+        this.rawSubmission = b.rawSubmission;
+        this.normalizedSubmission = b.normalizedSubmission;
+        this.globalCorrect = b.globalCorrect;
         this.poolType = b.poolType;
         this.helpUsed = b.helpUsed;
+        this.snapshot = b.snapshot;
+        this.plan = b.plan;
+        this.items = b.items != null ? b.items : new ArrayList<>();
+        validateInvariants();
     }
 
-    // Getters and setters
+    public void validateInvariants() {
+        if (course == null)
+            throw new IllegalStateException("CourseQuestionHistory.course is required");
+        if (askedAt == null)
+            throw new IllegalStateException("CourseQuestionHistory.askedAt is required");
+        if (poolType == null)
+            throw new IllegalStateException("CourseQuestionHistory.poolType is required");
+        if (questionRound < 0)
+            throw new IllegalStateException("CourseQuestionHistory.questionRound must be >= 0");
+        if (responseTimeMs < 0)
+            throw new IllegalStateException("CourseQuestionHistory.responseTimeMs must be >= 0");
+
+        if (snapshot != null)
+            snapshot.validateInvariants();
+
+        if (plan != null)
+            plan.validateInvariants();
+
+        if (items == null || items.isEmpty()) {
+            throw new IllegalStateException("CourseQuestionHistory must contain at least 1 item");
+        }
+        for (CourseQuestionItem item : items) {
+            if (item == null)
+                throw new IllegalStateException("CourseQuestionHistory.items cannot contain null");
+            item.validateInvariants();
+        }
+    }
+
+    // Getters/Setters
     public Long getId() {
         return id;
     }
@@ -53,14 +116,6 @@ public class CourseQuestionHistory {
 
     public void setCourse(Course course) {
         this.course = course;
-    }
-
-    public Knowledge getKnowledge() {
-        return knowledge;
-    }
-
-    public void setKnowledge(Knowledge knowledge) {
-        this.knowledge = knowledge;
     }
 
     public int getQuestionRound() {
@@ -95,20 +150,28 @@ public class CourseQuestionHistory {
         this.responseTimeMs = responseTimeMs;
     }
 
-    public String getUserAnswer() {
-        return userAnswer;
+    public String getRawSubmission() {
+        return rawSubmission;
     }
 
-    public void setUserAnswer(String userAnswer) {
-        this.userAnswer = userAnswer;
+    public void setRawSubmission(String rawSubmission) {
+        this.rawSubmission = rawSubmission;
     }
 
-    public boolean isCorrect() {
-        return correct;
+    public String getNormalizedSubmission() {
+        return normalizedSubmission;
     }
 
-    public void setCorrect(boolean correct) {
-        this.correct = correct;
+    public void setNormalizedSubmission(String normalizedSubmission) {
+        this.normalizedSubmission = normalizedSubmission;
+    }
+
+    public boolean isGlobalCorrect() {
+        return globalCorrect;
+    }
+
+    public void setGlobalCorrect(boolean globalCorrect) {
+        this.globalCorrect = globalCorrect;
     }
 
     public PoolType getPoolType() {
@@ -127,19 +190,45 @@ public class CourseQuestionHistory {
         this.helpUsed = helpUsed;
     }
 
-    // Builder pattern
+    public QuizQuestionSnapshot getSnapshot() {
+        return snapshot;
+    }
+
+    public CourseQuestionPlan getPlan() {
+        return plan;
+    }
+
+    public void setSnapshot(QuizQuestionSnapshot snapshot) {
+        this.snapshot = snapshot;
+    }
+
+    public void setPlan(CourseQuestionPlan plan) {
+        this.plan = plan;
+    }
+
+    public List<CourseQuestionItem> getItems() {
+        return items;
+    }
+
+    public void setItems(List<CourseQuestionItem> items) {
+        this.items = items;
+    }
+
     public static class Builder {
         private Long id;
         private Course course;
-        private Knowledge knowledge;
         private int questionRound;
         private LocalDateTime askedAt;
         private LocalDateTime answeredAt;
         private int responseTimeMs;
-        private String userAnswer;
-        private boolean correct;
+        private String rawSubmission;
+        private String normalizedSubmission;
+        private boolean globalCorrect;
         private PoolType poolType;
         private boolean helpUsed;
+        private QuizQuestionSnapshot snapshot;
+        private CourseQuestionPlan plan;
+        private List<CourseQuestionItem> items = new ArrayList<>();
 
         public Builder withId(Long id) {
             this.id = id;
@@ -148,11 +237,6 @@ public class CourseQuestionHistory {
 
         public Builder withCourse(Course course) {
             this.course = course;
-            return this;
-        }
-
-        public Builder withKnowledge(Knowledge knowledge) {
-            this.knowledge = knowledge;
             return this;
         }
 
@@ -176,13 +260,18 @@ public class CourseQuestionHistory {
             return this;
         }
 
-        public Builder withUserAnswer(String userAnswer) {
-            this.userAnswer = userAnswer;
+        public Builder withRawSubmission(String rawSubmission) {
+            this.rawSubmission = rawSubmission;
             return this;
         }
 
-        public Builder withCorrect(boolean correct) {
-            this.correct = correct;
+        public Builder withNormalizedSubmission(String normalizedSubmission) {
+            this.normalizedSubmission = normalizedSubmission;
+            return this;
+        }
+
+        public Builder withGlobalCorrect(boolean globalCorrect) {
+            this.globalCorrect = globalCorrect;
             return this;
         }
 
@@ -193,6 +282,21 @@ public class CourseQuestionHistory {
 
         public Builder withHelpUsed(boolean helpUsed) {
             this.helpUsed = helpUsed;
+            return this;
+        }
+
+        public Builder withSnapshot(QuizQuestionSnapshot snapshot) {
+            this.snapshot = snapshot;
+            return this;
+        }
+
+        public Builder withPlan(CourseQuestionPlan plan) {
+            this.plan = plan;
+            return this;
+        }
+
+        public Builder withItems(List<CourseQuestionItem> items) {
+            this.items = items;
             return this;
         }
 
@@ -208,38 +312,25 @@ public class CourseQuestionHistory {
         if (!(o instanceof CourseQuestionHistory))
             return false;
         CourseQuestionHistory that = (CourseQuestionHistory) o;
-        return id == that.id &&
-                questionRound == that.questionRound &&
-                responseTimeMs == that.responseTimeMs &&
-                correct == that.correct &&
-                helpUsed == that.helpUsed &&
-                Objects.equals(course, that.course) &&
-                Objects.equals(knowledge, that.knowledge) &&
-                Objects.equals(askedAt, that.askedAt) &&
-                Objects.equals(answeredAt, that.answeredAt) &&
-                Objects.equals(userAnswer, that.userAnswer) &&
-                poolType == that.poolType;
+        return questionRound == that.questionRound
+                && responseTimeMs == that.responseTimeMs
+                && globalCorrect == that.globalCorrect
+                && helpUsed == that.helpUsed
+                && Objects.equals(id, that.id)
+                && Objects.equals(course, that.course)
+                && Objects.equals(askedAt, that.askedAt)
+                && Objects.equals(answeredAt, that.answeredAt)
+                && Objects.equals(rawSubmission, that.rawSubmission)
+                && Objects.equals(normalizedSubmission, that.normalizedSubmission)
+                && poolType == that.poolType
+                && Objects.equals(snapshot, that.snapshot)
+                && Objects.equals(plan, that.plan)
+                && Objects.equals(items, that.items);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, course, knowledge, questionRound,
-                askedAt, answeredAt, responseTimeMs,
-                userAnswer, correct, poolType, helpUsed);
-    }
-
-    @Override
-    public String toString() {
-        return "CourseQuestionHistory{" +
-                "id=" + id +
-                ", questionRound=" + questionRound +
-                ", askedAt=" + askedAt +
-                ", answeredAt=" + answeredAt +
-                ", responseTimeMs=" + responseTimeMs +
-                ", userAnswer='" + userAnswer + '\'' +
-                ", correct=" + correct +
-                ", poolType=" + poolType +
-                ", helpUsed=" + helpUsed +
-                '}';
+        return Objects.hash(id, course, questionRound, askedAt, answeredAt, responseTimeMs,
+                rawSubmission, normalizedSubmission, globalCorrect, poolType, helpUsed, snapshot, plan, items);
     }
 }

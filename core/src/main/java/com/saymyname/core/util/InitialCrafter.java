@@ -7,9 +7,9 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
-import com.saymyname.core.model.game.options.GameMode;
 import com.saymyname.core.model.people.Person;
 import com.saymyname.core.model.people.PersonAttribute;
+import com.saymyname.core.model.quiz.options.GameMode;
 
 @Component
 public class InitialCrafter {

@@ -2,8 +2,9 @@ package com.saymyname.core.model.course;
 
 import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.enums.KnowledgeStatus;
-import com.saymyname.core.model.game.options.GameMode;
 import com.saymyname.core.model.people.Person;
+import com.saymyname.core.model.quiz.options.GameMode;
+
 import java.time.LocalDateTime;
 import java.math.BigDecimal;
 import java.util.Objects;

@@ -18,12 +18,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.saymyname.core.model.enums.EmailStatus;
 import com.saymyname.core.model.enums.PhotoStatus;
-import com.saymyname.core.model.game.options.GameOptions;
 import com.saymyname.core.model.people.Person;
 import com.saymyname.core.model.persondirectory.AdminPersonSearchCriteria;
 import com.saymyname.core.model.persondirectory.AttributeValueRow;
 import com.saymyname.core.model.persondirectory.PagePersonRow;
 import com.saymyname.core.model.persondirectory.PersonSearchCriteria;
+import com.saymyname.core.model.quiz.options.GameOptions;
 import com.saymyname.persistence.entity.organization.PersonAttributeEntity;
 import com.saymyname.persistence.entity.organization.PersonEntity;
 import com.saymyname.persistence.entity.organization.PhotoEntity;

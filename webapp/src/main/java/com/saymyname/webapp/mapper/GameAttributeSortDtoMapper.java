@@ -1,6 +1,6 @@
 package com.saymyname.webapp.mapper;
 
-import com.saymyname.core.model.game.options.GameAttributeSort;
+import com.saymyname.core.model.quiz.options.GameAttributeSort;
 import com.saymyname.webapp.dto.GameAttributeSortDto;
 import org.springframework.stereotype.Component;
 
@@ -21,13 +21,11 @@ public class GameAttributeSortDtoMapper {
                 .build();
     }
 
-
     public GameAttributeSortDto toDto(GameAttributeSort gameAttributeSort) {
         return new GameAttributeSortDto(
                 gameAttributeSort.getId(),
                 attributeDtoMapper.toDto(gameAttributeSort.getAttribute()),
-                gameAttributeSort.getOrder()
-        );
+                gameAttributeSort.getOrder());
     }
 
 }

@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -15,19 +16,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.saymyname.core.model.auth.User;
-import com.saymyname.core.model.course.AnswerValidationResult;
 import com.saymyname.core.model.course.Course;
+import com.saymyname.core.model.course.CourseQuestionHistory;
 import com.saymyname.core.model.course.Knowledge;
 import com.saymyname.core.model.course.KnowledgeResultEvent;
-import com.saymyname.core.model.course.ResultAttribute;
 import com.saymyname.core.model.enums.KnowledgeStatus;
 import com.saymyname.core.model.enums.PopulationScope;
 import com.saymyname.core.model.enums.SrsAlgorithm;
-import com.saymyname.core.model.game.options.GameMode;
-import com.saymyname.core.model.people.Attribute;
 import com.saymyname.core.model.people.Person;
-import com.saymyname.core.model.people.PersonAttribute;
-import com.saymyname.core.util.AnswerValidator;
+import com.saymyname.core.model.quiz.options.GameMode;
 import com.saymyname.persistence.dao.PersonAttributeDao;
 import com.saymyname.persistence.dao.course.KnowledgeDao;
 import com.saymyname.service.course.scheduler.SchedulerStrategy;
@@ -61,11 +58,11 @@ public class KnowledgeService {
             @Value("${quiz.reviewAlgorithm:SM2}") SrsAlgorithm defaultAlgorithm,
             PersonAttributeDao personAttributeDao,
             LeaderboardService leaderboardService) {
-        this.knowledgeDao = knowledgeDao;
-        this.strategies = strategies;
-        this.defaultAlgorithm = defaultAlgorithm;
-        this.personAttributeDao = personAttributeDao;
-        this.leaderboardService = leaderboardService;
+        this.knowledgeDao = Objects.requireNonNull(knowledgeDao, "knowledgeDao");
+        this.strategies = Objects.requireNonNull(strategies, "strategies");
+        this.defaultAlgorithm = Objects.requireNonNull(defaultAlgorithm, "defaultAlgorithm");
+        this.personAttributeDao = Objects.requireNonNull(personAttributeDao, "personAttributeDao");
+        this.leaderboardService = Objects.requireNonNull(leaderboardService, "leaderboardService");
     }
 
     public int insertBatchOfTenKnowledges(Course course) {
@@ -80,84 +77,24 @@ public class KnowledgeService {
         return knowledgeDao.countByCourseAndStatus(course, status);
     }
 
-    /**
-     * Enregistre un seul résultat pour une personne / gameMode.
-     */
-    @Transactional
-    public void recordSingleResult(
-            User user,
-            Long gameModeId,
-            Long personId,
-            boolean correct,
-            boolean helpUsed) {
-        KnowledgeResultEvent ev = new KnowledgeResultEvent(gameModeId, personId, correct, helpUsed);
-        recordBatchResults(user, List.of(ev));
-    }
+    // ---------------------------------------------------------------------
+    // ✅ NEW: Validation pure, basée sur la vérité figée dans le snapshot
+    // ---------------------------------------------------------------------
 
     @Transactional
-    public AnswerValidationResult validateAnswer(
-            Long personId,
-            String answer,
+    public void recordCourseAnswerResults(
             User user,
-            GameMode gameMode,
-            boolean helpUsed) {
-
-        // 1) Calculer le verdict
-        List<PersonAttribute> personAttrs = personAttributeDao.findAttributesByPersonId(personId);
-        List<Long> modeAttrIds = gameMode.getGameModeAttributes().stream()
-                .map(gma -> gma.getAttribute().getId())
-                .toList();
-
-        List<String> correctValues = personAttrs.stream()
-                .filter(pa -> modeAttrIds.contains(pa.getAttribute().getId()))
-                .map(PersonAttribute::getValue)
-                .toList();
-
-        boolean isCorrect = AnswerValidator.match(answer, correctValues, gameMode.getOperator(), true);
-        String correctAnswer = String.join(" ", correctValues);
-
-        // 2) Construire la liste des ResultAttribute
-        List<ResultAttribute> resultAttrs = personAttrs.stream()
-                .map(pa -> {
-                    boolean isTarget = modeAttrIds.contains(pa.getAttribute().getId());
-                    boolean isCorrectAttr = true;
-                    if (isTarget) {
-                        String normAnswer = answer == null ? "" : answer.trim().toLowerCase();
-                        String normVal = pa.getValue() == null ? "" : pa.getValue().trim().toLowerCase();
-                        isCorrectAttr = normAnswer.contains(normVal);
-                    }
-                    return new ResultAttribute(
-                            new Attribute.Builder()
-                                    .withId(pa.getAttribute().getId())
-                                    .withName(pa.getAttribute().getName())
-                                    .build(),
-                            pa.getValue(),
-                            isCorrectAttr,
-                            isTarget);
-                })
-                .toList();
-
-        if (logger.isDebugEnabled()) {
-            logger.debug("resultAttrs={}", resultAttrs);
-        }
-
-        // 3) Enregistrer le résultat (Knowledge + XP)
-        recordSingleResult(user, gameMode.getId(), personId, isCorrect, helpUsed);
-
-        // 4) Retourner le verdict + bonne réponse
-        return new AnswerValidationResult.Builder()
-                .withCorrect(isCorrect)
-                .withCorrectAnswer(correctAnswer)
-                .withResultAttributes(resultAttrs)
-                .build();
+            Course course,
+            CourseQuestionHistory history,
+            boolean helpUsed,
+            List<KnowledgeResultEvent> events) {
+        recordBatchResults(user, events);
     }
 
-    /**
-     * VERSION PERF:
-     * - 1 seul upsertKnowledge(...) par (gameModeId, personId)
-     * - XP events "accumulés" puis crédités après upsert (1 event batch +
-     * milestones)
-     */
+    // ---------------------------------------------------------------------
+    // RecordBatchResults inchangé (SRS/XP)
+    // ---------------------------------------------------------------------
+
     @Transactional
     public int recordBatchResults(User user, List<KnowledgeResultEvent> events) {
         if (user == null || user.getId() == null)
@@ -166,18 +103,110 @@ public class KnowledgeService {
             return 0;
 
         var grouped = events.stream()
-                .collect(Collectors.groupingBy(ev -> new GroupKey(ev.gameModeId(), ev.personId())));
+                .filter(Objects::nonNull)
+                .collect(Collectors.groupingBy(KnowledgeService::toEventKey));
 
         for (var entry : grouped.entrySet()) {
-            GroupKey key = entry.getKey();
+            EventKey key = entry.getKey();
             List<KnowledgeResultEvent> groupEvents = entry.getValue();
+            if (groupEvents == null || groupEvents.isEmpty())
+                continue;
 
-            Knowledge knowledge = knowledgeDao
-                    .findByUserGameModeAndPerson(user.getId(), key.gameModeId, key.personId)
+            Knowledge knowledge = loadKnowledgeForKey(user, key, groupEvents);
+
+            long totalAnswerXp = 0;
+            List<StreakMilestoneHit> streakHits = new ArrayList<>();
+
+            int prevGlobalStreak = knowledge.getGlobalStreak();
+            boolean hasAnyCountedAnswer = false;
+
+            for (KnowledgeResultEvent ev : groupEvents) {
+                boolean correct = ev.isCorrect();
+                boolean helpUsed = ev.isHelpUsed();
+
+                applyResultToKnowledge(knowledge, user, correct, helpUsed);
+
+                int xp = leaderboardService.computeXpForKnowledgeResult(correct, helpUsed);
+                totalAnswerXp += xp;
+
+                if (!(correct && helpUsed)) {
+                    hasAnyCountedAnswer = true;
+                }
+
+                int newGlobalStreak = knowledge.getGlobalStreak();
+                if (newGlobalStreak != prevGlobalStreak) {
+                    int bonus = leaderboardService.computeStreakBonus(newGlobalStreak);
+                    if (bonus > 0) {
+                        streakHits.add(new StreakMilestoneHit(newGlobalStreak, bonus));
+                    }
+                    prevGlobalStreak = newGlobalStreak;
+                }
+            }
+
+            knowledgeDao.upsertKnowledge(knowledge);
+
+            Long refPersonId = resolvePersonIdForXp(key, knowledge, groupEvents);
+            LocalDateTime at = LocalDateTime.now();
+
+            if (totalAnswerXp > 0 && refPersonId != null) {
+                leaderboardService.addXp(
+                        user,
+                        "KNOWLEDGE_ANSWER_BATCH",
+                        SOURCE_TYPE_KNOWLEDGE,
+                        refPersonId,
+                        safeLongToInt(totalAnswerXp),
+                        at,
+                        false,
+                        !hasAnyCountedAnswer);
+            }
+
+            for (StreakMilestoneHit hit : streakHits) {
+                if (refPersonId == null)
+                    continue;
+
+                leaderboardService.addXp(
+                        user,
+                        computeStreakEventKey(hit.milestone()),
+                        SOURCE_TYPE_KNOWLEDGE,
+                        refPersonId,
+                        hit.bonusXp(),
+                        at,
+                        false,
+                        true);
+            }
+        }
+
+        return grouped.size();
+    }
+
+    private static EventKey toEventKey(KnowledgeResultEvent ev) {
+        if (ev.getKnowledgeId() != null) {
+            return new KnowledgeIdKey(ev.getKnowledgeId());
+        }
+        Long gm = ev.getGameModeId();
+        Long pid = ev.getPersonId();
+        if (gm == null || pid == null) {
+            throw new IllegalArgumentException(
+                    "KnowledgeResultEvent missing both knowledgeId and (gameModeId, personId)");
+        }
+        return new ModePersonKey(gm, pid);
+    }
+
+    private Knowledge loadKnowledgeForKey(User user, EventKey key, List<KnowledgeResultEvent> groupEvents) {
+        if (key instanceof KnowledgeIdKey kid) {
+            KnowledgeResultEvent first = groupEvents.get(0);
+            if (first.getGameModeId() == null || first.getPersonId() == null) {
+                throw new IllegalArgumentException(
+                        "Event grouped by knowledgeId requires either KnowledgeDao.findByIdForUser(...) " +
+                                "or (gameModeId, personId) fallback present on event");
+            }
+
+            return knowledgeDao
+                    .findByUserGameModeAndPerson(user.getId(), first.getGameModeId(), first.getPersonId())
                     .orElseGet(() -> new Knowledge.Builder()
                             .withUser(user)
-                            .withGameMode(new GameMode.Builder().withId(key.gameModeId).build())
-                            .withPerson(new Person.Builder().withId(key.personId).build())
+                            .withGameMode(new GameMode.Builder().withId(first.getGameModeId()).build())
+                            .withPerson(new Person.Builder().withId(first.getPersonId()).build())
                             .withStatus(KnowledgeStatus.DISCOVERED)
                             .withNextReviewDate(LocalDateTime.now())
                             .withLastReviewDate(LocalDateTime.now())
@@ -190,76 +219,52 @@ public class KnowledgeService {
                             .withDifficulty(INITIAL_DIFF)
                             .withStability(INITIAL_STABILITY)
                             .build());
-
-            long totalAnswerXp = 0;
-            List<StreakMilestoneHit> streakHits = new ArrayList<>();
-
-            int prevGlobalStreak = knowledge.getGlobalStreak();
-
-            // On mémorise aussi si le batch contient au moins une "réponse comptée"
-            // (correct+help -> on ne compte pas total_answers)
-            boolean hasAnyCountedAnswer = false;
-
-            for (KnowledgeResultEvent ev : groupEvents) {
-                applyResultToKnowledge(knowledge, user, ev.correct(), ev.helpUsed());
-
-                int xp = leaderboardService.computeXpForKnowledgeResult(ev.correct(), ev.helpUsed());
-                totalAnswerXp += xp;
-
-                // Une "answer" est comptée si NOT(correct && helpUsed)
-                if (!(ev.correct() && ev.helpUsed())) {
-                    hasAnyCountedAnswer = true;
-                }
-
-                int newGlobalStreak = knowledge.getGlobalStreak();
-                if (newGlobalStreak != prevGlobalStreak) {
-                    int bonus = leaderboardService.computeStreakBonus(newGlobalStreak);
-                    if (bonus > 0)
-                        streakHits.add(new StreakMilestoneHit(newGlobalStreak, bonus));
-                    prevGlobalStreak = newGlobalStreak;
-                }
-            }
-
-            // Upsert knowledge une fois
-            knowledgeDao.upsertKnowledge(knowledge);
-
-            // Créditer XP
-            LocalDateTime at = LocalDateTime.now();
-
-            if (totalAnswerXp > 0) {
-                leaderboardService.addXp(
-                        user,
-                        "KNOWLEDGE_ANSWER_BATCH",
-                        SOURCE_TYPE_KNOWLEDGE,
-                        key.personId,
-                        safeLongToInt(totalAnswerXp),
-                        at,
-                        // pour les compteurs : on met "correct/helpUsed" du batch ?
-                        // On choisit: countedAnswer=true -> total_answers+1, sinon +0.
-                        // correctAnswersDelta ne peut pas être exact si batch mixte, donc on le laisse
-                        // à 0 ici.
-                        // (si tu veux exact, il faut passer des deltas et faire une méthode dédiée)
-                        false,
-                        !hasAnyCountedAnswer // hack pour forcer total_answersDelta=0 dans DAO si "correct&&help"
-                );
-            }
-
-            // milestones: rares -> ok de faire plusieurs events
-            for (StreakMilestoneHit hit : streakHits) {
-                leaderboardService.addXp(
-                        user,
-                        computeStreakEventKey(hit.milestone()),
-                        SOURCE_TYPE_KNOWLEDGE,
-                        key.personId,
-                        hit.bonusXp(),
-                        at,
-                        false,
-                        true // milestones ne doivent pas compter comme answers
-                );
-            }
         }
 
-        return grouped.size();
+        ModePersonKey mp = (ModePersonKey) key;
+
+        return knowledgeDao
+                .findByUserGameModeAndPerson(user.getId(), mp.gameModeId(), mp.personId())
+                .orElseGet(() -> new Knowledge.Builder()
+                        .withUser(user)
+                        .withGameMode(new GameMode.Builder().withId(mp.gameModeId()).build())
+                        .withPerson(new Person.Builder().withId(mp.personId()).build())
+                        .withStatus(KnowledgeStatus.DISCOVERED)
+                        .withNextReviewDate(LocalDateTime.now())
+                        .withLastReviewDate(LocalDateTime.now())
+                        .withTotalRepetitionCount(0)
+                        .withFailureCount(0)
+                        .withSuccessCount(0)
+                        .withSrsStreak(0)
+                        .withGlobalStreak(0)
+                        .withEaseFactor(INITIAL_EF)
+                        .withDifficulty(INITIAL_DIFF)
+                        .withStability(INITIAL_STABILITY)
+                        .build());
+    }
+
+    private static Long resolvePersonIdForXp(EventKey key, Knowledge knowledge,
+            List<KnowledgeResultEvent> groupEvents) {
+        if (key instanceof ModePersonKey mp) {
+            return mp.personId();
+        }
+        if (knowledge != null && knowledge.getPerson() != null && knowledge.getPerson().getId() != null) {
+            return knowledge.getPerson().getId();
+        }
+        if (groupEvents != null && !groupEvents.isEmpty()) {
+            KnowledgeResultEvent first = groupEvents.get(0);
+            return first.getPersonId();
+        }
+        return null;
+    }
+
+    private sealed interface EventKey permits KnowledgeIdKey, ModePersonKey {
+    }
+
+    private record KnowledgeIdKey(Long knowledgeId) implements EventKey {
+    }
+
+    private record ModePersonKey(Long gameModeId, Long personId) implements EventKey {
     }
 
     private static int safeLongToInt(long value) {
@@ -308,8 +313,9 @@ public class KnowledgeService {
 
             switch (algo) {
                 case SM2 -> {
-                    if (!isCorrect || srsDue)
+                    if (!isCorrect || srsDue) {
                         scheduler.schedule(k, grade);
+                    }
                 }
                 case PFA, FSRS -> scheduler.schedule(k, grade);
             }
@@ -328,11 +334,7 @@ public class KnowledgeService {
         k.setLastReviewDate(now);
     }
 
-    private record GroupKey(Long gameModeId, Long personId) {
-    }
-
-    // ----------------- POOLS -----------------
-
+    // POOLS (inchangé)
     public Knowledge findFirstNew(Course course, Long lastPersonId, boolean allowRepeat) {
         return knowledgeDao.findFirstNew(course, lastPersonId, allowRepeat);
     }
@@ -361,8 +363,13 @@ public class KnowledgeService {
         return knowledgeDao.findAllByCourse(course);
     }
 
-    public int resetForCourseScope(long userId, long gameModeId, PopulationScope popScope,
-            double baselineEase, double baselineDiff, double baselineStability) {
+    public int resetForCourseScope(
+            long userId,
+            long gameModeId,
+            PopulationScope popScope,
+            double baselineEase,
+            double baselineDiff,
+            double baselineStability) {
         return knowledgeDao.resetForCourseScope(userId, gameModeId, popScope, baselineEase, baselineDiff,
                 baselineStability);
     }

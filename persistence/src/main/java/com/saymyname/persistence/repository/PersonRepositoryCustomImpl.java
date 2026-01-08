@@ -8,8 +8,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.saymyname.core.model.enums.FollowFilter;
 import com.saymyname.core.model.enums.PhotoStatus;
-import com.saymyname.core.model.game.options.GameAttributeFilter;
-import com.saymyname.core.model.game.options.GameOptions;
+import com.saymyname.core.model.quiz.options.GameAttributeFilter;
+import com.saymyname.core.model.quiz.options.GameOptions;
 import com.saymyname.persistence.entity.organization.PersonAttributeEntity;
 import com.saymyname.persistence.entity.organization.PersonEntity;
 import com.saymyname.persistence.entity.organization.PhotoEntity;

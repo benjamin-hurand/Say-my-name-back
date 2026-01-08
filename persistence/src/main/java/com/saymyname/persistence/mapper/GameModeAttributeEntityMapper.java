@@ -1,6 +1,6 @@
 package com.saymyname.persistence.mapper;
 
-import com.saymyname.core.model.game.options.GameModeAttribute;
+import com.saymyname.core.model.quiz.options.GameModeAttribute;
 import com.saymyname.persistence.entity.organization.GameModeAttributeEntity;
 
 import org.springframework.stereotype.Component;

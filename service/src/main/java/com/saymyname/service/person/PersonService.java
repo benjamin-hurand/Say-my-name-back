@@ -18,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.course.Course;
-import com.saymyname.core.model.game.options.GameMode;
 import com.saymyname.core.model.people.Person;
 import com.saymyname.core.model.people.PersonAttribute;
 import com.saymyname.core.model.persondirectory.AdminPersonCard;
@@ -28,6 +27,7 @@ import com.saymyname.core.model.persondirectory.AttributeValueView;
 import com.saymyname.core.model.persondirectory.PagePersonRow;
 import com.saymyname.core.model.persondirectory.PersonCard;
 import com.saymyname.core.model.persondirectory.PersonSearchCriteria;
+import com.saymyname.core.model.quiz.options.GameMode;
 import com.saymyname.persistence.dao.PersonDao;
 import com.saymyname.service.PersonAttributeService;
 import com.saymyname.service.UserOrganizationService;

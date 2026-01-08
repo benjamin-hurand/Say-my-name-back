@@ -1,7 +1,7 @@
 package com.saymyname.webapp.mapper;
 
-import com.saymyname.core.model.game.options.GameAttributeSort;
 import com.saymyname.core.model.people.Attribute;
+import com.saymyname.core.model.quiz.options.GameAttributeSort;
 import com.saymyname.webapp.dto.ReducedGameAttributeSortDto;
 
 import org.springframework.stereotype.Component;

@@ -1,6 +1,6 @@
 package com.saymyname.webapp.mapper;
 
-import com.saymyname.core.model.game.options.GameRepetitionPattern;
+import com.saymyname.core.model.quiz.options.GameRepetitionPattern;
 import com.saymyname.webapp.dto.GameRepetitionPatternDto;
 import org.springframework.stereotype.Component;
 
@@ -19,7 +19,6 @@ public class GameRepetitionPatternDtoMapper {
         return new GameRepetitionPatternDto(
                 gameRepetitionPattern.getPatternName(),
                 gameRepetitionPattern.getFrequency(),
-                gameRepetitionPattern.getQuantity()
-        );
+                gameRepetitionPattern.getQuantity());
     }
 }

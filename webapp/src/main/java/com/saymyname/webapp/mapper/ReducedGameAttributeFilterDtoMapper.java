@@ -2,8 +2,8 @@ package com.saymyname.webapp.mapper;
 
 import org.springframework.stereotype.Component;
 
-import com.saymyname.core.model.game.options.GameAttributeFilter;
 import com.saymyname.core.model.people.Attribute;
+import com.saymyname.core.model.quiz.options.GameAttributeFilter;
 import com.saymyname.webapp.dto.ReducedGameAttributeFilterDto;
 
 @Component

@@ -4,22 +4,21 @@ import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.course.ResultAttribute;
 import com.saymyname.webapp.dto.course.ResultAttributeDto;
-import com.saymyname.webapp.mapper.AttributeDtoMapper;
 
 @Component
 public class ResultAttributeDtoMapper {
 
-    private final AttributeDtoMapper attributeDtoMapper;
-
-    public ResultAttributeDtoMapper(AttributeDtoMapper attributeDtoMapper) {
-        this.attributeDtoMapper = attributeDtoMapper;
+    public ResultAttributeDtoMapper() {
     }
 
-    public ResultAttributeDto toDto(ResultAttribute model) {
+    public ResultAttributeDto toDto(ResultAttribute ra) {
+        if (ra == null)
+            return null;
         return new ResultAttributeDto(
-                attributeDtoMapper.toReducedDto(model.getAttribute()),
-                model.getValue(),
-                model.isCorrect(),
-                model.isTarget());
+                ra.getAttribute() != null ? ra.getAttribute().getId() : null,
+                ra.getAttribute() != null ? ra.getAttribute().getName() : null,
+                ra.getValue(),
+                ra.isCorrect(),
+                ra.isTarget());
     }
 }

@@ -2,7 +2,7 @@ package com.saymyname.webapp.mapper;
 
 import org.springframework.stereotype.Component;
 
-import com.saymyname.core.model.game.options.GameOptions;
+import com.saymyname.core.model.quiz.options.GameOptions;
 import com.saymyname.webapp.dto.ReducedGameOptionsDto;
 
 @Component

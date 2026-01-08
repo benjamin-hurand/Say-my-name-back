@@ -1,6 +1,6 @@
 package com.saymyname.webapp.mapper;
 
-import com.saymyname.core.model.game.options.GameMode;
+import com.saymyname.core.model.quiz.options.GameMode;
 import com.saymyname.webapp.dto.GameModeDto;
 import org.springframework.stereotype.Component;
 

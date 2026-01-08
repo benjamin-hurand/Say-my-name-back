@@ -21,12 +21,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.enums.OrgRole;
-import com.saymyname.core.model.game.options.GameMode;
 import com.saymyname.core.model.people.Attribute;
 import com.saymyname.core.model.people.Person;
 import com.saymyname.core.model.people.PersonAttribute;
 import com.saymyname.core.model.persondirectory.AdminPersonCard;
 import com.saymyname.core.model.persondirectory.AdminPersonSearchCriteria;
+import com.saymyname.core.model.quiz.options.GameMode;
 import com.saymyname.service.AttributeService;
 import com.saymyname.service.ChangeRequestService;
 import com.saymyname.service.GameModeService;

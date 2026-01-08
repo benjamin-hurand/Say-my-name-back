@@ -1,3 +1,4 @@
+// src/main/java/com/saymyname/webapp/mapper/course/KnowledgeResultDtoMapper.java
 package com.saymyname.webapp.mapper.course;
 
 import org.springframework.stereotype.Component;
@@ -9,7 +10,18 @@ import com.saymyname.webapp.dto.course.KnowledgeResultDto;
 public class KnowledgeResultDtoMapper {
 
     public KnowledgeResultEvent toModel(KnowledgeResultDto dto) {
-        return new KnowledgeResultEvent(dto.gameModeId(), dto.personId(), dto.isCorrect(),
-                dto.helpUsed());
+        if (dto == null)
+            return null;
+
+        return new KnowledgeResultEvent.Builder()
+                .withKnowledgeId(dto.knowledgeId())
+                .withGameModeId(dto.gameModeId())
+                .withPersonId(dto.personId())
+                .withCorrect(dto.isCorrect())
+                .withHelpUsed(dto.helpUsed())
+                .withCourseId(dto.courseId())
+                .withCourseQuestionHistoryId(dto.courseQuestionHistoryId())
+                .withQuestionRound(dto.questionRound())
+                .build();
     }
 }

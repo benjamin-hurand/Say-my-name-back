@@ -1,3 +1,4 @@
+// src/main/java/com/saymyname/service/course/CourseQuestionHistoryService.java
 package com.saymyname.service.course;
 
 import java.time.LocalDateTime;
@@ -8,66 +9,132 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.saymyname.core.model.course.Course;
 import com.saymyname.core.model.course.CourseQuestionHistory;
+import com.saymyname.core.model.course.CourseQuestionItem;
+import com.saymyname.core.model.enums.course.CourseQuestionItemRole;
 import com.saymyname.core.model.people.PersonAttribute;
-import com.saymyname.persistence.dao.course.CourseQuestionHistoryDao;
 import com.saymyname.service.PersonAttributeService;
+import com.saymyname.persistence.dao.course.CourseQuestionHistoryDao;
 
 @Service
 public class CourseQuestionHistoryService {
 
-    private final CourseQuestionHistoryDao courseQuestionHistoryDao;
+    private final CourseQuestionHistoryDao dao;
     private final PersonAttributeService personAttributeService;
 
-    public CourseQuestionHistoryService(CourseQuestionHistoryDao courseQuestionHistoryDao,
+    public CourseQuestionHistoryService(
+            CourseQuestionHistoryDao dao,
             PersonAttributeService personAttributeService) {
-        this.courseQuestionHistoryDao = courseQuestionHistoryDao;
+        this.dao = dao;
         this.personAttributeService = personAttributeService;
     }
 
     public CourseQuestionHistory create(CourseQuestionHistory history) {
-        return courseQuestionHistoryDao.create(history);
+        return dao.create(history);
     }
 
     public CourseQuestionHistory findById(Long id) {
-        return courseQuestionHistoryDao.findById(id);
+        return dao.findById(id);
     }
 
     public CourseQuestionHistory findByIdAndMarkHelpUsed(Long questionId) {
         CourseQuestionHistory question = findById(questionId);
+        if (question == null)
+            return null;
+
         question.setHelpUsed(true);
         update(question);
         return question;
     }
 
     public void deleteAllByCourse(Course course) {
-        courseQuestionHistoryDao.deleteAllByCourse(course);
+        dao.deleteAllByCourse(course);
     }
 
     public void update(CourseQuestionHistory courseQuestion) {
-        courseQuestionHistoryDao.update(courseQuestion);
+        dao.update(courseQuestion);
     }
 
     @Transactional
     public List<PersonAttribute> markHelpAndGetAttributes(Long courseId, Long questionId) {
-        // 1. Marquer l’aide utilisée
-        CourseQuestionHistory questionMarked = findByIdAndMarkHelpUsed(questionId);
+        if (courseId == null)
+            throw new IllegalArgumentException("courseId cannot be null");
+        if (questionId == null)
+            throw new IllegalArgumentException("questionId cannot be null");
 
-        // 2. Récupérer les attributs de la personne liée à la question
-        Long personId = questionMarked.getKnowledge().getPerson().getId();
+        // 1) Marquer l’aide utilisée
+        CourseQuestionHistory questionMarked = findByIdAndMarkHelpUsed(questionId);
+        if (questionMarked == null) {
+            throw new IllegalArgumentException("Question not found: " + questionId);
+        }
+
+        // 1bis) Guard : cohérence course
+        if (questionMarked.getCourse() == null || questionMarked.getCourse().getId() == null) {
+            throw new IllegalStateException("Question " + questionId + " has no course reference");
+        }
+        if (!courseId.equals(questionMarked.getCourse().getId())) {
+            throw new IllegalArgumentException(
+                    "Question " + questionId + " does not belong to course " + courseId);
+        }
+
+        // 2) Déterminer la personne cible (robuste aux futurs formats)
+        Long personId = extractTargetPersonId(questionMarked);
 
         return personAttributeService.getAttributesByPersonId(personId);
     }
 
+    private Long extractTargetPersonId(CourseQuestionHistory history) {
+        // ✅ Priorité 0 : snapshot (robuste multi-format)
+        if (history.getSnapshot() != null && history.getSnapshot().getTargetPersonIds() != null) {
+            List<Long> ids = history.getSnapshot().getTargetPersonIds();
+            if (!ids.isEmpty() && ids.get(0) != null) {
+                return ids.get(0); // pour "help", on prend le 1er (primary)
+            }
+        }
+
+        // Fallback legacy : items
+        List<CourseQuestionItem> items = history.getItems();
+        if (items == null || items.isEmpty()) {
+            throw new IllegalStateException("No items found for question " + history.getId());
+        }
+
+        Long personId = items.stream()
+                .filter(it -> it.getRole() == CourseQuestionItemRole.TARGET)
+                .map(it -> it.getPerson() != null ? it.getPerson().getId() : null)
+                .filter(id -> id != null)
+                .findFirst()
+                .orElse(null);
+
+        if (personId != null)
+            return personId;
+
+        personId = items.stream()
+                .filter(it -> it.getRole() == CourseQuestionItemRole.TARGET)
+                .map(it -> (it.getKnowledge() != null
+                        && it.getKnowledge().getPerson() != null)
+                                ? it.getKnowledge().getPerson().getId()
+                                : null)
+                .filter(id -> id != null)
+                .findFirst()
+                .orElse(null);
+
+        if (personId != null)
+            return personId;
+
+        throw new IllegalStateException(
+                "Unable to resolve TARGET personId for question " + history.getId()
+                        + " (snapshot has no targetPersonIds and items don't expose target person)");
+    }
+
     // ------- Stats activité -------
     public int countAllAnswersByCourse(Course course) {
-        return courseQuestionHistoryDao.countAllAnswersByCourse(course);
+        return dao.countAllAnswersByCourse(course);
     }
 
     public int countAnswersSince(Course course, LocalDateTime since) {
-        return courseQuestionHistoryDao.countAnswersSince(course, since);
+        return dao.countAnswersSince(course, since);
     }
 
     public LocalDateTime findLastAnsweredAt(Course course) {
-        return courseQuestionHistoryDao.findLastAnsweredAt(course);
+        return dao.findLastAnsweredAt(course);
     }
 }

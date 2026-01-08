@@ -1,11 +1,14 @@
+// src/main/java/com/saymyname/service/course/CourseService.java
 package com.saymyname.service.course;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 
@@ -14,25 +17,40 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.saymyname.core.exception.course.CourseAlreadyExistsException;
 import com.saymyname.core.exception.course.NextQuestionUnavailableException;
 import com.saymyname.core.exception.course.NoMoreQuestionsException;
 import com.saymyname.core.exception.course.QuestionAlreadyAnsweredException;
 import com.saymyname.core.model.auth.User;
-import com.saymyname.core.model.course.AnswerAndNextQuestion;
-import com.saymyname.core.model.course.AnswerValidationResult;
 import com.saymyname.core.model.course.Course;
+import com.saymyname.core.model.course.CourseAnswerItemResult;
+import com.saymyname.core.model.course.CourseAnswerResult;
 import com.saymyname.core.model.course.CourseQuestionHistory;
+import com.saymyname.core.model.course.CourseQuestionItem;
+import com.saymyname.core.model.course.CourseQuestionPlan;
 import com.saymyname.core.model.course.CourseStats;
 import com.saymyname.core.model.course.Knowledge;
+import com.saymyname.core.model.course.KnowledgeResultEvent;
 import com.saymyname.core.model.enums.CourseStatus;
 import com.saymyname.core.model.enums.KnowledgeStatus;
 import com.saymyname.core.model.enums.PoolType;
 import com.saymyname.core.model.enums.PopulationScope;
+import com.saymyname.core.model.enums.course.CourseQuestionItemRole;
+import com.saymyname.core.model.enums.quiz.QuizFormat;
+import com.saymyname.core.model.enums.quiz.QuizPreferredFormat;
+import com.saymyname.core.model.quiz.QuizAnswerSubmission;
+import com.saymyname.core.model.quiz.QuizQuestion;
+import com.saymyname.core.model.quiz.QuizValidationResult;
+import com.saymyname.core.model.quiz.snapshot.TruthAttributeValue;
 import com.saymyname.persistence.dao.course.CourseDao;
 import com.saymyname.service.UserService;
 import com.saymyname.service.UserSubscriptionService;
 import com.saymyname.service.person.PersonService;
+import com.saymyname.service.quiz.QuizAnswerValidator;
+import com.saymyname.service.quiz.QuizQuestionSnapshotFactory;
+import com.saymyname.service.quiz.QuizQuestionSnapshotMapper;
 
 @Service
 public class CourseService {
@@ -44,91 +62,106 @@ public class CourseService {
     private final PersonService personService;
     private final UserService userService;
 
-    // Statuts actifs = uniquement IN_PROGRESS
+    private final CourseQuizQuestionBuilder courseQuizQuestionBuilder;
+    private final CourseQuizPlanPolicy courseQuizPlanPolicy;
+
+    /** Snapshot: freeze truth centralisé (training + course). */
+    private final QuizQuestionSnapshotFactory snapshotFactory;
+
+    /** Validation snapshot (plus de DB-live). */
+    private final QuizAnswerValidator quizAnswerValidator;
+
+    /** ObjectMapper injecté (config Spring/Jackson). */
+    private final ObjectMapper objectMapper;
+
     private static final List<CourseStatus> ACTIVE_STATUSES = List.of(CourseStatus.IN_PROGRESS);
 
-    // Poids des pools
     private static final double WEIGHT_ERROR = 5;
     private static final double WEIGHT_SRS = 4;
     private static final double WEIGHT_NOT_SO_NEW = 6;
     private static final double WEIGHT_NEW = 3;
     private static final double WEIGHT_REVISION = 0;
+    private static final int MULTI_TARGET_MIN = 4;
 
-    public CourseService(CourseDao courseDao, KnowledgeService knowledgeService,
-            CourseQuestionHistoryService courseQuestionHistoryService, UserSubscriptionService userSubscriptionService,
-            PersonService personService, UserService userService) {
+    public CourseService(
+            CourseDao courseDao,
+            KnowledgeService knowledgeService,
+            CourseQuestionHistoryService courseQuestionHistoryService,
+            UserSubscriptionService userSubscriptionService,
+            PersonService personService,
+            UserService userService,
+            CourseQuizQuestionBuilder courseQuizQuestionBuilder,
+            CourseQuizPlanPolicy courseQuizPlanPolicy,
+            QuizQuestionSnapshotFactory snapshotFactory,
+            QuizAnswerValidator quizAnswerValidator,
+            ObjectMapper objectMapper) {
+
         this.courseDao = courseDao;
         this.knowledgeService = knowledgeService;
         this.courseQuestionHistoryService = courseQuestionHistoryService;
         this.userSubscriptionService = userSubscriptionService;
         this.personService = personService;
         this.userService = userService;
+        this.courseQuizQuestionBuilder = courseQuizQuestionBuilder;
+        this.courseQuizPlanPolicy = courseQuizPlanPolicy;
+
+        this.snapshotFactory = snapshotFactory;
+        this.quizAnswerValidator = quizAnswerValidator;
+        this.objectMapper = objectMapper;
     }
 
-    /** Dernier cours “focus” (lastAccessedAt) parmi les actifs, sinon fallback. */
+    // ---------------------------------------------------------------------
+    // Course lifecycle
+    // ---------------------------------------------------------------------
+
     @Transactional(readOnly = true)
     public Optional<Course> getLastUsedCourse() {
         Long userId = userService.getCurrentIdOrThrow();
 
-        // 1) Dernier cours “focus/last accessed” parmi les actifs
         Optional<Course> focused = courseDao.findLastAccessedFirstActive(userId, ACTIVE_STATUSES);
         if (focused.isPresent())
             return focused;
 
-        // 2) Sinon, premier actif par “updatedAt”
         var actives = courseDao.findAllByUserAndStatusesOrderedByUpdatedAt(userId, ACTIVE_STATUSES);
         if (!actives.isEmpty())
             return Optional.of(actives.get(0));
 
-        // 3) Sinon, éventuellement le “current course” (si ta notion diffère)
         return courseDao.getCurrentCourse(userId);
     }
 
     @Transactional
     public Course createCourse(Course proto) {
-        // 🔐 Attache l’utilisateur courant (dérivé du JWT)
         User me = userService.getCurrentAuthenticatedUserOrThrow();
         proto.setUser(me);
 
-        // (Optionnel) garde-fous si jamais le mapper ne l’a pas déjà fait
-        if (proto.getPopulationScope() == null) {
+        if (proto.getPopulationScope() == null)
             proto.setPopulationScope(PopulationScope.FOLLOWED);
-        }
-        if (proto.getStatus() == null) {
+        if (proto.getStatus() == null)
             proto.setStatus(CourseStatus.IN_PROGRESS);
-        }
 
-        // Unicité : (user, mode, scope) en IN_PROGRESS
         var existing = courseDao.findFirstByUserModeScopeAndStatus(
                 me.getId(),
                 proto.getGameMode().getId(),
                 proto.getPopulationScope(),
                 CourseStatus.IN_PROGRESS);
 
-        if (existing.isPresent()) {
+        if (existing.isPresent())
             throw new CourseAlreadyExistsException();
-        }
 
         Course created = courseDao.saveCourse(proto);
         knowledgeService.insertBatchOfTenKnowledges(created);
         return created;
     }
 
-    /**
-     * Crée si aucun IN_PROGRESS pour (user,mode,scope), sinon renvoie l’existant.
-     */
     @Transactional
     public Course createOrResume(Course proto) {
-        // 🔐 Attache l’utilisateur courant (dérivé du JWT)
         User me = userService.getCurrentAuthenticatedUserOrThrow();
         proto.setUser(me);
 
-        if (proto.getPopulationScope() == null) {
+        if (proto.getPopulationScope() == null)
             proto.setPopulationScope(PopulationScope.FOLLOWED);
-        }
-        if (proto.getStatus() == null) {
+        if (proto.getStatus() == null)
             proto.setStatus(CourseStatus.IN_PROGRESS);
-        }
 
         var existing = courseDao.findFirstByUserModeScopeAndStatus(
                 me.getId(),
@@ -136,9 +169,8 @@ public class CourseService {
                 proto.getPopulationScope(),
                 CourseStatus.IN_PROGRESS);
 
-        if (existing.isPresent()) {
+        if (existing.isPresent())
             return existing.get();
-        }
 
         Course created = courseDao.saveCourse(proto);
         knowledgeService.insertBatchOfTenKnowledges(created);
@@ -153,10 +185,8 @@ public class CourseService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Forbidden");
         }
 
-        // 1) purge historique local
         courseQuestionHistoryService.deleteAllByCourse(course);
 
-        // 2) reset “dur” des knowledges pour le périmètre du cours
         final double BASELINE_EASE = 2.5;
         final double BASELINE_DIFF = 1.0;
         final double BASELINE_STAB = 1.0;
@@ -168,7 +198,6 @@ public class CourseService {
                 scope,
                 BASELINE_EASE, BASELINE_DIFF, BASELINE_STAB);
 
-        // 3) méta du course
         course.setStatus(CourseStatus.IN_PROGRESS);
         course.setCurrentRound(0);
 
@@ -185,7 +214,6 @@ public class CourseService {
                 .orElseThrow(() -> new IllegalArgumentException("Course not found"));
     }
 
-    /** Marque le “focus” utilisateur sur ce cours. */
     @Transactional
     public void touchLastAccessed(Long courseId) {
         courseDao.findById(courseId)
@@ -193,9 +221,37 @@ public class CourseService {
         courseDao.touchLastAccessed(courseId, LocalDateTime.now());
     }
 
-    /** Démarrer/récupérer la prochaine question (marque aussi le focus). */
+    // ---------------------------------------------------------------------
+    // Continue / Emit
+    // ---------------------------------------------------------------------
+
+    /** Continue returns a QuizQuestion directly. */
     @Transactional
-    public CourseQuestionHistory continueCourse(Long courseId) {
+    public QuizQuestion continueCourse(
+            Long courseId,
+            QuizPreferredFormat preferredFormat,
+            Boolean timed,
+            Integer timeLimitMs) {
+        CourseQuestionHistory nextHistory = continueCourseHistory(courseId, preferredFormat, timed, timeLimitMs);
+        return QuizQuestionSnapshotMapper.toQuestion(nextHistory.getSnapshot());
+    }
+
+    /**
+     * Internal: persists the next history (used by continue + answer).
+     *
+     * Round management (perfect):
+     * - currentRound increments ONLY if we successfully emit+persist a new
+     * question.
+     * - history.questionRound == nextRound by construction.
+     *
+     * Freeze truth at emission time and persist snapshot.
+     */
+    @Transactional
+    protected CourseQuestionHistory continueCourseHistory(
+            Long courseId,
+            QuizPreferredFormat preferredFormat,
+            Boolean timed,
+            Integer timeLimitMs) {
         Course course = courseDao.findById(courseId)
                 .orElseThrow(() -> new IllegalArgumentException("Course not found"));
 
@@ -204,8 +260,48 @@ public class CourseService {
         if (knowledgeService.countByCourseAndStatus(course, KnowledgeStatus.UNKNOWN) == 0) {
             knowledgeService.insertBatchOfTenKnowledges(course);
         }
-        return courseQuestionHistoryService.create(findNextDue(course, null, null, null, true));
+
+        // 1) Pick next history FIRST (no side effect on course rounds yet)
+        CourseQuestionHistory history = findNextDue(course, null, null, null, true);
+        if (history == null)
+            throw new NextQuestionUnavailableException();
+
+        // 2) Determine nextRound from course state (single source of truth)
+        int nextRound = course.getCurrentRound() + 1;
+
+        // 3) Enforce questionRound
+        history.setQuestionRound(nextRound);
+
+        // 4) Compute plan + targets
+        CourseQuestionPlan plan = buildPlan(
+                course,
+                null,
+                history,
+                preferredFormat,
+                timed,
+                timeLimitMs);
+        history.setPlan(plan);
+
+        // 5) Build runtime question (payload/display)
+        QuizQuestion q = courseQuizQuestionBuilder.buildFromHistory(history, plan);
+
+        // 6) Freeze truth + build snapshot
+        List<TruthAttributeValue> frozen = snapshotFactory.freezeTruthForQuestion(q);
+        history.setSnapshot(snapshotFactory.fromQuestion(q, frozen, targetPersonIds(history)));
+
+        // 7) Persist history
+        CourseQuestionHistory persisted = courseQuestionHistoryService.create(history);
+
+        // 7) Update course round ONLY after successful emission (same TX => atomic)
+        course.setCurrentRound(nextRound);
+        updateCourse(course);
+
+        return persisted;
     }
+
+    // ---------------------------------------------------------------------
+    // Stats
+    // ---------------------------------------------------------------------
 
     @Transactional(readOnly = true)
     public CourseStats getStats(Long courseId) {
@@ -248,12 +344,10 @@ public class CourseService {
     public List<Course> findAllByUser() {
         Long userId = userService.getCurrentIdOrThrow();
 
-        // 1) Triés par “last access” si dispo
         var list = courseDao.findAllByUserAndStatusesOrderedByLastAccess(userId, ACTIVE_STATUSES);
         if (!list.isEmpty())
             return list;
 
-        // 2) Sinon, fallback sur “updatedAt”
         return courseDao.findAllByUserAndStatusesOrderedByUpdatedAt(userId, ACTIVE_STATUSES);
     }
 
@@ -264,7 +358,10 @@ public class CourseService {
                 .toList();
     }
 
-    // ------ pools ------
+    // ---------------------------------------------------------------------
+    // Pools
+    // ---------------------------------------------------------------------
+
     @Transactional
     private CourseQuestionHistory findNextDue(
             Course course,
@@ -306,93 +403,380 @@ public class CourseService {
             }
 
             if (k != null) {
+                CourseQuestionItem target = new CourseQuestionItem.Builder()
+                        .withPosition(0)
+                        .withRole(CourseQuestionItemRole.TARGET)
+                        .withKnowledge(k)
+                        .withPerson(k.getPerson())
+                        .withAnswered(false)
+                        .withCorrect(null)
+                        .withNormalizedAnswer(null)
+                        .build();
+
+                // NOTE:
+                // questionRound is enforced by the caller (continueCourseHistory / answer).
+                // This value is a placeholder only.
                 return new CourseQuestionHistory.Builder()
                         .withCourse(course)
-                        .withKnowledge(k)
                         .withQuestionRound(course.getCurrentRound() + 1)
                         .withAskedAt(LocalDateTime.now())
+                        .withAnsweredAt(null)
                         .withResponseTimeMs(0)
-                        .withUserAnswer(null)
-                        .withCorrect(correct != null && correct)
+                        .withRawSubmission(null)
+                        .withNormalizedSubmission(null)
+                        .withGlobalCorrect(false)
                         .withPoolType(selected)
                         .withHelpUsed(false)
+                        .withItems(List.of(target))
                         .build();
             }
+
             weights.remove(selected);
         }
 
-        if (allowRepeat) {
+        if (allowRepeat)
             throw new NoMoreQuestionsException(course.getId());
-        } else {
-            return findNextDue(course, lastPersonId, correct, feedback, true);
+        return findNextDue(course, lastPersonId, correct, feedback, true);
+    }
+
+    private static String getFeedbackMessage(Boolean correct) {
+        return Boolean.TRUE.equals(correct) ? "Correct !" : "Incorrect !";
+    }
+
+    private String serializeRawSubmission(QuizAnswerSubmission submission) {
+        if (submission == null)
+            return null;
+
+        try {
+            return objectMapper.writeValueAsString(submission);
+        } catch (JsonProcessingException e) {
+            if (submission.getUserAnswer() != null)
+                return submission.getUserAnswer();
+            if (submission.getSelectedChoiceId() != null)
+                return "selectedChoiceId=" + submission.getSelectedChoiceId();
+            if (submission.getSelectedChoiceIds() != null)
+                return "selectedChoiceIds=" + submission.getSelectedChoiceIds();
+            if (submission.getSwipeRight() != null)
+                return "swipeRight=" + submission.getSwipeRight();
+            if (submission.getOrderingIds() != null)
+                return "orderingIds=" + submission.getOrderingIds();
+            if (submission.getPairs() != null)
+                return "pairs=" + submission.getPairs();
+            if (submission.getTimeMs() != null)
+                return "timeMs=" + submission.getTimeMs();
+            return null;
         }
     }
 
-    private String getFeedbackMessage(Boolean correct) {
-        return correct ? "Correct !" : "Incorrect !";
-    }
+    // ---------------------------------------------------------------------
+    // Answer
+    // ---------------------------------------------------------------------
 
-    /**
-     * Valide une réponse à une question et renvoie la question suivante.
-     */
     @Transactional
-    public AnswerAndNextQuestion answer(Course course,
-            CourseQuestionHistory answerHistory) {
+    public CourseAnswerResult answer(
+            Course course,
+            Long courseQuestionHistoryId,
+            QuizPreferredFormat preferredFormat,
+            Boolean timed,
+            Integer timeLimitMs,
+            QuizAnswerSubmission submission) {
 
-        // 1) Incrémenter le cours:
-        course.setCurrentRound(course.getCurrentRound() + 1);
-        updateCourse(course);
-
-        // 2) Charger l’historique complet en base
-        CourseQuestionHistory previous = courseQuestionHistoryService.findById(answerHistory.getId());
-        Knowledge knowledge = previous.getKnowledge();
-
-        // 2a) Si déjà répondu, on bloque
-        if (previous.getAnsweredAt() != null) {
+        CourseQuestionHistory previous = courseQuestionHistoryService.findById(courseQuestionHistoryId);
+        if (previous == null)
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Question not found");
+        if (previous.getAnsweredAt() != null)
             throw new QuestionAlreadyAnsweredException(previous.getId());
+
+        // Round coherence guard (fail fast if something drifted)
+        // Expect: course.currentRound == previous.questionRound (because it was
+        // incremented at emission time)
+        if (previous.getQuestionRound() > 0 && course.getCurrentRound() != previous.getQuestionRound()) {
+            throw new IllegalStateException(
+                    "Round mismatch: course.currentRound=" + course.getCurrentRound()
+                            + " but previous.questionRound=" + previous.getQuestionRound());
         }
 
-        // 3) Compléter la réponse
+        // 1) Ensure snapshot exists (legacy safety)
+        if (previous.getSnapshot() == null) {
+            CourseQuestionPlan plan = previous.getPlan();
+            if (plan == null) {
+                throw new IllegalStateException("CourseQuestionHistory.plan is required to rebuild a snapshot");
+            }
+            QuizQuestion previousQuestionRuntime = courseQuizQuestionBuilder.buildFromHistory(previous, plan);
+            List<TruthAttributeValue> frozen = snapshotFactory.freezeTruthForQuestion(previousQuestionRuntime);
+            previous.setSnapshot(snapshotFactory.fromQuestion(previousQuestionRuntime, frozen, targetPersonIds(previous)));
+        }
+
+        // 3) Single pipeline: normalize + validate from snapshot (no DB-live)
+        QuizAnswerValidator.Evaluation eval = quizAnswerValidator.evaluateFromSnapshot(previous.getSnapshot(),
+                submission);
+        var normalized = eval.normalized();
+        QuizValidationResult validation = eval.validation();
+
+        String normalizedAudit = (normalized == null) ? null : normalized.auditString();
+
+        // 4) Persist answer metadata
         LocalDateTime now = LocalDateTime.now();
-        long delta = ChronoUnit.MILLIS.between(previous.getAskedAt(), now);
+        int deltaMs = (int) Math.max(0, ChronoUnit.MILLIS.between(previous.getAskedAt(), now));
+
         previous.setAnsweredAt(now);
-        previous.setResponseTimeMs((int) delta);
-        previous.setUserAnswer(answerHistory.getUserAnswer());
+        previous.setResponseTimeMs(deltaMs);
+        previous.setRawSubmission(serializeRawSubmission(submission));
+        previous.setNormalizedSubmission(normalizedAudit);
+
+        List<CourseAnswerItemResult> itemResults = new ArrayList<>();
+        List<KnowledgeResultEvent> srsEvents = new ArrayList<>();
+
+        boolean allTargetsCorrect = true;
+
+        for (CourseQuestionItem item : previous.getItems()) {
+            if (item.getRole() != CourseQuestionItemRole.TARGET)
+                continue;
+
+            Long personId = item.getKnowledge().getPerson().getId();
+
+            boolean correct = validation.isCorrect();
+            if (!correct)
+                allTargetsCorrect = false;
+
+            item.setAnswered(true);
+            item.setCorrect(correct);
+            item.setNormalizedAnswer(normalizedAudit);
+
+            itemResults.add(new CourseAnswerItemResult.Builder()
+                    .withPosition(item.getPosition())
+                    .withRole(item.getRole())
+                    .withKnowledgeId(item.getKnowledge().getId())
+                    .withPersonId(personId)
+                    .withCorrect(correct)
+                    .withUserAnswerNormalized(normalizedAudit)
+                    .withCorrectAnswer(validation.getCorrectAnswerDisplay())
+                    .withResultAttributes(validation.getResultAttributes())
+                    .build());
+
+            srsEvents.add(new KnowledgeResultEvent.Builder()
+                    .withKnowledgeId(item.getKnowledge().getId())
+                    .withGameModeId(course.getGameMode().getId())
+                    .withPersonId(personId)
+                    .withCorrect(correct)
+                    .withHelpUsed(previous.isHelpUsed())
+                    .withCourseId(course.getId())
+                    .withCourseQuestionHistoryId(previous.getId())
+                    .withQuestionRound(previous.getQuestionRound())
+                    .build());
+        }
+
+        previous.setGlobalCorrect(allTargetsCorrect);
         courseQuestionHistoryService.update(previous);
 
-        // 4) Valider la réponse
-        AnswerValidationResult validation = knowledgeService.validateAnswer(
-                knowledge.getPerson().getId(),
-                previous.getUserAnswer(),
-                course.getUser(),
-                course.getGameMode(),
-                previous.isHelpUsed());
+        if (!srsEvents.isEmpty()) {
+            knowledgeService.recordBatchResults(course.getUser(), srsEvents);
+        }
 
-        // 5) Enregistrer le booléen “correct”
-        previous.setCorrect(validation.isCorrect());
-        courseQuestionHistoryService.update(previous);
+        // 5) Prepare next question history (no round mutation yet)
+        Long lastPersonId = lastTargetPersonId(previous);
 
-        // 6) Construire et persister la prochaine question
-        CourseQuestionHistory next = findNextDue(
+        CourseQuestionHistory nextHistory = findNextDue(
                 course,
-                knowledge.getPerson().getId(),
-                validation.isCorrect(),
-                getFeedbackMessage(validation.isCorrect()),
+                lastPersonId,
+                allTargetsCorrect,
+                getFeedbackMessage(allTargetsCorrect),
                 false);
 
-        if (next == null) {
+        if (nextHistory == null)
             throw new NextQuestionUnavailableException();
-        }
-        CourseQuestionHistory savedNext = courseQuestionHistoryService.create(next);
 
-        // 7) Retourner le résultat DTO
-        return new AnswerAndNextQuestion.Builder()
-                .withIsCorrect(validation.isCorrect())
-                .withUserAnswer(previous.getUserAnswer())
-                .withCorrectAnswer(validation.getCorrectAnswer())
-                .withFeedbackMessage(getFeedbackMessage(validation.isCorrect()))
-                .withNextQuestion(savedNext)
-                .withResultAttributes(validation.getResultAttributes())
+        // 6) Compute nextRound from previous round (most robust)
+        int baseRound = previous.getQuestionRound() > 0 ? previous.getQuestionRound() : course.getCurrentRound();
+        int nextRound = baseRound + 1;
+
+        // enforce questionRound
+        nextHistory.setQuestionRound(nextRound);
+
+        // 7) Build next question + freeze truth + snapshot BEFORE persist
+        CourseQuestionPlan nextPlan = buildPlan(
+                course,
+                previous,
+                nextHistory,
+                preferredFormat,
+                timed,
+                timeLimitMs);
+        nextHistory.setPlan(nextPlan);
+
+        QuizQuestion nextQuizQuestionRuntime = courseQuizQuestionBuilder.buildFromHistory(
+                nextHistory,
+                nextPlan);
+
+        List<TruthAttributeValue> frozenNext = snapshotFactory.freezeTruthForQuestion(nextQuizQuestionRuntime);
+        nextHistory.setSnapshot(snapshotFactory.fromQuestion(nextQuizQuestionRuntime, frozenNext,
+                targetPersonIds(nextHistory)));
+
+        // 8) Persist next history
+        courseQuestionHistoryService.create(nextHistory);
+
+        // 9) Update course round ONLY after successful emission (same TX => atomic)
+        course.setCurrentRound(nextRound);
+        updateCourse(course);
+
+        return new CourseAnswerResult.Builder()
+                .withCorrect(allTargetsCorrect)
+                .withRawSubmission(previous.getRawSubmission())
+                .withNormalizedSubmission(previous.getNormalizedSubmission())
+                .withFeedbackMessage(getFeedbackMessage(allTargetsCorrect))
+                .withNextQuestion(nextQuizQuestionRuntime)
+                .withItemResults(itemResults)
                 .build();
+    }
+
+    // ---------------------------------------------------------------------
+    // helpers (targets)
+    // ---------------------------------------------------------------------
+
+    private CourseQuestionPlan buildPlan(
+            Course course,
+            CourseQuestionHistory previousHistory,
+            CourseQuestionHistory nextHistory,
+            QuizPreferredFormat preferredFormat,
+            Boolean timed,
+            Integer timeLimitMs) {
+        Knowledge knowledge = targetKnowledge(nextHistory);
+        List<Knowledge> extraTargets = findMultiTargetCandidates(course, knowledge, MULTI_TARGET_MIN - 1);
+        boolean multiTargetAvailable = extraTargets.size() >= Math.max(0, MULTI_TARGET_MIN - 1);
+
+        CourseQuizPlanPolicy.Plan decision = courseQuizPlanPolicy.decide(
+                course,
+                previousHistory,
+                knowledge,
+                preferredFormat,
+                timed,
+                timeLimitMs,
+                multiTargetAvailable);
+
+        int needed = decision.targetCount() - 1;
+        if (needed > 0) {
+            if (extraTargets.size() < needed) {
+                decision = fallbackToMcq(decision, "MULTI_TARGET_SHORTFALL");
+            } else {
+                applyAdditionalTargets(nextHistory, extraTargets.subList(0, needed));
+            }
+        }
+
+        List<Long> targetKnowledgeIds = targetKnowledgeIds(nextHistory);
+        if (targetKnowledgeIds.size() != decision.targetCount()) {
+            throw new IllegalStateException("Plan targetCount mismatch: expected=" + decision.targetCount()
+                    + " actual=" + targetKnowledgeIds.size());
+        }
+
+        return new CourseQuestionPlan.Builder()
+                .withFormat(decision.format())
+                .withTimed(decision.timed())
+                .withTimeLimitMs(decision.timeLimitMs())
+                .withTargetCount(decision.targetCount())
+                .withTargetKnowledgeIds(targetKnowledgeIds)
+                .withParamsJson(decision.paramsJson())
+                .withReason(decision.reason())
+                .build();
+    }
+
+    private CourseQuizPlanPolicy.Plan fallbackToMcq(CourseQuizPlanPolicy.Plan base, String reason) {
+        return new CourseQuizPlanPolicy.Plan(
+                QuizFormat.MCQ,
+                base.timed(),
+                base.timeLimitMs(),
+                1,
+                "{\"nbChoices\":4}",
+                reason);
+    }
+
+    private List<Knowledge> findMultiTargetCandidates(Course course, Knowledge primary, int limit) {
+        if (course == null || limit <= 0) {
+            return List.of();
+        }
+        Long primaryPersonId = primary != null && primary.getPerson() != null ? primary.getPerson().getId() : null;
+        return knowledgeService.findAllByCourse(course).stream()
+                .filter(Objects::nonNull)
+                .filter(k -> k.getPerson() != null && k.getPerson().getId() != null)
+                .filter(k -> k.getStatus() == KnowledgeStatus.LEARNED)
+                .filter(CourseService::hasLowErrorRate)
+                .filter(k -> primaryPersonId == null || !primaryPersonId.equals(k.getPerson().getId()))
+                .limit(limit)
+                .toList();
+    }
+
+    private void applyAdditionalTargets(CourseQuestionHistory history, List<Knowledge> extraTargets) {
+        if (history == null || extraTargets == null || extraTargets.isEmpty()) {
+            return;
+        }
+        List<CourseQuestionItem> items = new ArrayList<>(
+                history.getItems() != null ? history.getItems() : List.of());
+        int pos = items.stream().mapToInt(CourseQuestionItem::getPosition).max().orElse(-1) + 1;
+        for (Knowledge k : extraTargets) {
+            if (k == null || k.getPerson() == null) {
+                continue;
+            }
+            items.add(new CourseQuestionItem.Builder()
+                    .withPosition(pos++)
+                    .withRole(CourseQuestionItemRole.TARGET)
+                    .withKnowledge(k)
+                    .withPerson(k.getPerson())
+                    .withAnswered(false)
+                    .withCorrect(null)
+                    .withNormalizedAnswer(null)
+                    .build());
+        }
+        history.setItems(items);
+    }
+
+    private static boolean hasLowErrorRate(Knowledge knowledge) {
+        int failures = Math.max(0, knowledge.getFailureCount());
+        int successes = Math.max(0, knowledge.getSuccessCount());
+        int total = failures + successes;
+        if (total <= 0) {
+            return true;
+        }
+        double rate = (double) failures / (double) total;
+        return rate <= 0.2;
+    }
+
+    private Knowledge targetKnowledge(CourseQuestionHistory h) {
+        if (h == null || h.getItems() == null) {
+            return null;
+        }
+        return h.getItems().stream()
+                .filter(it -> it.getRole() == CourseQuestionItemRole.TARGET)
+                .map(CourseQuestionItem::getKnowledge)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private List<CourseQuestionItem> targetItems(CourseQuestionHistory h) {
+        if (h == null || h.getItems() == null)
+            return List.of();
+        return h.getItems().stream()
+                .filter(it -> it.getRole() == CourseQuestionItemRole.TARGET)
+                .toList();
+    }
+
+    private List<Long> targetKnowledgeIds(CourseQuestionHistory h) {
+        return targetItems(h).stream()
+                .map(it -> it.getKnowledge() != null ? it.getKnowledge().getId() : null)
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    private List<Long> targetPersonIds(CourseQuestionHistory h) {
+        return targetItems(h).stream()
+                .map(it -> it.getPerson() != null ? it.getPerson().getId() : null)
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    private Long lastTargetPersonId(CourseQuestionHistory h) {
+        return targetItems(h).stream()
+                .sorted((a, b) -> Integer.compare(a.getPosition(), b.getPosition()))
+                .findFirst()
+                .map(it -> it.getKnowledge().getPerson().getId())
+                .orElse(null);
     }
 }

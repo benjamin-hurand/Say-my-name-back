@@ -4,8 +4,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.course.Knowledge;
-import com.saymyname.core.model.game.QuizEntry;
 import com.saymyname.core.model.people.Person;
+import com.saymyname.core.model.quiz.QuizEntry;
 import com.saymyname.webapp.dto.QuizEntryDto;
 
 @Component
