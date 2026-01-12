@@ -50,7 +50,7 @@ public interface PersonRepository extends JpaRepository<PersonEntity, Long>, Per
             ON pa.person_id         = p.id
            AND pa.attribute_id      = gma.attribute_id
            AND pa.organization_id   = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
-           AND pa.value IS NOT NULL AND pa.value <> ''
+           AND pa.attribute_value IS NOT NULL AND pa.attribute_value <> ''
          WHERE p.organization_id    = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
          GROUP BY p.id
         HAVING COUNT(DISTINCT gma.attribute_id) > 0
@@ -74,7 +74,7 @@ public interface PersonRepository extends JpaRepository<PersonEntity, Long>, Per
           ON pa.person_id         = p.id
          AND pa.attribute_id      = gma.attribute_id
          AND pa.organization_id   = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
-         AND pa.value IS NOT NULL AND pa.value <> ''
+         AND pa.attribute_value IS NOT NULL AND pa.attribute_value <> ''
        WHERE p.organization_id    = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
       """, nativeQuery = true)
   long countUniverseEligibleOR(@Param("gameModeId") Long gameModeId);

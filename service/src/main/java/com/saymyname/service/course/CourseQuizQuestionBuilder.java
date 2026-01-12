@@ -10,13 +10,14 @@ import com.saymyname.core.model.course.Course;
 import com.saymyname.core.model.course.CourseQuestionHistory;
 import com.saymyname.core.model.course.CourseQuestionPlan;
 import com.saymyname.core.model.enums.PhotoStatus;
-import com.saymyname.core.model.enums.course.CourseQuestionItemRole;
+import com.saymyname.core.model.enums.course.QuizQuestionItemRole;
 import com.saymyname.core.model.enums.quiz.QuizFormat;
 import com.saymyname.core.model.enums.quiz.QuizQuestionSource;
 import com.saymyname.core.model.people.Person;
 import com.saymyname.core.model.quiz.QuizQuestion;
 import com.saymyname.core.model.quiz.QuizQuestionContext;
 import com.saymyname.core.model.quiz.QuizQuestionSpec;
+import com.saymyname.core.model.quiz.QuizPayloadItem;
 import com.saymyname.core.model.quiz.options.GameOptions;
 import com.saymyname.service.quiz.CourseToOptionsAdapter;
 import com.saymyname.service.quiz.QuizCandidateProvider;
@@ -51,7 +52,7 @@ public class CourseQuizQuestionBuilder {
 
                 // ✅ Dans ton modèle refacto, le "target" est dans items[role=TARGET]
                 List<Person> targetPersons = h.getItems().stream()
-                                .filter(it -> it.getRole() != null && it.getRole() == CourseQuestionItemRole.TARGET)
+                                .filter(it -> it.getRole() != null && it.getRole() == QuizQuestionItemRole.TARGET)
                                 .sorted((a, b) -> Integer.compare(a.getPosition(), b.getPosition()))
                                 .map(it -> it.getPerson())
                                 .filter(Objects::nonNull)
@@ -78,10 +79,18 @@ public class CourseQuizQuestionBuilder {
                                 .filter(Objects::nonNull)
                                 .toList();
 
+                List<QuizPayloadItem> poolItems = toCandidateItems(pool);
+                List<QuizPayloadItem> targetItems = toCandidateItems(targetPersons);
+
                 List<Long> candidatePoolIds = (plan.getFormat() == QuizFormat.ORDERING
                                 || plan.getFormat() == QuizFormat.ASSOCIATION)
                                                 ? targetPersonIds
                                                 : poolIds;
+
+                List<QuizPayloadItem> candidatePoolItems = (plan.getFormat() == QuizFormat.ORDERING
+                                || plan.getFormat() == QuizFormat.ASSOCIATION)
+                                                ? targetItems
+                                                : poolItems;
 
                 final List<Long> targetAttributeIds = options.getGameMode().getGameModeAttributes().stream()
                                 .map(gma -> gma.getAttribute().getId())
@@ -107,6 +116,7 @@ public class CourseQuizQuestionBuilder {
                                 .withContext(ctx)
                                 .withInitials(null)
                                 .withCandidatePoolPersonIds(candidatePoolIds)
+                                .withCandidatePoolItems(candidatePoolItems)
                                 .withTimed(plan.isTimed())
                                 .withTimeLimitMs(plan.getTimeLimitMs())
                                 .withReasonCode(plan.getReasonCode())
@@ -125,5 +135,27 @@ public class CourseQuizQuestionBuilder {
                                                 "Person " + person.getId()
                                                                 + " n'a pas de photo APPROVED malgré le filtre SQL"))
                                 .getStorageKey();
+        }
+
+        private static List<QuizPayloadItem> toCandidateItems(List<Person> persons) {
+                if (persons == null || persons.isEmpty()) {
+                        return List.of();
+                }
+                return persons.stream()
+                                .filter(Objects::nonNull)
+                                .map(p -> {
+                                        Long id = p.getId();
+                                        if (id == null) {
+                                                return null;
+                                        }
+                                        String storageKey = approvedStorageKeyOrThrow(p);
+                                        return new QuizPayloadItem.Builder()
+                                                        .withPersonId(id)
+                                                        .withStorageKey(storageKey)
+                                                        .withLabelId(String.valueOf(id))
+                                                        .build();
+                                })
+                                .filter(Objects::nonNull)
+                                .toList();
         }
 }

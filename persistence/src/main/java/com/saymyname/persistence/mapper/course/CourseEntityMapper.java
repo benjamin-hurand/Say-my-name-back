@@ -29,14 +29,12 @@ public class CourseEntityMapper {
 
         CourseEntity e = new CourseEntity();
         e.setId(model.getId());
-        e.setUser(userMapper.toEntity(model.getUser()));
-        e.setGameMode(gameModeMapper.toEntity(model.getGameMode()));
+        e.setUser(userMapper.toEntity(model.getUser())); // idem, potentiellement même souci
+        // ❌ e.setGameMode(gameModeMapper.toRefEntity(model.getGameMode()));
         e.setStatus(model.getStatus() != null ? model.getStatus() : CourseStatus.IN_PROGRESS);
         e.setCurrentRound(model.getCurrentRound());
         e.setPopulationScope(
                 model.getPopulationScope() != null ? model.getPopulationScope() : PopulationScope.FOLLOWED);
-
-        // On laisse createdAt / updatedAt gérés par la DB
         e.setLastAccessedAt(model.getLastAccessedAt());
         return e;
     }

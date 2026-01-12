@@ -6,10 +6,10 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
-@Table(name = "organizations", uniqueConstraints = @UniqueConstraint(name = "uk_organizations_key", columnNames = {
-        "key" }), indexes = {
+@Table(name = "organizations", uniqueConstraints = @UniqueConstraint(name = "uk_organizations_org_key", columnNames = {
+        "org_key" }), indexes = {
                 @Index(name = "idx_organizations_active", columnList = "is_active"),
-                @Index(name = "idx_organizations_key", columnList = "key")
+                @Index(name = "idx_organizations_org_key", columnList = "org_key")
         })
 public class OrganizationEntity {
 
@@ -19,7 +19,7 @@ public class OrganizationEntity {
 
     // "key" est un mot réservé MySQL – Hibernate gère bien, mais on peut être
     // explicite
-    @Column(name = "`key`", nullable = false, length = 64)
+    @Column(name = "org_key", nullable = false, length = 64)
     private String key;
 
     @Column(name = "name", nullable = false, length = 255)

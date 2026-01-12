@@ -1,4 +1,3 @@
-// src/main/java/com/saymyname/service/quiz/QuizAnswerValidator.java
 package com.saymyname.service.quiz;
 
 import java.util.Objects;
@@ -39,9 +38,10 @@ public class QuizAnswerValidator {
             QuizAnswerSubmission submission) {
 
         Objects.requireNonNull(snapshot, "snapshot");
+        QuizSnapshotGuards.validateSnapshotOrThrow(snapshot);
 
-        // Normalisation/validation par plugin du format snapshot.
-        QuizFormat fmt = Objects.requireNonNull(snapshot.getFormat(), "snapshot.format");
+        // La guard garantit que snapshot.format est non null.
+        QuizFormat fmt = snapshot.getFormat();
         QuizQuestionPlugin plugin = factory.pluginFor(fmt);
 
         QuizQuestion q = QuizQuestionSnapshotMapper.toQuestion(snapshot);

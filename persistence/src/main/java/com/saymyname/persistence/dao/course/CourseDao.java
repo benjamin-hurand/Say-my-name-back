@@ -13,6 +13,8 @@ import com.saymyname.core.model.enums.CourseStatus;
 import com.saymyname.core.model.enums.PopulationScope;
 import com.saymyname.persistence.entity.organization.course.CourseEntity;
 import com.saymyname.persistence.mapper.course.CourseEntityMapper;
+import com.saymyname.persistence.repository.GameModeRepository;
+import com.saymyname.persistence.repository.UserRepository;
 import com.saymyname.persistence.repository.course.CourseRepository;
 
 @Repository
@@ -21,10 +23,15 @@ public class CourseDao {
 
     private final CourseRepository courseRepo;
     private final CourseEntityMapper courseEntityMapper;
+    private final UserRepository userRepo;
+    private final GameModeRepository gameModeRepo;
 
-    public CourseDao(CourseRepository courseRepo, CourseEntityMapper courseEntityMapper) {
+    public CourseDao(CourseRepository courseRepo, CourseEntityMapper courseEntityMapper, UserRepository userRepo,
+            GameModeRepository gameModeRepo) {
         this.courseRepo = courseRepo;
         this.courseEntityMapper = courseEntityMapper;
+        this.userRepo = userRepo;
+        this.gameModeRepo = gameModeRepo;
     }
 
     public Optional<Course> getCurrentCourse(Long userId) {
@@ -32,8 +39,21 @@ public class CourseDao {
                 .map(courseEntityMapper::toShortModel);
     }
 
+    @Transactional
     public Course saveCourse(Course course) {
-        CourseEntity saved = courseRepo.save(courseEntityMapper.toEntity(course));
+        CourseEntity e = courseEntityMapper.toEntity(course);
+
+        // ✅ user ref managée (évite un autre “detached” potentiel)
+        if (course.getUser() != null && course.getUser().getId() != null) {
+            e.setUser(userRepo.getReferenceById(course.getUser().getId()));
+        }
+
+        // ✅ gamemode ref managée (corrige TON erreur)
+        if (course.getGameMode() != null && course.getGameMode().getId() != null) {
+            e.setGameMode(gameModeRepo.getReferenceById(course.getGameMode().getId()));
+        }
+
+        CourseEntity saved = courseRepo.save(e);
         return courseEntityMapper.toShortModel(saved);
     }
 

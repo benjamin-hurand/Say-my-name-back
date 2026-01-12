@@ -7,8 +7,8 @@ import java.util.Objects;
 public class QuizAnswerSubmission {
 
     private String userAnswer; // TEXT_INPUT / CLOZE / HANGMAN
-    private Long selectedChoiceId; // MCQ/TAP_CHOICE (simple)
-    private List<Long> selectedChoiceIds; // MCQ/TAP_CHOICE (multiple)
+    private Long selectedChoiceId; // MCQ (simple)
+    private List<Long> selectedChoiceIds; // MCQ (multiple)
     private Boolean swipeRight; // BINARY_SWIPE
     private List<Long> orderingIds; // ORDERING
     private List<QuizAssociationPair> pairs; // ASSOCIATION

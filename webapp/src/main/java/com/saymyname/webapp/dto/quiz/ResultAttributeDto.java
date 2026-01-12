@@ -1,5 +1,5 @@
-// src/main/java/com/saymyname/webapp/dto/course/ResultAttributeDto.java
-package com.saymyname.webapp.dto.course;
+// src/main/java/com/saymyname/webapp/dto/quiz/ResultAttributeDto.java
+package com.saymyname.webapp.dto.quiz;
 
 public record ResultAttributeDto(
         Long attributeId,

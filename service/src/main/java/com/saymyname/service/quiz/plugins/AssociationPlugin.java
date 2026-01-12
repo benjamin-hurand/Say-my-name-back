@@ -21,6 +21,7 @@ import com.saymyname.core.model.quiz.answer.NormalizedAssociation;
 import com.saymyname.core.model.quiz.answer.NormalizedSubmission;
 import com.saymyname.core.model.quiz.snapshot.QuizQuestionSnapshot;
 import com.saymyname.core.model.quiz.snapshot.TruthPair;
+import com.saymyname.service.quiz.QuizSnapshotGuards;
 
 @Component
 public class AssociationPlugin implements QuizQuestionPlugin {
@@ -36,16 +37,7 @@ public class AssociationPlugin implements QuizQuestionPlugin {
     public QuizQuestion build(QuizQuestionSpec spec) {
         Objects.requireNonNull(spec, "spec");
 
-        List<Long> poolIds = PluginSupport.poolIdsLimited(spec, DEFAULT_ITEMS, null);
-
-        List<QuizPayloadItem> items = poolIds.stream()
-                .filter(Objects::nonNull)
-                .map(id -> new QuizPayloadItem.Builder()
-                        .withPersonId(id)
-                        .withStorageKey(null)
-                        .withLabelId(String.valueOf(id))
-                        .build())
-                .toList();
+        List<QuizPayloadItem> items = PluginSupport.poolItemsLimited(spec, DEFAULT_ITEMS, null);
 
         QuizQuestionPayload payload = new QuizQuestionPayload.Builder()
                 .withType(QuizPayloadType.ASSOCIATION)
@@ -93,9 +85,7 @@ public class AssociationPlugin implements QuizQuestionPlugin {
         boolean correct = new java.util.HashSet<>(expected).equals(new java.util.HashSet<>(userPairs));
         String correctDisplay = snapshot.getTruth() == null ? null : snapshot.getTruth().getCorrectAnswerDisplay();
 
-        Long attrId = (snapshot.getTargetAttributeIds() == null || snapshot.getTargetAttributeIds().isEmpty())
-                ? null
-                : snapshot.getTargetAttributeIds().get(0);
+        Long attrId = QuizSnapshotGuards.requireSingleTargetAttributeId(snapshot, QuizFormat.ASSOCIATION);
 
         List<ResultAttribute> attrs = List.of(
                 PluginSupport.resultAttr(attrId, na.auditString(), correct, true));

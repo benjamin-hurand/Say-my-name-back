@@ -21,7 +21,8 @@ import com.saymyname.core.model.quiz.snapshot.TruthPair;
 import com.saymyname.persistence.dao.PersonAttributeDao;
 
 /**
- * Construit un snapshot auto-suffisant (truth + payload) sans dépendance au token.
+ * Construit un snapshot auto-suffisant (truth + payload) sans dépendance au
+ * token.
  */
 @Component
 public class QuizQuestionSnapshotFactory {
@@ -197,7 +198,11 @@ public class QuizQuestionSnapshotFactory {
         }
 
         if (type == QuizTruthType.MCQ) {
-            List<String> correctKeys = extractCorrectChoiceKeys(effectivePayload);
+            // MCQ truth extraction now uses matching instead of deprecated correct flag
+            List<String> correctKeys = extractCorrectChoiceKeys(
+                    effectivePayload,
+                    frozenTargetValues,
+                    q.getPersonId());
             tb.withCorrectChoiceKeys(correctKeys);
             tb.withCorrectAnswerDisplay(firstChoiceLabel(effectivePayload, correctKeys));
             return tb.build();
@@ -228,31 +233,104 @@ public class QuizQuestionSnapshotFactory {
     private static QuizTruthType toTruthType(QuizFormat fmt) {
         return switch (fmt) {
             case TEXT_INPUT, CLOZE, HANGMAN -> QuizTruthType.TEXT;
-            case MCQ, TAP_CHOICE -> QuizTruthType.MCQ;
+            case MCQ -> QuizTruthType.MCQ;
             case BINARY_SWIPE -> QuizTruthType.BINARY_SWIPE;
             case ORDERING -> QuizTruthType.ORDERING;
             case ASSOCIATION -> QuizTruthType.ASSOCIATION;
         };
     }
 
-    private List<String> extractCorrectChoiceKeys(QuizQuestionPayload payload) {
+    /**
+     * Extract correct choice keys by matching against frozen truth.
+     *
+     * Strategy:
+     * 1. Try personId matching (for photo MCQs: "Who is this person?")
+     * 2. Try value matching (for text MCQs: "What is X's last name?")
+     *
+     * @param payload The question payload with choices
+     * @param frozenTargetValues The frozen truth values from EAV
+     * @param targetPersonId The target person ID (for photo MCQs)
+     * @return List of correct choice IDs
+     */
+    private List<String> extractCorrectChoiceKeys(
+            QuizQuestionPayload payload,
+            List<TruthAttributeValue> frozenTargetValues,
+            Long targetPersonId) {
+
         if (payload == null || payload.getChoices() == null || payload.getChoices().isEmpty()) {
             throw new IllegalStateException("MCQ truth requires payload.choices");
         }
 
-        List<String> correct = payload.getChoices().stream()
+        List<QuizChoice> choices = payload.getChoices().stream()
                 .filter(Objects::nonNull)
-                .filter(c -> Boolean.TRUE.equals(c.getCorrect()))
-                .map(QuizChoice::getId)
-                .filter(Objects::nonNull)
-                .map(String::valueOf)
-                .distinct()
                 .toList();
 
-        if (correct.isEmpty()) {
-            throw new IllegalStateException("MCQ truth requires at least 1 choice with correct=true");
+        if (choices.isEmpty()) {
+            throw new IllegalStateException("MCQ truth requires non-empty choices");
         }
-        return correct;
+
+        // Branch 1: Match by personId (photo MCQs)
+        if (targetPersonId != null) {
+            List<String> personMatches = choices.stream()
+                    .filter(c -> targetPersonId.equals(c.getPersonId()))
+                    .map(QuizChoice::getId)
+                    .filter(Objects::nonNull)
+                    .map(String::valueOf)
+                    .distinct()
+                    .toList();
+
+            if (!personMatches.isEmpty()) {
+                return personMatches;
+            }
+        }
+
+        // Branch 2: Match by value (text MCQs)
+        if (frozenTargetValues != null && !frozenTargetValues.isEmpty()) {
+            // Build set of canonicalized truth values
+            java.util.Set<String> truthValues = frozenTargetValues.stream()
+                    .map(TruthAttributeValue::getValue)
+                    .filter(Objects::nonNull)
+                    .map(this::canonicalize)
+                    .collect(java.util.stream.Collectors.toSet());
+
+            List<String> valueMatches = choices.stream()
+                    .filter(c -> c.getValue() != null)
+                    .filter(c -> truthValues.contains(canonicalize(c.getValue())))
+                    .map(QuizChoice::getId)
+                    .filter(Objects::nonNull)
+                    .map(String::valueOf)
+                    .distinct()
+                    .toList();
+
+            if (!valueMatches.isEmpty()) {
+                return valueMatches;
+            }
+        }
+
+        // No matches found - provide actionable error
+        String attempted = "Attempted matching: ";
+        if (targetPersonId != null) {
+            attempted += "personId=" + targetPersonId + " ";
+        }
+        if (frozenTargetValues != null && !frozenTargetValues.isEmpty()) {
+            attempted += "frozenValues=" + frozenTargetValues.stream()
+                    .map(TruthAttributeValue::getValue)
+                    .toList();
+        }
+
+        throw new IllegalStateException(
+                "MCQ truth extraction failed: no choices matched frozen truth. " + attempted);
+    }
+
+    /**
+     * Canonicalize text for case-insensitive, trim, diacritic-normalized comparison.
+     */
+    private String canonicalize(String text) {
+        if (text == null) {
+            return "";
+        }
+        return java.text.Normalizer.normalize(text.trim().toLowerCase(), java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "");
     }
 
     private String firstChoiceLabel(QuizQuestionPayload payload, List<String> correctKeys) {

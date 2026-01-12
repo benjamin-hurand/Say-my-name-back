@@ -3,12 +3,12 @@ package com.saymyname.core.model.course;
 import java.util.List;
 import java.util.Objects;
 
-import com.saymyname.core.model.enums.course.CourseQuestionItemRole;
+import com.saymyname.core.model.enums.course.QuizQuestionItemRole;
 
 public class CourseAnswerItemResult {
 
     private int position;
-    private CourseQuestionItemRole role;
+    private QuizQuestionItemRole role;
 
     private Long knowledgeId; // null si distractor
     private Long personId; // utile pour feedback UI
@@ -37,7 +37,7 @@ public class CourseAnswerItemResult {
         return position;
     }
 
-    public CourseQuestionItemRole getRole() {
+    public QuizQuestionItemRole getRole() {
         return role;
     }
 
@@ -67,7 +67,7 @@ public class CourseAnswerItemResult {
 
     public static class Builder {
         private int position;
-        private CourseQuestionItemRole role;
+        private QuizQuestionItemRole role;
         private Long knowledgeId;
         private Long personId;
         private boolean correct;
@@ -80,7 +80,7 @@ public class CourseAnswerItemResult {
             return this;
         }
 
-        public Builder withRole(CourseQuestionItemRole role) {
+        public Builder withRole(QuizQuestionItemRole role) {
             this.role = role;
             return this;
         }

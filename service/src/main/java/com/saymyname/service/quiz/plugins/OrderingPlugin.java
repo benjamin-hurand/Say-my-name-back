@@ -3,7 +3,6 @@ package com.saymyname.service.quiz.plugins;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
@@ -21,6 +20,7 @@ import com.saymyname.core.model.quiz.QuizValidationResult;
 import com.saymyname.core.model.quiz.answer.NormalizedOrdering;
 import com.saymyname.core.model.quiz.answer.NormalizedSubmission;
 import com.saymyname.core.model.quiz.snapshot.QuizQuestionSnapshot;
+import com.saymyname.service.quiz.QuizSnapshotGuards;
 
 @Component
 public class OrderingPlugin implements QuizQuestionPlugin {
@@ -35,15 +35,7 @@ public class OrderingPlugin implements QuizQuestionPlugin {
     @Override
     public QuizQuestion build(QuizQuestionSpec spec) {
 
-        List<Long> poolIds = PluginSupport.poolIdsLimited(spec, DEFAULT_ITEMS, null);
-
-        List<QuizPayloadItem> items = poolIds.stream()
-                .map(id -> new QuizPayloadItem.Builder()
-                        .withPersonId(id)
-                        .withStorageKey(null)
-                        .withLabelId(String.valueOf(id))
-                        .build())
-                .collect(Collectors.toList());
+        List<QuizPayloadItem> items = PluginSupport.poolItemsLimited(spec, DEFAULT_ITEMS, null);
 
         QuizQuestionPayload payload = new QuizQuestionPayload.Builder()
                 .withType(QuizPayloadType.ORDERING)
@@ -88,9 +80,7 @@ public class OrderingPlugin implements QuizQuestionPlugin {
         boolean correct = expected.equals(user);
         String correctDisplay = snapshot.getTruth() == null ? null : snapshot.getTruth().getCorrectAnswerDisplay();
 
-        Long attrId = (snapshot.getTargetAttributeIds() == null || snapshot.getTargetAttributeIds().isEmpty())
-                ? null
-                : snapshot.getTargetAttributeIds().get(0);
+        Long attrId = QuizSnapshotGuards.requireSingleTargetAttributeId(snapshot, QuizFormat.ORDERING);
 
         List<ResultAttribute> attrs = List.of(
                 PluginSupport.resultAttr(attrId, no.auditString(), correct, true));

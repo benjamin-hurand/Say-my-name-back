@@ -7,47 +7,33 @@ import com.saymyname.persistence.entity.organization.attribute.AttributeEntity;
 import com.saymyname.persistence.multitenancy.BaseOrgScoped;
 
 @Entity
-@Table(name = "game_modes_attributes")
+@Table(name = "game_modes_attributes", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_gma_org_gamemode_attribute", columnNames = { "organization_id", "game_mode_id",
+                "attribute_id" })
+})
 public class GameModeAttributeEntity extends BaseOrgScoped {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "game_mode_id")
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "game_mode_id", nullable = false)
     private GameModeEntity gameMode;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "attribute_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "attribute_id", nullable = false)
     private AttributeEntity attribute;
-
-    // Constructors, getters, setters, equals, hashCode, and toString methods
 
     public GameModeAttributeEntity() {
     }
 
-    public GameModeAttributeEntity(GameModeEntity gameMode, AttributeEntity attribute) {
-        this.gameMode = gameMode;
-        this.attribute = attribute;
-    }
-
-    public GameModeAttributeEntity(Long id, AttributeEntity attribute) {
-        this.id = id;
-        this.attribute = attribute;
-    }
-
-    public GameModeAttributeEntity(Long id, GameModeEntity gameMode, AttributeEntity attribute) {
-        this.id = id;
-        this.gameMode = gameMode;
+    public GameModeAttributeEntity(AttributeEntity attribute) {
         this.attribute = attribute;
     }
 
     public Long getId() {
         return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public GameModeEntity getGameMode() {
@@ -70,25 +56,13 @@ public class GameModeAttributeEntity extends BaseOrgScoped {
     public boolean equals(Object o) {
         if (this == o)
             return true;
-        if (!(o instanceof GameModeAttributeEntity))
+        if (!(o instanceof GameModeAttributeEntity that))
             return false;
-        GameModeAttributeEntity that = (GameModeAttributeEntity) o;
-        return id == that.id &&
-                Objects.equals(gameMode, that.gameMode) &&
-                Objects.equals(attribute, that.attribute);
+        return Objects.equals(id, that.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, gameMode, attribute);
-    }
-
-    @Override
-    public String toString() {
-        return "GameModeAttributesEntity{" +
-                "id=" + id +
-                ", gameMode=" + gameMode +
-                ", attribute=" + attribute +
-                '}';
+        return Objects.hash(id);
     }
 }

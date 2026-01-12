@@ -114,9 +114,6 @@ public class CourseQuestionHistoryEntity extends BaseOrgScoped {
     @Column(name = "planned_reason_details_json", columnDefinition = "LONGTEXT")
     private String plannedReasonDetailsJson;
 
-    @Column(name = "planned_reason", length = 255)
-    private String plannedReason;
-
     @OneToMany(mappedBy = "history", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("position ASC")
     @BatchSize(size = 100)
@@ -326,14 +323,6 @@ public class CourseQuestionHistoryEntity extends BaseOrgScoped {
 
     public void setPlannedReasonDetailsJson(String plannedReasonDetailsJson) {
         this.plannedReasonDetailsJson = plannedReasonDetailsJson;
-    }
-
-    public String getPlannedReason() {
-        return plannedReason;
-    }
-
-    public void setPlannedReason(String plannedReason) {
-        this.plannedReason = plannedReason;
     }
 
     public List<CourseQuestionItemEntity> getItems() {

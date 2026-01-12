@@ -1,18 +1,18 @@
 // src/main/java/com/saymyname/webapp/mapper/course/CourseAnswerResultDtoMapper.java
 package com.saymyname.webapp.mapper.course;
 
-import java.util.Collections;
 import java.util.List;
 
 import org.springframework.stereotype.Component;
 
-import com.saymyname.core.model.course.CourseAnswerItemResult;
 import com.saymyname.core.model.course.CourseAnswerResult;
-import com.saymyname.webapp.dto.course.CourseAnswerItemResultDto;
+import com.saymyname.core.model.quiz.QuizAnswerItemResult;
 import com.saymyname.webapp.dto.course.CourseAnswerResultDto;
-import com.saymyname.webapp.dto.course.ResultAttributeDto;
 import com.saymyname.webapp.dto.course.StatusCountsDto;
+import com.saymyname.webapp.dto.quiz.QuizAnswerItemResultDto;
+import com.saymyname.webapp.dto.quiz.ResultAttributeDto;
 import com.saymyname.webapp.mapper.quiz.QuizQuestionDtoMapper;
+import com.saymyname.webapp.mapper.quiz.ResultAttributeDtoMapper;
 
 @Component
 public class CourseAnswerResultDtoMapper {
@@ -28,36 +28,34 @@ public class CourseAnswerResultDtoMapper {
     }
 
     public CourseAnswerResultDto toDto(CourseAnswerResult res, StatusCountsDto statusCounts) {
-        if (res == null)
+        if (res == null) {
             return null;
+        }
 
-        List<CourseAnswerItemResultDto> itemDtos = res.getItemResults() == null
+        List<QuizAnswerItemResultDto> itemDtos = res.getItemResults() == null
                 ? List.of()
                 : res.getItemResults().stream().map(this::toItemDto).toList();
 
         return new CourseAnswerResultDto(
                 res.isCorrect(),
-                res.getRawSubmission(),
-                res.getNormalizedSubmission(),
                 res.getFeedbackMessage(),
-                quizQuestionDtoMapper.toDto(res.getNextQuestion()),
+                res.getNextQuestion() == null ? null : quizQuestionDtoMapper.toDto(res.getNextQuestion()),
                 itemDtos,
                 statusCounts);
     }
 
-    private CourseAnswerItemResultDto toItemDto(CourseAnswerItemResult r) {
-        if (r == null)
+    private QuizAnswerItemResultDto toItemDto(QuizAnswerItemResult r) {
+        if (r == null) {
             return null;
-
-        List<ResultAttributeDto> attrs = Collections.emptyList();
-        var domain = r.getResultAttributes();
-        if (domain != null && !domain.isEmpty()) {
-            attrs = domain.stream().map(resultAttributeDtoMapper::toDto).toList();
         }
 
-        return new CourseAnswerItemResultDto(
+        List<ResultAttributeDto> attrs = r.getResultAttributes() == null
+                ? List.of()
+                : r.getResultAttributes().stream().map(resultAttributeDtoMapper::toDto).toList();
+
+        return new QuizAnswerItemResultDto(
                 r.getPosition(),
-                r.getRole(),
+                r.getRole(), // ✅ plus de conversion valueOf(name())
                 r.getKnowledgeId(),
                 r.getPersonId(),
                 r.isCorrect(),

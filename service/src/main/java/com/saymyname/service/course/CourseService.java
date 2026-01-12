@@ -20,17 +20,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.saymyname.core.exception.course.CourseAlreadyExistsException;
 import com.saymyname.core.exception.course.NextQuestionUnavailableException;
-import com.saymyname.core.exception.course.NoMoreQuestionsException;
 import com.saymyname.core.exception.course.QuestionAlreadyAnsweredException;
 import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.course.Course;
-import com.saymyname.core.model.course.CourseAnswerItemResult;
 import com.saymyname.core.model.course.CourseAnswerResult;
 import com.saymyname.core.model.course.CourseQuestionHistory;
 import com.saymyname.core.model.course.CourseQuestionItem;
 import com.saymyname.core.model.course.CourseQuestionPlan;
-import com.saymyname.core.model.course.CourseStats;
 import com.saymyname.core.model.course.CourseRecentStats;
+import com.saymyname.core.model.course.CourseStats;
 import com.saymyname.core.model.course.Knowledge;
 import com.saymyname.core.model.course.KnowledgeResultEvent;
 import com.saymyname.core.model.course.KnowledgeStats;
@@ -38,10 +36,11 @@ import com.saymyname.core.model.enums.CourseStatus;
 import com.saymyname.core.model.enums.KnowledgeStatus;
 import com.saymyname.core.model.enums.PoolType;
 import com.saymyname.core.model.enums.PopulationScope;
-import com.saymyname.core.model.enums.course.CourseQuestionItemRole;
+import com.saymyname.core.model.enums.course.QuizQuestionItemRole;
 import com.saymyname.core.model.enums.quiz.QuizDecisionReasonCode;
 import com.saymyname.core.model.enums.quiz.QuizFormat;
 import com.saymyname.core.model.enums.quiz.QuizPreferredFormat;
+import com.saymyname.core.model.quiz.QuizAnswerItemResult;
 import com.saymyname.core.model.quiz.QuizAnswerSubmission;
 import com.saymyname.core.model.quiz.QuizQuestion;
 import com.saymyname.core.model.quiz.QuizValidationResult;
@@ -310,7 +309,6 @@ public class CourseService {
         CourseQuestionHistory persisted = courseQuestionHistoryService.create(history);
 
         ensureSnapshotCourseQuestionId(persisted);
-        courseQuestionHistoryService.update(persisted);
 
         // 7) Update course round ONLY after successful emission (same TX => atomic)
         course.setCurrentRound(nextRound);
@@ -410,7 +408,7 @@ public class CourseService {
         Knowledge k = selection.knowledge();
         CourseQuestionItem target = new CourseQuestionItem.Builder()
                 .withPosition(0)
-                .withRole(CourseQuestionItemRole.TARGET)
+                .withRole(QuizQuestionItemRole.TARGET)
                 .withKnowledge(k)
                 .withPerson(k.getPerson())
                 .withAnswered(false)
@@ -501,7 +499,8 @@ public class CourseService {
             }
             QuizQuestion previousQuestionRuntime = courseQuizQuestionBuilder.buildFromHistory(previous, plan);
             List<TruthAttributeValue> frozen = snapshotFactory.freezeTruthForQuestion(previousQuestionRuntime);
-            previous.setSnapshot(snapshotFactory.fromQuestion(previousQuestionRuntime, frozen, targetPersonIds(previous)));
+            previous.setSnapshot(
+                    snapshotFactory.fromQuestion(previousQuestionRuntime, frozen, targetPersonIds(previous)));
         }
 
         // 3) Single pipeline: normalize + validate from snapshot (no DB-live)
@@ -521,13 +520,13 @@ public class CourseService {
         previous.setRawSubmission(serializeRawSubmission(submission));
         previous.setNormalizedSubmission(normalizedAudit);
 
-        List<CourseAnswerItemResult> itemResults = new ArrayList<>();
+        List<QuizAnswerItemResult> itemResults = new ArrayList<>();
         List<KnowledgeResultEvent> srsEvents = new ArrayList<>();
 
         boolean allTargetsCorrect = true;
 
         for (CourseQuestionItem item : previous.getItems()) {
-            if (item.getRole() != CourseQuestionItemRole.TARGET)
+            if (item.getRole() != QuizQuestionItemRole.TARGET)
                 continue;
 
             Long personId = item.getKnowledge().getPerson().getId();
@@ -540,9 +539,9 @@ public class CourseService {
             item.setCorrect(correct);
             item.setNormalizedAnswer(normalizedAudit);
 
-            itemResults.add(new CourseAnswerItemResult.Builder()
+            itemResults.add(new QuizAnswerItemResult.Builder()
                     .withPosition(item.getPosition())
-                    .withRole(item.getRole())
+                    .withRole(item.getRole()) // même enum
                     .withKnowledgeId(item.getKnowledge().getId())
                     .withPersonId(personId)
                     .withCorrect(correct)
@@ -564,7 +563,7 @@ public class CourseService {
         }
 
         previous.setGlobalCorrect(allTargetsCorrect);
-        courseQuestionHistoryService.update(previous);
+        courseQuestionHistoryService.updateAnswerMetaAndItems(previous);
 
         if (!srsEvents.isEmpty()) {
             knowledgeService.recordBatchResults(course.getUser(), srsEvents);
@@ -613,7 +612,6 @@ public class CourseService {
         // 8) Persist next history
         courseQuestionHistoryService.create(nextHistory);
         ensureSnapshotCourseQuestionId(nextHistory);
-        courseQuestionHistoryService.update(nextHistory);
 
         // 9) Update course round ONLY after successful emission (same TX => atomic)
         course.setCurrentRound(nextRound);
@@ -684,7 +682,7 @@ public class CourseService {
         }
 
         for (CourseQuestionItem item : items) {
-            if (item.getRole() != CourseQuestionItemRole.TARGET) {
+            if (item.getRole() != QuizQuestionItemRole.TARGET) {
                 continue;
             }
             Knowledge knowledge = item.getKnowledge();
@@ -848,7 +846,7 @@ public class CourseService {
             }
             items.add(new CourseQuestionItem.Builder()
                     .withPosition(pos++)
-                    .withRole(CourseQuestionItemRole.TARGET)
+                    .withRole(QuizQuestionItemRole.TARGET)
                     .withKnowledge(k)
                     .withPerson(k.getPerson())
                     .withAnswered(false)
@@ -864,7 +862,7 @@ public class CourseService {
             return null;
         }
         return h.getItems().stream()
-                .filter(it -> it.getRole() == CourseQuestionItemRole.TARGET)
+                .filter(it -> it.getRole() == QuizQuestionItemRole.TARGET)
                 .map(CourseQuestionItem::getKnowledge)
                 .filter(Objects::nonNull)
                 .findFirst()
@@ -875,7 +873,7 @@ public class CourseService {
         if (h == null || h.getItems() == null)
             return List.of();
         return h.getItems().stream()
-                .filter(it -> it.getRole() == CourseQuestionItemRole.TARGET)
+                .filter(it -> it.getRole() == QuizQuestionItemRole.TARGET)
                 .toList();
     }
 

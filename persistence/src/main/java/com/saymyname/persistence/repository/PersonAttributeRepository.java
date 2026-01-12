@@ -12,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.saymyname.persistence.entity.organization.PersonAttributeEntity;
+import com.saymyname.persistence.entity.organization.attribute.AttributeEntity;
 import com.saymyname.persistence.projection.PersonAttrValueProjection;
 
 import static org.hibernate.jpa.HibernateHints.HINT_FETCH_SIZE;
@@ -24,8 +25,8 @@ public interface PersonAttributeRepository extends JpaRepository<PersonAttribute
   // MIN/MAX pour attributs numériques (valeurs stockées en texte)
   @Query(value = """
       SELECT pa.attribute_id    AS attributeId,
-             MIN(CAST(pa.value AS DECIMAL(20,6))) AS minVal,
-             MAX(CAST(pa.value AS DECIMAL(20,6))) AS maxVal
+             MIN(CAST(pa.attribute_value AS DECIMAL(20,6))) AS minVal,
+             MAX(CAST(pa.attribute_value AS DECIMAL(20,6))) AS maxVal
         FROM person_attributes pa
        WHERE pa.attribute_id IN (:attributeIds)
          AND pa.organization_id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
@@ -36,8 +37,8 @@ public interface PersonAttributeRepository extends JpaRepository<PersonAttribute
   // MIN/MAX pour attributs date (format 'YYYY-MM-DD' côté DB)
   @Query(value = """
       SELECT pa.attribute_id AS attributeId,
-             DATE_FORMAT(MIN(STR_TO_DATE(pa.value, '%Y-%m-%d')), '%Y-%m-%d') AS minVal,
-             DATE_FORMAT(MAX(STR_TO_DATE(pa.value, '%Y-%m-%d')), '%Y-%m-%d') AS maxVal
+             DATE_FORMAT(MIN(STR_TO_DATE(pa.attribute_value, '%Y-%m-%d')), '%Y-%m-%d') AS minVal,
+             DATE_FORMAT(MAX(STR_TO_DATE(pa.attribute_value, '%Y-%m-%d')), '%Y-%m-%d') AS maxVal
         FROM person_attributes pa
        WHERE pa.attribute_id IN (:attributeIds)
          AND pa.organization_id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
@@ -49,8 +50,8 @@ public interface PersonAttributeRepository extends JpaRepository<PersonAttribute
   @Query(value = """
       SELECT COUNT(DISTINCT pa.person_id)
         FROM person_attributes pa
-       WHERE pa.value >= ?1
-         AND pa.value <  ?2
+       WHERE pa.attribute_value >= ?1
+         AND pa.attribute_value <  ?2
          AND pa.valid_from <= ?3
          AND (pa.valid_to IS NULL OR pa.valid_to > ?3)
          AND pa.attribute_id = ?4

@@ -24,6 +24,7 @@ public class QuizQuestionSpec {
 
     // ---- plugin helpers (core-friendly) ----
     private List<Long> candidatePoolPersonIds; // optional but strongly recommended for MCQ/association/ordering
+    private List<QuizPayloadItem> candidatePoolItems; // optional, includes storageKey for media
     private Boolean timed; // explicit timing toggle
     private Integer timeLimitMs; // required when timed=true
     private Integer maxErrorsOverride; // optional (for HANGMAN)
@@ -43,6 +44,7 @@ public class QuizQuestionSpec {
         this.context = b.context;
         this.initials = b.initials;
         this.candidatePoolPersonIds = b.candidatePoolPersonIds;
+        this.candidatePoolItems = b.candidatePoolItems;
         this.timed = b.timed;
         this.timeLimitMs = b.timeLimitMs;
         this.maxErrorsOverride = b.maxErrorsOverride;
@@ -84,6 +86,10 @@ public class QuizQuestionSpec {
 
     public List<Long> getCandidatePoolPersonIds() {
         return candidatePoolPersonIds;
+    }
+
+    public List<QuizPayloadItem> getCandidatePoolItems() {
+        return candidatePoolItems;
     }
 
     public Boolean getTimed() {
@@ -142,6 +148,10 @@ public class QuizQuestionSpec {
         this.candidatePoolPersonIds = candidatePoolPersonIds;
     }
 
+    public void setCandidatePoolItems(List<QuizPayloadItem> candidatePoolItems) {
+        this.candidatePoolItems = candidatePoolItems;
+    }
+
     public void setTimed(Boolean timed) {
         this.timed = timed;
     }
@@ -172,6 +182,7 @@ public class QuizQuestionSpec {
         private QuizQuestionContext context;
         private String initials;
         private List<Long> candidatePoolPersonIds;
+        private List<QuizPayloadItem> candidatePoolItems;
         private Boolean timed;
         private Integer timeLimitMs;
         private Integer maxErrorsOverride;
@@ -220,6 +231,11 @@ public class QuizQuestionSpec {
 
         public Builder withCandidatePoolPersonIds(List<Long> v) {
             this.candidatePoolPersonIds = v;
+            return this;
+        }
+
+        public Builder withCandidatePoolItems(List<QuizPayloadItem> v) {
+            this.candidatePoolItems = v;
             return this;
         }
 
@@ -275,6 +291,7 @@ public class QuizQuestionSpec {
                 && Objects.equals(context, that.context)
                 && Objects.equals(initials, that.initials)
                 && Objects.equals(candidatePoolPersonIds, that.candidatePoolPersonIds)
+                && Objects.equals(candidatePoolItems, that.candidatePoolItems)
                 && Objects.equals(timed, that.timed)
                 && Objects.equals(timeLimitMs, that.timeLimitMs)
                 && Objects.equals(maxErrorsOverride, that.maxErrorsOverride)
@@ -285,7 +302,8 @@ public class QuizQuestionSpec {
     @Override
     public int hashCode() {
         return Objects.hash(source, personId, storageKey, gameModeId, targetAttributeIds, operator, context, initials,
-                candidatePoolPersonIds, timed, timeLimitMs, maxErrorsOverride, reasonCode, reasonDetailsJson);
+                candidatePoolPersonIds, candidatePoolItems, timed, timeLimitMs, maxErrorsOverride, reasonCode,
+                reasonDetailsJson);
     }
 
     @Override
@@ -300,6 +318,7 @@ public class QuizQuestionSpec {
                 ", context=" + context +
                 ", initials='" + initials + '\'' +
                 ", candidatePoolPersonIds=" + candidatePoolPersonIds +
+                ", candidatePoolItems=" + candidatePoolItems +
                 ", timed=" + timed +
                 ", timeLimitMs=" + timeLimitMs +
                 ", maxErrorsOverride=" + maxErrorsOverride +

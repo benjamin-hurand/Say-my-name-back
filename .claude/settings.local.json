@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(mvn clean compile:*)",
+      "Bash(mvn compile:*)",
+      "Bash(mvn test:*)",
+      "Bash(mvn surefire:test:*)",
+      "Bash(mvn clean:*)",
+      "Bash(mvn -pl core -Ptests test)",
+      "Bash(mvn -pl core -Ptests test -q)",
+      "Bash(mvn -pl security -Ptests test -q)",
+      "Bash(mvn -pl persistence -Ptests test -q)",
+      "Bash(mvn -pl service -Ptests test -q)",
+      "Bash(mvn -pl infra -Ptests test -q)",
+      "Bash(mvn -Ptests test -q)",
+      "Bash(mvn:*)",
+      "Bash(tee:*)",
+      "Bash(timeout 30 mvn:*)"
+    ]
+  }
+}

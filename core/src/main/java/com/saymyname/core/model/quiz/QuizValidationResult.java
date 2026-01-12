@@ -35,8 +35,11 @@ public final class QuizValidationResult {
         }
 
         private void validateInvariants() {
-                if (resultAttributes.contains(null)) {
-                        throw new IllegalStateException("QuizValidationResult.resultAttributes cannot contain null");
+                for (ResultAttribute ra : resultAttributes) {
+                        if (ra == null) {
+                                throw new IllegalStateException(
+                                                "QuizValidationResult.resultAttributes cannot contain null");
+                        }
                 }
         }
 
@@ -69,11 +72,17 @@ public final class QuizValidationResult {
                 }
 
                 public Builder withResultAttributes(List<ResultAttribute> v) {
+                        if (v != null && v.stream().anyMatch(Objects::isNull)) {
+                                throw new IllegalArgumentException("resultAttributes cannot contain null");
+                        }
                         this.resultAttributes = v;
                         return this;
                 }
 
                 public Builder addResultAttribute(ResultAttribute v) {
+                        if (v == null) {
+                                throw new IllegalArgumentException("ResultAttribute cannot be null");
+                        }
                         if (this.resultAttributes == null) {
                                 this.resultAttributes = new ArrayList<>();
                         }

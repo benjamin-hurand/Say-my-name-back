@@ -68,7 +68,7 @@ public interface UserSubscriptionRepository extends JpaRepository<UserSubscripti
             ON pa.person_id         = s.person_id
            AND pa.attribute_id      = gma.attribute_id
            AND pa.organization_id   = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
-           AND pa.value IS NOT NULL AND pa.value <> ''
+           AND pa.attribute_value IS NOT NULL AND pa.attribute_value <> ''
          WHERE s.user_id            = :userId
            AND s.organization_id    = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
          GROUP BY s.person_id
@@ -96,7 +96,7 @@ public interface UserSubscriptionRepository extends JpaRepository<UserSubscripti
           ON pa.person_id         = s.person_id
          AND pa.attribute_id      = gma.attribute_id
          AND pa.organization_id   = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
-         AND pa.value IS NOT NULL AND pa.value <> ''
+         AND pa.attribute_value IS NOT NULL AND pa.attribute_value <> ''
        WHERE s.user_id            = :userId
          AND s.organization_id    = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
       """, nativeQuery = true)

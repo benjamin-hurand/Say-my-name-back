@@ -1,4 +1,3 @@
-// src/main/java/com/saymyname/service/quiz/plugins/PluginSupport.java
 package com.saymyname.service.quiz.plugins;
 
 import java.text.Normalizer;
@@ -18,6 +17,7 @@ import com.saymyname.core.model.quiz.QuizQuestionDisplay;
 import com.saymyname.core.model.quiz.QuizQuestionHints;
 import com.saymyname.core.model.quiz.QuizQuestionPayload;
 import com.saymyname.core.model.quiz.QuizQuestionSpec;
+import com.saymyname.core.model.quiz.QuizPayloadItem;
 
 final class PluginSupport {
 
@@ -44,10 +44,14 @@ final class PluginSupport {
     }
 
     static ResultAttribute resultAttr(Long attributeId, String value, boolean correct, boolean target) {
+        if (attributeId == null) {
+            throw new IllegalStateException("ResultAttribute.attributeId is required");
+        }
+
         // Placeholder Attribute (id + name) pour rester compatible DTO sans lookup DB
         Attribute a = new Attribute.Builder()
                 .withId(attributeId)
-                .withName(attributeId == null ? null : ("attribute#" + attributeId))
+                .withName("attribute#" + attributeId)
                 .build();
 
         return new ResultAttribute(a, value, correct, target);
@@ -131,6 +135,49 @@ final class PluginSupport {
         return Collections.unmodifiableList(out);
     }
 
+    static List<QuizPayloadItem> poolItemsLimited(QuizQuestionSpec spec, int limit, Long excludePersonId) {
+        List<QuizPayloadItem> src = spec.getCandidatePoolItems();
+        if (src != null && !src.isEmpty()) {
+            List<QuizPayloadItem> out = new ArrayList<>(Math.min(limit, src.size()));
+            for (QuizPayloadItem item : src) {
+                if (item == null)
+                    continue;
+                Long id = item.getPersonId();
+                if (id == null)
+                    continue;
+                if (excludePersonId != null && excludePersonId.equals(id))
+                    continue;
+                String labelId = item.getLabelId() != null ? item.getLabelId() : String.valueOf(id);
+                out.add(new QuizPayloadItem.Builder()
+                        .withPersonId(id)
+                        .withStorageKey(item.getStorageKey())
+                        .withLabelId(labelId)
+                        .build());
+                if (out.size() >= limit)
+                    break;
+            }
+            return Collections.unmodifiableList(out);
+        }
+
+        List<Long> ids = poolIdsLimited(spec, limit, excludePersonId);
+        if (ids.isEmpty())
+            return List.of();
+
+        List<QuizPayloadItem> out = new ArrayList<>(ids.size());
+        for (Long id : ids) {
+            if (id == null)
+                continue;
+            out.add(new QuizPayloadItem.Builder()
+                    .withPersonId(id)
+                    .withStorageKey(null)
+                    .withLabelId(String.valueOf(id))
+                    .build());
+            if (out.size() >= limit)
+                break;
+        }
+        return Collections.unmodifiableList(out);
+    }
+
     static String maskifyAlphaNum(String s) {
         if (s == null || s.isBlank())
             return "";
@@ -142,5 +189,85 @@ final class PluginSupport {
                 b.append(c);
         }
         return b.toString();
+    }
+
+    static long deterministicSeedFromSpec(QuizQuestionSpec spec) {
+        if (spec == null)
+            return 0L;
+        var ctx = spec.getContext();
+        int round = (ctx != null && ctx.getQuestionRound() != null) ? ctx.getQuestionRound() : 0;
+        Long personId = spec.getPersonId();
+        Long gameModeId = spec.getGameModeId();
+        return java.util.Objects.hash(personId, gameModeId, round);
+    }
+
+    /**
+     * Cloze UX-friendly: masque la plupart des caractères alphanum,
+     * mais révèle quelques lettres/chiffres de façon déterministe.
+     *
+     * Exemples:
+     * - "Abarna" => "A____a"
+     * - "Jean Dupont" => "J__n D_____"
+     */
+    static String clozeMaskRevealSome(String answer, long seed) {
+        if (answer == null || answer.isBlank()) {
+            return "";
+        }
+
+        // On travaille sur la string originale pour préserver espaces/ponctuation
+        char[] src = answer.toCharArray();
+        int n = src.length;
+
+        // Indices des caractères alphanumériques (ceux qu'on peut masquer/révéler)
+        java.util.List<Integer> alphaNumIdx = new java.util.ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            if (Character.isLetterOrDigit(src[i])) {
+                alphaNumIdx.add(i);
+            }
+        }
+
+        if (alphaNumIdx.isEmpty()) {
+            return answer; // rien à masquer
+        }
+
+        // Règle simple et stable:
+        // - révèle toujours le premier caractère alphanumérique
+        // - révèle souvent le dernier si longueur >= 6
+        // - révèle 1 caractère alphanum additionnel par ~4 chars (capé)
+        java.util.Random rnd = new java.util.Random(seed);
+
+        boolean[] reveal = new boolean[n];
+
+        // Reveal first
+        reveal[alphaNumIdx.get(0)] = true;
+
+        // Reveal last for longer answers
+        if (alphaNumIdx.size() >= 6) {
+            reveal[alphaNumIdx.get(alphaNumIdx.size() - 1)] = true;
+        }
+
+        int extraToReveal = Math.min(2, Math.max(0, (alphaNumIdx.size() / 4) - 1));
+        // Randomly reveal extra characters (excluding already revealed)
+        for (int k = 0; k < extraToReveal; k++) {
+            // Try a few draws to find a not-yet-revealed index
+            for (int tries = 0; tries < 8; tries++) {
+                int pick = alphaNumIdx.get(rnd.nextInt(alphaNumIdx.size()));
+                if (!reveal[pick]) {
+                    reveal[pick] = true;
+                    break;
+                }
+            }
+        }
+
+        StringBuilder out = new StringBuilder(n);
+        for (int i = 0; i < n; i++) {
+            char c = src[i];
+            if (Character.isLetterOrDigit(c) && !reveal[i]) {
+                out.append('_');
+            } else {
+                out.append(c);
+            }
+        }
+        return out.toString();
     }
 }

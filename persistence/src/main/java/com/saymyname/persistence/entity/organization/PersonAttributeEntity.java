@@ -23,7 +23,7 @@ public class PersonAttributeEntity extends BaseOrgScoped {
     @JoinColumn(name = "person_id", nullable = false)
     private PersonEntity person;
 
-    @Column(name = "value", length = 255)
+    @Column(name = "attribute_value", length = 255)
     private String value;
 
     @Column(name = "valid_from", nullable = false)
@@ -32,8 +32,8 @@ public class PersonAttributeEntity extends BaseOrgScoped {
     @Column(name = "valid_to")
     private LocalDateTime validTo;
 
-    /** MySQL: tinyint(1) NOT NULL DEFAULT 0 */
-    @Column(name = "is_pending_delete", nullable = false, columnDefinition = "tinyint(1) default 0")
+    /** Boolean field - Hibernate will use appropriate type per dialect (tinyint for MySQL, boolean for H2) */
+    @Column(name = "is_pending_delete", nullable = false)
     private boolean pendingDelete = false;
 
     public PersonAttributeEntity() {

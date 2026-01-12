@@ -3,7 +3,7 @@ package com.saymyname.persistence.mapper.course;
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.course.CourseQuestionItem;
-import com.saymyname.core.model.enums.course.CourseQuestionItemRole;
+import com.saymyname.core.model.enums.course.QuizQuestionItemRole;
 import com.saymyname.persistence.entity.organization.PersonEntity;
 import com.saymyname.persistence.entity.organization.course.CourseQuestionItemEntity;
 import com.saymyname.persistence.entity.organization.course.KnowledgeEntity;
@@ -57,7 +57,7 @@ public class CourseQuestionItemEntityMapper {
         if (entity == null)
             return null;
 
-        CourseQuestionItemRole role = mapRole(entity.getRole());
+        QuizQuestionItemRole role = mapRole(entity.getRole());
 
         return new CourseQuestionItem.Builder()
                 .withId(entity.getId())
@@ -71,11 +71,11 @@ public class CourseQuestionItemEntityMapper {
                 .build();
     }
 
-    private CourseQuestionItemEntity.Role mapRole(CourseQuestionItemRole role) {
+    private CourseQuestionItemEntity.Role mapRole(QuizQuestionItemRole role) {
         return role == null ? null : CourseQuestionItemEntity.Role.valueOf(role.name());
     }
 
-    private CourseQuestionItemRole mapRole(CourseQuestionItemEntity.Role role) {
-        return role == null ? null : CourseQuestionItemRole.valueOf(role.name());
+    private QuizQuestionItemRole mapRole(CourseQuestionItemEntity.Role role) {
+        return role == null ? null : QuizQuestionItemRole.valueOf(role.name());
     }
 }

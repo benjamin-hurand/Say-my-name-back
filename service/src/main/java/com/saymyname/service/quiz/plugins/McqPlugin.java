@@ -2,8 +2,11 @@
 package com.saymyname.service.quiz.plugins;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.springframework.stereotype.Component;
@@ -13,6 +16,7 @@ import com.saymyname.core.model.enums.quiz.QuizFormat;
 import com.saymyname.core.model.enums.quiz.QuizPayloadType;
 import com.saymyname.core.model.quiz.QuizAnswerSubmission;
 import com.saymyname.core.model.quiz.QuizChoice;
+import com.saymyname.core.model.quiz.QuizLayoutHints;
 import com.saymyname.core.model.quiz.QuizQuestion;
 import com.saymyname.core.model.quiz.QuizQuestionDisplay;
 import com.saymyname.core.model.quiz.QuizQuestionPayload;
@@ -22,14 +26,36 @@ import com.saymyname.core.model.quiz.answer.NormalizedChoice;
 import com.saymyname.core.model.quiz.answer.NormalizedSubmission;
 import com.saymyname.core.model.quiz.snapshot.QuizQuestionSnapshot;
 import com.saymyname.service.quiz.AnswerKeyService;
+import com.saymyname.service.quiz.QuizSnapshotGuards;
 
+/**
+ * Multiple Choice Question plugin.
+ *
+ * Supports rich content:
+ * - Text-only choices (current implementation)
+ * - Photo-only choices (future enhancement via storageKey)
+ * - Text + photo combos (future enhancement)
+ *
+ * ARCHITECTURE:
+ * - Choices are DISPLAY-ONLY (no truth/answer key in QuizChoice)
+ * - Truth extraction happens in QuizQuestionSnapshotFactory via:
+ *   1. personId matching (for photo MCQs: "Who is this person?")
+ *   2. value matching (for text MCQs: "What is X's last name?")
+ * - Truth is stored in snapshot.truth (backend-only)
+ * - Truth is NEVER sent to client (filtered in QuizQuestionDtoMapper)
+ */
 @Component
-public class McqPlugin implements QuizQuestionPlugin {
+public class McqPlugin implements QuizQuestionPlugin, QuizQuestionPluginEnhanced {
 
     private static final int DEFAULT_CHOICES = 4;
     private static final int DEFAULT_POOL_SCAN = 30;
 
     private final AnswerKeyService answerKeyService;
+
+    /**
+     * Choice ids must be stable within one question payload, but they do not need
+     * to be globally unique across questions. Using a per-plugin counter is OK.
+     */
     private final AtomicLong seq = new AtomicLong(1L);
 
     public McqPlugin(AnswerKeyService answerKeyService) {
@@ -45,45 +71,71 @@ public class McqPlugin implements QuizQuestionPlugin {
     public QuizQuestion build(QuizQuestionSpec spec) {
         Objects.requireNonNull(spec, "spec");
 
+        // Compute correct value for target person + attributes
         String correctValue = answerKeyService
                 .compute(spec.getPersonId(), spec.getTargetAttributeIds(), spec.getOperator())
                 .correctAnswerJoined();
 
-        if (correctValue == null)
-            correctValue = "";
+        correctValue = (correctValue == null) ? "" : correctValue;
 
-        List<String> distractors = new ArrayList<>();
-        List<Long> poolIds = PluginSupport.poolIdsLimited(spec, DEFAULT_POOL_SCAN, spec.getPersonId());
+        // Build distractors by scanning a randomized subset of the pool
+        List<String> distractors = new ArrayList<>(DEFAULT_CHOICES - 1);
+
+        List<Long> poolIds = new ArrayList<>(
+                PluginSupport.poolIdsLimited(spec, DEFAULT_POOL_SCAN, spec.getPersonId()));
+
+        // Randomize pool scan order to avoid always picking the same distractors
+        if (poolIds.size() > 1) {
+            Collections.shuffle(poolIds, ThreadLocalRandom.current());
+        }
 
         for (Long pid : poolIds) {
-            if (pid == null)
+            if (pid == null) {
                 continue;
+            }
 
             String v = answerKeyService
                     .compute(pid, spec.getTargetAttributeIds(), spec.getOperator())
                     .correctAnswerJoined();
 
-            if (v == null || v.isBlank())
+            if (v == null) {
                 continue;
-            if (v.equalsIgnoreCase(correctValue))
+            }
+            String trimmed = v.trim();
+            if (trimmed.isEmpty()) {
                 continue;
-            boolean already = distractors.stream().anyMatch(d -> d.equalsIgnoreCase(v));
-            if (already)
-                continue;
+            }
 
-            distractors.add(v);
-            if (distractors.size() >= DEFAULT_CHOICES - 1)
+            // exclude the correct value
+            if (!correctValue.isEmpty() && trimmed.equalsIgnoreCase(correctValue)) {
+                continue;
+            }
+
+            // exclude duplicates (case-insensitive)
+            boolean already = distractors.stream().anyMatch(d -> d.equalsIgnoreCase(trimmed));
+            if (already) {
+                continue;
+            }
+
+            distractors.add(trimmed);
+            if (distractors.size() >= DEFAULT_CHOICES - 1) {
                 break;
+            }
         }
 
+        // Build choices (correct + distractors + placeholders)
         List<QuizChoice> choices = new ArrayList<>(DEFAULT_CHOICES);
 
+        // Correct choice: always included, but order will be shuffled later
+        // CRITICAL: Truth extraction happens in QuizQuestionSnapshotFactory via:
+        //   1. personId matching (for photo MCQs: "Who is this person?")
+        //   2. value matching (for text MCQs: "What is X's last name?")
+        // The 'correct' flag is NOT used (it's deprecated and always returns null)
         choices.add(new QuizChoice.Builder()
                 .withId(nextChoiceId())
                 .withLabel(correctValue)
                 .withValue(correctValue)
-                .withCorrect(true)
-                .withPersonId(spec.getPersonId())
+                .withPersonId(spec.getPersonId()) // Used by snapshot factory for truth matching
                 .build());
 
         for (String d : distractors) {
@@ -91,19 +143,22 @@ public class McqPlugin implements QuizQuestionPlugin {
                     .withId(nextChoiceId())
                     .withLabel(d)
                     .withValue(d)
-                    .withCorrect(false)
-                    .withPersonId(null)
+                    // No personId for distractors (won't match target person)
                     .build());
         }
 
+        // Fill remaining slots with empty placeholders (keeps payload size stable)
         while (choices.size() < DEFAULT_CHOICES) {
             choices.add(new QuizChoice.Builder()
                     .withId(nextChoiceId())
                     .withLabel("")
                     .withValue("")
-                    .withCorrect(false)
-                    .withPersonId(null)
                     .build());
+        }
+
+        // Randomize choice ordering so correct answer isn't always in the same position
+        if (choices.size() > 1) {
+            Collections.shuffle(choices, ThreadLocalRandom.current());
         }
 
         QuizQuestionDisplay display = new QuizQuestionDisplay.Builder()
@@ -112,10 +167,17 @@ public class McqPlugin implements QuizQuestionPlugin {
                 .withInputPlaceholder(null)
                 .build();
 
+        // Layout hints for text-only MCQ (vertical list)
+        QuizLayoutHints layoutHints = new QuizLayoutHints.Builder()
+                .withLayout("list_vertical")
+                .withItemStyle("text_only")
+                .build();
+
         QuizQuestionPayload payload = new QuizQuestionPayload.Builder()
                 .withType(QuizPayloadType.MCQ)
                 .withChoices(choices)
                 .withAllowMultiple(false)
+                .withLayoutHints(layoutHints)
                 .build();
 
         return PluginSupport.baseQuestion(
@@ -164,30 +226,36 @@ public class McqPlugin implements QuizQuestionPlugin {
 
         Objects.requireNonNull(snapshot, "snapshot");
 
-        NormalizedChoice nc = (normalized instanceof NormalizedChoice c) ? c : new NormalizedChoice(null, null);
+        NormalizedChoice nc = (normalized instanceof NormalizedChoice c)
+                ? c
+                : new NormalizedChoice(null, null);
 
-        List<String> correctKeys = snapshot.getTruth() == null ? List.of() : snapshot.getTruth().getCorrectChoiceKeys();
+        List<String> correctKeys = snapshot.getTruth() == null
+                ? List.of()
+                : snapshot.getTruth().getCorrectChoiceKeys();
 
         boolean correct = false;
+
+        // Primary: validate by selectedChoiceId against snapshot truth keys
         if (nc.selectedChoiceId() != null && correctKeys != null && !correctKeys.isEmpty()) {
             String key = String.valueOf(nc.selectedChoiceId());
             correct = correctKeys.contains(key);
         }
+
+        // Fallback: validate by canonicalized value against correctAnswerDisplay
         if (!correct && nc.selectedValue() != null && snapshot.getTruth() != null) {
             String expected = snapshot.getTruth().getCorrectAnswerDisplay();
             correct = PluginSupport.equalsCanon(nc.selectedValue(), expected);
         }
 
-        Long attrId = (snapshot.getTargetAttributeIds() == null || snapshot.getTargetAttributeIds().isEmpty())
-                ? null
-                : snapshot.getTargetAttributeIds().get(0);
+        Long attrId = QuizSnapshotGuards.requireSingleTargetAttributeId(snapshot, QuizFormat.MCQ);
 
-        List<ResultAttribute> attrs = List.of(
-                PluginSupport.resultAttr(
-                        attrId,
-                        nc.selectedValue(),
-                        correct,
-                        true));
+        List<ResultAttribute> attrs = new ArrayList<>(1);
+        attrs.add(PluginSupport.resultAttr(
+                attrId,
+                nc.selectedValue(),
+                correct,
+                true));
 
         return new QuizValidationResult.Builder()
                 .withCorrect(correct)
@@ -199,5 +267,42 @@ public class McqPlugin implements QuizQuestionPlugin {
 
     private Long nextChoiceId() {
         return seq.getAndIncrement();
+    }
+
+    // ========================================
+    // QuizQuestionPluginEnhanced implementation
+    // ========================================
+
+    @Override
+    public String generateFeedback(
+            QuizQuestionSnapshot snapshot,
+            QuizAnswerSubmission submission,
+            NormalizedSubmission normalized,
+            QuizValidationResult validation) {
+
+        if (validation.isCorrect()) {
+            return "Correct ! 🎉";
+        }
+
+        // Find what user selected
+        NormalizedChoice nc = (NormalizedChoice) normalized;
+        String selected = nc.selectedValue();
+        String correct = validation.getCorrectAnswerDisplay();
+
+        if (selected != null && correct != null) {
+            return String.format("Incorrect. Tu as choisi '%s' mais la bonne réponse est '%s'.",
+                    selected, correct);
+        }
+
+        return "Incorrect. Essaie encore !";
+    }
+
+    @Override
+    public Set<String> capabilities() {
+        return Set.of(
+                "supports_text_choices",
+                "supports_single_selection"
+                // Future: "supports_photos", "supports_rich_content", "supports_multiple_selection"
+        );
     }
 }

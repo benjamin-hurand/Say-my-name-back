@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.saymyname.core.model.course.Course;
 import com.saymyname.core.model.course.CourseQuestionHistory;
 import com.saymyname.core.model.course.CourseQuestionItem;
-import com.saymyname.core.model.enums.course.CourseQuestionItemRole;
+import com.saymyname.core.model.enums.course.QuizQuestionItemRole;
 import com.saymyname.core.model.people.PersonAttribute;
 import com.saymyname.service.PersonAttributeService;
 import com.saymyname.persistence.dao.course.CourseQuestionHistoryDao;
@@ -45,8 +45,19 @@ public class CourseQuestionHistoryService {
         dao.deleteAllByCourse(course);
     }
 
-    public void update(CourseQuestionHistory courseQuestion) {
-        dao.update(courseQuestion);
+    public void updateAnswerMetaAndItems(CourseQuestionHistory courseQuestion) {
+        dao.updateAnswerMeta(courseQuestion);
+
+        boolean hasTargets = courseQuestion.getItems() != null && courseQuestion.getItems().stream()
+                .anyMatch(it -> it.getRole() == QuizQuestionItemRole.TARGET);
+        if (hasTargets) {
+            dao.updateTargetItemsAnswerMeta(
+                    courseQuestion.getId(),
+                    true,
+                    courseQuestion.isGlobalCorrect(),
+                    courseQuestion.getNormalizedSubmission(),
+                    true);
+        }
     }
 
     @Transactional
@@ -93,7 +104,7 @@ public class CourseQuestionHistoryService {
         }
 
         Long personId = items.stream()
-                .filter(it -> it.getRole() == CourseQuestionItemRole.TARGET)
+                .filter(it -> it.getRole() == QuizQuestionItemRole.TARGET)
                 .map(it -> it.getPerson() != null ? it.getPerson().getId() : null)
                 .filter(id -> id != null)
                 .findFirst()
@@ -103,7 +114,7 @@ public class CourseQuestionHistoryService {
             return personId;
 
         personId = items.stream()
-                .filter(it -> it.getRole() == CourseQuestionItemRole.TARGET)
+                .filter(it -> it.getRole() == QuizQuestionItemRole.TARGET)
                 .map(it -> (it.getKnowledge() != null
                         && it.getKnowledge().getPerson() != null)
                                 ? it.getKnowledge().getPerson().getId()

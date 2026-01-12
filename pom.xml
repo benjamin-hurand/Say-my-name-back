@@ -26,13 +26,20 @@
 
     <!-- DB -->
     <mysql.version>8.3.0</mysql.version>
-    <h2.version>2.2.224</h2.version>
     <hikaricp.version>5.1.0</hikaricp.version>
 
     <!-- Tests -->
-    <junit.version>4.13.2</junit.version>
     <junit.jupiter.version>5.10.1</junit.jupiter.version>
     <mockito.version>5.12.0</mockito.version>
+    <assertj.version>3.24.2</assertj.version>
+
+    <!-- ✅ Testcontainers -->
+    <testcontainers.version>1.20.4</testcontainers.version>
+
+    <!-- Test plugins -->
+    <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
+    <maven-failsafe-plugin.version>3.2.5</maven-failsafe-plugin.version>
+    <jacoco-maven-plugin.version>0.8.11</jacoco-maven-plugin.version>
 
     <!-- Web -->
     <servlet.api.version>6.1.0</servlet.api.version>
@@ -52,31 +59,25 @@
     <jakarta.validation.version>3.1.0</jakarta.validation.version>
     <jakarta.el.version>6.0.0</jakarta.el.version>
     <hibernate.core.version>6.5.2.Final</hibernate.core.version>
-    <bytebuddy.version>1.12.19</bytebuddy.version>
+    <bytebuddy.version>1.14.18</bytebuddy.version>
 
     <!-- Swagger -->
     <swagger.version>2.5.0</swagger.version>
 
     <!-- Spring Boot -->
     <spring-boot.version>3.3.1</spring-boot.version>
+
+    <!-- ✅ test toggles : par défaut ON pour assurer la qualité -->
+    <skipUnitTests>true</skipUnitTests>
+    <skipITs>true</skipITs>
   </properties>
 
   <dependencyManagement>
     <dependencies>
-      <!-- Modules du projet : versions centralisées -->
+      <!-- Modules du projet -->
       <dependency>
         <groupId>com.saymyname</groupId>
         <artifactId>core</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.saymyname</groupId>
-        <artifactId>binding</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.saymyname</groupId>
-        <artifactId>console</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -105,19 +106,7 @@
         <version>${project.version}</version>
       </dependency>
 
-      <!-- Tests -->
-      <dependency>
-        <groupId>com.h2database</groupId>
-        <artifactId>h2</artifactId>
-        <version>${h2.version}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>junit</groupId>
-        <artifactId>junit</artifactId>
-        <version>${junit.version}</version>
-        <scope>test</scope>
-      </dependency>
+      <!-- ✅ Tests (versions centralisées) -->
       <dependency>
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter</artifactId>
@@ -128,6 +117,39 @@
         <groupId>org.mockito</groupId>
         <artifactId>mockito-core</artifactId>
         <version>${mockito.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-junit-jupiter</artifactId>
+        <version>${mockito.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.assertj</groupId>
+        <artifactId>assertj-core</artifactId>
+        <version>${assertj.version}</version>
+        <scope>test</scope>
+      </dependency>
+
+      <!-- ✅ Testcontainers (versions gérées par le BOM) -->
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>junit-jupiter</artifactId>
+        <version>${testcontainers.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>mysql</artifactId>
+        <version>${testcontainers.version}</version>
+        <scope>test</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.springframework.security</groupId>
+        <artifactId>spring-security-test</artifactId>
+        <version>${spring.security.version}</version>
         <scope>test</scope>
       </dependency>
 
@@ -156,6 +178,7 @@
         <groupId>org.springframework</groupId>
         <artifactId>spring-test</artifactId>
         <version>${spring.version}</version>
+        <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>org.springframework</groupId>
@@ -178,6 +201,7 @@
         <version>${spring.jpa.version}</version>
       </dependency>
 
+      <!-- Spring Security BOM -->
       <dependency>
         <groupId>org.springframework.security</groupId>
         <artifactId>spring-security-bom</artifactId>
@@ -213,6 +237,12 @@
         <groupId>net.bytebuddy</groupId>
         <artifactId>byte-buddy</artifactId>
         <version>${bytebuddy.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.bytebuddy</groupId>
+        <artifactId>byte-buddy-agent</artifactId>
+        <version>${bytebuddy.version}</version>
+        <scope>test</scope>
       </dependency>
 
       <!-- DB -->
@@ -305,6 +335,7 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-test</artifactId>
         <version>${spring-boot.version}</version>
+        <scope>test</scope>
       </dependency>
 
       <!-- Google APIs -->
@@ -331,85 +362,145 @@
     </dependencies>
   </dependencyManagement>
 
-  <dependencies>
-    <!-- Laisse sans versions : elles viennent du dependencyManagement -->
-    <dependency>
-      <groupId>com.h2database</groupId>
-      <artifactId>h2</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <!-- Starters Boot, etc. -->
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-data-jpa</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-security</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-validation</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-web</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-mail</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-test</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <!-- Google APIs -->
-    <dependency>
-      <groupId>com.google.auth</groupId>
-      <artifactId>google-auth-library-oauth2-http</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.google.oauth-client</groupId>
-      <artifactId>google-oauth-client-jetty</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.google.api-client</groupId>
-      <artifactId>google-api-client</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.google.oauth-client</groupId>
-      <artifactId>google-oauth-client</artifactId>
-    </dependency>
-  </dependencies>
+  <!-- ✅ pas de <dependencies> ici (parent pom) -->
 
   <build>
+    <pluginManagement>
+      <plugins>
+
+        <!-- Unit tests -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>${maven-surefire-plugin.version}</version>
+          <configuration>
+            <skipTests>${skipUnitTests}</skipTests>
+            <includes>
+              <include>**/*Test.java</include>
+              <include>**/*Tests.java</include>
+            </includes>
+            <excludes>
+              <exclude>**/*IT.java</exclude>
+              <exclude>**/*IntegrationTest.java</exclude>
+            </excludes>
+            <useModulePath>false</useModulePath>
+          </configuration>
+        </plugin>
+
+        <!-- Integration tests -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-failsafe-plugin</artifactId>
+          <version>${maven-failsafe-plugin.version}</version>
+          <executions>
+            <execution>
+              <id>it</id>
+              <goals>
+                <goal>integration-test</goal>
+                <goal>verify</goal>
+              </goals>
+              <configuration>
+                <skipITs>${skipITs}</skipITs>
+                <includes>
+                  <include>**/*IT.java</include>
+                  <include>**/*IntegrationTest.java</include>
+                </includes>
+                <useModulePath>false</useModulePath>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+
+        <!-- JaCoCo -->
+        <plugin>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>${jacoco-maven-plugin.version}</version>
+          <executions>
+            <execution>
+              <id>prepare-agent</id>
+              <goals>
+                <goal>prepare-agent</goal>
+              </goals>
+            </execution>
+            <execution>
+              <id>report</id>
+              <phase>test</phase>
+              <goals>
+                <goal>report</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+
+      </plugins>
+    </pluginManagement>
+
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.2.5</version>
-        <configuration>
-          <skipTests>true</skipTests>
-        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <id>tests</id>
+      <properties>
+        <skipUnitTests>false</skipUnitTests>
+      </properties>
+    </profile>
+
+    <profile>
+      <id>it</id>
+      <properties>
+        <skipUnitTests>false</skipUnitTests>
+        <skipITs>false</skipITs>
+      </properties>
+    </profile>
+
+    <profile>
+      <id>skip-tests</id>
+      <properties>
+        <skipUnitTests>true</skipUnitTests>
+        <skipITs>true</skipITs>
+        <maven.test.skip>true</maven.test.skip>
+      </properties>
+    </profile>
+
+    <profile>
+      <id>coverage</id>
+      <properties>
+        <skipUnitTests>false</skipUnitTests>
+        <skipITs>true</skipITs>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>report-aggregate</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>report-aggregate</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
 </project>

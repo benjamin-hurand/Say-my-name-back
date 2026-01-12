@@ -5,7 +5,6 @@ public enum QuizPayloadType {
     CLOZE,
     HANGMAN,
     MCQ,
-    TAP_CHOICE,
     BINARY_SWIPE,
     ASSOCIATION,
     ORDERING

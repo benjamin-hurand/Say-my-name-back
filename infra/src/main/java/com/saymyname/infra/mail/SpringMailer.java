@@ -17,7 +17,7 @@ import com.saymyname.core.model.enums.OrgRole;
 import com.saymyname.service.port.Mailer;
 
 @Component
-@Profile("!dev")
+@Profile("prod")
 @EnableConfigurationProperties(MailProperties.class)
 public class SpringMailer implements Mailer {
 

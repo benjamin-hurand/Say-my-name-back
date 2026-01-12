@@ -1,6 +1,6 @@
 package com.saymyname.core.model.course;
 
-import com.saymyname.core.model.enums.course.CourseQuestionItemRole;
+import com.saymyname.core.model.enums.course.QuizQuestionItemRole;
 import com.saymyname.core.model.people.Person;
 
 import java.util.Objects;
@@ -9,7 +9,7 @@ public class CourseQuestionItem {
 
     private Long id;
     private int position;
-    private CourseQuestionItemRole role;
+    private QuizQuestionItemRole role;
 
     /**
      * TARGET => knowledge != null
@@ -43,7 +43,7 @@ public class CourseQuestionItem {
         if (position < 0)
             throw new IllegalStateException("CourseQuestionItem.position must be >= 0");
 
-        if (role == CourseQuestionItemRole.TARGET) {
+        if (role == QuizQuestionItemRole.TARGET) {
             if (knowledge == null)
                 throw new IllegalStateException("TARGET item must reference a Knowledge");
         } else {
@@ -71,11 +71,11 @@ public class CourseQuestionItem {
         this.position = position;
     }
 
-    public CourseQuestionItemRole getRole() {
+    public QuizQuestionItemRole getRole() {
         return role;
     }
 
-    public void setRole(CourseQuestionItemRole role) {
+    public void setRole(QuizQuestionItemRole role) {
         this.role = role;
     }
 
@@ -122,7 +122,7 @@ public class CourseQuestionItem {
     public static class Builder {
         private Long id;
         private int position;
-        private CourseQuestionItemRole role;
+        private QuizQuestionItemRole role;
         private Knowledge knowledge;
         private Person person;
         private boolean answered;
@@ -139,7 +139,7 @@ public class CourseQuestionItem {
             return this;
         }
 
-        public Builder withRole(CourseQuestionItemRole role) {
+        public Builder withRole(QuizQuestionItemRole role) {
             this.role = role;
             return this;
         }

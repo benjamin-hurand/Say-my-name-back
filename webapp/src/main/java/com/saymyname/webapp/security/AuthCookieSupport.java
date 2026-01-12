@@ -94,6 +94,28 @@ public class AuthCookieSupport {
     // -------------------- WRITE --------------------
 
     /**
+     * ✅ Set XSRF cookie only (non HttpOnly).
+     * À utiliser pour bootstrap CSRF avant un POST /refresh quand le cookie
+     * n'existe pas encore.
+     */
+    public void setXsrfOnly(HttpServletResponse res) {
+        if (res == null)
+            return;
+
+        String xsrfValue = randomUrlSafeToken(32);
+
+        ResponseCookie xsrf = ResponseCookie.from(xsrfCookieName, xsrfValue)
+                .httpOnly(false)
+                .secure(secure)
+                .path(xsrfPath)
+                .sameSite(sameSite)
+                .maxAge(maxAgeSeconds)
+                .build();
+
+        res.addHeader(HttpHeaders.SET_COOKIE, xsrf.toString());
+    }
+
+    /**
      * Set refresh cookie (HttpOnly) + set XSRF cookie (non HttpOnly).
      * Appeler sur login/register et sur refresh rotation.
      */

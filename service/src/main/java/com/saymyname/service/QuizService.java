@@ -35,41 +35,6 @@ public class QuizService {
         this.quizQuestionFactory = quizQuestionFactory;
     }
 
-    /** (Ancien) Training list “simple” — compat */
-    public List<QuizEntry> getQuizEntries(GameOptions options, Long userId) {
-        Objects.requireNonNull(options, "options");
-        Objects.requireNonNull(options.getGameMode(), "options.gameMode");
-
-        List<Person> persons = personDao.findByOptions(options, userId);
-
-        if (options.getSortBy() != null && !options.getSortBy().isEmpty()) {
-            persons.sort((p1, p2) -> {
-                for (var sort : options.getSortBy()) {
-                    String val1 = getAttributeValueFor(p1, sort.getAttribute().getId());
-                    String val2 = getAttributeValueFor(p2, sort.getAttribute().getId());
-                    int cmp = val1.compareToIgnoreCase(val2);
-                    if (cmp != 0) {
-                        return "ASC".equalsIgnoreCase(sort.getOrder()) ? cmp : -cmp;
-                    }
-                }
-                return 0;
-            });
-        }
-
-        return persons.stream()
-                .map(p -> {
-                    String initials = initialCrafter.computeInitials(p, options.getGameMode());
-                    String storageKey = approvedStorageKeyOrThrow(p);
-
-                    return new QuizEntry.Builder()
-                            .withPersonId(p.getId())
-                            .withStorageKey(storageKey)
-                            .withInitials(initials)
-                            .build();
-                })
-                .toList();
-    }
-
     /**
      * TRAINING questions (plugin-based):
      * - construit un QuizQuestionSpec (core model)

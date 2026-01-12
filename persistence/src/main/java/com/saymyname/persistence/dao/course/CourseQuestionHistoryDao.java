@@ -11,17 +11,21 @@ import com.saymyname.core.model.course.CourseQuestionHistory;
 import com.saymyname.persistence.entity.organization.course.CourseQuestionHistoryEntity;
 import com.saymyname.persistence.mapper.course.CourseQuestionHistoryEntityMapper;
 import com.saymyname.persistence.repository.course.CourseQuestionHistoryRepository;
+import com.saymyname.persistence.repository.course.CourseQuestionItemRepository;
 
 @Repository
 public class CourseQuestionHistoryDao {
 
     private final CourseQuestionHistoryRepository repo;
+    private final CourseQuestionItemRepository itemRepo;
     private final CourseQuestionHistoryEntityMapper mapper;
 
     public CourseQuestionHistoryDao(
             CourseQuestionHistoryRepository repo,
+            CourseQuestionItemRepository itemRepo,
             CourseQuestionHistoryEntityMapper mapper) {
         this.repo = repo;
+        this.itemRepo = itemRepo;
         this.mapper = mapper;
     }
 
@@ -58,6 +62,7 @@ public class CourseQuestionHistoryDao {
                 .orElse(null);
     }
 
+
     @Transactional
     public void deleteAllByCourse(Course course) {
         if (course != null) {
@@ -66,24 +71,38 @@ public class CourseQuestionHistoryDao {
     }
 
     /**
-     * Update (history + items).
+     * Regle: pas de save(mapper.toEntity(...)) pour update partiel d'un agregat avec collection.
      */
     @Transactional
-    public void update(CourseQuestionHistory courseQuestion) {
+    public void updateAnswerMeta(CourseQuestionHistory courseQuestion) {
         if (courseQuestion == null) {
             throw new IllegalArgumentException("courseQuestion cannot be null");
         }
         if (courseQuestion.getId() == null) {
             throw new IllegalStateException("courseQuestion.id is required for update");
         }
-        if (courseQuestion.getSnapshot() == null) {
-            throw new IllegalStateException("CourseQuestionHistory.snapshot is required (Option B)");
+        int n = repo.updateAnswerMeta(
+                courseQuestion.getId(),
+                courseQuestion.getAnsweredAt(),
+                courseQuestion.getResponseTimeMs(),
+                courseQuestion.getRawSubmission(),
+                courseQuestion.getNormalizedSubmission(),
+                courseQuestion.isGlobalCorrect());
+        if (n == 0) {
+            throw new IllegalArgumentException("Question not found: " + courseQuestion.getId());
         }
-        if (courseQuestion.getPlan() == null) {
-            throw new IllegalStateException("CourseQuestionHistory.plan is required");
-        }
+    }
 
-        repo.save(mapper.toEntity(courseQuestion));
+    @Transactional
+    public void updateTargetItemsAnswerMeta(Long historyId, boolean answered, Boolean correct, String normalizedAnswer,
+            boolean expectTargets) {
+        if (historyId == null) {
+            throw new IllegalArgumentException("historyId cannot be null");
+        }
+        int n = itemRepo.updateTargetItemsAnswerMeta(historyId, answered, correct, normalizedAnswer);
+        if (expectTargets && n == 0) {
+            throw new IllegalStateException("No TARGET items updated for historyId=" + historyId);
+        }
     }
 
     // ------- Stats activité -------

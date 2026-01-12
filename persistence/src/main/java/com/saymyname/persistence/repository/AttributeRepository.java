@@ -33,4 +33,12 @@ public interface AttributeRepository extends JpaRepository<AttributeEntity, Long
             where a.organizationId = :orgId
             """)
     List<AttributeMetaRow> findMetaByOrgId(@Param("orgId") Long orgId);
+
+    @Query("""
+                select a
+                from AttributeEntity a
+                where a.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+                  and a.id in :ids
+            """)
+    List<AttributeEntity> findAllByIdsInCurrentOrg(@Param("ids") List<Long> ids);
 }

@@ -2,8 +2,6 @@ package com.saymyname.webapp.dto.quiz;
 
 import java.util.List;
 
-import com.saymyname.webapp.dto.course.ResultAttributeDto;
-
 public record QuizResultDto(
         Boolean correct,
         Integer grade, // optionnel, v2

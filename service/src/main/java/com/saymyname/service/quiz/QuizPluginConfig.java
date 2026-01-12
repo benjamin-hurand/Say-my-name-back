@@ -10,7 +10,6 @@ import com.saymyname.service.quiz.plugins.ClozePlugin;
 import com.saymyname.service.quiz.plugins.HangmanPlugin;
 import com.saymyname.service.quiz.plugins.McqPlugin;
 import com.saymyname.service.quiz.plugins.OrderingPlugin;
-import com.saymyname.service.quiz.plugins.TapChoicePlugin;
 import com.saymyname.service.quiz.plugins.TextInputPlugin;
 
 @Configuration
@@ -34,11 +33,6 @@ public class QuizPluginConfig {
     @Bean
     public McqPlugin mcqPlugin(AnswerKeyService aks) {
         return new McqPlugin(aks);
-    }
-
-    @Bean
-    public TapChoicePlugin tapChoicePlugin(AnswerKeyService aks) {
-        return new TapChoicePlugin(aks);
     }
 
     @Bean

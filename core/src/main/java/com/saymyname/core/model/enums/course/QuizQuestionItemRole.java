@@ -1,6 +1,6 @@
 package com.saymyname.core.model.enums.course;
 
-public enum CourseQuestionItemRole {
+public enum QuizQuestionItemRole {
     TARGET,
     DISTRACTOR
 }

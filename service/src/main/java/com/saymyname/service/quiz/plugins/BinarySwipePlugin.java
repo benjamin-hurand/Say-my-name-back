@@ -20,6 +20,7 @@ import com.saymyname.core.model.quiz.answer.NormalizedBinary;
 import com.saymyname.core.model.quiz.answer.NormalizedSubmission;
 import com.saymyname.core.model.quiz.snapshot.QuizQuestionSnapshot;
 import com.saymyname.service.quiz.AnswerKeyService;
+import com.saymyname.service.quiz.QuizSnapshotGuards;
 
 @Component
 public class BinarySwipePlugin implements QuizQuestionPlugin {
@@ -109,9 +110,7 @@ public class BinarySwipePlugin implements QuizQuestionPlugin {
         boolean correct = expected != null && nb.swipeRight() != null && expected.equals(nb.swipeRight());
         String expectedDisplay = snapshot.getTruth() == null ? null : snapshot.getTruth().getCorrectAnswerDisplay();
 
-        Long attrId = (snapshot.getTargetAttributeIds() == null || snapshot.getTargetAttributeIds().isEmpty())
-                ? null
-                : snapshot.getTargetAttributeIds().get(0);
+        Long attrId = QuizSnapshotGuards.requireSingleTargetAttributeId(snapshot, QuizFormat.BINARY_SWIPE);
 
         List<ResultAttribute> attrs = List.of(
                 PluginSupport.resultAttr(attrId, nb.auditString(), correct, true));

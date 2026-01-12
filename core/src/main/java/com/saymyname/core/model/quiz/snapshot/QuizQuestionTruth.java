@@ -14,7 +14,6 @@ public class QuizQuestionTruth {
     /**
      * Type de vérité (piloté par format).
      * - TEXT: TEXT_INPUT / CLOZE / HANGMAN
-     * - MCQ: MCQ / TAP_CHOICE
      * - BINARY_SWIPE: swipe
      * - ORDERING: ordering
      * - ASSOCIATION: matching pairs
@@ -49,7 +48,7 @@ public class QuizQuestionTruth {
     private List<TruthAttributeValue> targetAttributeValues = new ArrayList<>();
 
     /**
-     * Clés de choix correctes (format MCQ / TAP_CHOICE).
+     * Clés de choix correctes (format MCQ).
      * Ce sont des keys du snapshot (pas DB id).
      */
     private List<String> correctChoiceKeys = new ArrayList<>();

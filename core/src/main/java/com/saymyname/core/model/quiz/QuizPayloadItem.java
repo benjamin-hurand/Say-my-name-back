@@ -1,86 +1,60 @@
 // src/main/java/com/saymyname/core/model/quiz/QuizPayloadItem.java
 package com.saymyname.core.model.quiz;
 
-import java.util.Objects;
-
-public class QuizPayloadItem {
-
-    private Long personId;
-    private String storageKey; // important: core stores key, webapp maps to photoUrl
-    private String labelId; // i18n key or internal label id
+/**
+ * Semantic wrapper for QuizDisplayItem used in multi-item formats (ASSOCIATION, ORDERING).
+ *
+ * Legacy fields:
+ * - labelId: Kept for backward compatibility, maps to 'label' field
+ *
+ * Enhanced to support same features as QuizChoice:
+ * - Text only (label/labelId)
+ * - Photo only (storageKey + personId)
+ * - Text + Photo combo
+ * - Role hints for layout (e.g., "left", "right" for ASSOCIATION)
+ *
+ * CRITICAL: This class extends QuizDisplayItem which is DISPLAY-ONLY.
+ * NO truth/answer key data is stored here.
+ */
+public class QuizPayloadItem extends QuizDisplayItem {
 
     public QuizPayloadItem() {
+        super();
     }
 
-    private QuizPayloadItem(Builder b) {
-        this.personId = b.personId;
-        this.storageKey = b.storageKey;
-        this.labelId = b.labelId;
+    protected QuizPayloadItem(Builder b) {
+        super(b);
     }
 
-    public Long getPersonId() {
-        return personId;
-    }
-
-    public String getStorageKey() {
-        return storageKey;
-    }
-
+    /**
+     * Legacy accessor for labelId (maps to label field).
+     * Kept for backward compatibility with existing code.
+     */
     public String getLabelId() {
-        return labelId;
+        return getLabel();
     }
 
-    public void setPersonId(Long personId) {
-        this.personId = personId;
-    }
-
-    public void setStorageKey(String storageKey) {
-        this.storageKey = storageKey;
-    }
-
+    /**
+     * Legacy setter for labelId (maps to label field).
+     * Kept for backward compatibility with existing code.
+     */
     public void setLabelId(String labelId) {
-        this.labelId = labelId;
+        setLabel(labelId);
     }
 
-    public static class Builder {
-        private Long personId;
-        private String storageKey;
-        private String labelId;
+    public static class Builder extends QuizDisplayItem.Builder<Builder> {
 
-        public Builder withPersonId(Long v) {
-            this.personId = v;
-            return this;
-        }
-
-        public Builder withStorageKey(String v) {
-            this.storageKey = v;
-            return this;
-        }
-
+        /**
+         * Legacy builder method for labelId (maps to label).
+         * Kept for backward compatibility with existing code.
+         */
         public Builder withLabelId(String v) {
-            this.labelId = v;
-            return this;
+            return (Builder) withLabel(v);
         }
 
+        @Override
         public QuizPayloadItem build() {
             return new QuizPayloadItem(this);
         }
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (!(o instanceof QuizPayloadItem))
-            return false;
-        QuizPayloadItem that = (QuizPayloadItem) o;
-        return Objects.equals(personId, that.personId)
-                && Objects.equals(storageKey, that.storageKey)
-                && Objects.equals(labelId, that.labelId);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(personId, storageKey, labelId);
     }
 }

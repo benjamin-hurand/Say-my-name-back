@@ -35,6 +35,7 @@ public interface CourseQuestionHistoryRepository extends JpaRepository<CourseQue
       """)
   Optional<CourseQuestionHistoryEntity> findByIdWithItems(@Param("id") Long id);
 
+
   /** Count avec tenant guard. */
   @Query("""
           SELECT COUNT(c)

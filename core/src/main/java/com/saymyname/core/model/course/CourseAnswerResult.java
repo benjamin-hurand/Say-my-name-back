@@ -1,40 +1,23 @@
 // src/main/java/com/saymyname/core/model/course/CourseAnswerResult.java
 package com.saymyname.core.model.course;
 
-import java.util.List;
 import java.util.Objects;
 
-import com.saymyname.core.model.quiz.QuizQuestion;
+import com.saymyname.core.model.quiz.QuizAnswerResultBase;
 
-public class CourseAnswerResult {
+public class CourseAnswerResult extends QuizAnswerResultBase {
 
-    private boolean correct;
     private String rawSubmission;
     private String normalizedSubmission;
-    private String feedbackMessage;
-
-    /**
-     * ✅ Next question already built as a QuizQuestion (no more CourseQuestionDto).
-     */
-    private QuizQuestion nextQuestion;
-
-    /** ✅ Per item results (targets, later distractors, etc.). */
-    private List<CourseAnswerItemResult> itemResults;
 
     public CourseAnswerResult() {
+        super();
     }
 
     private CourseAnswerResult(Builder b) {
-        this.correct = b.correct;
+        super(b);
         this.rawSubmission = b.rawSubmission;
         this.normalizedSubmission = b.normalizedSubmission;
-        this.feedbackMessage = b.feedbackMessage;
-        this.nextQuestion = b.nextQuestion;
-        this.itemResults = b.itemResults;
-    }
-
-    public boolean isCorrect() {
-        return correct;
     }
 
     public String getRawSubmission() {
@@ -45,22 +28,6 @@ public class CourseAnswerResult {
         return normalizedSubmission;
     }
 
-    public String getFeedbackMessage() {
-        return feedbackMessage;
-    }
-
-    public QuizQuestion getNextQuestion() {
-        return nextQuestion;
-    }
-
-    public List<CourseAnswerItemResult> getItemResults() {
-        return itemResults;
-    }
-
-    public void setCorrect(boolean correct) {
-        this.correct = correct;
-    }
-
     public void setRawSubmission(String rawSubmission) {
         this.rawSubmission = rawSubmission;
     }
@@ -69,56 +36,26 @@ public class CourseAnswerResult {
         this.normalizedSubmission = normalizedSubmission;
     }
 
-    public void setFeedbackMessage(String feedbackMessage) {
-        this.feedbackMessage = feedbackMessage;
-    }
-
-    public void setNextQuestion(QuizQuestion nextQuestion) {
-        this.nextQuestion = nextQuestion;
-    }
-
-    public void setItemResults(List<CourseAnswerItemResult> itemResults) {
-        this.itemResults = itemResults;
-    }
-
-    public static class Builder {
-        private boolean correct;
+    public static class Builder extends QuizAnswerResultBase.Builder<Builder> {
         private String rawSubmission;
         private String normalizedSubmission;
-        private String feedbackMessage;
-        private QuizQuestion nextQuestion;
-        private List<CourseAnswerItemResult> itemResults;
 
-        public Builder withCorrect(boolean correct) {
-            this.correct = correct;
+        public Builder withRawSubmission(String v) {
+            this.rawSubmission = v;
             return this;
         }
 
-        public Builder withRawSubmission(String rawSubmission) {
-            this.rawSubmission = rawSubmission;
+        public Builder withNormalizedSubmission(String v) {
+            this.normalizedSubmission = v;
             return this;
         }
 
-        public Builder withNormalizedSubmission(String normalizedSubmission) {
-            this.normalizedSubmission = normalizedSubmission;
+        @Override
+        protected Builder self() {
             return this;
         }
 
-        public Builder withFeedbackMessage(String feedbackMessage) {
-            this.feedbackMessage = feedbackMessage;
-            return this;
-        }
-
-        public Builder withNextQuestion(QuizQuestion nextQuestion) {
-            this.nextQuestion = nextQuestion;
-            return this;
-        }
-
-        public Builder withItemResults(List<CourseAnswerItemResult> itemResults) {
-            this.itemResults = itemResults;
-            return this;
-        }
-
+        @Override
         public CourseAnswerResult build() {
             return new CourseAnswerResult(this);
         }
@@ -130,28 +67,26 @@ public class CourseAnswerResult {
             return true;
         if (!(o instanceof CourseAnswerResult that))
             return false;
-        return correct == that.correct
-                && Objects.equals(rawSubmission, that.rawSubmission)
-                && Objects.equals(normalizedSubmission, that.normalizedSubmission)
-                && Objects.equals(feedbackMessage, that.feedbackMessage)
-                && Objects.equals(nextQuestion, that.nextQuestion)
-                && Objects.equals(itemResults, that.itemResults);
+        if (!super.equals(o))
+            return false;
+        return Objects.equals(rawSubmission, that.rawSubmission)
+                && Objects.equals(normalizedSubmission, that.normalizedSubmission);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(correct, rawSubmission, normalizedSubmission, feedbackMessage, nextQuestion, itemResults);
+        return Objects.hash(super.hashCode(), rawSubmission, normalizedSubmission);
     }
 
     @Override
     public String toString() {
         return "CourseAnswerResult{" +
-                "correct=" + correct +
+                "correct=" + isCorrect() +
+                ", feedbackMessage='" + getFeedbackMessage() + '\'' +
+                ", nextQuestion=" + getNextQuestion() +
+                ", itemResults=" + getItemResults() +
                 ", rawSubmission='" + rawSubmission + '\'' +
                 ", normalizedSubmission='" + normalizedSubmission + '\'' +
-                ", feedbackMessage='" + feedbackMessage + '\'' +
-                ", nextQuestion=" + nextQuestion +
-                ", itemResults=" + itemResults +
                 '}';
     }
 }

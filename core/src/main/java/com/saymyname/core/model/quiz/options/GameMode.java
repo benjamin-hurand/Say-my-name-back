@@ -5,6 +5,10 @@ import java.util.Objects;
 
 public class GameMode {
     private Long id;
+
+    /** NEW: version optimistic locking */
+    private Long version;
+
     private String title;
     private String description;
     private List<GameModeAttribute> gameModeAttributes;
@@ -15,6 +19,7 @@ public class GameMode {
 
     private GameMode(Builder builder) {
         this.id = builder.id;
+        this.version = builder.version;
         this.title = builder.title;
         this.description = builder.description;
         this.gameModeAttributes = builder.gameModeAttributes;
@@ -23,6 +28,10 @@ public class GameMode {
 
     public Long getId() {
         return id;
+    }
+
+    public Long getVersion() {
+        return version;
     }
 
     public String getTitle() {
@@ -45,6 +54,10 @@ public class GameMode {
         this.id = id;
     }
 
+    public void setVersion(Long version) {
+        this.version = version;
+    }
+
     public void setTitle(String title) {
         this.title = title;
     }
@@ -63,6 +76,7 @@ public class GameMode {
 
     public static class Builder {
         private Long id;
+        private Long version; // NEW
         private String title;
         private String description;
         private List<GameModeAttribute> gameModeAttributes;
@@ -70,6 +84,11 @@ public class GameMode {
 
         public Builder withId(Long id) {
             this.id = id;
+            return this;
+        }
+
+        public Builder withVersion(Long version) { // NEW
+            this.version = version;
             return this;
         }
 
@@ -105,26 +124,28 @@ public class GameMode {
         if (!(o instanceof GameMode))
             return false;
         GameMode gameMode = (GameMode) o;
-        return id == gameMode.id &&
-                Objects.equals(title, gameMode.title) &&
-                Objects.equals(description, gameMode.description) &&
-                Objects.equals(gameModeAttributes, gameMode.gameModeAttributes) &&
-                Objects.equals(operator, gameMode.operator);
+        return Objects.equals(id, gameMode.id)
+                && Objects.equals(version, gameMode.version)
+                && Objects.equals(title, gameMode.title)
+                && Objects.equals(description, gameMode.description)
+                && Objects.equals(gameModeAttributes, gameMode.gameModeAttributes)
+                && Objects.equals(operator, gameMode.operator);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, title, description, gameModeAttributes, operator);
+        return Objects.hash(id, version, title, description, gameModeAttributes, operator);
     }
 
     @Override
     public String toString() {
-        return "GameMode{" +
-                "id=" + id +
-                ", title='" + title + '\'' +
-                ", description='" + description + '\'' +
-                ", gameModeAttributes=" + gameModeAttributes +
-                ", operator=" + operator +
-                '}';
+        return "GameMode{"
+                + "id=" + id
+                + ", version=" + version
+                + ", title='" + title + '\''
+                + ", description='" + description + '\''
+                + ", gameModeAttributes=" + gameModeAttributes
+                + ", operator=" + operator
+                + '}';
     }
 }

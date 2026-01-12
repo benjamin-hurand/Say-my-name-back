@@ -3,6 +3,7 @@ package com.saymyname.persistence.mapper.course;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.stereotype.Component;
 
@@ -30,9 +31,9 @@ public class CourseQuestionHistoryEntityMapper {
             CourseEntityMapper courseMapper,
             CourseQuestionItemEntityMapper itemMapper,
             ObjectMapper objectMapper) {
-        this.courseMapper = courseMapper;
-        this.itemMapper = itemMapper;
-        this.objectMapper = objectMapper;
+        this.courseMapper = Objects.requireNonNull(courseMapper, "courseMapper");
+        this.itemMapper = Objects.requireNonNull(itemMapper, "itemMapper");
+        this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper");
     }
 
     public CourseQuestionHistoryEntity toEntity(CourseQuestionHistory model) {
@@ -40,9 +41,37 @@ public class CourseQuestionHistoryEntityMapper {
             return null;
 
         if (model.getSnapshot() == null) {
-            throw new IllegalStateException("CourseQuestionHistory.snapshot is required for persistence");
+            throw new IllegalStateException("CourseQuestionHistory.snapshot is required for persistence"
+                    + " historyId=" + model.getId()
+                    + " courseId=" + (model.getCourse() != null ? model.getCourse().getId() : null));
         }
-        model.getSnapshot().validateInvariants();
+
+        // Strict validation: snapshot must be valid at persistence time.
+        try {
+            model.getSnapshot().validateInvariants();
+        } catch (RuntimeException e) {
+            throw new IllegalStateException("Invalid QuizQuestionSnapshot for persistence"
+                    + " historyId=" + model.getId()
+                    + " courseId=" + (model.getCourse() != null ? model.getCourse().getId() : null)
+                    + " format=" + model.getSnapshot().getFormat(), e);
+        }
+
+        CourseQuestionPlan plan = model.getPlan();
+        if (plan == null) {
+            throw new IllegalStateException("CourseQuestionHistory.plan is required for persistence"
+                    + " historyId=" + model.getId()
+                    + " courseId=" + (model.getCourse() != null ? model.getCourse().getId() : null));
+        }
+
+        try {
+            plan.validateInvariants();
+        } catch (RuntimeException e) {
+            throw new IllegalStateException("Invalid CourseQuestionPlan for persistence"
+                    + " historyId=" + model.getId()
+                    + " courseId=" + (model.getCourse() != null ? model.getCourse().getId() : null)
+                    + " plannedFormat=" + plan.getFormat()
+                    + " targetCount=" + plan.getTargetCount(), e);
+        }
 
         CourseQuestionHistoryEntity entity = new CourseQuestionHistoryEntity();
         entity.setId(model.getId());
@@ -63,23 +92,17 @@ public class CourseQuestionHistoryEntityMapper {
         entity.setSnapshotSchemaVersion(snap.getSnapshotSchemaVersion());
         entity.setGeneratorVersion(snap.getGeneratorVersion());
         entity.setNormalizerVersion(snap.getNormalizerVersion());
-        entity.setQuestionSnapshotJson(writeSnapshotJson(snap));
+        entity.setQuestionSnapshotJson(writeSnapshotJson(snap, model));
 
-        CourseQuestionPlan plan = model.getPlan();
-        if (plan == null) {
-            throw new IllegalStateException("CourseQuestionHistory.plan is required for persistence");
-        }
-        plan.validateInvariants();
-
+        // Plan: champs flat
         entity.setPlannedFormat(plan.getFormat());
         entity.setPlannedTimed(plan.isTimed());
         entity.setPlannedTimeLimitMs(plan.getTimeLimitMs());
         entity.setPlannedTargetCount(plan.getTargetCount());
-        entity.setPlannedTargetKnowledgeIdsJson(writeJsonList(plan.getTargetKnowledgeIds()));
+        entity.setPlannedTargetKnowledgeIdsJson(writeJsonList(plan.getTargetKnowledgeIds(), model));
         entity.setPlannedParamsJson(plan.getParamsJson());
         entity.setPlannedReasonCode(plan.getReasonCode() != null ? plan.getReasonCode().name() : null);
         entity.setPlannedReasonDetailsJson(plan.getReasonDetailsJson());
-        entity.setPlannedReason(plan.getReasonCode() != null ? plan.getReasonCode().name() : null);
 
         // Items: maintenir relation bidirectionnelle
         entity.getItems().clear();
@@ -103,10 +126,32 @@ public class CourseQuestionHistoryEntityMapper {
             }
         }
 
-        QuizQuestionSnapshot snapshot = readSnapshotJson(entity.getQuestionSnapshotJson());
+        QuizQuestionSnapshot snapshot = readSnapshotJson(entity.getQuestionSnapshotJson(), entity);
+
+        // Strict validation: snapshot must be valid at read time.
+        try {
+            snapshot.validateInvariants();
+        } catch (RuntimeException e) {
+            throw new IllegalStateException("Invalid QuizQuestionSnapshot loaded from DB"
+                    + " historyId=" + entity.getId()
+                    + " courseId=" + (entity.getCourse() != null ? entity.getCourse().getId() : null)
+                    + " columnFormat=" + entity.getQuestionFormat()
+                    + " jsonFormat=" + snapshot.getFormat(), e);
+        }
+
+        // Safety: coherence between columns and JSON
+        if (entity.getQuestionFormat() != null && snapshot.getFormat() != null
+                && entity.getQuestionFormat() != snapshot.getFormat()) {
+            throw new IllegalStateException("Snapshot format mismatch between columns and JSON"
+                    + " historyId=" + entity.getId()
+                    + " courseId=" + (entity.getCourse() != null ? entity.getCourse().getId() : null)
+                    + " columnFormat=" + entity.getQuestionFormat()
+                    + " jsonFormat=" + snapshot.getFormat());
+        }
+
         String reasonCode = entity.getPlannedReasonCode() != null
                 ? entity.getPlannedReasonCode()
-                : entity.getPlannedReason();
+                : null;
         QuizDecisionReasonCode resolvedReason = QuizDecisionReasonCode.fromString(reasonCode);
 
         CourseQuestionPlan plan = new CourseQuestionPlan.Builder()
@@ -114,18 +159,20 @@ public class CourseQuestionHistoryEntityMapper {
                 .withTimed(entity.isPlannedTimed())
                 .withTimeLimitMs(entity.getPlannedTimeLimitMs())
                 .withTargetCount(entity.getPlannedTargetCount())
-                .withTargetKnowledgeIds(readJsonList(entity.getPlannedTargetKnowledgeIdsJson()))
+                .withTargetKnowledgeIds(readJsonList(entity.getPlannedTargetKnowledgeIdsJson(), entity))
                 .withParamsJson(entity.getPlannedParamsJson())
                 .withReasonCode(resolvedReason)
                 .withReasonDetailsJson(entity.getPlannedReasonDetailsJson())
                 .build();
 
-        // Filet de sécurité : cohérence format/version entre colonnes et JSON
-        // (on ne force pas, mais on peut vérifier / log si tu veux)
-        if (snapshot != null) {
-            if (entity.getQuestionFormat() != snapshot.getFormat()) {
-                throw new IllegalStateException("Snapshot format mismatch between columns and JSON");
-            }
+        try {
+            plan.validateInvariants();
+        } catch (RuntimeException e) {
+            throw new IllegalStateException("Invalid CourseQuestionPlan loaded from DB"
+                    + " historyId=" + entity.getId()
+                    + " courseId=" + (entity.getCourse() != null ? entity.getCourse().getId() : null)
+                    + " plannedFormat=" + entity.getPlannedFormat()
+                    + " targetCount=" + entity.getPlannedTargetCount(), e);
         }
 
         return new CourseQuestionHistory.Builder()
@@ -146,36 +193,48 @@ public class CourseQuestionHistoryEntityMapper {
                 .build();
     }
 
-    private String writeSnapshotJson(QuizQuestionSnapshot snapshot) {
+    private String writeSnapshotJson(QuizQuestionSnapshot snapshot, CourseQuestionHistory model) {
         try {
             return objectMapper.writeValueAsString(snapshot);
         } catch (JsonProcessingException e) {
-            throw new IllegalStateException("Failed to serialize QuizQuestionSnapshot", e);
+            throw new IllegalStateException("Failed to serialize QuizQuestionSnapshot"
+                    + " historyId=" + (model != null ? model.getId() : null)
+                    + " courseId=" + (model != null && model.getCourse() != null ? model.getCourse().getId() : null)
+                    + " format=" + (snapshot != null ? snapshot.getFormat() : null), e);
         }
     }
 
-    private String writeJsonList(List<Long> values) {
+    private String writeJsonList(List<Long> values, CourseQuestionHistory model) {
         if (values == null)
             return null;
         try {
             return objectMapper.writeValueAsString(values);
         } catch (JsonProcessingException e) {
-            throw new IllegalStateException("Failed to serialize plan target knowledge ids", e);
+            throw new IllegalStateException("Failed to serialize plan target knowledge ids"
+                    + " historyId=" + (model != null ? model.getId() : null)
+                    + " courseId=" + (model != null && model.getCourse() != null ? model.getCourse().getId() : null),
+                    e);
         }
     }
 
-    private QuizQuestionSnapshot readSnapshotJson(String json) {
+    private QuizQuestionSnapshot readSnapshotJson(String json, CourseQuestionHistoryEntity entity) {
         if (json == null || json.isBlank()) {
-            throw new IllegalStateException("questionSnapshotJson is required but was null/blank");
+            throw new IllegalStateException("questionSnapshotJson is required but was null/blank"
+                    + " historyId=" + (entity != null ? entity.getId() : null)
+                    + " courseId="
+                    + (entity != null && entity.getCourse() != null ? entity.getCourse().getId() : null));
         }
         try {
             return objectMapper.readValue(json, QuizQuestionSnapshot.class);
         } catch (JsonProcessingException e) {
-            throw new IllegalStateException("Failed to deserialize QuizQuestionSnapshot", e);
+            throw new IllegalStateException("Failed to deserialize QuizQuestionSnapshot"
+                    + " historyId=" + (entity != null ? entity.getId() : null)
+                    + " courseId=" + (entity != null && entity.getCourse() != null ? entity.getCourse().getId() : null),
+                    e);
         }
     }
 
-    private List<Long> readJsonList(String json) {
+    private List<Long> readJsonList(String json, CourseQuestionHistoryEntity entity) {
         if (json == null || json.isBlank()) {
             return List.of();
         }
@@ -183,7 +242,10 @@ public class CourseQuestionHistoryEntityMapper {
             return objectMapper.readValue(json, new TypeReference<List<Long>>() {
             });
         } catch (JsonProcessingException e) {
-            throw new IllegalStateException("Failed to deserialize plan target knowledge ids", e);
+            throw new IllegalStateException("Failed to deserialize plan target knowledge ids"
+                    + " historyId=" + (entity != null ? entity.getId() : null)
+                    + " courseId=" + (entity != null && entity.getCourse() != null ? entity.getCourse().getId() : null),
+                    e);
         }
     }
 }

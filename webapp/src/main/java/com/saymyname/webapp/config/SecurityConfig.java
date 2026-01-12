@@ -116,15 +116,33 @@ public class SecurityConfig {
 
         cfg.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"));
 
-        // Ajoute X-XSRF-TOKEN (Double Submit) + Authorization (JWT) + X-Org-Id
+        /**
+         * Allowed headers:
+         * - Custom app headers: X-XSRF-TOKEN, X-Org-Id, X-Device-*
+         * - Auth: Authorization
+         * - Standards: Content-Type, Accept, Accept-Language
+         * - Cache-related headers sometimes added by clients: Cache-Control, Pragma,
+         * Expires
+         */
         cfg.setAllowedHeaders(Arrays.asList(
                 "Content-Type",
                 "Authorization",
                 "X-Org-Id",
                 "X-Requested-With",
-                "X-XSRF-TOKEN", "X-Device-Id", "X-Device-Name"));
+                "X-XSRF-TOKEN",
+                "X-Device-Id",
+                "X-Device-Name",
+                "Accept",
+                "Accept-Language",
+                "Cache-Control",
+                "Pragma",
+                "Expires"));
 
         cfg.setAllowCredentials(true);
+
+        // Optionnel: expose headers si tu veux lire des headers côté client.
+        // Ici inutile pour CSRF car cookie via Set-Cookie est géré par le navigateur.
+        // cfg.setExposedHeaders(Arrays.asList("Set-Cookie"));
 
         UrlBasedCorsConfigurationSource src = new UrlBasedCorsConfigurationSource();
         src.registerCorsConfiguration("/**", cfg);

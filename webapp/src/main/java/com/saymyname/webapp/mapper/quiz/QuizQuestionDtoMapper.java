@@ -77,21 +77,35 @@ public class QuizQuestionDtoMapper {
 
         // Single-target info (core)
         Long targetPersonId = q.getPersonId();
-        String targetPhotoUrl = q.getStorageKey() != null ? photoUrlResolver.smallUrl(q.getStorageKey()) : null;
+        String targetPhotoUrl = q.getStorageKey() != null ? photoUrlResolver.largeUrl(q.getStorageKey()) : null;
 
-        // Choices
+        // Choices (CRITICAL: Filter out any truth data, map photos)
         List<ChoiceDto> choices = null;
         if (p.getChoices() != null) {
             choices = p.getChoices().stream()
-                    .map(c -> new ChoiceDto(c.getId(), c.getLabel(), c.getValue(), c.getPersonId()))
+                    .map(c -> new ChoiceDto(
+                            c.getId(),
+                            c.getLabel(),
+                            c.getValue(),
+                            c.getStorageKey() != null ? photoUrlResolver.largeUrl(c.getStorageKey()) : null,
+                            c.getPersonId()
+                            // CRITICAL: c.getCorrect() deliberately omitted - never expose truth to client
+                    ))
                     .toList();
         }
 
-        // Proposition (swipe)
+        // Proposition (swipe) (CRITICAL: Filter out any truth data, map photos)
         ChoiceDto proposition = null;
         if (p.getProposition() != null) {
             var c = p.getProposition();
-            proposition = new ChoiceDto(c.getId(), c.getLabel(), c.getValue(), c.getPersonId());
+            proposition = new ChoiceDto(
+                    c.getId(),
+                    c.getLabel(),
+                    c.getValue(),
+                    c.getStorageKey() != null ? photoUrlResolver.largeUrl(c.getStorageKey()) : null,
+                    c.getPersonId()
+                    // CRITICAL: c.getCorrect() deliberately omitted - never expose truth to client
+            );
         }
 
         // Items (association/ordering)
@@ -100,7 +114,7 @@ public class QuizQuestionDtoMapper {
             items = p.getItems().stream()
                     .map(it -> new QuizQuestionPayloadDto.ItemDto(
                             it.getPersonId(),
-                            it.getStorageKey() != null ? photoUrlResolver.smallUrl(it.getStorageKey()) : null,
+                            it.getStorageKey() != null ? photoUrlResolver.largeUrl(it.getStorageKey()) : null,
                             it.getLabelId() // ✅ ton modèle a labelId, pas label
                     ))
                     .toList();
@@ -126,10 +140,17 @@ public class QuizQuestionDtoMapper {
                 case HANGMAN -> hangman = new QuizQuestionPayloadDto.HangmanPayload(targetPersonId, targetPhotoUrl,
                         p.getMask(), p.getMaxErrors());
 
-                case MCQ, TAP_CHOICE ->
-                    choicePayload = new QuizQuestionPayloadDto.ChoicePayload(choices, p.getAllowMultiple());
+                case MCQ ->
+                    choicePayload = new QuizQuestionPayloadDto.ChoicePayload(
+                            choices,
+                            p.getAllowMultiple(),
+                            targetPersonId,
+                            targetPhotoUrl);
 
-                case BINARY_SWIPE -> binarySwipe = new QuizQuestionPayloadDto.BinarySwipePayload(proposition);
+                case BINARY_SWIPE -> binarySwipe = new QuizQuestionPayloadDto.BinarySwipePayload(
+                        proposition,
+                        targetPersonId,
+                        targetPhotoUrl);
 
                 case ASSOCIATION -> association = new QuizQuestionPayloadDto.AssociationPayload(items);
 
@@ -138,7 +159,11 @@ public class QuizQuestionDtoMapper {
         } else {
             // fallback: on ne plante pas si format null
             choicePayload = (choices != null || p.getAllowMultiple() != null)
-                    ? new QuizQuestionPayloadDto.ChoicePayload(choices, p.getAllowMultiple())
+                    ? new QuizQuestionPayloadDto.ChoicePayload(
+                            choices,
+                            p.getAllowMultiple(),
+                            targetPersonId,
+                            targetPhotoUrl)
                     : null;
         }
 

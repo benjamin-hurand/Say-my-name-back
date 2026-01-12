@@ -14,7 +14,7 @@ import com.saymyname.core.model.enums.OrgRole;
 import com.saymyname.service.port.Mailer;
 
 @Component
-@Profile("dev")
+@Profile({ "dev", "test", "default" })
 public class ConsoleMailer implements Mailer {
 
     private final Logger logger = LoggerFactory.getLogger(ConsoleMailer.class);

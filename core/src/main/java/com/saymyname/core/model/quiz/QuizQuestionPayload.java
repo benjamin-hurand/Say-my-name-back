@@ -15,7 +15,7 @@ public class QuizQuestionPayload {
     private String mask;
     private Integer maxErrors;
 
-    // MCQ / TAP_CHOICE
+    // MCQ
     private List<QuizChoice> choices;
     private Boolean allowMultiple;
 
@@ -25,6 +25,9 @@ public class QuizQuestionPayload {
     // ASSOCIATION / ORDERING
     private List<QuizPayloadItem> items;
     private QuizOrderingRule orderBy;
+
+    // Layout hints for frontend rendering
+    private QuizLayoutHints layoutHints;
 
     public QuizQuestionPayload() {
     }
@@ -38,6 +41,7 @@ public class QuizQuestionPayload {
         this.proposition = b.proposition;
         this.items = b.items;
         this.orderBy = b.orderBy;
+        this.layoutHints = b.layoutHints;
     }
 
     public QuizPayloadType getType() {
@@ -72,6 +76,9 @@ public class QuizQuestionPayload {
         return orderBy;
     }
 
+    public QuizLayoutHints getLayoutHints() {
+        return layoutHints;
+    }
 
     public void setType(QuizPayloadType type) {
         this.type = type;
@@ -105,6 +112,10 @@ public class QuizQuestionPayload {
         this.orderBy = orderBy;
     }
 
+    public void setLayoutHints(QuizLayoutHints layoutHints) {
+        this.layoutHints = layoutHints;
+    }
+
     public static class Builder {
         private QuizPayloadType type;
         private String mask;
@@ -114,6 +125,7 @@ public class QuizQuestionPayload {
         private QuizChoice proposition;
         private List<QuizPayloadItem> items;
         private QuizOrderingRule orderBy;
+        private QuizLayoutHints layoutHints;
 
         public Builder withType(QuizPayloadType v) {
             this.type = v;
@@ -155,6 +167,11 @@ public class QuizQuestionPayload {
             return this;
         }
 
+        public Builder withLayoutHints(QuizLayoutHints v) {
+            this.layoutHints = v;
+            return this;
+        }
+
         public QuizQuestionPayload build() {
             return new QuizQuestionPayload(this);
         }
@@ -174,11 +191,12 @@ public class QuizQuestionPayload {
                 && Objects.equals(allowMultiple, that.allowMultiple)
                 && Objects.equals(proposition, that.proposition)
                 && Objects.equals(items, that.items)
-                && orderBy == that.orderBy;
+                && orderBy == that.orderBy
+                && Objects.equals(layoutHints, that.layoutHints);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, mask, maxErrors, choices, allowMultiple, proposition, items, orderBy);
+        return Objects.hash(type, mask, maxErrors, choices, allowMultiple, proposition, items, orderBy, layoutHints);
     }
 }

@@ -13,14 +13,17 @@ import com.saymyname.core.model.course.Knowledge;
 import com.saymyname.core.model.course.KnowledgeResultEvent;
 import com.saymyname.core.model.course.KnowledgeStats;
 import com.saymyname.core.model.enums.PhotoStatus;
+import com.saymyname.core.model.enums.course.QuizQuestionItemRole;
 import com.saymyname.core.model.enums.quiz.QuizPreferredFormat;
 import com.saymyname.core.model.enums.quiz.QuizQuestionSource;
 import com.saymyname.core.model.people.Person;
+import com.saymyname.core.model.quiz.QuizAnswerItemResult;
 import com.saymyname.core.model.quiz.QuizAnswerResult;
 import com.saymyname.core.model.quiz.QuizAnswerSubmission;
 import com.saymyname.core.model.quiz.QuizQuestion;
 import com.saymyname.core.model.quiz.QuizQuestionContext;
 import com.saymyname.core.model.quiz.QuizQuestionSpec;
+import com.saymyname.core.model.quiz.QuizPayloadItem;
 import com.saymyname.core.model.quiz.QuizValidationResult;
 import com.saymyname.core.model.quiz.options.GameOptions;
 import com.saymyname.core.model.quiz.snapshot.QuizQuestionSnapshot;
@@ -116,6 +119,8 @@ public class QuizEngine {
                                 .filter(Objects::nonNull)
                                 .toList();
 
+                List<QuizPayloadItem> poolItems = buildCandidateItems(pool);
+
                 List<Long> targetAttributeIds = options.getGameMode()
                                 .getGameModeAttributes().stream()
                                 .map(gma -> gma.getAttribute().getId())
@@ -179,6 +184,7 @@ public class QuizEngine {
                                         .withContext(ctx)
                                         .withInitials(initials)
                                         .withCandidatePoolPersonIds(poolIds)
+                                        .withCandidatePoolItems(poolItems)
                                         .withTimed(plan.timed())
                                         .withTimeLimitMs(plan.timeLimitMs())
                                         .withReasonCode(plan.reasonCode())
@@ -269,10 +275,23 @@ public class QuizEngine {
 
                 return new QuizAnswerResult.Builder()
                                 .withCorrect(validation.isCorrect())
-                                .withUserAnswer(submission != null ? submission.getUserAnswer() : null)
-                                .withCorrectAnswer(validation.getCorrectAnswerDisplay())
                                 .withFeedbackMessage(validation.isCorrect() ? "Correct !" : "Incorrect !")
-                                .withResultAttributes(validation.getResultAttributes())
+                                .withNextQuestion(null) // training batch: front a déjà la suite
+                                .withItemResults(List.of(
+                                                new QuizAnswerItemResult.Builder()
+                                                                .withPosition(0)
+                                                                .withRole(QuizQuestionItemRole.TARGET)
+                                                                .withKnowledgeId(null)
+                                                                .withPersonId(personId) // si tu veux l’exposer; sinon
+                                                                                        // null
+                                                                .withCorrect(validation.isCorrect())
+                                                                .withUserAnswerNormalized(submission != null
+                                                                                ? submission.getUserAnswer()
+                                                                                : null)
+                                                                .withCorrectAnswer(validation.getCorrectAnswerDisplay()) // nullable
+                                                                                                                         // ok
+                                                                .withResultAttributes(validation.getResultAttributes())
+                                                                .build()))
                                 .withFollowUp(null)
                                 .build();
         }
@@ -329,5 +348,27 @@ public class QuizEngine {
                                 .orElseThrow(() -> new IllegalStateException(
                                                 "Person " + person.getId() + " has no APPROVED photo"))
                                 .getStorageKey();
+        }
+
+        private static List<QuizPayloadItem> buildCandidateItems(List<Person> persons) {
+                if (persons == null || persons.isEmpty()) {
+                        return List.of();
+                }
+                return persons.stream()
+                                .filter(Objects::nonNull)
+                                .map(p -> {
+                                        Long id = p.getId();
+                                        if (id == null) {
+                                                return null;
+                                        }
+                                        String storageKey = approvedStorageKeyOrThrow(p);
+                                        return new QuizPayloadItem.Builder()
+                                                        .withPersonId(id)
+                                                        .withStorageKey(storageKey)
+                                                        .withLabelId(String.valueOf(id))
+                                                        .build();
+                                })
+                                .filter(Objects::nonNull)
+                                .toList();
         }
 }
