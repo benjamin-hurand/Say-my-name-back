@@ -14,6 +14,9 @@ public record QuizQuestionPayloadDto(
                 ClozePayload cloze,
                 HangmanPayload hangman,
 
+                // WORD_PUZZLE
+                WordPuzzlePayload wordPuzzle,
+
                 // MCQ
                 ChoicePayload choices,
 
@@ -44,6 +47,14 @@ public record QuizQuestionPayloadDto(
                         String targetPhotoUrl,
                         String mask,
                         Integer maxErrors) {
+        }
+
+        public record WordPuzzlePayload(
+                        Long targetPersonId,
+                        String targetPhotoUrl,
+                        Integer wordLength,
+                        Integer maxAttempts,
+                        WordPuzzleStateDto currentState) {
         }
 
         public record ChoicePayload(

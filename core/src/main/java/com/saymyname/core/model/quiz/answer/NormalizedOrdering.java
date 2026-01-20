@@ -3,7 +3,7 @@ package com.saymyname.core.model.quiz.answer;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public record NormalizedOrdering(List<Long> orderingIds) implements NormalizedSubmission {
+public record NormalizedOrdering(List<Long> orderingIds) implements NormalizedAudit {
 
     @Override
     public String auditString() {

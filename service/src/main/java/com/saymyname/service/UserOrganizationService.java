@@ -260,12 +260,6 @@ public class UserOrganizationService {
             throw new AccessDeniedException("Only OWNER can transfer ownership");
         }
 
-        OrgMemberRow currentOwner = dao.findMemberRowForCurrentOrg(actorUserId)
-                .orElseThrow(() -> new EntityNotFoundException("Current owner not in org"));
-
-        OrgMemberRow nextOwner = dao.findMemberRowForCurrentOrg(newOwnerUserId)
-                .orElseThrow(() -> new EntityNotFoundException("New owner not in org"));
-
         // Apply transfer: new owner -> OWNER; old owner -> ADMIN
         dao.transferOwnershipInCurrentOrg(actorUserId, newOwnerUserId);
 

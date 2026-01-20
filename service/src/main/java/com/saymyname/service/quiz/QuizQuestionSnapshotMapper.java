@@ -1,6 +1,8 @@
 package com.saymyname.service.quiz;
 
+import com.saymyname.core.model.enums.quiz.QuizFormat;
 import com.saymyname.core.model.quiz.QuizQuestion;
+import com.saymyname.core.model.quiz.snapshot.MultiStepState;
 import com.saymyname.core.model.quiz.snapshot.QuizQuestionSnapshot;
 
 public final class QuizQuestionSnapshotMapper {
@@ -8,6 +10,10 @@ public final class QuizQuestionSnapshotMapper {
     }
 
     public static QuizQuestion toQuestion(QuizQuestionSnapshot s) {
+        if (s == null) {
+            return null;
+        }
+
         return new QuizQuestion.Builder()
                 .withPersonId(s.getPersonId())
                 .withStorageKey(s.getStorageKey())
@@ -22,6 +28,20 @@ public final class QuizQuestionSnapshotMapper {
                 .withFollowUp(s.getFollowUp())
                 .withReasonCode(s.getReasonCode())
                 .withReasonDetailsJson(s.getReasonDetailsJson())
+                // ✅ NEW: inject runtime multi-step state into QuizQuestion
+                .withMultiStepState(extractMultiStepState(s))
                 .build();
+    }
+
+    private static MultiStepState extractMultiStepState(QuizQuestionSnapshot s) {
+        QuizFormat fmt = s.getFormat();
+        if (fmt == null) {
+            return null;
+        }
+        return switch (fmt) {
+            case HANGMAN -> s.getHangmanState();
+            case WORD_PUZZLE -> s.getWordPuzzleState();
+            default -> null;
+        };
     }
 }

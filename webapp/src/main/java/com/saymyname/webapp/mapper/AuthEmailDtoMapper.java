@@ -5,7 +5,6 @@ import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.auth.EmailVerificationChallenge;
 import com.saymyname.core.model.auth.EmailVerificationConfirmation;
-import com.saymyname.core.model.enums.EmailVerificationKind;
 import com.saymyname.webapp.dto.UserEmailDto;
 import com.saymyname.webapp.dto.auth.AddEmailResponseDto;
 import com.saymyname.webapp.dto.auth.ConfirmEmailVerificationResponseDto;

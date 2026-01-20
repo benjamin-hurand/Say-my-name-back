@@ -11,10 +11,14 @@ import com.saymyname.core.model.quiz.snapshot.QuizQuestionSnapshot;
 public final class QuizSnapshotGuards {
 
     /**
-     * Formats dont la validation (et/ou l’UI) dépend explicitement d’un attributeId
-     * (donc targetAttributeIds non vide, non null, sans null).
+     * Formats dont la validation dépend d'une vérité EAV (targetAttributeIds).
+     * => Inclut aussi les formats TEXT (TEXT_INPUT/CLOZE/HANGMAN) car truth est
+     * figée à partir des attributs.
      */
     private static final EnumSet<QuizFormat> FORMATS_REQUIRING_TARGET_ATTRIBUTE_IDS = EnumSet.of(
+            QuizFormat.TEXT_INPUT,
+            QuizFormat.CLOZE,
+            QuizFormat.HANGMAN,
             QuizFormat.MCQ,
             QuizFormat.BINARY_SWIPE,
             QuizFormat.ASSOCIATION,
@@ -28,8 +32,6 @@ public final class QuizSnapshotGuards {
             throw new IllegalStateException("Invalid QuizQuestionSnapshot for answer: snapshot=null");
         }
 
-        // Valide d'abord invariants "structuraux" du snapshot (schéma, champs requis,
-        // etc.)
         try {
             snapshot.validateInvariants();
         } catch (RuntimeException e) {
@@ -37,15 +39,9 @@ public final class QuizSnapshotGuards {
                     "Invalid QuizQuestionSnapshot for answer: " + contextSummary(snapshot), e);
         }
 
-        // Valide ensuite les invariants dépendants du format.
         validateFormatSpecificInvariants(snapshot);
     }
 
-    /**
-     * Validation stricte par format :
-     * - format non null
-     * - si le format exige targetAttributeIds => fail-fast si manquant/invalid
-     */
     private static void validateFormatSpecificInvariants(QuizQuestionSnapshot snapshot) {
         QuizFormat fmt = snapshot.getFormat();
         if (fmt == null) {
@@ -53,7 +49,6 @@ public final class QuizSnapshotGuards {
         }
 
         if (requiresTargetAttributeIds(fmt)) {
-            // Fail-fast (et message contextualisé) si targetAttributeIds est invalide.
             requireSingleTargetAttributeId(snapshot, fmt);
         }
     }
@@ -62,14 +57,6 @@ public final class QuizSnapshotGuards {
         return format != null && FORMATS_REQUIRING_TARGET_ATTRIBUTE_IDS.contains(format);
     }
 
-    /**
-     * Exige un seul attributeId "principal" exploitable côté validation/DTO.
-     * On tolère que la liste contienne plusieurs ids, mais :
-     * - elle doit exister
-     * - non vide
-     * - aucun élément null
-     * - le premier élément (id principal) non null
-     */
     public static Long requireSingleTargetAttributeId(QuizQuestionSnapshot snapshot, QuizFormat format) {
         Objects.requireNonNull(snapshot, "snapshot");
 

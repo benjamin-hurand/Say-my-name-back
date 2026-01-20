@@ -15,6 +15,10 @@ public class QuizQuestionPayload {
     private String mask;
     private Integer maxErrors;
 
+    // WORD_PUZZLE
+    private Integer wordLength;
+    private Integer maxAttempts;
+
     // MCQ
     private List<QuizChoice> choices;
     private Boolean allowMultiple;
@@ -36,6 +40,8 @@ public class QuizQuestionPayload {
         this.type = b.type;
         this.mask = b.mask;
         this.maxErrors = b.maxErrors;
+        this.wordLength = b.wordLength;
+        this.maxAttempts = b.maxAttempts;
         this.choices = b.choices;
         this.allowMultiple = b.allowMultiple;
         this.proposition = b.proposition;
@@ -54,6 +60,14 @@ public class QuizQuestionPayload {
 
     public Integer getMaxErrors() {
         return maxErrors;
+    }
+
+    public Integer getWordLength() {
+        return wordLength;
+    }
+
+    public Integer getMaxAttempts() {
+        return maxAttempts;
     }
 
     public List<QuizChoice> getChoices() {
@@ -92,6 +106,14 @@ public class QuizQuestionPayload {
         this.maxErrors = maxErrors;
     }
 
+    public void setWordLength(Integer wordLength) {
+        this.wordLength = wordLength;
+    }
+
+    public void setMaxAttempts(Integer maxAttempts) {
+        this.maxAttempts = maxAttempts;
+    }
+
     public void setChoices(List<QuizChoice> choices) {
         this.choices = choices;
     }
@@ -120,6 +142,8 @@ public class QuizQuestionPayload {
         private QuizPayloadType type;
         private String mask;
         private Integer maxErrors;
+        private Integer wordLength;
+        private Integer maxAttempts;
         private List<QuizChoice> choices;
         private Boolean allowMultiple;
         private QuizChoice proposition;
@@ -139,6 +163,16 @@ public class QuizQuestionPayload {
 
         public Builder withMaxErrors(Integer v) {
             this.maxErrors = v;
+            return this;
+        }
+
+        public Builder withWordLength(Integer v) {
+            this.wordLength = v;
+            return this;
+        }
+
+        public Builder withMaxAttempts(Integer v) {
+            this.maxAttempts = v;
             return this;
         }
 
@@ -187,6 +221,8 @@ public class QuizQuestionPayload {
         return type == that.type
                 && Objects.equals(mask, that.mask)
                 && Objects.equals(maxErrors, that.maxErrors)
+                && Objects.equals(wordLength, that.wordLength)
+                && Objects.equals(maxAttempts, that.maxAttempts)
                 && Objects.equals(choices, that.choices)
                 && Objects.equals(allowMultiple, that.allowMultiple)
                 && Objects.equals(proposition, that.proposition)
@@ -197,6 +233,7 @@ public class QuizQuestionPayload {
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, mask, maxErrors, choices, allowMultiple, proposition, items, orderBy, layoutHints);
+        return Objects.hash(type, mask, maxErrors, wordLength, maxAttempts, choices, allowMultiple, proposition, items,
+                orderBy, layoutHints);
     }
 }

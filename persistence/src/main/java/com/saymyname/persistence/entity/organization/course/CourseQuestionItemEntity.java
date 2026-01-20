@@ -14,7 +14,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinColumns;
 import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -22,7 +21,7 @@ import jakarta.persistence.UniqueConstraint;
 
 @Entity
 @Table(name = "course_question_items", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_cqi_history_position", columnNames = { "history_id", "position" })
+        @UniqueConstraint(name = "uk_cqi_attempt_position", columnNames = { "attempt_id", "position" })
 })
 public class CourseQuestionItemEntity extends BaseOrgScoped {
 
@@ -36,8 +35,8 @@ public class CourseQuestionItemEntity extends BaseOrgScoped {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "history_id", referencedColumnName = "id", nullable = false)
-    private CourseQuestionHistoryEntity history;
+    @JoinColumn(name = "attempt_id", referencedColumnName = "id", nullable = false)
+    private CourseQuestionAttemptEntity attempt;
 
     @Column(name = "position", nullable = false)
     private int position;
@@ -75,12 +74,12 @@ public class CourseQuestionItemEntity extends BaseOrgScoped {
         this.id = id;
     }
 
-    public CourseQuestionHistoryEntity getHistory() {
-        return history;
+    public CourseQuestionAttemptEntity getAttempt() {
+        return attempt;
     }
 
-    public void setHistory(CourseQuestionHistoryEntity history) {
-        this.history = history;
+    public void setAttempt(CourseQuestionAttemptEntity attempt) {
+        this.attempt = attempt;
     }
 
     public int getPosition() {

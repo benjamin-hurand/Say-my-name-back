@@ -10,17 +10,25 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.quiz.snapshot.QuizQuestionSnapshot;
+import com.saymyname.service.quiz.store.TrainingQuestionTokenStore;
 
 @Component
 public class InMemoryTrainingQuestionTokenStore implements TrainingQuestionTokenStore {
 
-    private record Entry(Long userId, QuizQuestionSnapshot snapshot, Instant askedAt, Instant expiresAt) {
+    private record Entry(
+            Long userId,
+            QuizQuestionSnapshot snapshot,
+            Instant askedAt,
+            Instant expiresAt,
+            long originalTtlSeconds,
+            String rawSubmission,
+            String normalizedAudit) {
     }
 
     private final Map<String, Entry> map = new ConcurrentHashMap<>();
 
     @Override
-    public String put(Long userId, QuizQuestionSnapshot snapshot, long ttlSeconds) {
+    public String put(Long userId, QuizQuestionSnapshot snapshot, long askedAtEpochMs, long ttlSeconds) {
         if (userId == null) {
             throw new IllegalArgumentException("userId is required");
         }
@@ -32,8 +40,11 @@ public class InMemoryTrainingQuestionTokenStore implements TrainingQuestionToken
         }
 
         String token = UUID.randomUUID().toString();
+        Instant askedAt = Instant.ofEpochMilli(askedAtEpochMs);
         Instant now = Instant.now();
-        map.put(token, new Entry(userId, snapshot, now, now.plusSeconds(ttlSeconds)));
+        // NB: expiration à partir de now (pas askedAt) = comportement stable pour
+        // refresh TTL.
+        map.put(token, new Entry(userId, snapshot, askedAt, now.plusSeconds(ttlSeconds), ttlSeconds, null, null));
         return token;
     }
 
@@ -43,21 +54,16 @@ public class InMemoryTrainingQuestionTokenStore implements TrainingQuestionToken
             return Optional.empty();
         }
 
-        // remove = atomique (et empêche la double-consommation)
         Entry e = map.remove(token);
         if (e == null) {
             return Optional.empty();
         }
 
-        // expiration
         if (Instant.now().isAfter(e.expiresAt())) {
             return Optional.empty();
         }
 
-        // user scoping (sécurité)
         if (!userId.equals(e.userId())) {
-            // Option: on ne remet PAS l'entrée (anti-bruteforce / anti-vol),
-            // sinon un attaquant peut essayer jusqu'au bon userId.
             return Optional.empty();
         }
 
@@ -65,6 +71,77 @@ public class InMemoryTrainingQuestionTokenStore implements TrainingQuestionToken
                 e.userId(),
                 e.snapshot(),
                 e.askedAt().toEpochMilli(),
-                e.expiresAt().getEpochSecond()));
+                e.expiresAt().getEpochSecond(),
+                e.rawSubmission(),
+                e.normalizedAudit()));
+    }
+
+    @Override
+    public Optional<StoredTrainingQuestion> peek(String token, Long userId) {
+        if (token == null || token.isBlank() || userId == null) {
+            return Optional.empty();
+        }
+
+        Entry e = map.get(token);
+        if (e == null) {
+            return Optional.empty();
+        }
+
+        Instant now = Instant.now();
+        if (now.isAfter(e.expiresAt())) {
+            map.remove(token);
+            return Optional.empty();
+        }
+
+        if (!userId.equals(e.userId())) {
+            return Optional.empty();
+        }
+
+        return Optional.of(new StoredTrainingQuestion(
+                e.userId(),
+                e.snapshot(),
+                e.askedAt().toEpochMilli(),
+                e.expiresAt().getEpochSecond(),
+                e.rawSubmission(),
+                e.normalizedAudit()));
+    }
+
+    @Override
+    public boolean update(String token, Long userId, QuizQuestionSnapshot updatedSnapshot) {
+        return updateAttempt(token, userId, updatedSnapshot, null, null);
+    }
+
+    @Override
+    public boolean updateAttempt(String token, Long userId, QuizQuestionSnapshot updatedSnapshot, String rawSubmission,
+            String normalizedAudit) {
+
+        if (token == null || token.isBlank() || userId == null || updatedSnapshot == null) {
+            return false;
+        }
+
+        Entry updated = map.computeIfPresent(token, (k, oldEntry) -> {
+            if (!userId.equals(oldEntry.userId())) {
+                return oldEntry;
+            }
+
+            Instant now = Instant.now();
+            if (now.isAfter(oldEntry.expiresAt())) {
+                return null;
+            }
+
+            String raw = rawSubmission != null ? rawSubmission : oldEntry.rawSubmission();
+            String norm = normalizedAudit != null ? normalizedAudit : oldEntry.normalizedAudit();
+
+            return new Entry(
+                    oldEntry.userId(),
+                    updatedSnapshot,
+                    oldEntry.askedAt(),
+                    now.plusSeconds(oldEntry.originalTtlSeconds()),
+                    oldEntry.originalTtlSeconds(),
+                    raw,
+                    norm);
+        });
+
+        return updated != null;
     }
 }

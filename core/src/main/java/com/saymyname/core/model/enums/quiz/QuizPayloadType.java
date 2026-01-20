@@ -7,5 +7,6 @@ public enum QuizPayloadType {
     MCQ,
     BINARY_SWIPE,
     ASSOCIATION,
-    ORDERING
+    ORDERING,
+    WORD_PUZZLE
 }

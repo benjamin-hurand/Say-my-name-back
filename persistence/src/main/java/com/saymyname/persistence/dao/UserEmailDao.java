@@ -169,7 +169,7 @@ public class UserEmailDao {
         }
 
         LocalDateTime now = LocalDateTime.now();
-        int updated = repo.markVerifiedNowIfNull(userId, normalized, now);
+        repo.markVerifiedNowIfNull(userId, normalized, now);
 
         // Si updated=0, soit déjà vérifié, soit email introuvable pour ce user -> on
         // distingue

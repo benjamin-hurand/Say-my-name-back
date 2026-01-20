@@ -6,21 +6,21 @@ import com.saymyname.core.model.quiz.QuizAnswerSubmission; // ✅ CORE
 import com.saymyname.core.model.quiz.QuizQuestion;
 import com.saymyname.core.model.quiz.QuizQuestionSpec;
 import com.saymyname.core.model.quiz.QuizValidationResult;
-import com.saymyname.core.model.quiz.answer.NormalizedSubmission;
+import com.saymyname.core.model.quiz.answer.NormalizedAudit;
 import com.saymyname.core.model.quiz.snapshot.QuizQuestionSnapshot;
 
 public interface QuizQuestionPlugin {
 
-    QuizFormat supports();
+        QuizFormat supports();
 
-    QuizQuestion build(QuizQuestionSpec spec);
+        QuizQuestion build(QuizQuestionSpec spec);
 
-    NormalizedSubmission normalize(
-            QuizQuestion question,
-            QuizAnswerSubmission submission);
+        NormalizedAudit normalize(
+                        QuizQuestion question,
+                        QuizAnswerSubmission submission);
 
-    QuizValidationResult validate(
-            QuizQuestionSnapshot snapshot,
-            QuizAnswerSubmission submission,
-            NormalizedSubmission normalized);
+        QuizValidationResult validate(
+                        QuizQuestionSnapshot snapshot,
+                        QuizAnswerSubmission submission,
+                        NormalizedAudit normalized);
 }

@@ -7,5 +7,6 @@ public enum QuizFormat {
     MCQ, // Multiple Choice Question
     BINARY_SWIPE, // Swipe left/right for binary choice
     ASSOCIATION, // Match pairs
-    ORDERING // Arrange in order
+    ORDERING, // Arrange in order
+    WORD_PUZZLE // Wordle-like word guessing with positional feedback
 }

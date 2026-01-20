@@ -2,7 +2,7 @@ package com.saymyname.core.model.quiz.answer;
 
 public record NormalizedChoice(
         Long selectedChoiceId,
-        String selectedValue) implements NormalizedSubmission {
+        String selectedValue) implements NormalizedAudit {
 
     @Override
     public String auditString() {

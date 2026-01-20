@@ -7,61 +7,93 @@ import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.quiz.QuizAnswerItemResult;
 import com.saymyname.core.model.quiz.QuizAnswerResult;
+import com.saymyname.core.model.quiz.QuizAnswerResult;
+import com.saymyname.core.model.quiz.snapshot.HangmanSnapshotState;
+import com.saymyname.core.model.quiz.snapshot.MultiStepState;
+import com.saymyname.core.model.quiz.snapshot.WordPuzzleSnapshotState;
+import com.saymyname.webapp.dto.quiz.MultiStepStateDto;
 import com.saymyname.webapp.dto.quiz.QuizAnswerItemResultDto;
-import com.saymyname.webapp.dto.quiz.QuizAnswerResultBaseDto;
+import com.saymyname.webapp.dto.quiz.QuizAnswerResultDto;
 import com.saymyname.webapp.dto.quiz.ResultAttributeDto;
+import com.saymyname.webapp.mapper.leaderboard.XpAwardDtoMapper;
 
 @Component
 public class QuizAnswerResultDtoMapper {
 
-    private final ResultAttributeDtoMapper resultAttributeDtoMapper;
-    private final QuizQuestionDtoMapper quizQuestionDtoMapper;
+        private final ResultAttributeDtoMapper resultAttributeDtoMapper;
+        private final QuizQuestionDtoMapper quizQuestionDtoMapper;
+        private final HangmanStateDtoMapper hangmanStateDtoMapper;
+        private final WordPuzzleStateDtoMapper wordPuzzleStateDtoMapper;
+        private final XpAwardDtoMapper xpAwardDtoMapper;
 
-    public QuizAnswerResultDtoMapper(
-            ResultAttributeDtoMapper resultAttributeDtoMapper,
-            QuizQuestionDtoMapper quizQuestionDtoMapper) {
-        this.resultAttributeDtoMapper = resultAttributeDtoMapper;
-        this.quizQuestionDtoMapper = quizQuestionDtoMapper;
-    }
-
-    /**
-     * Training answer result.
-     * - Plus de "pont minimal": on mappe directement r.itemResults.
-     * - nextQuestion vient de r.getNextQuestion() (souvent null en training batch).
-     */
-    public QuizAnswerResultBaseDto toDto(QuizAnswerResult r) {
-        if (r == null) {
-            return null;
+        public QuizAnswerResultDtoMapper(
+                        ResultAttributeDtoMapper resultAttributeDtoMapper,
+                        QuizQuestionDtoMapper quizQuestionDtoMapper,
+                        HangmanStateDtoMapper hangmanStateDtoMapper,
+                        WordPuzzleStateDtoMapper wordPuzzleStateDtoMapper,
+                        XpAwardDtoMapper xpAwardDtoMapper) {
+                this.resultAttributeDtoMapper = resultAttributeDtoMapper;
+                this.quizQuestionDtoMapper = quizQuestionDtoMapper;
+                this.hangmanStateDtoMapper = hangmanStateDtoMapper;
+                this.wordPuzzleStateDtoMapper = wordPuzzleStateDtoMapper;
+                this.xpAwardDtoMapper = xpAwardDtoMapper;
         }
 
-        List<QuizAnswerItemResultDto> itemDtos = r.getItemResults() == null
-                ? List.of()
-                : r.getItemResults().stream().map(this::toItemDto).toList();
+        /**
+         * ✅ New: maps the common base (works for QuizAnswerResult and
+         * CourseAnswerResult)
+         */
+        public QuizAnswerResultDto toDto(QuizAnswerResult r) {
+                if (r == null) {
+                        return null;
+                }
 
-        return new QuizAnswerResultBaseDto(
-                r.isCorrect(),
-                r.getFeedbackMessage(),
-                r.getNextQuestion() == null ? null : quizQuestionDtoMapper.toDto(r.getNextQuestion()),
-                itemDtos);
-    }
+                List<QuizAnswerItemResultDto> itemDtos = r.getItemResults() == null
+                                ? List.of()
+                                : r.getItemResults().stream().map(this::toItemDto).toList();
 
-    private QuizAnswerItemResultDto toItemDto(QuizAnswerItemResult r) {
-        if (r == null) {
-            return null;
+                MultiStepStateDto currentStateDto = mapCurrentState(r.getCurrentState());
+
+                return new QuizAnswerResultDto(
+                                r.isCorrect(),
+                                r.getFeedbackMessage(),
+                                r.getNextQuestion() == null ? null : quizQuestionDtoMapper.toDto(r.getNextQuestion()),
+                                itemDtos,
+                                r.getIsComplete(),
+                                currentStateDto,
+                                r.getXpAward() == null ? null : xpAwardDtoMapper.toDto(r.getXpAward()));
         }
 
-        List<ResultAttributeDto> attrs = r.getResultAttributes() == null
-                ? List.of()
-                : r.getResultAttributes().stream().map(resultAttributeDtoMapper::toDto).toList();
+        private MultiStepStateDto mapCurrentState(MultiStepState currentState) {
+                if (currentState == null) {
+                        return null;
+                }
+                if (currentState instanceof HangmanSnapshotState hangmanState) {
+                        return hangmanStateDtoMapper.toDto(hangmanState);
+                }
+                if (currentState instanceof WordPuzzleSnapshotState wordPuzzleState) {
+                        return wordPuzzleStateDtoMapper.toDto(wordPuzzleState);
+                }
+                return null;
+        }
 
-        return new QuizAnswerItemResultDto(
-                r.getPosition(),
-                r.getRole(),
-                r.getKnowledgeId(),
-                r.getPersonId(),
-                r.isCorrect(),
-                r.getUserAnswerNormalized(),
-                r.getCorrectAnswer(),
-                attrs);
-    }
+        private QuizAnswerItemResultDto toItemDto(QuizAnswerItemResult r) {
+                if (r == null) {
+                        return null;
+                }
+
+                List<ResultAttributeDto> attrs = r.getResultAttributes() == null
+                                ? List.of()
+                                : r.getResultAttributes().stream().map(resultAttributeDtoMapper::toDto).toList();
+
+                return new QuizAnswerItemResultDto(
+                                r.getPosition(),
+                                r.getRole(),
+                                r.getKnowledgeId(),
+                                r.getPersonId(),
+                                r.isCorrect(),
+                                r.getUserAnswerNormalized(),
+                                r.getCorrectAnswer(),
+                                attrs);
+        }
 }

@@ -23,7 +23,7 @@ import com.saymyname.core.model.quiz.QuizQuestionPayload;
 import com.saymyname.core.model.quiz.QuizQuestionSpec;
 import com.saymyname.core.model.quiz.QuizValidationResult;
 import com.saymyname.core.model.quiz.answer.NormalizedChoice;
-import com.saymyname.core.model.quiz.answer.NormalizedSubmission;
+import com.saymyname.core.model.quiz.answer.NormalizedAudit;
 import com.saymyname.core.model.quiz.snapshot.QuizQuestionSnapshot;
 import com.saymyname.service.quiz.AnswerKeyService;
 import com.saymyname.service.quiz.QuizSnapshotGuards;
@@ -39,8 +39,8 @@ import com.saymyname.service.quiz.QuizSnapshotGuards;
  * ARCHITECTURE:
  * - Choices are DISPLAY-ONLY (no truth/answer key in QuizChoice)
  * - Truth extraction happens in QuizQuestionSnapshotFactory via:
- *   1. personId matching (for photo MCQs: "Who is this person?")
- *   2. value matching (for text MCQs: "What is X's last name?")
+ * 1. personId matching (for photo MCQs: "Who is this person?")
+ * 2. value matching (for text MCQs: "What is X's last name?")
  * - Truth is stored in snapshot.truth (backend-only)
  * - Truth is NEVER sent to client (filtered in QuizQuestionDtoMapper)
  */
@@ -128,8 +128,8 @@ public class McqPlugin implements QuizQuestionPlugin, QuizQuestionPluginEnhanced
 
         // Correct choice: always included, but order will be shuffled later
         // CRITICAL: Truth extraction happens in QuizQuestionSnapshotFactory via:
-        //   1. personId matching (for photo MCQs: "Who is this person?")
-        //   2. value matching (for text MCQs: "What is X's last name?")
+        // 1. personId matching (for photo MCQs: "Who is this person?")
+        // 2. value matching (for text MCQs: "What is X's last name?")
         // The 'correct' flag is NOT used (it's deprecated and always returns null)
         choices.add(new QuizChoice.Builder()
                 .withId(nextChoiceId())
@@ -190,7 +190,7 @@ public class McqPlugin implements QuizQuestionPlugin, QuizQuestionPluginEnhanced
     }
 
     @Override
-    public NormalizedSubmission normalize(QuizQuestion question, QuizAnswerSubmission submission) {
+    public NormalizedAudit normalize(QuizQuestion question, QuizAnswerSubmission submission) {
         if (submission == null) {
             return new NormalizedChoice(null, null);
         }
@@ -222,7 +222,7 @@ public class McqPlugin implements QuizQuestionPlugin, QuizQuestionPluginEnhanced
     public QuizValidationResult validate(
             QuizQuestionSnapshot snapshot,
             QuizAnswerSubmission submission,
-            NormalizedSubmission normalized) {
+            NormalizedAudit normalized) {
 
         Objects.requireNonNull(snapshot, "snapshot");
 
@@ -277,7 +277,7 @@ public class McqPlugin implements QuizQuestionPlugin, QuizQuestionPluginEnhanced
     public String generateFeedback(
             QuizQuestionSnapshot snapshot,
             QuizAnswerSubmission submission,
-            NormalizedSubmission normalized,
+            NormalizedAudit normalized,
             QuizValidationResult validation) {
 
         if (validation.isCorrect()) {
@@ -302,7 +302,8 @@ public class McqPlugin implements QuizQuestionPlugin, QuizQuestionPluginEnhanced
         return Set.of(
                 "supports_text_choices",
                 "supports_single_selection"
-                // Future: "supports_photos", "supports_rich_content", "supports_multiple_selection"
+        // Future: "supports_photos", "supports_rich_content",
+        // "supports_multiple_selection"
         );
     }
 }

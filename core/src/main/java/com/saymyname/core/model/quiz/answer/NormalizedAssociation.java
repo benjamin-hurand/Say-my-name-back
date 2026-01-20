@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 
 import com.saymyname.core.model.quiz.QuizAssociationPair;
 
-public record NormalizedAssociation(List<QuizAssociationPair> pairs) implements NormalizedSubmission {
+public record NormalizedAssociation(List<QuizAssociationPair> pairs) implements NormalizedAudit {
 
     @Override
     public String auditString() {

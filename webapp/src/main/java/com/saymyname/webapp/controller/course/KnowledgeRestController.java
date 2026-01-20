@@ -60,10 +60,10 @@ public class KnowledgeRestController {
                 .toList();
 
         // 3) Enregistrement
-        int updated = knowledgeService.recordBatchResults(user, events);
+        var xpAward = knowledgeService.recordBatchResults(user, events);
 
-        logger.info("Knowledge batch processed | userId={} displayName={} count={}",
-                user.getId(), user.getDisplayName(), updated);
+        logger.info("Knowledge batch processed | userId={} displayName={} eventsCount={}",
+                user.getId(), user.getDisplayName(), events.size());
 
         return ResponseEntity.ok().build();
     }

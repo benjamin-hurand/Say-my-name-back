@@ -6,10 +6,11 @@ import java.util.Objects;
 
 import com.saymyname.core.model.enums.quiz.QuizDecisionReasonCode;
 import com.saymyname.core.model.enums.quiz.QuizFormat;
+import com.saymyname.core.model.quiz.snapshot.MultiStepState;
 
 public class QuizQuestion {
 
-    private String questionToken; // ✅ NEW (training truth token)
+    private String questionHandle;
 
     private Long personId;
     private String storageKey;
@@ -29,11 +30,18 @@ public class QuizQuestion {
     private QuizDecisionReasonCode reasonCode;
     private String reasonDetailsJson;
 
+    /**
+     * Runtime state for multi-step formats (HANGMAN, WORD_PUZZLE).
+     * MUST NOT contain truth/solution data.
+     * Null for non multi-step formats.
+     */
+    private MultiStepState multiStepState;
+
     public QuizQuestion() {
     }
 
     private QuizQuestion(Builder b) {
-        this.questionToken = b.questionToken;
+        this.questionHandle = b.questionHandle;
         this.personId = b.personId;
         this.storageKey = b.storageKey;
         this.gameModeId = b.gameModeId;
@@ -47,14 +55,15 @@ public class QuizQuestion {
         this.followUp = b.followUp;
         this.reasonCode = b.reasonCode;
         this.reasonDetailsJson = b.reasonDetailsJson;
+        this.multiStepState = b.multiStepState;
     }
 
-    public String getQuestionToken() {
-        return questionToken;
+    public String getQuestionHandle() {
+        return questionHandle;
     }
 
-    public void setQuestionToken(String questionToken) {
-        this.questionToken = questionToken;
+    public void setQuestionHandle(String questionHandle) {
+        this.questionHandle = questionHandle;
     }
 
     public Long getPersonId() {
@@ -109,6 +118,10 @@ public class QuizQuestion {
         return reasonDetailsJson;
     }
 
+    public MultiStepState getMultiStepState() {
+        return multiStepState;
+    }
+
     public void setPersonId(Long personId) {
         this.personId = personId;
     }
@@ -161,8 +174,12 @@ public class QuizQuestion {
         this.reasonDetailsJson = reasonDetailsJson;
     }
 
+    public void setMultiStepState(MultiStepState multiStepState) {
+        this.multiStepState = multiStepState;
+    }
+
     public static class Builder {
-        private String questionToken;
+        private String questionHandle;
 
         private Long personId;
         private String storageKey;
@@ -179,8 +196,10 @@ public class QuizQuestion {
         private QuizDecisionReasonCode reasonCode;
         private String reasonDetailsJson;
 
-        public Builder withQuestionToken(String v) {
-            this.questionToken = v;
+        private MultiStepState multiStepState;
+
+        public Builder withQuestionHandle(String v) {
+            this.questionHandle = v;
             return this;
         }
 
@@ -249,6 +268,11 @@ public class QuizQuestion {
             return this;
         }
 
+        public Builder withMultiStepState(MultiStepState v) {
+            this.multiStepState = v;
+            return this;
+        }
+
         public QuizQuestion build() {
             return new QuizQuestion(this);
         }
@@ -261,7 +285,7 @@ public class QuizQuestion {
         if (!(o instanceof QuizQuestion))
             return false;
         QuizQuestion that = (QuizQuestion) o;
-        return Objects.equals(questionToken, that.questionToken)
+        return Objects.equals(questionHandle, that.questionHandle)
                 && Objects.equals(personId, that.personId)
                 && Objects.equals(storageKey, that.storageKey)
                 && Objects.equals(gameModeId, that.gameModeId)
@@ -274,13 +298,14 @@ public class QuizQuestion {
                 && Objects.equals(display, that.display)
                 && Objects.equals(followUp, that.followUp)
                 && Objects.equals(reasonCode, that.reasonCode)
-                && Objects.equals(reasonDetailsJson, that.reasonDetailsJson);
+                && Objects.equals(reasonDetailsJson, that.reasonDetailsJson)
+                && Objects.equals(multiStepState, that.multiStepState);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(
-                questionToken,
+                questionHandle,
                 personId,
                 storageKey,
                 gameModeId,
@@ -293,13 +318,14 @@ public class QuizQuestion {
                 display,
                 followUp,
                 reasonCode,
-                reasonDetailsJson);
+                reasonDetailsJson,
+                multiStepState);
     }
 
     @Override
     public String toString() {
         return "QuizQuestion{" +
-                "questionToken='" + questionToken + '\'' +
+                "questionHandle='" + questionHandle + '\'' +
                 ", personId=" + personId +
                 ", storageKey='" + storageKey + '\'' +
                 ", gameModeId=" + gameModeId +
@@ -313,6 +339,7 @@ public class QuizQuestion {
                 ", followUp=" + followUp +
                 ", reasonCode='" + reasonCode + '\'' +
                 ", reasonDetailsJson='" + reasonDetailsJson + '\'' +
+                ", multiStepState=" + multiStepState +
                 '}';
     }
 }

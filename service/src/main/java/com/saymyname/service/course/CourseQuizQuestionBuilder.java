@@ -7,7 +7,8 @@ import java.util.Objects;
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.course.Course;
-import com.saymyname.core.model.course.CourseQuestionHistory;
+import com.saymyname.core.model.course.CourseQuestionAttempt;
+import com.saymyname.core.model.course.CourseQuestionItem;
 import com.saymyname.core.model.course.CourseQuestionPlan;
 import com.saymyname.core.model.enums.PhotoStatus;
 import com.saymyname.core.model.enums.course.QuizQuestionItemRole;
@@ -19,7 +20,7 @@ import com.saymyname.core.model.quiz.QuizQuestionContext;
 import com.saymyname.core.model.quiz.QuizQuestionSpec;
 import com.saymyname.core.model.quiz.QuizPayloadItem;
 import com.saymyname.core.model.quiz.options.GameOptions;
-import com.saymyname.service.quiz.CourseToOptionsAdapter;
+import com.saymyname.service.quiz.CourseOptionsResolver;
 import com.saymyname.service.quiz.QuizCandidateProvider;
 import com.saymyname.service.quiz.QuizQuestionFactory;
 
@@ -30,47 +31,50 @@ public class CourseQuizQuestionBuilder {
 
         private final QuizCandidateProvider candidateProvider;
         private final QuizQuestionFactory questionFactory;
+        private final CourseOptionsResolver courseOptionsResolver;
 
         public CourseQuizQuestionBuilder(
                         QuizCandidateProvider candidateProvider,
-                        QuizQuestionFactory questionFactory) {
+                        QuizQuestionFactory questionFactory,
+                        CourseOptionsResolver courseOptionsResolver) {
 
                 this.candidateProvider = Objects.requireNonNull(candidateProvider, "candidateProvider");
                 this.questionFactory = Objects.requireNonNull(questionFactory, "questionFactory");
+                this.courseOptionsResolver = Objects.requireNonNull(courseOptionsResolver, "courseOptionsResolver");
         }
 
-        public QuizQuestion buildFromHistory(
-                        CourseQuestionHistory h,
+        public QuizQuestion buildFromAttempt(
+                        CourseQuestionAttempt h,
                         CourseQuestionPlan plan) {
-                Objects.requireNonNull(h, "history");
+                Objects.requireNonNull(h, "attempt");
                 Objects.requireNonNull(plan, "plan");
-                Objects.requireNonNull(h.getCourse(), "history.course");
-                Objects.requireNonNull(h.getCourse().getUser(), "history.course.user");
-                Objects.requireNonNull(h.getCourse().getGameMode(), "history.course.gameMode");
+                Objects.requireNonNull(h.getCourse(), "attempt.course");
+                Objects.requireNonNull(h.getCourse().getUser(), "attempt.course.user");
+                Objects.requireNonNull(h.getCourse().getGameMode(), "attempt.course.gameMode");
 
                 Course course = h.getCourse();
 
-                // ✅ Dans ton modèle refacto, le "target" est dans items[role=TARGET]
+                // Targets are stored in items with role TARGET.
                 List<Person> targetPersons = h.getItems().stream()
                                 .filter(it -> it.getRole() != null && it.getRole() == QuizQuestionItemRole.TARGET)
                                 .sorted((a, b) -> Integer.compare(a.getPosition(), b.getPosition()))
-                                .map(it -> it.getPerson())
+                                .map(CourseQuestionItem::getPerson)
                                 .filter(Objects::nonNull)
                                 .toList();
 
                 Person targetPerson = targetPersons.stream()
                                 .findFirst()
                                 .orElseThrow(
-                                                () -> new IllegalStateException("CourseQuestionHistory " + h.getId()
+                                                () -> new IllegalStateException("CourseQuestionAttempt " + h.getId()
                                                                 + " has no TARGET item"));
 
                 String storageKey = approvedStorageKeyOrThrow(targetPerson);
 
-                GameOptions options = CourseToOptionsAdapter.toGameOptions(course);
+                GameOptions options = courseOptionsResolver.resolve(course);
 
-                List<Person> pool = candidateProvider.candidates(options, course.getUser().getId(), DEFAULT_POOL_SIZE);
-                List<Long> poolIds = pool.stream()
-                                .map(Person::getId)
+                List<Person> distractorPersons = h.getItems().stream()
+                                .filter(it -> it.getRole() == QuizQuestionItemRole.DISTRACTOR)
+                                .map(CourseQuestionItem::getPerson)
                                 .filter(Objects::nonNull)
                                 .toList();
 
@@ -79,18 +83,38 @@ public class CourseQuizQuestionBuilder {
                                 .filter(Objects::nonNull)
                                 .toList();
 
-                List<QuizPayloadItem> poolItems = toCandidateItems(pool);
                 List<QuizPayloadItem> targetItems = toCandidateItems(targetPersons);
 
-                List<Long> candidatePoolIds = (plan.getFormat() == QuizFormat.ORDERING
-                                || plan.getFormat() == QuizFormat.ASSOCIATION)
-                                                ? targetPersonIds
-                                                : poolIds;
+                boolean multiTarget = plan.getFormat() == QuizFormat.ORDERING
+                                || plan.getFormat() == QuizFormat.ASSOCIATION;
 
-                List<QuizPayloadItem> candidatePoolItems = (plan.getFormat() == QuizFormat.ORDERING
-                                || plan.getFormat() == QuizFormat.ASSOCIATION)
-                                                ? targetItems
-                                                : poolItems;
+                List<Long> candidatePoolIds;
+                List<QuizPayloadItem> candidatePoolItems;
+
+                if (multiTarget) {
+                        candidatePoolIds = targetPersonIds;
+                        candidatePoolItems = targetItems;
+                } else if (plan.getFormat() == QuizFormat.MCQ) {
+                        if (distractorPersons.isEmpty()) {
+                                throw new IllegalStateException(
+                                                "MCQ plan missing distractors for courseQuestionId=" + h.getId());
+                        }
+                        candidatePoolIds = distractorPersons.stream()
+                                        .map(Person::getId)
+                                        .filter(Objects::nonNull)
+                                        .toList();
+                        candidatePoolItems = toCandidateItems(distractorPersons);
+                } else {
+                        List<Person> pool = candidateProvider.candidates(
+                                        options,
+                                        course.getUser().getId(),
+                                        DEFAULT_POOL_SIZE);
+                        candidatePoolIds = pool.stream()
+                                        .map(Person::getId)
+                                        .filter(Objects::nonNull)
+                                        .toList();
+                        candidatePoolItems = toCandidateItems(pool);
+                }
 
                 final List<Long> targetAttributeIds = options.getGameMode().getGameModeAttributes().stream()
                                 .map(gma -> gma.getAttribute().getId())
@@ -133,7 +157,7 @@ public class CourseQuizQuestionBuilder {
                                 .findFirst()
                                 .orElseThrow(() -> new IllegalStateException(
                                                 "Person " + person.getId()
-                                                                + " n'a pas de photo APPROVED malgré le filtre SQL"))
+                                                                + " has no APPROVED photo despite SQL filter"))
                                 .getStorageKey();
         }
 

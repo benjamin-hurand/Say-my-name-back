@@ -38,13 +38,6 @@
             <artifactId>spring-jdbc</artifactId>
         </dependency>
 
-        <!-- ❗ spring-test doit être test-scope -->
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-webmvc</artifactId>

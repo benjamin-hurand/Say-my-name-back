@@ -10,13 +10,13 @@ import org.junit.jupiter.api.Test;
 
 import com.saymyname.core.model.enums.quiz.QuizFormat;
 import com.saymyname.core.model.enums.quiz.QuizPayloadType;
+import com.saymyname.core.model.enums.quiz.QuizQuestionSource;
 import com.saymyname.core.model.enums.quiz.snapshot.QuizTruthType;
 import com.saymyname.core.model.quiz.QuizAnswerSubmission;
 import com.saymyname.core.model.quiz.QuizChoice;
-import com.saymyname.core.model.quiz.QuizQuestionPayload;
-import com.saymyname.core.model.quiz.QuizValidationResult;
+import com.saymyname.core.model.quiz.QuizEvaluationResult;
 import com.saymyname.core.model.quiz.QuizQuestionContext;
-import com.saymyname.core.model.enums.quiz.QuizQuestionSource;
+import com.saymyname.core.model.quiz.QuizQuestionPayload;
 import com.saymyname.core.model.quiz.snapshot.QuizQuestionSnapshot;
 import com.saymyname.core.model.quiz.snapshot.QuizQuestionTruth;
 import com.saymyname.service.quiz.plugins.McqPlugin;
@@ -24,7 +24,7 @@ import com.saymyname.service.quiz.plugins.McqPlugin;
 class QuizAnswerValidatorMcqTest {
 
     @Test
-    void evaluateFromSnapshotThrowsWhenTargetAttributeIdsMissing() {
+    void evaluateThrowsWhenTargetAttributeIdsMissing() {
         AnswerKeyService answerKeyService = (personId, targetAttributeIds, operator) ->
                 new AnswerKeyService.AnswerKey(false, List.of("A"), "A");
         QuizQuestionFactory factory = new QuizQuestionFactory(List.of(new McqPlugin(answerKeyService)));
@@ -68,12 +68,12 @@ class QuizAnswerValidatorMcqTest {
         submission.setSelectedChoiceId(1L);
 
         IllegalStateException ex = assertThrows(IllegalStateException.class,
-                () -> validator.evaluateFromSnapshot(snapshot, submission));
+                () -> validator.evaluate(snapshot, submission));
         assertTrue(ex.getMessage().contains("courseId=1"));
     }
 
     @Test
-    void evaluateFromSnapshotSucceedsWithValidTargetAttributeIds() {
+    void evaluateSucceedsWithValidTargetAttributeIds() {
         AnswerKeyService answerKeyService = (personId, targetAttributeIds, operator) ->
                 new AnswerKeyService.AnswerKey(false, List.of("A"), "A");
         QuizQuestionFactory factory = new QuizQuestionFactory(List.of(new McqPlugin(answerKeyService)));
@@ -116,7 +116,7 @@ class QuizAnswerValidatorMcqTest {
         QuizAnswerSubmission submission = new QuizAnswerSubmission();
         submission.setSelectedChoiceId(1L);
 
-        QuizValidationResult res = assertDoesNotThrow(() -> validator.evaluateFromSnapshot(snapshot, submission).validation());
-        assertTrue(res.getResultAttributes().stream().noneMatch(java.util.Objects::isNull));
+        QuizEvaluationResult res = assertDoesNotThrow(() -> validator.evaluate(snapshot, submission));
+        assertTrue(res.correct());
     }
 }

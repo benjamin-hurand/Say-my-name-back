@@ -1,6 +1,6 @@
 package com.saymyname.core.model.quiz.answer;
 
-public record NormalizedBinary(Boolean swipeRight) implements NormalizedSubmission {
+public record NormalizedBinary(Boolean swipeRight) implements NormalizedAudit {
 
     @Override
     public String auditString() {

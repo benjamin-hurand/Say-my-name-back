@@ -15,6 +15,7 @@ public enum QuizPreferredFormat {
     TEXT_INPUT,
     CLOZE,
     HANGMAN,
+    WORD_PUZZLE,
     MCQ,
     BINARY_SWIPE,
     ASSOCIATION,

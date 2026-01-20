@@ -11,13 +11,14 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+import org.springframework.lang.NonNull;
 import static org.hibernate.jpa.HibernateHints.HINT_READ_ONLY;
 import static org.hibernate.jpa.HibernateHints.HINT_FETCH_SIZE;
 
 @Repository
 public interface UserSubscriptionRepository extends JpaRepository<UserSubscriptionEntity, UserSubscriptionId> {
 
-  boolean existsById(UserSubscriptionId id);
+  boolean existsById(@NonNull UserSubscriptionId id);
 
   long deleteByIdUserIdAndIdPersonId(Long userId, Long personId);
 

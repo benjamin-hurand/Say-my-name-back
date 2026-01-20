@@ -1,7 +1,7 @@
 // src/main/java/com/saymyname/core/model/quiz/answer/NormalizedText.java
 package com.saymyname.core.model.quiz.answer;
 
-public record NormalizedText(String raw, String canonical) implements NormalizedSubmission {
+public record NormalizedText(String raw, String canonical) implements NormalizedAudit {
 
     @Override
     public String auditString() {

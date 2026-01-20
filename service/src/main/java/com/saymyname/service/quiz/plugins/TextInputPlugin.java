@@ -17,7 +17,7 @@ import com.saymyname.core.model.quiz.QuizQuestionHints;
 import com.saymyname.core.model.quiz.QuizQuestionPayload;
 import com.saymyname.core.model.quiz.QuizQuestionSpec;
 import com.saymyname.core.model.quiz.QuizValidationResult;
-import com.saymyname.core.model.quiz.answer.NormalizedSubmission;
+import com.saymyname.core.model.quiz.answer.NormalizedAudit;
 import com.saymyname.core.model.quiz.answer.NormalizedText;
 import com.saymyname.core.model.quiz.snapshot.QuizQuestionSnapshot;
 import com.saymyname.core.model.quiz.snapshot.TruthAttributeValue;
@@ -55,7 +55,7 @@ public class TextInputPlugin implements QuizQuestionPlugin {
     }
 
     @Override
-    public NormalizedSubmission normalize(QuizQuestion question, QuizAnswerSubmission submission) {
+    public NormalizedAudit normalize(QuizQuestion question, QuizAnswerSubmission submission) {
         String raw = submission == null ? null : submission.getUserAnswer();
         String canon = PluginSupport.canonicalizeText(raw);
         return new NormalizedText(raw, canon);
@@ -65,7 +65,7 @@ public class TextInputPlugin implements QuizQuestionPlugin {
     public QuizValidationResult validate(
             QuizQuestionSnapshot snapshot,
             QuizAnswerSubmission submission,
-            NormalizedSubmission normalized) {
+            NormalizedAudit normalized) {
 
         Objects.requireNonNull(snapshot, "snapshot");
 

@@ -54,11 +54,12 @@ public class KnowledgeStatsService {
         }
 
         int lastCorrect = correct ? 1 : 0;
-        int lastHelpUsed = helpUsed ? 1 : 0;
         int errorStreak = correct ? 0 : 1;
         int safeResponseTimeMs = Math.max(0, responseTimeMs);
         LocalDateTime at = answeredAt != null ? answeredAt : LocalDateTime.now();
 
+        // TODO : Mieux gérer helpUsed, mettre un endpoint, ou supprimer helpUsed
+        // partout
         dao.upsertOnAnswer(
                 userId,
                 gameModeId,
@@ -66,11 +67,11 @@ public class KnowledgeStatsService {
                 personId,
                 1.0,
                 correct ? 1.0 : 0.0,
-                helpUsed ? 1.0 : 0.0,
+                helpUsed ? 1 : 0,
                 safeResponseTimeMs,
                 at,
                 lastCorrect,
-                lastHelpUsed,
+                helpUsed ? 1 : 0,
                 safeResponseTimeMs,
                 errorStreak,
                 DECAY);

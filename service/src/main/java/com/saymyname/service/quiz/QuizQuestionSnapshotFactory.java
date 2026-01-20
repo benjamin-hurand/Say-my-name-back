@@ -13,7 +13,12 @@ import com.saymyname.core.model.people.PersonAttribute;
 import com.saymyname.core.model.quiz.QuizChoice;
 import com.saymyname.core.model.quiz.QuizQuestion;
 import com.saymyname.core.model.quiz.QuizQuestionPayload;
+import com.saymyname.core.model.quiz.snapshot.HangmanRules;
+import com.saymyname.core.model.quiz.snapshot.HangmanSnapshotState;
+import com.saymyname.core.model.quiz.snapshot.MultiStepState;
 import com.saymyname.core.model.quiz.snapshot.QuizQuestionSnapshot;
+import com.saymyname.core.model.quiz.snapshot.WordPuzzleRules;
+import com.saymyname.core.model.quiz.snapshot.WordPuzzleSnapshotState;
 import com.saymyname.core.model.quiz.snapshot.QuizQuestionTruth;
 import com.saymyname.core.model.quiz.snapshot.QuizTruthRules;
 import com.saymyname.core.model.quiz.snapshot.TruthAttributeValue;
@@ -27,7 +32,8 @@ import com.saymyname.persistence.dao.PersonAttributeDao;
 @Component
 public class QuizQuestionSnapshotFactory {
 
-    private static final int SNAPSHOT_SCHEMA_VERSION = 4;
+    // ✅ bump schema version (ajout hangman state/rules)
+    private static final int SNAPSHOT_SCHEMA_VERSION = 5;
     private static final String GENERATOR_VERSION = "quiz-pipeline-v1";
     private static final String NORMALIZER_VERSION = "normalizer-v1";
 
@@ -80,10 +86,6 @@ public class QuizQuestionSnapshotFactory {
         return out;
     }
 
-    /**
-     * Construit un snapshot à partir d'une question runtime + truth figée.
-     * Le snapshot ne dépend pas du token.
-     */
     public QuizQuestionSnapshot fromQuestion(QuizQuestion q, List<TruthAttributeValue> frozenTargetValues) {
         return fromQuestion(q, frozenTargetValues, null);
     }
@@ -92,6 +94,7 @@ public class QuizQuestionSnapshotFactory {
             QuizQuestion q,
             List<TruthAttributeValue> frozenTargetValues,
             List<Long> targetPersonIdsOverride) {
+
         Objects.requireNonNull(q, "quizQuestion");
 
         if (q.getFormat() == null)
@@ -133,6 +136,84 @@ public class QuizQuestionSnapshotFactory {
             resolvedTargets.add(q.getPersonId());
         }
 
+        // ------------------------------------------------------------
+        // ✅ HANGMAN snapshot state/rules (stateful, replayable)
+        // ------------------------------------------------------------
+        HangmanRules hangmanRules = null;
+        HangmanSnapshotState hangmanState = null;
+
+        if (q.getFormat() == QuizFormat.HANGMAN) {
+            QuizQuestionPayload payload = q.getPayload();
+
+            // mask initial (doit être présent côté payload en build() du plugin)
+            String mask = (payload != null ? payload.getMask() : null);
+            if (mask == null) {
+                throw new IllegalStateException("HANGMAN requires payload.mask to initialize snapshot");
+            }
+
+            Integer maxErrors = (payload != null ? payload.getMaxErrors() : null);
+            if (maxErrors == null) {
+                // fallback très prudent
+                maxErrors = 6;
+            }
+
+            // Règles (tu peux ajuster selon ton produit)
+            hangmanRules = new HangmanRules.Builder()
+                    .withMaxErrors(maxErrors)
+                    .withNormalized(true) // ignore accents/case (recommandé)
+                    .withCanSolveWholeWord(true) // option UX
+                    .withAlphabet(List.of(
+                            "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
+                            "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"))
+                    .build();
+
+            // État initial
+            hangmanState = new HangmanSnapshotState.Builder()
+                    .withMask(mask)
+                    .withErrorsCount(0)
+                    .withTriedLetters(new ArrayList<>())
+                    .withWrongLetters(new ArrayList<>())
+                    .build();
+        }
+
+        // ------------------------------------------------------------
+        // ✅ WORD_PUZZLE snapshot state/rules (stateful, replayable)
+        // ------------------------------------------------------------
+        WordPuzzleRules wordPuzzleRules = null;
+        WordPuzzleSnapshotState wordPuzzleState = null;
+
+        if (q.getFormat() == QuizFormat.WORD_PUZZLE) {
+            QuizQuestionPayload payload = q.getPayload();
+
+            Integer maxAttempts = (payload != null ? payload.getMaxAttempts() : null);
+            if (maxAttempts == null) {
+                maxAttempts = 6; // Default Wordle-style
+            }
+
+            Integer wordLength = (payload != null ? payload.getWordLength() : null);
+            if (wordLength == null) {
+                // Derive from frozen target values
+                String solution = frozenTargetValues.get(0).getValue();
+                wordLength = solution.length();
+            }
+
+            // Rules
+            wordPuzzleRules = new WordPuzzleRules.Builder()
+                    .withMaxAttempts(maxAttempts)
+                    .withWordLength(wordLength)
+                    .withCaseSensitive(false)
+                    .withAllowRepeatedLetters(true)
+                    .build();
+
+            // Initial state
+            wordPuzzleState = new WordPuzzleSnapshotState.Builder()
+                    .withAttempts(new ArrayList<>())
+                    .withAttemptsRemaining(maxAttempts)
+                    .withSolved(false)
+                    .withFailed(false)
+                    .build();
+        }
+
         return new QuizQuestionSnapshot.Builder()
                 .withSnapshotSchemaVersion(SNAPSHOT_SCHEMA_VERSION)
                 .withGeneratorVersion(GENERATOR_VERSION)
@@ -161,6 +242,15 @@ public class QuizQuestionSnapshotFactory {
                 // truth
                 .withTruth(truth)
                 .withTargetPersonIds(resolvedTargets)
+
+                // ✅ hangman extras
+                .withHangmanRules(hangmanRules)
+                .withHangmanState(hangmanState)
+
+                // ✅ word puzzle extras
+                .withWordPuzzleRules(wordPuzzleRules)
+                .withWordPuzzleState(wordPuzzleState)
+
                 .build();
     }
 
@@ -198,7 +288,6 @@ public class QuizQuestionSnapshotFactory {
         }
 
         if (type == QuizTruthType.MCQ) {
-            // MCQ truth extraction now uses matching instead of deprecated correct flag
             List<String> correctKeys = extractCorrectChoiceKeys(
                     effectivePayload,
                     frozenTargetValues,
@@ -232,7 +321,7 @@ public class QuizQuestionSnapshotFactory {
 
     private static QuizTruthType toTruthType(QuizFormat fmt) {
         return switch (fmt) {
-            case TEXT_INPUT, CLOZE, HANGMAN -> QuizTruthType.TEXT;
+            case TEXT_INPUT, CLOZE, HANGMAN, WORD_PUZZLE -> QuizTruthType.TEXT;
             case MCQ -> QuizTruthType.MCQ;
             case BINARY_SWIPE -> QuizTruthType.BINARY_SWIPE;
             case ORDERING -> QuizTruthType.ORDERING;
@@ -240,18 +329,6 @@ public class QuizQuestionSnapshotFactory {
         };
     }
 
-    /**
-     * Extract correct choice keys by matching against frozen truth.
-     *
-     * Strategy:
-     * 1. Try personId matching (for photo MCQs: "Who is this person?")
-     * 2. Try value matching (for text MCQs: "What is X's last name?")
-     *
-     * @param payload The question payload with choices
-     * @param frozenTargetValues The frozen truth values from EAV
-     * @param targetPersonId The target person ID (for photo MCQs)
-     * @return List of correct choice IDs
-     */
     private List<String> extractCorrectChoiceKeys(
             QuizQuestionPayload payload,
             List<TruthAttributeValue> frozenTargetValues,
@@ -269,7 +346,6 @@ public class QuizQuestionSnapshotFactory {
             throw new IllegalStateException("MCQ truth requires non-empty choices");
         }
 
-        // Branch 1: Match by personId (photo MCQs)
         if (targetPersonId != null) {
             List<String> personMatches = choices.stream()
                     .filter(c -> targetPersonId.equals(c.getPersonId()))
@@ -284,9 +360,7 @@ public class QuizQuestionSnapshotFactory {
             }
         }
 
-        // Branch 2: Match by value (text MCQs)
         if (frozenTargetValues != null && !frozenTargetValues.isEmpty()) {
-            // Build set of canonicalized truth values
             java.util.Set<String> truthValues = frozenTargetValues.stream()
                     .map(TruthAttributeValue::getValue)
                     .filter(Objects::nonNull)
@@ -307,7 +381,6 @@ public class QuizQuestionSnapshotFactory {
             }
         }
 
-        // No matches found - provide actionable error
         String attempted = "Attempted matching: ";
         if (targetPersonId != null) {
             attempted += "personId=" + targetPersonId + " ";
@@ -322,9 +395,6 @@ public class QuizQuestionSnapshotFactory {
                 "MCQ truth extraction failed: no choices matched frozen truth. " + attempted);
     }
 
-    /**
-     * Canonicalize text for case-insensitive, trim, diacritic-normalized comparison.
-     */
     private String canonicalize(String text) {
         if (text == null) {
             return "";
@@ -378,5 +448,26 @@ public class QuizQuestionSnapshotFactory {
             throw new IllegalStateException("ASSOCIATION truth requires non-empty correctPairs");
         }
         return pairs;
+    }
+
+    /**
+     * Creates a new snapshot with the updated multi-step state.
+     * Used for HANGMAN and WORD_PUZZLE formats after each step.
+     */
+    public static QuizQuestionSnapshot updateState(QuizQuestionSnapshot original, MultiStepState newState) {
+        Objects.requireNonNull(original, "original snapshot");
+        Objects.requireNonNull(newState, "newState");
+
+        QuizQuestionSnapshot.Builder builder = new QuizQuestionSnapshot.Builder().from(original);
+
+        if (newState instanceof HangmanSnapshotState hangmanState) {
+            builder.withHangmanState(hangmanState);
+        } else if (newState instanceof WordPuzzleSnapshotState wordPuzzleState) {
+            builder.withWordPuzzleState(wordPuzzleState);
+        } else {
+            throw new IllegalArgumentException("Unknown MultiStepState type: " + newState.getClass().getName());
+        }
+
+        return builder.build();
     }
 }

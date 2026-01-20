@@ -21,11 +21,10 @@ public class ReducedGameOptionsDtoMapper {
 
     public GameOptions toModel(ReducedGameOptionsDto dto) {
         return new GameOptions.Builder()
-                .withId(dto.id())
                 .withGameMode(reducedGameModeDtoMapper.toModel(dto.gameMode()))
                 .withPopulationScope(dto.populationScope())
                 .withFilters(dto.filters().stream().map(reducedGameAttributeFilterDtoMapper::toModel).toList())
-                .withSortBy(dto.sortBy().stream().map(reducedGameAttributeSortDtoMapper::toModel).toList())
+                .withTrackKnowledge(dto.trackKnowledge())
                 .build();
     }
 }

@@ -17,7 +17,7 @@ import com.saymyname.core.model.quiz.QuizQuestionPayload;
 import com.saymyname.core.model.quiz.QuizQuestionSpec;
 import com.saymyname.core.model.quiz.QuizValidationResult;
 import com.saymyname.core.model.quiz.answer.NormalizedBinary;
-import com.saymyname.core.model.quiz.answer.NormalizedSubmission;
+import com.saymyname.core.model.quiz.answer.NormalizedAudit;
 import com.saymyname.core.model.quiz.snapshot.QuizQuestionSnapshot;
 import com.saymyname.service.quiz.AnswerKeyService;
 import com.saymyname.service.quiz.QuizSnapshotGuards;
@@ -48,7 +48,6 @@ public class BinarySwipePlugin implements QuizQuestionPlugin {
                 .withId(1L)
                 .withLabel("Ce prénom est " + (correct == null ? "…" : correct) + " ?")
                 .withValue(correct == null ? "" : correct)
-                .withCorrect(null)
                 .withPersonId(spec.getPersonId())
                 .build();
 
@@ -73,7 +72,7 @@ public class BinarySwipePlugin implements QuizQuestionPlugin {
     }
 
     @Override
-    public NormalizedSubmission normalize(QuizQuestion question, QuizAnswerSubmission submission) {
+    public NormalizedAudit normalize(QuizQuestion question, QuizAnswerSubmission submission) {
         if (submission == null) {
             return new NormalizedBinary(null);
         }
@@ -101,7 +100,7 @@ public class BinarySwipePlugin implements QuizQuestionPlugin {
 
     @Override
     public QuizValidationResult validate(QuizQuestionSnapshot snapshot, QuizAnswerSubmission submission,
-            NormalizedSubmission normalized) {
+            NormalizedAudit normalized) {
         Objects.requireNonNull(snapshot, "snapshot");
 
         NormalizedBinary nb = (normalized instanceof NormalizedBinary b) ? b : new NormalizedBinary(null);

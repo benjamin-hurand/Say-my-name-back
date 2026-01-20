@@ -68,6 +68,32 @@ public class QuizQuestionSnapshot {
     // ---- multi-target explicit ----
     private List<Long> targetPersonIds = new ArrayList<>();
 
+    // ------------------------------------------------------------------
+    // HANGMAN (stateful, snapshot-based)
+    // ------------------------------------------------------------------
+    /**
+     * Règles Hangman (paramétrage stable) - requis si format=HANGMAN.
+     */
+    private HangmanRules hangmanRules;
+
+    /**
+     * État Hangman (mask + erreurs + lettres) - requis si format=HANGMAN.
+     */
+    private HangmanSnapshotState hangmanState;
+
+    // ------------------------------------------------------------------
+    // WORD_PUZZLE (stateful, snapshot-based)
+    // ------------------------------------------------------------------
+    /**
+     * Règles Word Puzzle (paramétrage stable) - requis si format=WORD_PUZZLE.
+     */
+    private WordPuzzleRules wordPuzzleRules;
+
+    /**
+     * État Word Puzzle (attempts + feedback + status) - requis si format=WORD_PUZZLE.
+     */
+    private WordPuzzleSnapshotState wordPuzzleState;
+
     public QuizQuestionSnapshot() {
     }
 
@@ -97,6 +123,12 @@ public class QuizQuestionSnapshot {
 
         this.truth = b.truth;
         this.targetPersonIds = b.targetPersonIds != null ? b.targetPersonIds : new ArrayList<>();
+
+        this.hangmanRules = b.hangmanRules;
+        this.hangmanState = b.hangmanState;
+
+        this.wordPuzzleRules = b.wordPuzzleRules;
+        this.wordPuzzleState = b.wordPuzzleState;
 
         validateInvariants();
     }
@@ -131,8 +163,6 @@ public class QuizQuestionSnapshot {
         if (operator == null || operator.isBlank())
             throw new IllegalStateException("QuizQuestionSnapshot.operator is required");
 
-        // personId/storageKey peuvent être null si multi-target natif / non applicable
-
         // ---- render + truth ----
         if (payload == null)
             throw new IllegalStateException("QuizQuestionSnapshot.payload is required");
@@ -156,10 +186,56 @@ public class QuizQuestionSnapshot {
             throw new IllegalStateException("QuizQuestionSnapshot.targetPersonIds cannot contain null");
 
         // ---- coherence guard ----
-        // Si personId est fourni, il doit être inclus dans targetPersonIds (au moins).
         if (personId != null && !targetPersonIds.contains(personId)) {
             throw new IllegalStateException(
                     "QuizQuestionSnapshot.personId must be included in targetPersonIds when provided");
+        }
+
+        // ------------------------------------------------------------------
+        // HANGMAN invariants
+        // ------------------------------------------------------------------
+        if (format == QuizFormat.HANGMAN) {
+            if (hangmanRules == null) {
+                throw new IllegalStateException("QuizQuestionSnapshot.hangmanRules is required when format=HANGMAN");
+            }
+            if (hangmanState == null) {
+                throw new IllegalStateException("QuizQuestionSnapshot.hangmanState is required when format=HANGMAN");
+            }
+            hangmanRules.validateInvariants();
+            hangmanState.validateInvariants();
+
+            Integer max = hangmanRules.getMaxErrors();
+            Integer errors = hangmanState.getErrorsCount();
+            if (max != null && errors != null && errors > max) {
+                throw new IllegalStateException(
+                        "QuizQuestionSnapshot.hangmanState.errorsCount cannot exceed hangmanRules.maxErrors");
+            }
+        }
+
+        // ------------------------------------------------------------------
+        // WORD_PUZZLE invariants
+        // ------------------------------------------------------------------
+        if (format == QuizFormat.WORD_PUZZLE) {
+            if (wordPuzzleRules == null) {
+                throw new IllegalStateException("QuizQuestionSnapshot.wordPuzzleRules is required when format=WORD_PUZZLE");
+            }
+            if (wordPuzzleState == null) {
+                throw new IllegalStateException("QuizQuestionSnapshot.wordPuzzleState is required when format=WORD_PUZZLE");
+            }
+            wordPuzzleRules.validateInvariants();
+            wordPuzzleState.validateInvariants();
+
+            // Cross-validation: attemptsRemaining should match maxAttempts - attempts.size()
+            Integer maxAttempts = wordPuzzleRules.getMaxAttempts();
+            Integer attemptsRemaining = wordPuzzleState.getAttemptsRemaining();
+            int attemptsMade = wordPuzzleState.getAttempts().size();
+            if (maxAttempts != null && attemptsRemaining != null) {
+                int expected = maxAttempts - attemptsMade;
+                if (attemptsRemaining != expected) {
+                    throw new IllegalStateException(
+                            "QuizQuestionSnapshot.wordPuzzleState.attemptsRemaining inconsistent: expected " + expected + ", got " + attemptsRemaining);
+                }
+            }
         }
     }
 
@@ -272,36 +348,36 @@ public class QuizQuestionSnapshot {
         return followUp;
     }
 
-    public Boolean getTimed() {
-        return timed;
-    }
-
-    public Integer getTimeLimitMs() {
-        return timeLimitMs;
-    }
-
-    public QuizDecisionReasonCode getReasonCode() {
-        return reasonCode;
-    }
-
-    public String getReasonDetailsJson() {
-        return reasonDetailsJson;
-    }
-
     public void setFollowUp(QuizFollowUp followUp) {
         this.followUp = followUp;
+    }
+
+    public Boolean getTimed() {
+        return timed;
     }
 
     public void setTimed(Boolean timed) {
         this.timed = timed;
     }
 
+    public Integer getTimeLimitMs() {
+        return timeLimitMs;
+    }
+
     public void setTimeLimitMs(Integer timeLimitMs) {
         this.timeLimitMs = timeLimitMs;
     }
 
+    public QuizDecisionReasonCode getReasonCode() {
+        return reasonCode;
+    }
+
     public void setReasonCode(QuizDecisionReasonCode reasonCode) {
         this.reasonCode = reasonCode;
+    }
+
+    public String getReasonDetailsJson() {
+        return reasonDetailsJson;
     }
 
     public void setReasonDetailsJson(String reasonDetailsJson) {
@@ -322,6 +398,40 @@ public class QuizQuestionSnapshot {
 
     public void setTargetPersonIds(List<Long> targetPersonIds) {
         this.targetPersonIds = targetPersonIds;
+    }
+
+    // ---- Hangman getters/setters ----
+    public HangmanRules getHangmanRules() {
+        return hangmanRules;
+    }
+
+    public void setHangmanRules(HangmanRules hangmanRules) {
+        this.hangmanRules = hangmanRules;
+    }
+
+    public HangmanSnapshotState getHangmanState() {
+        return hangmanState;
+    }
+
+    public void setHangmanState(HangmanSnapshotState hangmanState) {
+        this.hangmanState = hangmanState;
+    }
+
+    // ---- Word Puzzle getters/setters ----
+    public WordPuzzleRules getWordPuzzleRules() {
+        return wordPuzzleRules;
+    }
+
+    public void setWordPuzzleRules(WordPuzzleRules wordPuzzleRules) {
+        this.wordPuzzleRules = wordPuzzleRules;
+    }
+
+    public WordPuzzleSnapshotState getWordPuzzleState() {
+        return wordPuzzleState;
+    }
+
+    public void setWordPuzzleState(WordPuzzleSnapshotState wordPuzzleState) {
+        this.wordPuzzleState = wordPuzzleState;
     }
 
     // ---------------- Builder ----------------
@@ -351,6 +461,44 @@ public class QuizQuestionSnapshot {
 
         private QuizQuestionTruth truth;
         private List<Long> targetPersonIds;
+
+        private HangmanRules hangmanRules;
+        private HangmanSnapshotState hangmanState;
+
+        private WordPuzzleRules wordPuzzleRules;
+        private WordPuzzleSnapshotState wordPuzzleState;
+
+        /**
+         * Copies all fields from an existing snapshot (for efficient cloning).
+         * Useful for updating mutable state while preserving immutable fields.
+         */
+        public Builder from(QuizQuestionSnapshot original) {
+            this.snapshotSchemaVersion = original.snapshotSchemaVersion;
+            this.generatorVersion = original.generatorVersion;
+            this.normalizerVersion = original.normalizerVersion;
+            this.format = original.format;
+            this.context = original.context;
+            this.gameModeId = original.gameModeId;
+            this.targetAttributeIds = original.targetAttributeIds;
+            this.operator = original.operator;
+            this.personId = original.personId;
+            this.storageKey = original.storageKey;
+            this.display = original.display;
+            this.hints = original.hints;
+            this.payload = original.payload;
+            this.followUp = original.followUp;
+            this.timed = original.timed;
+            this.timeLimitMs = original.timeLimitMs;
+            this.reasonCode = original.reasonCode;
+            this.reasonDetailsJson = original.reasonDetailsJson;
+            this.truth = original.truth;
+            this.targetPersonIds = original.targetPersonIds;
+            this.hangmanRules = original.hangmanRules;
+            this.hangmanState = original.hangmanState;
+            this.wordPuzzleRules = original.wordPuzzleRules;
+            this.wordPuzzleState = original.wordPuzzleState;
+            return this;
+        }
 
         public Builder withSnapshotSchemaVersion(int v) {
             this.snapshotSchemaVersion = v;
@@ -452,6 +600,28 @@ public class QuizQuestionSnapshot {
             return this;
         }
 
+        // Hangman
+        public Builder withHangmanRules(HangmanRules v) {
+            this.hangmanRules = v;
+            return this;
+        }
+
+        public Builder withHangmanState(HangmanSnapshotState v) {
+            this.hangmanState = v;
+            return this;
+        }
+
+        // Word Puzzle
+        public Builder withWordPuzzleRules(WordPuzzleRules v) {
+            this.wordPuzzleRules = v;
+            return this;
+        }
+
+        public Builder withWordPuzzleState(WordPuzzleSnapshotState v) {
+            this.wordPuzzleState = v;
+            return this;
+        }
+
         public QuizQuestionSnapshot build() {
             return new QuizQuestionSnapshot(this);
         }
@@ -487,7 +657,11 @@ public class QuizQuestionSnapshot {
                 && Objects.equals(reasonCode, that.reasonCode)
                 && Objects.equals(reasonDetailsJson, that.reasonDetailsJson)
                 && Objects.equals(truth, that.truth)
-                && Objects.equals(targetPersonIds, that.targetPersonIds);
+                && Objects.equals(targetPersonIds, that.targetPersonIds)
+                && Objects.equals(hangmanRules, that.hangmanRules)
+                && Objects.equals(hangmanState, that.hangmanState)
+                && Objects.equals(wordPuzzleRules, that.wordPuzzleRules)
+                && Objects.equals(wordPuzzleState, that.wordPuzzleState);
     }
 
     @Override
@@ -512,6 +686,10 @@ public class QuizQuestionSnapshot {
                 reasonCode,
                 reasonDetailsJson,
                 truth,
-                targetPersonIds);
+                targetPersonIds,
+                hangmanRules,
+                hangmanState,
+                wordPuzzleRules,
+                wordPuzzleState);
     }
 }

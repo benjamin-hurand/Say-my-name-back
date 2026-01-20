@@ -36,7 +36,6 @@ public class PasswordService {
     private final String frontendBaseUrl;
 
     private final UserIdentityService userIdentityService;
-    private final UserService userService;
     private final AuthInvalidationService authInvalidationService;
 
     private static final java.security.SecureRandom SECURE_RANDOM = new java.security.SecureRandom();
@@ -47,7 +46,6 @@ public class PasswordService {
             PasswordResetTokenDao tokenDao,
             Mailer mailer,
             UserIdentityService userIdentityService,
-            UserService userService,
             AuthInvalidationService authInvalidationService,
             @Value("${app.frontend.base-url:http://localhost:5173}") String frontendBaseUrl) {
         this.userDao = userDao;
@@ -55,7 +53,6 @@ public class PasswordService {
         this.tokenDao = tokenDao;
         this.mailer = mailer;
         this.userIdentityService = userIdentityService;
-        this.userService = userService;
         this.authInvalidationService = authInvalidationService;
         this.frontendBaseUrl = frontendBaseUrl.endsWith("/")
                 ? frontendBaseUrl.substring(0, frontendBaseUrl.length() - 1)

@@ -7,7 +7,7 @@ import java.util.List;
 
 import com.saymyname.core.model.course.Course;
 import com.saymyname.core.model.course.CourseRecentStats;
-import com.saymyname.core.model.course.CourseQuestionHistory;
+import com.saymyname.core.model.course.CourseQuestionAttempt;
 import com.saymyname.core.model.course.Knowledge;
 import com.saymyname.core.model.course.KnowledgeStats;
 import com.saymyname.core.model.enums.KnowledgeStatus;
@@ -15,6 +15,7 @@ import com.saymyname.core.model.enums.quiz.QuizDecisionReasonCode;
 import com.saymyname.core.model.enums.quiz.QuizFormat;
 import com.saymyname.core.model.enums.quiz.QuizPreferredFormat;
 
+@Deprecated
 @Component
 public class CourseQuizPlanPolicy {
 
@@ -64,7 +65,7 @@ public class CourseQuizPlanPolicy {
 
     public Plan decide(
             Course course,
-            CourseQuestionHistory previousHistory,
+            CourseQuestionAttempt previousAttempt,
             Knowledge nextKnowledge,
             QuizPreferredFormat preferredFormatQuery,
             Boolean requestedTimed,
@@ -72,7 +73,7 @@ public class CourseQuizPlanPolicy {
             boolean multiTargetAvailable) {
         return decide(
                 course,
-                previousHistory,
+                previousAttempt,
                 nextKnowledge,
                 null,
                 null,
@@ -85,7 +86,7 @@ public class CourseQuizPlanPolicy {
 
     public Plan decide(
             Course course,
-            CourseQuestionHistory previousHistory,
+            CourseQuestionAttempt previousAttempt,
             Knowledge nextKnowledge,
             KnowledgeStats primaryStats,
             List<KnowledgeStats> extraStats,
@@ -101,7 +102,7 @@ public class CourseQuizPlanPolicy {
             return explicitPlan(fmt, requestedTimed, requestedTimeLimitMs, multiTargetAvailable);
         }
 
-        return decideAuto(course, previousHistory, nextKnowledge, primaryStats, extraStats, courseStats, requestedTimed,
+        return decideAuto(course, previousAttempt, nextKnowledge, primaryStats, extraStats, courseStats, requestedTimed,
                 requestedTimeLimitMs, multiTargetAvailable);
     }
 
@@ -139,7 +140,7 @@ public class CourseQuizPlanPolicy {
 
     private Plan decideAuto(
             Course course,
-            CourseQuestionHistory previousHistory,
+            CourseQuestionAttempt previousAttempt,
             Knowledge nextKnowledge,
             KnowledgeStats primaryStats,
             List<KnowledgeStats> extraStats,
@@ -176,7 +177,7 @@ public class CourseQuizPlanPolicy {
 
         if (status == KnowledgeStatus.LEARNED) {
             boolean streakOk = nextKnowledge.getSrsStreak() >= MIN_TIMED_STREAK;
-            boolean fast = isFastRecent(previousHistory, primaryStats);
+            boolean fast = isFastRecent(previousAttempt, primaryStats);
             boolean timed = !avoidTimed && streakOk && fast;
             Integer timeLimitMs = resolveTimeLimitMs(timed, DEFAULT_TIME_LIMIT_MS);
             QuizFormat fmt = avoidTimed ? QuizFormat.MCQ : QuizFormat.TEXT_INPUT;
@@ -196,7 +197,7 @@ public class CourseQuizPlanPolicy {
         }
 
         boolean lowErrorRate = hasLowErrorRate(nextKnowledge, primaryStats);
-        boolean fast = isFastRecent(previousHistory, primaryStats);
+        boolean fast = isFastRecent(previousAttempt, primaryStats);
         boolean timed = !avoidTimed && fast && lowErrorRate;
 
         if (status == KnowledgeStatus.MASTERED && multiTargetAvailable && !avoidTimed && lowErrorRate) {
@@ -211,7 +212,7 @@ public class CourseQuizPlanPolicy {
                     .addRaw("multi_target_gate", gate.detailsJson());
 
             if (gateOk) {
-                QuizFormat fmt = chooseMultiTargetFormat(previousHistory, courseStats, gate);
+                QuizFormat fmt = chooseMultiTargetFormat(previousAttempt, courseStats, gate);
                 gateDetails.add("multi_target_format", fmt.name());
                 Plan plan = new Plan(fmt, false, null, MULTI_TARGET_MIN, null,
                         QuizDecisionReasonCode.AUTO_MASTERED_MULTI_TARGET, gateDetails.build());
@@ -268,15 +269,15 @@ public class CourseQuizPlanPolicy {
         return rate <= MAX_ERROR_RATE;
     }
 
-    private static boolean isFastRecent(CourseQuestionHistory previousHistory, KnowledgeStats stats) {
-        if (previousHistory == null) {
+    private static boolean isFastRecent(CourseQuestionAttempt previousAttempt, KnowledgeStats stats) {
+        if (previousAttempt == null) {
             if (stats == null) {
                 return false;
             }
             double avgRt = stats.getAvgRtRecent();
             return avgRt > 0 && avgRt <= FAST_RESPONSE_TIME_MS;
         }
-        int ms = previousHistory.getResponseTimeMs();
+        int ms = previousAttempt.getResponseTimeMs();
         return ms > 0 && ms <= FAST_RESPONSE_TIME_MS;
     }
 
@@ -346,12 +347,12 @@ public class CourseQuizPlanPolicy {
     }
 
     private static QuizFormat chooseMultiTargetFormat(
-            CourseQuestionHistory previousHistory,
+            CourseQuestionAttempt previousAttempt,
             CourseRecentStats stats,
             MultiTargetGate gate) {
 
         if (gate == null || gate.consideredCount() == 0) {
-            int round = previousHistory != null ? previousHistory.getQuestionRound() : 0;
+            int round = previousAttempt != null ? previousAttempt.getQuestionRound() : 0;
             return (round % 2 == 0) ? QuizFormat.ORDERING : QuizFormat.ASSOCIATION;
         }
 

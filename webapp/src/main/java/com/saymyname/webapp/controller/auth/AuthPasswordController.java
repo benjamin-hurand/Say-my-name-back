@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.saymyname.service.PasswordService;
-import com.saymyname.service.UserService;
 import com.saymyname.webapp.dto.auth.ForgotPasswordRequestDto;
 import com.saymyname.webapp.dto.auth.ResetPasswordRequestDto;
 

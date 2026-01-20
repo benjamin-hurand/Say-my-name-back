@@ -22,7 +22,7 @@ public class KnowledgeResultEvent {
 
         // Optional context (useful for analytics/debug)
         private final Long courseId;
-        private final Long courseQuestionHistoryId;
+        private final Long CourseQuestionAttemptId;
         private final Integer questionRound;
         private final LocalDateTime occurredAt;
 
@@ -33,7 +33,7 @@ public class KnowledgeResultEvent {
                 this.correct = b.correct;
                 this.helpUsed = b.helpUsed;
                 this.courseId = b.courseId;
-                this.courseQuestionHistoryId = b.courseQuestionHistoryId;
+                this.CourseQuestionAttemptId = b.CourseQuestionAttemptId;
                 this.questionRound = b.questionRound;
                 this.occurredAt = b.occurredAt != null ? b.occurredAt : LocalDateTime.now();
 
@@ -70,8 +70,8 @@ public class KnowledgeResultEvent {
                 return courseId;
         }
 
-        public Long getCourseQuestionHistoryId() {
-                return courseQuestionHistoryId;
+        public Long getCourseQuestionAttemptId() {
+                return CourseQuestionAttemptId;
         }
 
         public Integer getQuestionRound() {
@@ -90,7 +90,7 @@ public class KnowledgeResultEvent {
                 private boolean helpUsed;
 
                 private Long courseId;
-                private Long courseQuestionHistoryId;
+                private Long CourseQuestionAttemptId;
                 private Integer questionRound;
                 private LocalDateTime occurredAt;
 
@@ -124,8 +124,8 @@ public class KnowledgeResultEvent {
                         return this;
                 }
 
-                public Builder withCourseQuestionHistoryId(Long courseQuestionHistoryId) {
-                        this.courseQuestionHistoryId = courseQuestionHistoryId;
+                public Builder withCourseQuestionAttemptId(Long CourseQuestionAttemptId) {
+                        this.CourseQuestionAttemptId = CourseQuestionAttemptId;
                         return this;
                 }
 
@@ -157,7 +157,7 @@ public class KnowledgeResultEvent {
                                 && Objects.equals(gameModeId, that.gameModeId)
                                 && Objects.equals(personId, that.personId)
                                 && Objects.equals(courseId, that.courseId)
-                                && Objects.equals(courseQuestionHistoryId, that.courseQuestionHistoryId)
+                                && Objects.equals(CourseQuestionAttemptId, that.CourseQuestionAttemptId)
                                 && Objects.equals(questionRound, that.questionRound)
                                 && Objects.equals(occurredAt, that.occurredAt);
         }
@@ -165,7 +165,7 @@ public class KnowledgeResultEvent {
         @Override
         public int hashCode() {
                 return Objects.hash(knowledgeId, gameModeId, personId, correct, helpUsed,
-                                courseId, courseQuestionHistoryId, questionRound, occurredAt);
+                                courseId, CourseQuestionAttemptId, questionRound, occurredAt);
         }
 
         @Override
@@ -177,7 +177,7 @@ public class KnowledgeResultEvent {
                                 ", correct=" + correct +
                                 ", helpUsed=" + helpUsed +
                                 ", courseId=" + courseId +
-                                ", courseQuestionHistoryId=" + courseQuestionHistoryId +
+                                ", CourseQuestionAttemptId=" + CourseQuestionAttemptId +
                                 ", questionRound=" + questionRound +
                                 ", occurredAt=" + occurredAt +
                                 '}';

@@ -16,6 +16,7 @@ public class PersonDtoMapper {
         private final PersonAttributeDtoMapper personAttributeDtoMapper;
         private final PhotoDtoMapper photoDtoMapper;
         private final PhotoUrlResolver photoUrlResolver;
+        // TODO: Soit remettre soit supprimer completement METACACHE
         private final AttributeMetaCache attributeMetaCache;
         private final PersonDisplayNameBuilder displayNameBuilder;
 

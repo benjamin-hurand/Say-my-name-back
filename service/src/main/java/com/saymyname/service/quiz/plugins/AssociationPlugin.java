@@ -18,7 +18,7 @@ import com.saymyname.core.model.quiz.QuizQuestionPayload;
 import com.saymyname.core.model.quiz.QuizQuestionSpec;
 import com.saymyname.core.model.quiz.QuizValidationResult;
 import com.saymyname.core.model.quiz.answer.NormalizedAssociation;
-import com.saymyname.core.model.quiz.answer.NormalizedSubmission;
+import com.saymyname.core.model.quiz.answer.NormalizedAudit;
 import com.saymyname.core.model.quiz.snapshot.QuizQuestionSnapshot;
 import com.saymyname.core.model.quiz.snapshot.TruthPair;
 import com.saymyname.service.quiz.QuizSnapshotGuards;
@@ -26,74 +26,76 @@ import com.saymyname.service.quiz.QuizSnapshotGuards;
 @Component
 public class AssociationPlugin implements QuizQuestionPlugin {
 
-    private static final int DEFAULT_ITEMS = 6;
+        private static final int DEFAULT_ITEMS = 6;
 
-    @Override
-    public QuizFormat supports() {
-        return QuizFormat.ASSOCIATION;
-    }
+        @Override
+        public QuizFormat supports() {
+                return QuizFormat.ASSOCIATION;
+        }
 
-    @Override
-    public QuizQuestion build(QuizQuestionSpec spec) {
-        Objects.requireNonNull(spec, "spec");
+        @Override
+        public QuizQuestion build(QuizQuestionSpec spec) {
+                Objects.requireNonNull(spec, "spec");
 
-        List<QuizPayloadItem> items = PluginSupport.poolItemsLimited(spec, DEFAULT_ITEMS, null);
+                List<QuizPayloadItem> items = PluginSupport.poolItemsLimited(spec, DEFAULT_ITEMS, null);
 
-        QuizQuestionPayload payload = new QuizQuestionPayload.Builder()
-                .withType(QuizPayloadType.ASSOCIATION)
-                .withItems(items)
-                .build();
+                QuizQuestionPayload payload = new QuizQuestionPayload.Builder()
+                                .withType(QuizPayloadType.ASSOCIATION)
+                                .withItems(items)
+                                .build();
 
-        QuizQuestionDisplay display = new QuizQuestionDisplay.Builder()
-                .withPrompt("Associe les bons éléments")
-                .withSubtitle(null)
-                .withInputPlaceholder(null)
-                .build();
+                QuizQuestionDisplay display = new QuizQuestionDisplay.Builder()
+                                .withPrompt("Associe les bons éléments")
+                                .withSubtitle(null)
+                                .withInputPlaceholder(null)
+                                .build();
 
-        return PluginSupport.baseQuestion(
-                spec,
-                QuizFormat.ASSOCIATION,
-                payload,
-                null,
-                display,
-                null);
-    }
+                return PluginSupport.baseQuestion(
+                                spec,
+                                QuizFormat.ASSOCIATION,
+                                payload,
+                                null,
+                                display,
+                                null);
+        }
 
-    @Override
-    public NormalizedSubmission normalize(QuizQuestion question, QuizAnswerSubmission submission) {
-        List<QuizAssociationPair> pairs = submission == null ? null : submission.getPairs();
-        return new NormalizedAssociation(pairs);
-    }
+        @Override
+        public NormalizedAudit normalize(QuizQuestion question, QuizAnswerSubmission submission) {
+                List<QuizAssociationPair> pairs = submission == null ? null : submission.getPairs();
+                return new NormalizedAssociation(pairs);
+        }
 
-    @Override
-    public QuizValidationResult validate(QuizQuestionSnapshot snapshot, QuizAnswerSubmission submission,
-            NormalizedSubmission normalized) {
-        Objects.requireNonNull(snapshot, "snapshot");
+        @Override
+        public QuizValidationResult validate(QuizQuestionSnapshot snapshot, QuizAnswerSubmission submission,
+                        NormalizedAudit normalized) {
+                Objects.requireNonNull(snapshot, "snapshot");
 
-        NormalizedAssociation na = (normalized instanceof NormalizedAssociation a) ? a
-                : new NormalizedAssociation(null);
+                NormalizedAssociation na = (normalized instanceof NormalizedAssociation a) ? a
+                                : new NormalizedAssociation(null);
 
-        var expected = snapshot.getTruth() == null ? List.<TruthPair>of() : snapshot.getTruth().getCorrectPairs();
+                var expected = snapshot.getTruth() == null ? List.<TruthPair>of()
+                                : snapshot.getTruth().getCorrectPairs();
 
-        var userPairs = na.pairs() == null ? List.<TruthPair>of()
-                : na.pairs().stream()
-                        .filter(Objects::nonNull)
-                        .filter(p -> p.getLeftId() != null && p.getRightId() != null)
-                        .map(p -> new TruthPair(p.getLeftId(), p.getRightId()))
-                        .toList();
+                var userPairs = na.pairs() == null ? List.<TruthPair>of()
+                                : na.pairs().stream()
+                                                .filter(Objects::nonNull)
+                                                .filter(p -> p.getLeftId() != null && p.getRightId() != null)
+                                                .map(p -> new TruthPair(p.getLeftId(), p.getRightId()))
+                                                .toList();
 
-        boolean correct = new java.util.HashSet<>(expected).equals(new java.util.HashSet<>(userPairs));
-        String correctDisplay = snapshot.getTruth() == null ? null : snapshot.getTruth().getCorrectAnswerDisplay();
+                boolean correct = new java.util.HashSet<>(expected).equals(new java.util.HashSet<>(userPairs));
+                String correctDisplay = snapshot.getTruth() == null ? null
+                                : snapshot.getTruth().getCorrectAnswerDisplay();
 
-        Long attrId = QuizSnapshotGuards.requireSingleTargetAttributeId(snapshot, QuizFormat.ASSOCIATION);
+                Long attrId = QuizSnapshotGuards.requireSingleTargetAttributeId(snapshot, QuizFormat.ASSOCIATION);
 
-        List<ResultAttribute> attrs = List.of(
-                PluginSupport.resultAttr(attrId, na.auditString(), correct, true));
+                List<ResultAttribute> attrs = List.of(
+                                PluginSupport.resultAttr(attrId, na.auditString(), correct, true));
 
-        return new QuizValidationResult.Builder()
-                .withCorrect(correct)
-                .withCorrectAnswerDisplay(correctDisplay)
-                .withResultAttributes(attrs)
-                .build();
-    }
+                return new QuizValidationResult.Builder()
+                                .withCorrect(correct)
+                                .withCorrectAnswerDisplay(correctDisplay)
+                                .withResultAttributes(attrs)
+                                .build();
+        }
 }

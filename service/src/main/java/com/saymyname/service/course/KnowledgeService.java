@@ -9,20 +9,19 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.course.Course;
-import com.saymyname.core.model.course.CourseQuestionHistory;
+import com.saymyname.core.model.course.CourseQuestionAttempt;
 import com.saymyname.core.model.course.Knowledge;
 import com.saymyname.core.model.course.KnowledgeResultEvent;
 import com.saymyname.core.model.enums.KnowledgeStatus;
 import com.saymyname.core.model.enums.PopulationScope;
 import com.saymyname.core.model.enums.SrsAlgorithm;
+import com.saymyname.core.model.leaderboard.XpAward;
 import com.saymyname.core.model.people.Person;
 import com.saymyname.core.model.quiz.options.GameMode;
 import com.saymyname.persistence.dao.PersonAttributeDao;
@@ -32,8 +31,6 @@ import com.saymyname.service.leaderboard.LeaderboardService;
 
 @Service
 public class KnowledgeService {
-
-    private static final Logger logger = LoggerFactory.getLogger(KnowledgeService.class);
 
     private static final BigDecimal INITIAL_EF = BigDecimal.valueOf(2.5);
     private static final double INITIAL_DIFF = 1.0;
@@ -49,7 +46,6 @@ public class KnowledgeService {
     private final KnowledgeDao knowledgeDao;
     private final Map<SrsAlgorithm, SchedulerStrategy> strategies;
     private final SrsAlgorithm defaultAlgorithm;
-    private final PersonAttributeDao personAttributeDao;
     private final LeaderboardService leaderboardService;
 
     public KnowledgeService(
@@ -61,7 +57,6 @@ public class KnowledgeService {
         this.knowledgeDao = Objects.requireNonNull(knowledgeDao, "knowledgeDao");
         this.strategies = Objects.requireNonNull(strategies, "strategies");
         this.defaultAlgorithm = Objects.requireNonNull(defaultAlgorithm, "defaultAlgorithm");
-        this.personAttributeDao = Objects.requireNonNull(personAttributeDao, "personAttributeDao");
         this.leaderboardService = Objects.requireNonNull(leaderboardService, "leaderboardService");
     }
 
@@ -89,13 +84,13 @@ public class KnowledgeService {
     // ---------------------------------------------------------------------
 
     @Transactional
-    public void recordCourseAnswerResults(
+    public XpAward recordCourseAnswerResults(
             User user,
             Course course,
-            CourseQuestionHistory history,
+            CourseQuestionAttempt attempt,
             boolean helpUsed,
             List<KnowledgeResultEvent> events) {
-        recordBatchResults(user, events);
+        return recordBatchResults(user, events);
     }
 
     // ---------------------------------------------------------------------
@@ -103,21 +98,27 @@ public class KnowledgeService {
     // ---------------------------------------------------------------------
 
     @Transactional
-    public int recordBatchResults(User user, List<KnowledgeResultEvent> events) {
-        if (user == null || user.getId() == null)
-            return 0;
-        if (events == null || events.isEmpty())
-            return 0;
+    public XpAward recordBatchResults(User user, List<KnowledgeResultEvent> events) {
+        if (user == null || user.getId() == null) {
+            return XpAward.none();
+        }
+        if (events == null || events.isEmpty()) {
+            return XpAward.none();
+        }
 
         var grouped = events.stream()
                 .filter(Objects::nonNull)
                 .collect(Collectors.groupingBy(KnowledgeService::toEventKey));
 
+        long totalDeltaXp = 0;
+        List<String> eventKeys = new ArrayList<>(8);
+
         for (var entry : grouped.entrySet()) {
             EventKey key = entry.getKey();
             List<KnowledgeResultEvent> groupEvents = entry.getValue();
-            if (groupEvents == null || groupEvents.isEmpty())
+            if (groupEvents == null || groupEvents.isEmpty()) {
                 continue;
+            }
 
             Knowledge knowledge = loadKnowledgeForKey(user, key, groupEvents);
 
@@ -150,40 +151,56 @@ public class KnowledgeService {
                 }
             }
 
+            // Persist knowledge first (unchanged behavior)
             knowledgeDao.upsertKnowledge(knowledge);
 
             Long refPersonId = resolvePersonIdForXp(key, knowledge, groupEvents);
             LocalDateTime at = LocalDateTime.now();
 
+            // --- XP for answer batch (unchanged write behavior) ---
             if (totalAnswerXp > 0 && refPersonId != null) {
+                int delta = safeLongToInt(totalAnswerXp);
+                totalDeltaXp += delta;
+                eventKeys.add("KNOWLEDGE_ANSWER_BATCH");
+
                 leaderboardService.addXp(
                         user,
                         "KNOWLEDGE_ANSWER_BATCH",
                         SOURCE_TYPE_KNOWLEDGE,
                         refPersonId,
-                        safeLongToInt(totalAnswerXp),
+                        delta,
                         at,
                         false,
                         !hasAnyCountedAnswer);
             }
 
+            // --- XP for streak bonuses (unchanged write behavior) ---
             for (StreakMilestoneHit hit : streakHits) {
-                if (refPersonId == null)
+                if (refPersonId == null) {
                     continue;
+                }
+                int bonus = safeLongToInt(hit.bonusXp());
+                if (bonus <= 0) {
+                    continue;
+                }
+
+                String ek = computeStreakEventKey(hit.milestone());
+                totalDeltaXp += bonus;
+                eventKeys.add(ek);
 
                 leaderboardService.addXp(
                         user,
-                        computeStreakEventKey(hit.milestone()),
+                        ek,
                         SOURCE_TYPE_KNOWLEDGE,
                         refPersonId,
-                        hit.bonusXp(),
+                        bonus,
                         at,
                         false,
                         true);
             }
         }
 
-        return grouped.size();
+        return new XpAward(safeLongToInt(totalDeltaXp), List.copyOf(eventKeys));
     }
 
     private static EventKey toEventKey(KnowledgeResultEvent ev) {
@@ -200,7 +217,7 @@ public class KnowledgeService {
     }
 
     private Knowledge loadKnowledgeForKey(User user, EventKey key, List<KnowledgeResultEvent> groupEvents) {
-        if (key instanceof KnowledgeIdKey kid) {
+        if (key instanceof KnowledgeIdKey) {
             KnowledgeResultEvent first = groupEvents.get(0);
             if (first.getGameModeId() == null || first.getPersonId() == null) {
                 throw new IllegalArgumentException(

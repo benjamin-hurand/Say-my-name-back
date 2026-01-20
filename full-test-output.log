@@ -326,10 +326,10 @@ Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot lo
 2026-01-10T17:01:27.247+01:00  INFO 56100 --- [webapp-test] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
 2026-01-10T17:01:27.272+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table attribute_enum_options drop foreign key fk_attr_enum_option_attr
 2026-01-10T17:01:27.276+01:00  INFO 56100 --- [webapp-test] [           main] org.hibernate.orm.connections.access     : HHH10001501: Connection obtained from JdbcConnectionAccess [org.hibernate.engine.jdbc.env.internal.JdbcEnvironmentInitiator$ConnectionProviderJdbcConnectionAccess@26b16a2b] for (non-JTA) DDL execution was not in auto-commit mode; the Connection 'local transaction' will be committed and the Connection will be set into auto-commit mode.
-2026-01-10T17:01:27.277+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table attribute_enum_options drop foreign key fk_attr_enum_option_attr" via JDBC [Table "attribute_enum_options" non trouvée
+2026-01-10T17:01:27.277+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table attribute_enum_options drop foreign key fk_attr_enum_option_attr" via JDBC [Table "attribute_enum_options" non trouvï¿½e
 Table "attribute_enum_options" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table attribute_enum_options drop foreign key fk_attr_enum_option_attr" via JDBC [Table "attribute_enum_options" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table attribute_enum_options drop foreign key fk_attr_enum_option_attr" via JDBC [Table "attribute_enum_options" non trouvï¿½e
 Table "attribute_enum_options" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -449,7 +449,7 @@ Table "attribute_enum_options" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "attribute_enum_options" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "attribute_enum_options" non trouvï¿½e
 Table "attribute_enum_options" not found; SQL statement:
 alter table attribute_enum_options drop foreign key fk_attr_enum_option_attr [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -467,10 +467,10 @@ alter table attribute_enum_options drop foreign key fk_attr_enum_option_attr [42
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.285+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table change_request_items drop foreign key FK11eswjm4gbeah4rd81ts1xdjv
-2026-01-10T17:01:27.286+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table change_request_items drop foreign key FK11eswjm4gbeah4rd81ts1xdjv" via JDBC [Table "change_request_items" non trouvée
+2026-01-10T17:01:27.286+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table change_request_items drop foreign key FK11eswjm4gbeah4rd81ts1xdjv" via JDBC [Table "change_request_items" non trouvï¿½e
 Table "change_request_items" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table change_request_items drop foreign key FK11eswjm4gbeah4rd81ts1xdjv" via JDBC [Table "change_request_items" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table change_request_items drop foreign key FK11eswjm4gbeah4rd81ts1xdjv" via JDBC [Table "change_request_items" non trouvï¿½e
 Table "change_request_items" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -590,7 +590,7 @@ Table "change_request_items" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "change_request_items" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "change_request_items" non trouvï¿½e
 Table "change_request_items" not found; SQL statement:
 alter table change_request_items drop foreign key FK11eswjm4gbeah4rd81ts1xdjv [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -608,10 +608,10 @@ alter table change_request_items drop foreign key FK11eswjm4gbeah4rd81ts1xdjv [4
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.288+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table change_request_items drop foreign key FKdpl7xkovo73x2j5gohvcgi0ni
-2026-01-10T17:01:27.289+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table change_request_items drop foreign key FKdpl7xkovo73x2j5gohvcgi0ni" via JDBC [Table "change_request_items" non trouvée
+2026-01-10T17:01:27.289+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table change_request_items drop foreign key FKdpl7xkovo73x2j5gohvcgi0ni" via JDBC [Table "change_request_items" non trouvï¿½e
 Table "change_request_items" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table change_request_items drop foreign key FKdpl7xkovo73x2j5gohvcgi0ni" via JDBC [Table "change_request_items" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table change_request_items drop foreign key FKdpl7xkovo73x2j5gohvcgi0ni" via JDBC [Table "change_request_items" non trouvï¿½e
 Table "change_request_items" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -731,7 +731,7 @@ Table "change_request_items" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "change_request_items" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "change_request_items" non trouvï¿½e
 Table "change_request_items" not found; SQL statement:
 alter table change_request_items drop foreign key FKdpl7xkovo73x2j5gohvcgi0ni [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -749,10 +749,10 @@ alter table change_request_items drop foreign key FKdpl7xkovo73x2j5gohvcgi0ni [4
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.291+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table change_requests drop foreign key FK8evk21tvq3s82xd4updkny25c
-2026-01-10T17:01:27.292+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table change_requests drop foreign key FK8evk21tvq3s82xd4updkny25c" via JDBC [Table "change_requests" non trouvée
+2026-01-10T17:01:27.292+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table change_requests drop foreign key FK8evk21tvq3s82xd4updkny25c" via JDBC [Table "change_requests" non trouvï¿½e
 Table "change_requests" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table change_requests drop foreign key FK8evk21tvq3s82xd4updkny25c" via JDBC [Table "change_requests" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table change_requests drop foreign key FK8evk21tvq3s82xd4updkny25c" via JDBC [Table "change_requests" non trouvï¿½e
 Table "change_requests" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -872,7 +872,7 @@ Table "change_requests" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "change_requests" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "change_requests" non trouvï¿½e
 Table "change_requests" not found; SQL statement:
 alter table change_requests drop foreign key FK8evk21tvq3s82xd4updkny25c [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -890,10 +890,10 @@ alter table change_requests drop foreign key FK8evk21tvq3s82xd4updkny25c [42102-
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.294+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table change_requests drop foreign key FKlg39x24uffh5kvwar0k5ug1ap
-2026-01-10T17:01:27.294+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table change_requests drop foreign key FKlg39x24uffh5kvwar0k5ug1ap" via JDBC [Table "change_requests" non trouvée
+2026-01-10T17:01:27.294+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table change_requests drop foreign key FKlg39x24uffh5kvwar0k5ug1ap" via JDBC [Table "change_requests" non trouvï¿½e
 Table "change_requests" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table change_requests drop foreign key FKlg39x24uffh5kvwar0k5ug1ap" via JDBC [Table "change_requests" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table change_requests drop foreign key FKlg39x24uffh5kvwar0k5ug1ap" via JDBC [Table "change_requests" non trouvï¿½e
 Table "change_requests" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -1013,7 +1013,7 @@ Table "change_requests" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "change_requests" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "change_requests" non trouvï¿½e
 Table "change_requests" not found; SQL statement:
 alter table change_requests drop foreign key FKlg39x24uffh5kvwar0k5ug1ap [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -1031,10 +1031,10 @@ alter table change_requests drop foreign key FKlg39x24uffh5kvwar0k5ug1ap [42102-
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.296+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table change_requests drop foreign key FKrvb52j86ix8fynxbexyf55ha1
-2026-01-10T17:01:27.296+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table change_requests drop foreign key FKrvb52j86ix8fynxbexyf55ha1" via JDBC [Table "change_requests" non trouvée
+2026-01-10T17:01:27.296+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table change_requests drop foreign key FKrvb52j86ix8fynxbexyf55ha1" via JDBC [Table "change_requests" non trouvï¿½e
 Table "change_requests" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table change_requests drop foreign key FKrvb52j86ix8fynxbexyf55ha1" via JDBC [Table "change_requests" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table change_requests drop foreign key FKrvb52j86ix8fynxbexyf55ha1" via JDBC [Table "change_requests" non trouvï¿½e
 Table "change_requests" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -1154,7 +1154,7 @@ Table "change_requests" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "change_requests" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "change_requests" non trouvï¿½e
 Table "change_requests" not found; SQL statement:
 alter table change_requests drop foreign key FKrvb52j86ix8fynxbexyf55ha1 [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -1172,10 +1172,10 @@ alter table change_requests drop foreign key FKrvb52j86ix8fynxbexyf55ha1 [42102-
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.298+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table change_requests drop foreign key FK19iam04j484nev0wpq8tmcmkh
-2026-01-10T17:01:27.299+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table change_requests drop foreign key FK19iam04j484nev0wpq8tmcmkh" via JDBC [Table "change_requests" non trouvée
+2026-01-10T17:01:27.299+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table change_requests drop foreign key FK19iam04j484nev0wpq8tmcmkh" via JDBC [Table "change_requests" non trouvï¿½e
 Table "change_requests" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table change_requests drop foreign key FK19iam04j484nev0wpq8tmcmkh" via JDBC [Table "change_requests" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table change_requests drop foreign key FK19iam04j484nev0wpq8tmcmkh" via JDBC [Table "change_requests" non trouvï¿½e
 Table "change_requests" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -1295,7 +1295,7 @@ Table "change_requests" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "change_requests" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "change_requests" non trouvï¿½e
 Table "change_requests" not found; SQL statement:
 alter table change_requests drop foreign key FK19iam04j484nev0wpq8tmcmkh [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -1312,12 +1312,12 @@ alter table change_requests drop foreign key FK19iam04j484nev0wpq8tmcmkh [42102-
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:80) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	... 117 common frames omitted
 
-2026-01-10T17:01:27.300+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table course_question_history drop foreign key FKmvhetgpg3ag8hrf5cfdj2dqre
-2026-01-10T17:01:27.301+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table course_question_history drop foreign key FKmvhetgpg3ag8hrf5cfdj2dqre" via JDBC [Table "course_question_history" non trouvée
-Table "course_question_history" not found;]
+2026-01-10T17:01:27.300+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table course_question_attempts drop foreign key FKmvhetgpg3ag8hrf5cfdj2dqre
+2026-01-10T17:01:27.301+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table course_question_attempts drop foreign key FKmvhetgpg3ag8hrf5cfdj2dqre" via JDBC [Table "course_question_attempts" non trouvï¿½e
+Table "course_question_attempts" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table course_question_history drop foreign key FKmvhetgpg3ag8hrf5cfdj2dqre" via JDBC [Table "course_question_history" non trouvée
-Table "course_question_history" not found;]
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table course_question_attempts drop foreign key FKmvhetgpg3ag8hrf5cfdj2dqre" via JDBC [Table "course_question_attempts" non trouvï¿½e
+Table "course_question_attempts" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlStrings(Helper.java:217) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -1436,9 +1436,9 @@ Table "course_question_history" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "course_question_history" non trouvée
-Table "course_question_history" not found; SQL statement:
-alter table course_question_history drop foreign key FKmvhetgpg3ag8hrf5cfdj2dqre [42102-224]
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "course_question_attempts" non trouvï¿½e
+Table "course_question_attempts" not found; SQL statement:
+alter table course_question_attempts drop foreign key FKmvhetgpg3ag8hrf5cfdj2dqre [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:489) ~[h2-2.2.224.jar:2.2.224]
 	at org.h2.message.DbException.get(DbException.java:223) ~[h2-2.2.224.jar:2.2.224]
@@ -1454,10 +1454,10 @@ alter table course_question_history drop foreign key FKmvhetgpg3ag8hrf5cfdj2dqre
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.302+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table course_question_items drop foreign key FKt3awhtao0rwr0yh1eq8k878i6
-2026-01-10T17:01:27.303+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table course_question_items drop foreign key FKt3awhtao0rwr0yh1eq8k878i6" via JDBC [Table "course_question_items" non trouvée
+2026-01-10T17:01:27.303+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table course_question_items drop foreign key FKt3awhtao0rwr0yh1eq8k878i6" via JDBC [Table "course_question_items" non trouvï¿½e
 Table "course_question_items" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table course_question_items drop foreign key FKt3awhtao0rwr0yh1eq8k878i6" via JDBC [Table "course_question_items" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table course_question_items drop foreign key FKt3awhtao0rwr0yh1eq8k878i6" via JDBC [Table "course_question_items" non trouvï¿½e
 Table "course_question_items" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -1577,7 +1577,7 @@ Table "course_question_items" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "course_question_items" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "course_question_items" non trouvï¿½e
 Table "course_question_items" not found; SQL statement:
 alter table course_question_items drop foreign key FKt3awhtao0rwr0yh1eq8k878i6 [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -1595,10 +1595,10 @@ alter table course_question_items drop foreign key FKt3awhtao0rwr0yh1eq8k878i6 [
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.305+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table course_question_items drop foreign key FK2ibtcvh7i8tf1qxgcc55f2e2
-2026-01-10T17:01:27.305+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table course_question_items drop foreign key FK2ibtcvh7i8tf1qxgcc55f2e2" via JDBC [Table "course_question_items" non trouvée
+2026-01-10T17:01:27.305+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table course_question_items drop foreign key FK2ibtcvh7i8tf1qxgcc55f2e2" via JDBC [Table "course_question_items" non trouvï¿½e
 Table "course_question_items" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table course_question_items drop foreign key FK2ibtcvh7i8tf1qxgcc55f2e2" via JDBC [Table "course_question_items" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table course_question_items drop foreign key FK2ibtcvh7i8tf1qxgcc55f2e2" via JDBC [Table "course_question_items" non trouvï¿½e
 Table "course_question_items" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -1718,7 +1718,7 @@ Table "course_question_items" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "course_question_items" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "course_question_items" non trouvï¿½e
 Table "course_question_items" not found; SQL statement:
 alter table course_question_items drop foreign key FK2ibtcvh7i8tf1qxgcc55f2e2 [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -1736,10 +1736,10 @@ alter table course_question_items drop foreign key FK2ibtcvh7i8tf1qxgcc55f2e2 [4
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.307+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table course_question_items drop foreign key FK8ytgmdn6kehiyr8c9mhffjv44
-2026-01-10T17:01:27.308+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table course_question_items drop foreign key FK8ytgmdn6kehiyr8c9mhffjv44" via JDBC [Table "course_question_items" non trouvée
+2026-01-10T17:01:27.308+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table course_question_items drop foreign key FK8ytgmdn6kehiyr8c9mhffjv44" via JDBC [Table "course_question_items" non trouvï¿½e
 Table "course_question_items" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table course_question_items drop foreign key FK8ytgmdn6kehiyr8c9mhffjv44" via JDBC [Table "course_question_items" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table course_question_items drop foreign key FK8ytgmdn6kehiyr8c9mhffjv44" via JDBC [Table "course_question_items" non trouvï¿½e
 Table "course_question_items" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -1859,7 +1859,7 @@ Table "course_question_items" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "course_question_items" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "course_question_items" non trouvï¿½e
 Table "course_question_items" not found; SQL statement:
 alter table course_question_items drop foreign key FK8ytgmdn6kehiyr8c9mhffjv44 [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -1877,10 +1877,10 @@ alter table course_question_items drop foreign key FK8ytgmdn6kehiyr8c9mhffjv44 [
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.310+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table course_recent_stats drop foreign key FKpi38pd5vjspxe5do0gqnildy9
-2026-01-10T17:01:27.311+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table course_recent_stats drop foreign key FKpi38pd5vjspxe5do0gqnildy9" via JDBC [Table "course_recent_stats" non trouvée
+2026-01-10T17:01:27.311+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table course_recent_stats drop foreign key FKpi38pd5vjspxe5do0gqnildy9" via JDBC [Table "course_recent_stats" non trouvï¿½e
 Table "course_recent_stats" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table course_recent_stats drop foreign key FKpi38pd5vjspxe5do0gqnildy9" via JDBC [Table "course_recent_stats" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table course_recent_stats drop foreign key FKpi38pd5vjspxe5do0gqnildy9" via JDBC [Table "course_recent_stats" non trouvï¿½e
 Table "course_recent_stats" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -2000,7 +2000,7 @@ Table "course_recent_stats" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "course_recent_stats" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "course_recent_stats" non trouvï¿½e
 Table "course_recent_stats" not found; SQL statement:
 alter table course_recent_stats drop foreign key FKpi38pd5vjspxe5do0gqnildy9 [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -2018,10 +2018,10 @@ alter table course_recent_stats drop foreign key FKpi38pd5vjspxe5do0gqnildy9 [42
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.313+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table courses drop foreign key FKd7ilu33c5g8sjpbtdk36cbwm4
-2026-01-10T17:01:27.314+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table courses drop foreign key FKd7ilu33c5g8sjpbtdk36cbwm4" via JDBC [Table "courses" non trouvée
+2026-01-10T17:01:27.314+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table courses drop foreign key FKd7ilu33c5g8sjpbtdk36cbwm4" via JDBC [Table "courses" non trouvï¿½e
 Table "courses" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table courses drop foreign key FKd7ilu33c5g8sjpbtdk36cbwm4" via JDBC [Table "courses" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table courses drop foreign key FKd7ilu33c5g8sjpbtdk36cbwm4" via JDBC [Table "courses" non trouvï¿½e
 Table "courses" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -2141,7 +2141,7 @@ Table "courses" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "courses" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "courses" non trouvï¿½e
 Table "courses" not found; SQL statement:
 alter table courses drop foreign key FKd7ilu33c5g8sjpbtdk36cbwm4 [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -2159,10 +2159,10 @@ alter table courses drop foreign key FKd7ilu33c5g8sjpbtdk36cbwm4 [42102-224]
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.316+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table courses drop foreign key FK51k53m6m5gi9n91fnlxkxgpmv
-2026-01-10T17:01:27.317+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table courses drop foreign key FK51k53m6m5gi9n91fnlxkxgpmv" via JDBC [Table "courses" non trouvée
+2026-01-10T17:01:27.317+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table courses drop foreign key FK51k53m6m5gi9n91fnlxkxgpmv" via JDBC [Table "courses" non trouvï¿½e
 Table "courses" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table courses drop foreign key FK51k53m6m5gi9n91fnlxkxgpmv" via JDBC [Table "courses" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table courses drop foreign key FK51k53m6m5gi9n91fnlxkxgpmv" via JDBC [Table "courses" non trouvï¿½e
 Table "courses" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -2282,7 +2282,7 @@ Table "courses" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "courses" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "courses" non trouvï¿½e
 Table "courses" not found; SQL statement:
 alter table courses drop foreign key FK51k53m6m5gi9n91fnlxkxgpmv [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -2300,10 +2300,10 @@ alter table courses drop foreign key FK51k53m6m5gi9n91fnlxkxgpmv [42102-224]
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.319+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table game_modes_attributes drop foreign key FKsoyc11h09q105fr2290yvn1lu
-2026-01-10T17:01:27.319+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table game_modes_attributes drop foreign key FKsoyc11h09q105fr2290yvn1lu" via JDBC [Table "game_modes_attributes" non trouvée
+2026-01-10T17:01:27.319+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table game_modes_attributes drop foreign key FKsoyc11h09q105fr2290yvn1lu" via JDBC [Table "game_modes_attributes" non trouvï¿½e
 Table "game_modes_attributes" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table game_modes_attributes drop foreign key FKsoyc11h09q105fr2290yvn1lu" via JDBC [Table "game_modes_attributes" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table game_modes_attributes drop foreign key FKsoyc11h09q105fr2290yvn1lu" via JDBC [Table "game_modes_attributes" non trouvï¿½e
 Table "game_modes_attributes" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -2423,7 +2423,7 @@ Table "game_modes_attributes" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "game_modes_attributes" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "game_modes_attributes" non trouvï¿½e
 Table "game_modes_attributes" not found; SQL statement:
 alter table game_modes_attributes drop foreign key FKsoyc11h09q105fr2290yvn1lu [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -2441,10 +2441,10 @@ alter table game_modes_attributes drop foreign key FKsoyc11h09q105fr2290yvn1lu [
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.321+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table game_modes_attributes drop foreign key FKbyxiy6d82egmuubuwuxeb5rx1
-2026-01-10T17:01:27.322+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table game_modes_attributes drop foreign key FKbyxiy6d82egmuubuwuxeb5rx1" via JDBC [Table "game_modes_attributes" non trouvée
+2026-01-10T17:01:27.322+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table game_modes_attributes drop foreign key FKbyxiy6d82egmuubuwuxeb5rx1" via JDBC [Table "game_modes_attributes" non trouvï¿½e
 Table "game_modes_attributes" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table game_modes_attributes drop foreign key FKbyxiy6d82egmuubuwuxeb5rx1" via JDBC [Table "game_modes_attributes" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table game_modes_attributes drop foreign key FKbyxiy6d82egmuubuwuxeb5rx1" via JDBC [Table "game_modes_attributes" non trouvï¿½e
 Table "game_modes_attributes" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -2564,7 +2564,7 @@ Table "game_modes_attributes" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "game_modes_attributes" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "game_modes_attributes" non trouvï¿½e
 Table "game_modes_attributes" not found; SQL statement:
 alter table game_modes_attributes drop foreign key FKbyxiy6d82egmuubuwuxeb5rx1 [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -2582,10 +2582,10 @@ alter table game_modes_attributes drop foreign key FKbyxiy6d82egmuubuwuxeb5rx1 [
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.324+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table invitation_usages drop foreign key FKlk386s7xpdixjmicex2blbxbu
-2026-01-10T17:01:27.324+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table invitation_usages drop foreign key FKlk386s7xpdixjmicex2blbxbu" via JDBC [Table "invitation_usages" non trouvée
+2026-01-10T17:01:27.324+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table invitation_usages drop foreign key FKlk386s7xpdixjmicex2blbxbu" via JDBC [Table "invitation_usages" non trouvï¿½e
 Table "invitation_usages" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table invitation_usages drop foreign key FKlk386s7xpdixjmicex2blbxbu" via JDBC [Table "invitation_usages" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table invitation_usages drop foreign key FKlk386s7xpdixjmicex2blbxbu" via JDBC [Table "invitation_usages" non trouvï¿½e
 Table "invitation_usages" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -2705,7 +2705,7 @@ Table "invitation_usages" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "invitation_usages" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "invitation_usages" non trouvï¿½e
 Table "invitation_usages" not found; SQL statement:
 alter table invitation_usages drop foreign key FKlk386s7xpdixjmicex2blbxbu [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -2723,10 +2723,10 @@ alter table invitation_usages drop foreign key FKlk386s7xpdixjmicex2blbxbu [4210
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.326+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table invitation_usages drop foreign key FK9ixlcru110iqm9jl6oyxdsjev
-2026-01-10T17:01:27.327+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table invitation_usages drop foreign key FK9ixlcru110iqm9jl6oyxdsjev" via JDBC [Table "invitation_usages" non trouvée
+2026-01-10T17:01:27.327+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table invitation_usages drop foreign key FK9ixlcru110iqm9jl6oyxdsjev" via JDBC [Table "invitation_usages" non trouvï¿½e
 Table "invitation_usages" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table invitation_usages drop foreign key FK9ixlcru110iqm9jl6oyxdsjev" via JDBC [Table "invitation_usages" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table invitation_usages drop foreign key FK9ixlcru110iqm9jl6oyxdsjev" via JDBC [Table "invitation_usages" non trouvï¿½e
 Table "invitation_usages" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -2846,7 +2846,7 @@ Table "invitation_usages" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "invitation_usages" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "invitation_usages" non trouvï¿½e
 Table "invitation_usages" not found; SQL statement:
 alter table invitation_usages drop foreign key FK9ixlcru110iqm9jl6oyxdsjev [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -2864,10 +2864,10 @@ alter table invitation_usages drop foreign key FK9ixlcru110iqm9jl6oyxdsjev [4210
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.329+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table invitation_usages drop foreign key FK6vvigqciio18sdmbc8ph4ta52
-2026-01-10T17:01:27.329+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table invitation_usages drop foreign key FK6vvigqciio18sdmbc8ph4ta52" via JDBC [Table "invitation_usages" non trouvée
+2026-01-10T17:01:27.329+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table invitation_usages drop foreign key FK6vvigqciio18sdmbc8ph4ta52" via JDBC [Table "invitation_usages" non trouvï¿½e
 Table "invitation_usages" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table invitation_usages drop foreign key FK6vvigqciio18sdmbc8ph4ta52" via JDBC [Table "invitation_usages" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table invitation_usages drop foreign key FK6vvigqciio18sdmbc8ph4ta52" via JDBC [Table "invitation_usages" non trouvï¿½e
 Table "invitation_usages" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -2987,7 +2987,7 @@ Table "invitation_usages" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "invitation_usages" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "invitation_usages" non trouvï¿½e
 Table "invitation_usages" not found; SQL statement:
 alter table invitation_usages drop foreign key FK6vvigqciio18sdmbc8ph4ta52 [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -3005,10 +3005,10 @@ alter table invitation_usages drop foreign key FK6vvigqciio18sdmbc8ph4ta52 [4210
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.331+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table invitations drop foreign key FK65mvqbynmdkucm1xy8tm33glp
-2026-01-10T17:01:27.331+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table invitations drop foreign key FK65mvqbynmdkucm1xy8tm33glp" via JDBC [Table "invitations" non trouvée
+2026-01-10T17:01:27.331+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table invitations drop foreign key FK65mvqbynmdkucm1xy8tm33glp" via JDBC [Table "invitations" non trouvï¿½e
 Table "invitations" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table invitations drop foreign key FK65mvqbynmdkucm1xy8tm33glp" via JDBC [Table "invitations" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table invitations drop foreign key FK65mvqbynmdkucm1xy8tm33glp" via JDBC [Table "invitations" non trouvï¿½e
 Table "invitations" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -3128,7 +3128,7 @@ Table "invitations" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "invitations" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "invitations" non trouvï¿½e
 Table "invitations" not found; SQL statement:
 alter table invitations drop foreign key FK65mvqbynmdkucm1xy8tm33glp [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -3146,10 +3146,10 @@ alter table invitations drop foreign key FK65mvqbynmdkucm1xy8tm33glp [42102-224]
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.333+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table invitations drop foreign key FKdk5jriaydqgx84bf7fx7k6wn9
-2026-01-10T17:01:27.333+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table invitations drop foreign key FKdk5jriaydqgx84bf7fx7k6wn9" via JDBC [Table "invitations" non trouvée
+2026-01-10T17:01:27.333+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table invitations drop foreign key FKdk5jriaydqgx84bf7fx7k6wn9" via JDBC [Table "invitations" non trouvï¿½e
 Table "invitations" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table invitations drop foreign key FKdk5jriaydqgx84bf7fx7k6wn9" via JDBC [Table "invitations" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table invitations drop foreign key FKdk5jriaydqgx84bf7fx7k6wn9" via JDBC [Table "invitations" non trouvï¿½e
 Table "invitations" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -3269,7 +3269,7 @@ Table "invitations" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "invitations" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "invitations" non trouvï¿½e
 Table "invitations" not found; SQL statement:
 alter table invitations drop foreign key FKdk5jriaydqgx84bf7fx7k6wn9 [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -3287,10 +3287,10 @@ alter table invitations drop foreign key FKdk5jriaydqgx84bf7fx7k6wn9 [42102-224]
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.335+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table invitations drop foreign key FKgr8q4icsxv25w1g7g7kmf31jv
-2026-01-10T17:01:27.336+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table invitations drop foreign key FKgr8q4icsxv25w1g7g7kmf31jv" via JDBC [Table "invitations" non trouvée
+2026-01-10T17:01:27.336+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table invitations drop foreign key FKgr8q4icsxv25w1g7g7kmf31jv" via JDBC [Table "invitations" non trouvï¿½e
 Table "invitations" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table invitations drop foreign key FKgr8q4icsxv25w1g7g7kmf31jv" via JDBC [Table "invitations" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table invitations drop foreign key FKgr8q4icsxv25w1g7g7kmf31jv" via JDBC [Table "invitations" non trouvï¿½e
 Table "invitations" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -3410,7 +3410,7 @@ Table "invitations" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "invitations" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "invitations" non trouvï¿½e
 Table "invitations" not found; SQL statement:
 alter table invitations drop foreign key FKgr8q4icsxv25w1g7g7kmf31jv [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -3428,10 +3428,10 @@ alter table invitations drop foreign key FKgr8q4icsxv25w1g7g7kmf31jv [42102-224]
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.338+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table knowledge_stats drop foreign key FKmy98nlwpxcv13ynwk1ihef6fr
-2026-01-10T17:01:27.339+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table knowledge_stats drop foreign key FKmy98nlwpxcv13ynwk1ihef6fr" via JDBC [Table "knowledge_stats" non trouvée
+2026-01-10T17:01:27.339+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table knowledge_stats drop foreign key FKmy98nlwpxcv13ynwk1ihef6fr" via JDBC [Table "knowledge_stats" non trouvï¿½e
 Table "knowledge_stats" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table knowledge_stats drop foreign key FKmy98nlwpxcv13ynwk1ihef6fr" via JDBC [Table "knowledge_stats" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table knowledge_stats drop foreign key FKmy98nlwpxcv13ynwk1ihef6fr" via JDBC [Table "knowledge_stats" non trouvï¿½e
 Table "knowledge_stats" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -3551,7 +3551,7 @@ Table "knowledge_stats" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "knowledge_stats" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "knowledge_stats" non trouvï¿½e
 Table "knowledge_stats" not found; SQL statement:
 alter table knowledge_stats drop foreign key FKmy98nlwpxcv13ynwk1ihef6fr [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -3569,10 +3569,10 @@ alter table knowledge_stats drop foreign key FKmy98nlwpxcv13ynwk1ihef6fr [42102-
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.341+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table knowledge_stats drop foreign key FKik40v1c57gp95v3y1rcgxo8hh
-2026-01-10T17:01:27.341+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table knowledge_stats drop foreign key FKik40v1c57gp95v3y1rcgxo8hh" via JDBC [Table "knowledge_stats" non trouvée
+2026-01-10T17:01:27.341+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table knowledge_stats drop foreign key FKik40v1c57gp95v3y1rcgxo8hh" via JDBC [Table "knowledge_stats" non trouvï¿½e
 Table "knowledge_stats" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table knowledge_stats drop foreign key FKik40v1c57gp95v3y1rcgxo8hh" via JDBC [Table "knowledge_stats" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table knowledge_stats drop foreign key FKik40v1c57gp95v3y1rcgxo8hh" via JDBC [Table "knowledge_stats" non trouvï¿½e
 Table "knowledge_stats" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -3692,7 +3692,7 @@ Table "knowledge_stats" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "knowledge_stats" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "knowledge_stats" non trouvï¿½e
 Table "knowledge_stats" not found; SQL statement:
 alter table knowledge_stats drop foreign key FKik40v1c57gp95v3y1rcgxo8hh [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -3710,10 +3710,10 @@ alter table knowledge_stats drop foreign key FKik40v1c57gp95v3y1rcgxo8hh [42102-
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.342+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table knowledge_stats drop foreign key FKa6nmde5innfglgsopnd3tduiq
-2026-01-10T17:01:27.343+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table knowledge_stats drop foreign key FKa6nmde5innfglgsopnd3tduiq" via JDBC [Table "knowledge_stats" non trouvée
+2026-01-10T17:01:27.343+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table knowledge_stats drop foreign key FKa6nmde5innfglgsopnd3tduiq" via JDBC [Table "knowledge_stats" non trouvï¿½e
 Table "knowledge_stats" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table knowledge_stats drop foreign key FKa6nmde5innfglgsopnd3tduiq" via JDBC [Table "knowledge_stats" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table knowledge_stats drop foreign key FKa6nmde5innfglgsopnd3tduiq" via JDBC [Table "knowledge_stats" non trouvï¿½e
 Table "knowledge_stats" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -3833,7 +3833,7 @@ Table "knowledge_stats" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "knowledge_stats" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "knowledge_stats" non trouvï¿½e
 Table "knowledge_stats" not found; SQL statement:
 alter table knowledge_stats drop foreign key FKa6nmde5innfglgsopnd3tduiq [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -3851,10 +3851,10 @@ alter table knowledge_stats drop foreign key FKa6nmde5innfglgsopnd3tduiq [42102-
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.344+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table knowledge_stats drop foreign key FKla7nri6ih8a2u94gr3xg6p9ve
-2026-01-10T17:01:27.344+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table knowledge_stats drop foreign key FKla7nri6ih8a2u94gr3xg6p9ve" via JDBC [Table "knowledge_stats" non trouvée
+2026-01-10T17:01:27.344+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table knowledge_stats drop foreign key FKla7nri6ih8a2u94gr3xg6p9ve" via JDBC [Table "knowledge_stats" non trouvï¿½e
 Table "knowledge_stats" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table knowledge_stats drop foreign key FKla7nri6ih8a2u94gr3xg6p9ve" via JDBC [Table "knowledge_stats" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table knowledge_stats drop foreign key FKla7nri6ih8a2u94gr3xg6p9ve" via JDBC [Table "knowledge_stats" non trouvï¿½e
 Table "knowledge_stats" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -3974,7 +3974,7 @@ Table "knowledge_stats" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "knowledge_stats" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "knowledge_stats" non trouvï¿½e
 Table "knowledge_stats" not found; SQL statement:
 alter table knowledge_stats drop foreign key FKla7nri6ih8a2u94gr3xg6p9ve [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -3992,10 +3992,10 @@ alter table knowledge_stats drop foreign key FKla7nri6ih8a2u94gr3xg6p9ve [42102-
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.346+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table knowledges drop foreign key FKjtpooylupm1nmnsutiyy98h0m
-2026-01-10T17:01:27.346+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table knowledges drop foreign key FKjtpooylupm1nmnsutiyy98h0m" via JDBC [Table "knowledges" non trouvée
+2026-01-10T17:01:27.346+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table knowledges drop foreign key FKjtpooylupm1nmnsutiyy98h0m" via JDBC [Table "knowledges" non trouvï¿½e
 Table "knowledges" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table knowledges drop foreign key FKjtpooylupm1nmnsutiyy98h0m" via JDBC [Table "knowledges" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table knowledges drop foreign key FKjtpooylupm1nmnsutiyy98h0m" via JDBC [Table "knowledges" non trouvï¿½e
 Table "knowledges" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -4115,7 +4115,7 @@ Table "knowledges" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "knowledges" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "knowledges" non trouvï¿½e
 Table "knowledges" not found; SQL statement:
 alter table knowledges drop foreign key FKjtpooylupm1nmnsutiyy98h0m [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -4133,10 +4133,10 @@ alter table knowledges drop foreign key FKjtpooylupm1nmnsutiyy98h0m [42102-224]
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.348+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table knowledges drop foreign key FKqtmx4jhp3nmvor12iua7m5fuh
-2026-01-10T17:01:27.348+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table knowledges drop foreign key FKqtmx4jhp3nmvor12iua7m5fuh" via JDBC [Table "knowledges" non trouvée
+2026-01-10T17:01:27.348+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table knowledges drop foreign key FKqtmx4jhp3nmvor12iua7m5fuh" via JDBC [Table "knowledges" non trouvï¿½e
 Table "knowledges" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table knowledges drop foreign key FKqtmx4jhp3nmvor12iua7m5fuh" via JDBC [Table "knowledges" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table knowledges drop foreign key FKqtmx4jhp3nmvor12iua7m5fuh" via JDBC [Table "knowledges" non trouvï¿½e
 Table "knowledges" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -4256,7 +4256,7 @@ Table "knowledges" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "knowledges" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "knowledges" non trouvï¿½e
 Table "knowledges" not found; SQL statement:
 alter table knowledges drop foreign key FKqtmx4jhp3nmvor12iua7m5fuh [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -4274,10 +4274,10 @@ alter table knowledges drop foreign key FKqtmx4jhp3nmvor12iua7m5fuh [42102-224]
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.349+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table knowledges drop foreign key FK4g9cdjkli0ehk38enf7q5ld55
-2026-01-10T17:01:27.349+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table knowledges drop foreign key FK4g9cdjkli0ehk38enf7q5ld55" via JDBC [Table "knowledges" non trouvée
+2026-01-10T17:01:27.349+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table knowledges drop foreign key FK4g9cdjkli0ehk38enf7q5ld55" via JDBC [Table "knowledges" non trouvï¿½e
 Table "knowledges" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table knowledges drop foreign key FK4g9cdjkli0ehk38enf7q5ld55" via JDBC [Table "knowledges" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table knowledges drop foreign key FK4g9cdjkli0ehk38enf7q5ld55" via JDBC [Table "knowledges" non trouvï¿½e
 Table "knowledges" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -4397,7 +4397,7 @@ Table "knowledges" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "knowledges" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "knowledges" non trouvï¿½e
 Table "knowledges" not found; SQL statement:
 alter table knowledges drop foreign key FK4g9cdjkli0ehk38enf7q5ld55 [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -4415,10 +4415,10 @@ alter table knowledges drop foreign key FK4g9cdjkli0ehk38enf7q5ld55 [42102-224]
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.350+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table leaderboard_stats drop foreign key FKlmcglnxocersxfpvginkrmlh9
-2026-01-10T17:01:27.351+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table leaderboard_stats drop foreign key FKlmcglnxocersxfpvginkrmlh9" via JDBC [Table "leaderboard_stats" non trouvée
+2026-01-10T17:01:27.351+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table leaderboard_stats drop foreign key FKlmcglnxocersxfpvginkrmlh9" via JDBC [Table "leaderboard_stats" non trouvï¿½e
 Table "leaderboard_stats" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table leaderboard_stats drop foreign key FKlmcglnxocersxfpvginkrmlh9" via JDBC [Table "leaderboard_stats" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table leaderboard_stats drop foreign key FKlmcglnxocersxfpvginkrmlh9" via JDBC [Table "leaderboard_stats" non trouvï¿½e
 Table "leaderboard_stats" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -4538,7 +4538,7 @@ Table "leaderboard_stats" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "leaderboard_stats" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "leaderboard_stats" non trouvï¿½e
 Table "leaderboard_stats" not found; SQL statement:
 alter table leaderboard_stats drop foreign key FKlmcglnxocersxfpvginkrmlh9 [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -4556,10 +4556,10 @@ alter table leaderboard_stats drop foreign key FKlmcglnxocersxfpvginkrmlh9 [4210
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.352+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table person_attributes drop foreign key FKfmkxfq1avb3gi13lbt3wbi4jy
-2026-01-10T17:01:27.353+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table person_attributes drop foreign key FKfmkxfq1avb3gi13lbt3wbi4jy" via JDBC [Table "person_attributes" non trouvée
+2026-01-10T17:01:27.353+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table person_attributes drop foreign key FKfmkxfq1avb3gi13lbt3wbi4jy" via JDBC [Table "person_attributes" non trouvï¿½e
 Table "person_attributes" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table person_attributes drop foreign key FKfmkxfq1avb3gi13lbt3wbi4jy" via JDBC [Table "person_attributes" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table person_attributes drop foreign key FKfmkxfq1avb3gi13lbt3wbi4jy" via JDBC [Table "person_attributes" non trouvï¿½e
 Table "person_attributes" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -4679,7 +4679,7 @@ Table "person_attributes" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "person_attributes" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "person_attributes" non trouvï¿½e
 Table "person_attributes" not found; SQL statement:
 alter table person_attributes drop foreign key FKfmkxfq1avb3gi13lbt3wbi4jy [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -4697,10 +4697,10 @@ alter table person_attributes drop foreign key FKfmkxfq1avb3gi13lbt3wbi4jy [4210
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.355+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table person_attributes drop foreign key FK67ei3lsjqgtdw7g7cp912cxap
-2026-01-10T17:01:27.355+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table person_attributes drop foreign key FK67ei3lsjqgtdw7g7cp912cxap" via JDBC [Table "person_attributes" non trouvée
+2026-01-10T17:01:27.355+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table person_attributes drop foreign key FK67ei3lsjqgtdw7g7cp912cxap" via JDBC [Table "person_attributes" non trouvï¿½e
 Table "person_attributes" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table person_attributes drop foreign key FK67ei3lsjqgtdw7g7cp912cxap" via JDBC [Table "person_attributes" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table person_attributes drop foreign key FK67ei3lsjqgtdw7g7cp912cxap" via JDBC [Table "person_attributes" non trouvï¿½e
 Table "person_attributes" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -4820,7 +4820,7 @@ Table "person_attributes" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "person_attributes" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "person_attributes" non trouvï¿½e
 Table "person_attributes" not found; SQL statement:
 alter table person_attributes drop foreign key FK67ei3lsjqgtdw7g7cp912cxap [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -4838,10 +4838,10 @@ alter table person_attributes drop foreign key FK67ei3lsjqgtdw7g7cp912cxap [4210
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.357+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table person_emails drop foreign key FKelc8digvkrtfkpnn3ppwv6pom
-2026-01-10T17:01:27.357+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table person_emails drop foreign key FKelc8digvkrtfkpnn3ppwv6pom" via JDBC [Table "person_emails" non trouvée
+2026-01-10T17:01:27.357+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table person_emails drop foreign key FKelc8digvkrtfkpnn3ppwv6pom" via JDBC [Table "person_emails" non trouvï¿½e
 Table "person_emails" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table person_emails drop foreign key FKelc8digvkrtfkpnn3ppwv6pom" via JDBC [Table "person_emails" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table person_emails drop foreign key FKelc8digvkrtfkpnn3ppwv6pom" via JDBC [Table "person_emails" non trouvï¿½e
 Table "person_emails" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -4961,7 +4961,7 @@ Table "person_emails" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "person_emails" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "person_emails" non trouvï¿½e
 Table "person_emails" not found; SQL statement:
 alter table person_emails drop foreign key FKelc8digvkrtfkpnn3ppwv6pom [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -4979,10 +4979,10 @@ alter table person_emails drop foreign key FKelc8digvkrtfkpnn3ppwv6pom [42102-22
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.359+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table photo_reports drop foreign key fk_pr_person
-2026-01-10T17:01:27.359+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table photo_reports drop foreign key fk_pr_person" via JDBC [Table "photo_reports" non trouvée
+2026-01-10T17:01:27.359+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table photo_reports drop foreign key fk_pr_person" via JDBC [Table "photo_reports" non trouvï¿½e
 Table "photo_reports" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table photo_reports drop foreign key fk_pr_person" via JDBC [Table "photo_reports" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table photo_reports drop foreign key fk_pr_person" via JDBC [Table "photo_reports" non trouvï¿½e
 Table "photo_reports" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -5102,7 +5102,7 @@ Table "photo_reports" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "photo_reports" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "photo_reports" non trouvï¿½e
 Table "photo_reports" not found; SQL statement:
 alter table photo_reports drop foreign key fk_pr_person [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -5120,10 +5120,10 @@ alter table photo_reports drop foreign key fk_pr_person [42102-224]
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.360+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table photo_reports drop foreign key fk_pr_reported_by
-2026-01-10T17:01:27.361+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table photo_reports drop foreign key fk_pr_reported_by" via JDBC [Table "photo_reports" non trouvée
+2026-01-10T17:01:27.361+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table photo_reports drop foreign key fk_pr_reported_by" via JDBC [Table "photo_reports" non trouvï¿½e
 Table "photo_reports" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table photo_reports drop foreign key fk_pr_reported_by" via JDBC [Table "photo_reports" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table photo_reports drop foreign key fk_pr_reported_by" via JDBC [Table "photo_reports" non trouvï¿½e
 Table "photo_reports" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -5243,7 +5243,7 @@ Table "photo_reports" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "photo_reports" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "photo_reports" non trouvï¿½e
 Table "photo_reports" not found; SQL statement:
 alter table photo_reports drop foreign key fk_pr_reported_by [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -5261,10 +5261,10 @@ alter table photo_reports drop foreign key fk_pr_reported_by [42102-224]
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.362+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table photos drop foreign key fk_photos_approved_by
-2026-01-10T17:01:27.363+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table photos drop foreign key fk_photos_approved_by" via JDBC [Table "photos" non trouvée
+2026-01-10T17:01:27.363+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table photos drop foreign key fk_photos_approved_by" via JDBC [Table "photos" non trouvï¿½e
 Table "photos" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table photos drop foreign key fk_photos_approved_by" via JDBC [Table "photos" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table photos drop foreign key fk_photos_approved_by" via JDBC [Table "photos" non trouvï¿½e
 Table "photos" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -5384,7 +5384,7 @@ Table "photos" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "photos" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "photos" non trouvï¿½e
 Table "photos" not found; SQL statement:
 alter table photos drop foreign key fk_photos_approved_by [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -5402,10 +5402,10 @@ alter table photos drop foreign key fk_photos_approved_by [42102-224]
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.364+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table photos drop foreign key fk_photos_person
-2026-01-10T17:01:27.365+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table photos drop foreign key fk_photos_person" via JDBC [Table "photos" non trouvée
+2026-01-10T17:01:27.365+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table photos drop foreign key fk_photos_person" via JDBC [Table "photos" non trouvï¿½e
 Table "photos" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table photos drop foreign key fk_photos_person" via JDBC [Table "photos" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table photos drop foreign key fk_photos_person" via JDBC [Table "photos" non trouvï¿½e
 Table "photos" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -5525,7 +5525,7 @@ Table "photos" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "photos" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "photos" non trouvï¿½e
 Table "photos" not found; SQL statement:
 alter table photos drop foreign key fk_photos_person [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -5543,10 +5543,10 @@ alter table photos drop foreign key fk_photos_person [42102-224]
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.366+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table photos drop foreign key fk_photos_submitted_by
-2026-01-10T17:01:27.366+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table photos drop foreign key fk_photos_submitted_by" via JDBC [Table "photos" non trouvée
+2026-01-10T17:01:27.366+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table photos drop foreign key fk_photos_submitted_by" via JDBC [Table "photos" non trouvï¿½e
 Table "photos" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table photos drop foreign key fk_photos_submitted_by" via JDBC [Table "photos" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table photos drop foreign key fk_photos_submitted_by" via JDBC [Table "photos" non trouvï¿½e
 Table "photos" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -5666,7 +5666,7 @@ Table "photos" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "photos" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "photos" non trouvï¿½e
 Table "photos" not found; SQL statement:
 alter table photos drop foreign key fk_photos_submitted_by [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -5684,10 +5684,10 @@ alter table photos drop foreign key fk_photos_submitted_by [42102-224]
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.367+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table user_emails drop foreign key fk_user_emails_user
-2026-01-10T17:01:27.368+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table user_emails drop foreign key fk_user_emails_user" via JDBC [Table "user_emails" non trouvée
+2026-01-10T17:01:27.368+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table user_emails drop foreign key fk_user_emails_user" via JDBC [Table "user_emails" non trouvï¿½e
 Table "user_emails" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table user_emails drop foreign key fk_user_emails_user" via JDBC [Table "user_emails" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table user_emails drop foreign key fk_user_emails_user" via JDBC [Table "user_emails" non trouvï¿½e
 Table "user_emails" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -5807,7 +5807,7 @@ Table "user_emails" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "user_emails" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "user_emails" non trouvï¿½e
 Table "user_emails" not found; SQL statement:
 alter table user_emails drop foreign key fk_user_emails_user [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -5825,10 +5825,10 @@ alter table user_emails drop foreign key fk_user_emails_user [42102-224]
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.368+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table user_identities drop foreign key fk_uam_user
-2026-01-10T17:01:27.369+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table user_identities drop foreign key fk_uam_user" via JDBC [Table "user_identities" non trouvée
+2026-01-10T17:01:27.369+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table user_identities drop foreign key fk_uam_user" via JDBC [Table "user_identities" non trouvï¿½e
 Table "user_identities" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table user_identities drop foreign key fk_uam_user" via JDBC [Table "user_identities" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table user_identities drop foreign key fk_uam_user" via JDBC [Table "user_identities" non trouvï¿½e
 Table "user_identities" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -5948,7 +5948,7 @@ Table "user_identities" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "user_identities" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "user_identities" non trouvï¿½e
 Table "user_identities" not found; SQL statement:
 alter table user_identities drop foreign key fk_uam_user [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -5966,10 +5966,10 @@ alter table user_identities drop foreign key fk_uam_user [42102-224]
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.370+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table user_organizations drop foreign key fk_uo_org
-2026-01-10T17:01:27.370+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table user_organizations drop foreign key fk_uo_org" via JDBC [Table "user_organizations" non trouvée
+2026-01-10T17:01:27.370+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table user_organizations drop foreign key fk_uo_org" via JDBC [Table "user_organizations" non trouvï¿½e
 Table "user_organizations" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table user_organizations drop foreign key fk_uo_org" via JDBC [Table "user_organizations" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table user_organizations drop foreign key fk_uo_org" via JDBC [Table "user_organizations" non trouvï¿½e
 Table "user_organizations" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -6089,7 +6089,7 @@ Table "user_organizations" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "user_organizations" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "user_organizations" non trouvï¿½e
 Table "user_organizations" not found; SQL statement:
 alter table user_organizations drop foreign key fk_uo_org [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -6107,10 +6107,10 @@ alter table user_organizations drop foreign key fk_uo_org [42102-224]
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.372+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table user_organizations drop foreign key fk_uo_person
-2026-01-10T17:01:27.372+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table user_organizations drop foreign key fk_uo_person" via JDBC [Table "user_organizations" non trouvée
+2026-01-10T17:01:27.372+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table user_organizations drop foreign key fk_uo_person" via JDBC [Table "user_organizations" non trouvï¿½e
 Table "user_organizations" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table user_organizations drop foreign key fk_uo_person" via JDBC [Table "user_organizations" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table user_organizations drop foreign key fk_uo_person" via JDBC [Table "user_organizations" non trouvï¿½e
 Table "user_organizations" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -6230,7 +6230,7 @@ Table "user_organizations" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "user_organizations" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "user_organizations" non trouvï¿½e
 Table "user_organizations" not found; SQL statement:
 alter table user_organizations drop foreign key fk_uo_person [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -6248,10 +6248,10 @@ alter table user_organizations drop foreign key fk_uo_person [42102-224]
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.374+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table user_organizations drop foreign key fk_uo_pref_email
-2026-01-10T17:01:27.374+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table user_organizations drop foreign key fk_uo_pref_email" via JDBC [Table "user_organizations" non trouvée
+2026-01-10T17:01:27.374+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table user_organizations drop foreign key fk_uo_pref_email" via JDBC [Table "user_organizations" non trouvï¿½e
 Table "user_organizations" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table user_organizations drop foreign key fk_uo_pref_email" via JDBC [Table "user_organizations" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table user_organizations drop foreign key fk_uo_pref_email" via JDBC [Table "user_organizations" non trouvï¿½e
 Table "user_organizations" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -6371,7 +6371,7 @@ Table "user_organizations" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "user_organizations" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "user_organizations" non trouvï¿½e
 Table "user_organizations" not found; SQL statement:
 alter table user_organizations drop foreign key fk_uo_pref_email [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -6389,10 +6389,10 @@ alter table user_organizations drop foreign key fk_uo_pref_email [42102-224]
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.376+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table user_organizations drop foreign key fk_uo_user
-2026-01-10T17:01:27.376+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table user_organizations drop foreign key fk_uo_user" via JDBC [Table "user_organizations" non trouvée
+2026-01-10T17:01:27.376+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table user_organizations drop foreign key fk_uo_user" via JDBC [Table "user_organizations" non trouvï¿½e
 Table "user_organizations" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table user_organizations drop foreign key fk_uo_user" via JDBC [Table "user_organizations" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table user_organizations drop foreign key fk_uo_user" via JDBC [Table "user_organizations" non trouvï¿½e
 Table "user_organizations" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -6512,7 +6512,7 @@ Table "user_organizations" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "user_organizations" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "user_organizations" non trouvï¿½e
 Table "user_organizations" not found; SQL statement:
 alter table user_organizations drop foreign key fk_uo_user [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -6530,10 +6530,10 @@ alter table user_organizations drop foreign key fk_uo_user [42102-224]
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.378+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table user_refresh_tokens drop foreign key fk_urt_user
-2026-01-10T17:01:27.378+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table user_refresh_tokens drop foreign key fk_urt_user" via JDBC [Table "user_refresh_tokens" non trouvée
+2026-01-10T17:01:27.378+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table user_refresh_tokens drop foreign key fk_urt_user" via JDBC [Table "user_refresh_tokens" non trouvï¿½e
 Table "user_refresh_tokens" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table user_refresh_tokens drop foreign key fk_urt_user" via JDBC [Table "user_refresh_tokens" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table user_refresh_tokens drop foreign key fk_urt_user" via JDBC [Table "user_refresh_tokens" non trouvï¿½e
 Table "user_refresh_tokens" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -6653,7 +6653,7 @@ Table "user_refresh_tokens" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "user_refresh_tokens" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "user_refresh_tokens" non trouvï¿½e
 Table "user_refresh_tokens" not found; SQL statement:
 alter table user_refresh_tokens drop foreign key fk_urt_user [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -6671,10 +6671,10 @@ alter table user_refresh_tokens drop foreign key fk_urt_user [42102-224]
 	... 117 common frames omitted
 
 2026-01-10T17:01:27.380+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table xp_events drop foreign key FKk849fh25i4bp56bgg72kq0aev
-2026-01-10T17:01:27.380+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table xp_events drop foreign key FKk849fh25i4bp56bgg72kq0aev" via JDBC [Table "xp_events" non trouvée
+2026-01-10T17:01:27.380+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table xp_events drop foreign key FKk849fh25i4bp56bgg72kq0aev" via JDBC [Table "xp_events" non trouvï¿½e
 Table "xp_events" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table xp_events drop foreign key FKk849fh25i4bp56bgg72kq0aev" via JDBC [Table "xp_events" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table xp_events drop foreign key FKk849fh25i4bp56bgg72kq0aev" via JDBC [Table "xp_events" non trouvï¿½e
 Table "xp_events" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -6794,7 +6794,7 @@ Table "xp_events" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "xp_events" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "xp_events" non trouvï¿½e
 Table "xp_events" not found; SQL statement:
 alter table xp_events drop foreign key FKk849fh25i4bp56bgg72kq0aev [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -6815,7 +6815,7 @@ alter table xp_events drop foreign key FKk849fh25i4bp56bgg72kq0aev [42102-224]
 2026-01-10T17:01:27.382+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : drop table if exists attributes
 2026-01-10T17:01:27.382+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : drop table if exists change_request_items
 2026-01-10T17:01:27.382+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : drop table if exists change_requests
-2026-01-10T17:01:27.382+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : drop table if exists course_question_history
+2026-01-10T17:01:27.382+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : drop table if exists course_question_attempts
 2026-01-10T17:01:27.383+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : drop table if exists course_question_items
 2026-01-10T17:01:27.383+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : drop table if exists course_recent_stats
 2026-01-10T17:01:27.383+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : drop table if exists courses
@@ -6846,8 +6846,8 @@ alter table xp_events drop foreign key FKk849fh25i4bp56bgg72kq0aev [42102-224]
 2026-01-10T17:01:27.407+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : create table attributes (display_order integer not null, filter bit not null, initializable bit not null, is_category bit not null, max_values integer not null, primary_field bit not null, required bit not null, sort bit not null, id bigint not null auto_increment, organization_id bigint not null, attribute_name varchar(255) not null, constraint_payload json, casing_strategy enum ('NONE','SENTENCE_PRESERVE','TITLE_CASE','UPPERCASE') not null, constraint_kind enum ('ENUM','NONE','RANGE','REGEX','SET') not null, edit_policy enum ('FREE','RESTRICTED') not null, type enum ('BOOLEAN','DATE','DATETIME','EMAIL','ENUM','NUMBER','TEXT','URL') not null, primary key (id)) engine=InnoDB
 2026-01-10T17:01:27.409+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : create table change_request_items (change_request_id bigint not null, id bigint not null auto_increment, organization_id bigint not null, person_attribute_id bigint, proposed_value varchar(512), resolution_comment varchar(512), action enum ('CREATE','DELETE','UPDATE') not null, resolution_status enum ('APPROVED','CANCELED','PENDING','REJECTED') not null, primary key (id)) engine=InnoDB
 2026-01-10T17:01:27.410+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : create table change_requests (attribute_id bigint not null, created_at datetime(6) not null, id bigint not null auto_increment, organization_id bigint not null, person_id bigint not null, requester_id bigint not null, resolved_at datetime(6), resolved_by bigint, updated_at datetime(6), resolution_comment varchar(500), request_reason varchar(1024) not null, status enum ('APPROVED','CANCELED','PARTIALLY_APPROVED','PENDING','REJECTED') not null, primary key (id)) engine=InnoDB
-2026-01-10T17:01:27.411+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : create table course_question_history (global_correct bit not null, help_used bit not null, planned_target_count integer not null, planned_time_limit_ms integer, planned_timed bit not null, question_round integer not null, response_time_ms integer not null, snapshot_schema_version integer not null, answered_at datetime(6), asked_at datetime(6) not null, course_id bigint not null, id bigint not null auto_increment, organization_id bigint not null, generator_version varchar(64) not null, normalizer_version varchar(64) not null, planned_reason_code varchar(64), planned_reason varchar(255), normalized_submission tinytext, planned_format enum ('ASSOCIATION','BINARY_SWIPE','CLOZE','HANGMAN','MCQ','ORDERING','TEXT_INPUT') not null, planned_params_json LONGTEXT, planned_reason_details_json LONGTEXT, planned_target_knowledge_ids_json LONGTEXT, pool_type enum ('DISCOVERED','ERROR_RECENT','NEW','REVISION','SRS_DUE') not null, question_format enum ('ASSOCIATION','BINARY_SWIPE','CLOZE','HANGMAN','MCQ','ORDERING','TEXT_INPUT') not null, question_snapshot_json LONGTEXT not null, raw_submission tinytext, primary key (id)) engine=InnoDB
-2026-01-10T17:01:27.412+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : create table course_question_items (answered bit not null, correct bit, position integer not null, history_id bigint not null, id bigint not null auto_increment, knowledge_id bigint, organization_id bigint not null, person_id bigint, normalized_answer tinytext, role enum ('DISTRACTOR','TARGET') not null, primary key (id)) engine=InnoDB
+2026-01-10T17:01:27.411+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : create table course_question_attempts (global_correct bit not null, help_used bit not null, planned_target_count integer not null, planned_time_limit_ms integer, planned_timed bit not null, question_round integer not null, response_time_ms integer not null, snapshot_schema_version integer not null, answered_at datetime(6), asked_at datetime(6) not null, course_id bigint not null, id bigint not null auto_increment, organization_id bigint not null, generator_version varchar(64) not null, normalizer_version varchar(64) not null, planned_reason_code varchar(64), planned_reason varchar(255), normalized_audit tinytext, planned_format enum ('ASSOCIATION','BINARY_SWIPE','CLOZE','HANGMAN','MCQ','ORDERING','TEXT_INPUT') not null, planned_params_json LONGTEXT, planned_reason_details_json LONGTEXT, planned_target_knowledge_ids_json LONGTEXT, pool_type enum ('DISCOVERED','ERROR_RECENT','NEW','REVISION','SRS_DUE') not null, question_format enum ('ASSOCIATION','BINARY_SWIPE','CLOZE','HANGMAN','MCQ','ORDERING','TEXT_INPUT') not null, question_snapshot_json LONGTEXT not null, raw_submission tinytext, primary key (id)) engine=InnoDB
+2026-01-10T17:01:27.412+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : create table course_question_items (answered bit not null, correct bit, position integer not null, attempt_id bigint not null, id bigint not null auto_increment, knowledge_id bigint, organization_id bigint not null, person_id bigint, normalized_answer tinytext, role enum ('DISTRACTOR','TARGET') not null, primary key (id)) engine=InnoDB
 2026-01-10T17:01:27.413+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : create table course_recent_stats (avg_rt_recent float(53) not null, error_streak integer not null, format_streak integer not null, help_streak integer not null, course_id bigint not null, created_at datetime(6) not null, id bigint not null auto_increment, last_answer_at datetime(6), organization_id bigint not null, updated_at datetime(6) not null, last_format enum ('ASSOCIATION','BINARY_SWIPE','CLOZE','HANGMAN','MCQ','ORDERING','TEXT_INPUT'), primary key (id)) engine=InnoDB
 2026-01-10T17:01:27.414+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : create table courses (current_round integer not null, created_at DATETIME DEFAULT CURRENT_TIMESTAMP not null, game_mode_id bigint not null, id bigint not null auto_increment, last_accessed_at datetime(6), organization_id bigint not null, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP not null, user_id bigint not null, population_scope enum ('ALL','FOLLOWED') not null, status enum ('ARCHIVED','IN_PROGRESS') not null, primary key (id)) engine=InnoDB
 2026-01-10T17:01:27.415+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : create table email_verification_tokens (attempts integer not null, make_primary_now bit not null, resend_count integer not null, consumed_at datetime(6), created_at datetime(6) not null, expires_at datetime(6) not null, id bigint not null auto_increment, last_sent_at datetime(6), user_id bigint not null, email varchar(320) not null, code_hash_phc varchar(255), public_id BINARY(16) not null, token_hash varbinary(32) not null, purpose enum ('ADD_EMAIL','REGISTER_EMAIL') not null, primary key (id)) engine=InnoDB
@@ -7020,13 +7020,13 @@ create table person_attributes (is_pending_delete bit not null, attribute_id big
 2026-01-10T17:01:27.439+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : create table users (active bit not null, auth_version integer not null, auth_updated_at datetime(6) not null, id bigint not null auto_increment, display_name varchar(50) not null, roles varchar(255) not null, public_id BINARY(16) not null, srs_algorithm enum ('FSRS','PFA','SM2') not null, primary key (id)) engine=InnoDB
 2026-01-10T17:01:27.440+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : create table xp_events (delta_xp integer not null, created_at datetime(6) not null, id bigint not null auto_increment, organization_id bigint not null, source_id bigint, user_id bigint not null, source_type varchar(32) not null, event_key varchar(64) not null, event_id BINARY(16) not null, primary key (id)) engine=InnoDB
 2026-01-10T17:01:27.441+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table attribute_enum_options add constraint uq_attr_enum_code unique (attribute_id, code)
-2026-01-10T17:01:27.443+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : create index idx_cqh_course_round on course_question_history (course_id, question_round)
-2026-01-10T17:01:27.444+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : create index idx_cqh_course_answered on course_question_history (course_id, answered_at)
-2026-01-10T17:01:27.444+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : create index idx_cqh_answered_at on course_question_history (answered_at)
-2026-01-10T17:01:27.445+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : create index idx_cqh_course_correct on course_question_history (course_id, global_correct)
-2026-01-10T17:01:27.445+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : create index idx_cqh_org on course_question_history (organization_id)
-2026-01-10T17:01:27.445+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : create index idx_cqh_course_org on course_question_history (course_id, organization_id)
-2026-01-10T17:01:27.446+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table course_question_items add constraint uk_cqi_history_position unique (history_id, position)
+2026-01-10T17:01:27.443+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : create index idx_cqh_course_round on course_question_attempts (course_id, question_round)
+2026-01-10T17:01:27.444+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : create index idx_cqh_course_answered on course_question_attempts (course_id, answered_at)
+2026-01-10T17:01:27.444+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : create index idx_cqh_answered_at on course_question_attempts (answered_at)
+2026-01-10T17:01:27.445+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : create index idx_cqh_course_correct on course_question_attempts (course_id, global_correct)
+2026-01-10T17:01:27.445+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : create index idx_cqh_org on course_question_attempts (organization_id)
+2026-01-10T17:01:27.445+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : create index idx_cqh_course_org on course_question_attempts (course_id, organization_id)
+2026-01-10T17:01:27.446+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table course_question_items add constraint uk_cqi_attempt_position unique (attempt_id, position)
 2026-01-10T17:01:27.446+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : create index idx_crs_course on course_recent_stats (organization_id, course_id)
 2026-01-10T17:01:27.446+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table course_recent_stats add constraint uq_crs unique (organization_id, course_id)
 2026-01-10T17:01:27.447+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : create index ix_evt_user_email on email_verification_tokens (user_id, email)
@@ -7089,10 +7089,10 @@ create table person_attributes (is_pending_delete bit not null, attribute_id big
 2026-01-10T17:01:27.464+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table attribute_enum_options add constraint fk_attr_enum_option_attr foreign key (attribute_id) references attributes (id)
 2026-01-10T17:01:27.479+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table change_request_items add constraint FK11eswjm4gbeah4rd81ts1xdjv foreign key (change_request_id) references change_requests (id)
 2026-01-10T17:01:27.481+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table change_request_items add constraint FKdpl7xkovo73x2j5gohvcgi0ni foreign key (person_attribute_id) references person_attributes (id)
-2026-01-10T17:01:27.481+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table change_request_items add constraint FKdpl7xkovo73x2j5gohvcgi0ni foreign key (person_attribute_id) references person_attributes (id)" via JDBC [Table "person_attributes" non trouvée
+2026-01-10T17:01:27.481+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table change_request_items add constraint FKdpl7xkovo73x2j5gohvcgi0ni foreign key (person_attribute_id) references person_attributes (id)" via JDBC [Table "person_attributes" non trouvï¿½e
 Table "person_attributes" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table change_request_items add constraint FKdpl7xkovo73x2j5gohvcgi0ni foreign key (person_attribute_id) references person_attributes (id)" via JDBC [Table "person_attributes" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table change_request_items add constraint FKdpl7xkovo73x2j5gohvcgi0ni foreign key (person_attribute_id) references person_attributes (id)" via JDBC [Table "person_attributes" non trouvï¿½e
 Table "person_attributes" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -7211,7 +7211,7 @@ Table "person_attributes" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "person_attributes" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "person_attributes" non trouvï¿½e
 Table "person_attributes" not found; SQL statement:
 alter table change_request_items add constraint FKdpl7xkovo73x2j5gohvcgi0ni foreign key (person_attribute_id) references person_attributes (id) [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -7234,8 +7234,8 @@ alter table change_request_items add constraint FKdpl7xkovo73x2j5gohvcgi0ni fore
 2026-01-10T17:01:27.482+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table change_requests add constraint FKlg39x24uffh5kvwar0k5ug1ap foreign key (person_id) references persons (id)
 2026-01-10T17:01:27.483+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table change_requests add constraint FKrvb52j86ix8fynxbexyf55ha1 foreign key (requester_id) references users (id)
 2026-01-10T17:01:27.485+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table change_requests add constraint FK19iam04j484nev0wpq8tmcmkh foreign key (resolved_by) references users (id)
-2026-01-10T17:01:27.486+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table course_question_history add constraint FKmvhetgpg3ag8hrf5cfdj2dqre foreign key (course_id) references courses (id)
-2026-01-10T17:01:27.487+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table course_question_items add constraint FKt3awhtao0rwr0yh1eq8k878i6 foreign key (history_id) references course_question_history (id)
+2026-01-10T17:01:27.486+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table course_question_attempts add constraint FKmvhetgpg3ag8hrf5cfdj2dqre foreign key (course_id) references courses (id)
+2026-01-10T17:01:27.487+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table course_question_items add constraint FKt3awhtao0rwr0yh1eq8k878i6 foreign key (attempt_id) references course_question_attempts (id)
 2026-01-10T17:01:27.488+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table course_question_items add constraint FK2ibtcvh7i8tf1qxgcc55f2e2 foreign key (knowledge_id) references knowledges (id)
 2026-01-10T17:01:27.489+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table course_question_items add constraint FK8ytgmdn6kehiyr8c9mhffjv44 foreign key (person_id) references persons (id)
 2026-01-10T17:01:27.490+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table course_recent_stats add constraint FKpi38pd5vjspxe5do0gqnildy9 foreign key (course_id) references courses (id)
@@ -7258,10 +7258,10 @@ alter table change_request_items add constraint FKdpl7xkovo73x2j5gohvcgi0ni fore
 2026-01-10T17:01:27.509+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table knowledges add constraint FK4g9cdjkli0ehk38enf7q5ld55 foreign key (user_id) references users (id)
 2026-01-10T17:01:27.511+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table leaderboard_stats add constraint FKlmcglnxocersxfpvginkrmlh9 foreign key (user_id) references users (id)
 2026-01-10T17:01:27.512+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table person_attributes add constraint FKfmkxfq1avb3gi13lbt3wbi4jy foreign key (attribute_id) references attributes (id)
-2026-01-10T17:01:27.512+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table person_attributes add constraint FKfmkxfq1avb3gi13lbt3wbi4jy foreign key (attribute_id) references attributes (id)" via JDBC [Table "person_attributes" non trouvée
+2026-01-10T17:01:27.512+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table person_attributes add constraint FKfmkxfq1avb3gi13lbt3wbi4jy foreign key (attribute_id) references attributes (id)" via JDBC [Table "person_attributes" non trouvï¿½e
 Table "person_attributes" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table person_attributes add constraint FKfmkxfq1avb3gi13lbt3wbi4jy foreign key (attribute_id) references attributes (id)" via JDBC [Table "person_attributes" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table person_attributes add constraint FKfmkxfq1avb3gi13lbt3wbi4jy foreign key (attribute_id) references attributes (id)" via JDBC [Table "person_attributes" non trouvï¿½e
 Table "person_attributes" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -7380,7 +7380,7 @@ Table "person_attributes" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "person_attributes" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "person_attributes" non trouvï¿½e
 Table "person_attributes" not found; SQL statement:
 alter table person_attributes add constraint FKfmkxfq1avb3gi13lbt3wbi4jy foreign key (attribute_id) references attributes (id) [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]
@@ -7398,10 +7398,10 @@ alter table person_attributes add constraint FKfmkxfq1avb3gi13lbt3wbi4jy foreign
 	... 116 common frames omitted
 
 2026-01-10T17:01:27.513+01:00 DEBUG 56100 --- [webapp-test] [           main] org.hibernate.SQL                        : alter table person_attributes add constraint FK67ei3lsjqgtdw7g7cp912cxap foreign key (person_id) references persons (id)
-2026-01-10T17:01:27.514+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table person_attributes add constraint FK67ei3lsjqgtdw7g7cp912cxap foreign key (person_id) references persons (id)" via JDBC [Table "person_attributes" non trouvée
+2026-01-10T17:01:27.514+01:00  WARN 56100 --- [webapp-test] [           main] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "alter table person_attributes add constraint FK67ei3lsjqgtdw7g7cp912cxap foreign key (person_id) references persons (id)" via JDBC [Table "person_attributes" non trouvï¿½e
 Table "person_attributes" not found;]
 
-org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table person_attributes add constraint FK67ei3lsjqgtdw7g7cp912cxap foreign key (person_id) references persons (id)" via JDBC [Table "person_attributes" non trouvée
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table person_attributes add constraint FK67ei3lsjqgtdw7g7cp912cxap foreign key (person_id) references persons (id)" via JDBC [Table "person_attributes" non trouvï¿½e
 Table "person_attributes" not found;]
 	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
 	at org.hibernate.tool.schema.internal.Helper.applySqlString(Helper.java:233) ~[hibernate-core-6.5.2.Final.jar:6.5.2.Final]
@@ -7520,7 +7520,7 @@ Table "person_attributes" not found;]
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.2.5.jar:3.2.5]
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.2.5.jar:3.2.5]
-Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "person_attributes" non trouvée
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "person_attributes" non trouvï¿½e
 Table "person_attributes" not found; SQL statement:
 alter table person_attributes add constraint FK67ei3lsjqgtdw7g7cp912cxap foreign key (person_id) references persons (id) [42102-224]
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.2.224.jar:2.2.224]

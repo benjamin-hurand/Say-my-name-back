@@ -1,6 +1,9 @@
 // src/main/java/com/saymyname/persistence/repository/PersonAttributeRepository.java
 package com.saymyname.persistence.repository;
 
+import static org.hibernate.jpa.HibernateHints.HINT_FETCH_SIZE;
+import static org.hibernate.jpa.HibernateHints.HINT_READ_ONLY;
+
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -12,11 +15,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.saymyname.persistence.entity.organization.PersonAttributeEntity;
-import com.saymyname.persistence.entity.organization.attribute.AttributeEntity;
 import com.saymyname.persistence.projection.PersonAttrValueProjection;
 
-import static org.hibernate.jpa.HibernateHints.HINT_FETCH_SIZE;
-import static org.hibernate.jpa.HibernateHints.HINT_READ_ONLY;
 import jakarta.persistence.QueryHint;
 
 @Repository

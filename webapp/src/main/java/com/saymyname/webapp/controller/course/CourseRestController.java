@@ -6,30 +6,37 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.course.Course;
-import com.saymyname.core.model.course.CourseAnswerResult;
 import com.saymyname.core.model.course.CourseStats;
-import com.saymyname.core.model.enums.KnowledgeStatus;
-import com.saymyname.core.model.enums.quiz.QuizPreferredFormat;
+import com.saymyname.core.model.quiz.QuizAnswerResult;
 import com.saymyname.core.model.quiz.QuizAnswerSubmission;
 import com.saymyname.core.model.quiz.QuizQuestion;
 import com.saymyname.core.util.InitialCrafter;
 import com.saymyname.service.UserService;
-import com.saymyname.service.course.CourseQuestionHistoryService;
+import com.saymyname.service.course.CourseQuestionAttemptService;
 import com.saymyname.service.course.CourseService;
 import com.saymyname.service.course.KnowledgeService;
 import com.saymyname.webapp.dto.PersonAttributeLiteDto;
 import com.saymyname.webapp.dto.QuizEntryDto;
-import com.saymyname.webapp.dto.course.*;
+import com.saymyname.webapp.dto.course.CourseDto;
+import com.saymyname.webapp.dto.course.CourseStatsDto;
+import com.saymyname.webapp.dto.course.CreateCourseDto;
+import com.saymyname.webapp.dto.quiz.QuizAnswerRequestDto;
+import com.saymyname.webapp.dto.quiz.QuizAnswerResultDto;
 import com.saymyname.webapp.dto.quiz.QuizQuestionDto;
 import com.saymyname.webapp.mapper.PersonAttributeDtoMapper;
 import com.saymyname.webapp.mapper.QuizEntryDtoMapper;
-import com.saymyname.webapp.mapper.course.CourseAnswerResultDtoMapper;
 import com.saymyname.webapp.mapper.course.CourseDtoMapper;
 import com.saymyname.webapp.mapper.course.CourseStatsDtoMapper;
+import com.saymyname.webapp.mapper.quiz.QuizAnswerResultDtoMapper;
 import com.saymyname.webapp.mapper.quiz.QuizAnswerSubmissionDtoMapper;
 import com.saymyname.webapp.mapper.quiz.QuizQuestionDtoMapper;
 
@@ -44,7 +51,7 @@ public class CourseRestController {
         private final CourseStatsDtoMapper courseStatsDtoMapper;
 
         private final KnowledgeService knowledgeService;
-        private final CourseQuestionHistoryService courseQuestionHistoryService;
+        private final CourseQuestionAttemptService CourseQuestionAttemptService;
 
         private final PersonAttributeDtoMapper personAttributeDtoMapper;
         private final QuizEntryDtoMapper quizEntryDtoMapper;
@@ -57,7 +64,7 @@ public class CourseRestController {
         private final QuizAnswerSubmissionDtoMapper quizAnswerSubmissionDtoMapper;
 
         /** ✅ CourseAnswerResult -> DTO (contains next QuizQuestionDto) */
-        private final CourseAnswerResultDtoMapper courseAnswerResultDtoMapper;
+        private final QuizAnswerResultDtoMapper quizAnswerResultDtoMapper;
 
         public CourseRestController(
                         CourseService courseService,
@@ -65,26 +72,26 @@ public class CourseRestController {
                         CourseDtoMapper courseDtoMapper,
                         CourseStatsDtoMapper courseStatsDtoMapper,
                         KnowledgeService knowledgeService,
-                        CourseQuestionHistoryService courseQuestionHistoryService,
+                        CourseQuestionAttemptService CourseQuestionAttemptService,
                         PersonAttributeDtoMapper personAttributeDtoMapper,
                         QuizEntryDtoMapper quizEntryDtoMapper,
                         InitialCrafter initialCrafter,
                         QuizQuestionDtoMapper quizQuestionDtoMapper,
                         QuizAnswerSubmissionDtoMapper quizAnswerSubmissionDtoMapper,
-                        CourseAnswerResultDtoMapper courseAnswerResultDtoMapper) {
+                        QuizAnswerResultDtoMapper quizAnswerResultDtoMapper) {
 
                 this.courseService = courseService;
                 this.userService = userService;
                 this.courseDtoMapper = courseDtoMapper;
                 this.courseStatsDtoMapper = courseStatsDtoMapper;
                 this.knowledgeService = knowledgeService;
-                this.courseQuestionHistoryService = courseQuestionHistoryService;
+                this.CourseQuestionAttemptService = CourseQuestionAttemptService;
                 this.personAttributeDtoMapper = personAttributeDtoMapper;
                 this.quizEntryDtoMapper = quizEntryDtoMapper;
                 this.initialCrafter = initialCrafter;
                 this.quizQuestionDtoMapper = quizQuestionDtoMapper;
                 this.quizAnswerSubmissionDtoMapper = quizAnswerSubmissionDtoMapper;
-                this.courseAnswerResultDtoMapper = courseAnswerResultDtoMapper;
+                this.quizAnswerResultDtoMapper = quizAnswerResultDtoMapper;
         }
 
         // ----------------- COURSES LIST / META -----------------
@@ -133,56 +140,37 @@ public class CourseRestController {
 
         /**
          * ✅ Option A: returns QuizQuestionDto directly
-         * Backend persists CourseQuestionHistory and builds QuizQuestion
+         * Backend persists CourseQuestionAttempt and builds QuizQuestion
          * (format-aware).
          */
         @GetMapping("/{courseId}/continue")
-        public ResponseEntity<QuizQuestionDto> start(
-                        @PathVariable("courseId") Long courseId,
-                        @RequestParam(value = "preferredFormat", required = false) QuizPreferredFormat preferredFormat,
-                        @RequestParam(value = "timed", required = false) Boolean timed,
-                        @RequestParam(value = "timeLimitMs", required = false) Integer timeLimitMs) {
+        public ResponseEntity<QuizQuestionDto> start(@PathVariable("courseId") Long courseId) {
 
-                QuizQuestion q = courseService.continueCourse(courseId, preferredFormat, timed, timeLimitMs);
+                QuizQuestion q = courseService.continueCourse(courseId);
                 return ResponseEntity.ok(quizQuestionDtoMapper.toDto(q));
         }
 
         /**
-         * ✅ Option A: answer using submission DTO only (NO normalizedSubmission from
-         * client)
          *
          * Uses CourseService.answer signature:
-         * answer(Course course, Long courseQuestionHistoryId, QuizPreferredFormat
-         * preferredFormat, QuizAnswerSubmission submission)
+         * answer(Course course, Long CourseQuestionAttemptId, QuizAnswerSubmission
+         * submission)
          */
         @PostMapping("/{courseId}/answer")
-        public CourseAnswerResultDto answer(
+        public QuizAnswerResultDto answer(
                         @PathVariable("courseId") Long courseId,
-                        @RequestParam(value = "preferredFormat", required = false) QuizPreferredFormat preferredFormat,
-                        @RequestParam(value = "timed", required = false) Boolean timed,
-                        @RequestParam(value = "timeLimitMs", required = false) Integer timeLimitMs,
-                        @RequestBody CourseAnswerDto answerDto) {
+                        @RequestBody QuizAnswerRequestDto answerDto) {
 
                 Course course = courseService.findById(courseId);
 
                 QuizAnswerSubmission submission = quizAnswerSubmissionDtoMapper.toModel(answerDto.submission());
 
-                CourseAnswerResult res = courseService.answer(
+                QuizAnswerResult res = courseService.answer(
                                 course,
-                                answerDto.questionId(),
-                                preferredFormat,
-                                timed,
-                                timeLimitMs,
+                                answerDto.questionHandle(),
                                 submission);
 
-                Integer unknown = knowledgeService.countByCourseAndStatus(course, KnowledgeStatus.UNKNOWN);
-                Integer discovered = knowledgeService.countByCourseAndStatus(course, KnowledgeStatus.DISCOVERED);
-                Integer learned = knowledgeService.countByCourseAndStatus(course, KnowledgeStatus.LEARNED);
-                Integer mastered = knowledgeService.countByCourseAndStatus(course, KnowledgeStatus.MASTERED);
-
-                StatusCountsDto statusCounts = new StatusCountsDto(unknown, discovered, learned, mastered);
-
-                return courseAnswerResultDtoMapper.toDto(res, statusCounts);
+                return quizAnswerResultDtoMapper.toDto(res);
         }
 
         @PostMapping("/{courseId}/questions/{questionId}/help")
@@ -190,7 +178,7 @@ public class CourseRestController {
                         @PathVariable("courseId") Long courseId,
                         @PathVariable("questionId") Long questionId) {
 
-                var list = courseQuestionHistoryService
+                var list = CourseQuestionAttemptService
                                 .markHelpAndGetAttributes(courseId, questionId).stream()
                                 .map(personAttributeDtoMapper::toLiteDto)
                                 .toList();

@@ -18,77 +18,78 @@ import com.saymyname.core.model.quiz.QuizQuestionPayload;
 import com.saymyname.core.model.quiz.QuizQuestionSpec;
 import com.saymyname.core.model.quiz.QuizValidationResult;
 import com.saymyname.core.model.quiz.answer.NormalizedOrdering;
-import com.saymyname.core.model.quiz.answer.NormalizedSubmission;
+import com.saymyname.core.model.quiz.answer.NormalizedAudit;
 import com.saymyname.core.model.quiz.snapshot.QuizQuestionSnapshot;
 import com.saymyname.service.quiz.QuizSnapshotGuards;
 
 @Component
 public class OrderingPlugin implements QuizQuestionPlugin {
 
-    private static final int DEFAULT_ITEMS = 6;
+        private static final int DEFAULT_ITEMS = 6;
 
-    @Override
-    public QuizFormat supports() {
-        return QuizFormat.ORDERING;
-    }
+        @Override
+        public QuizFormat supports() {
+                return QuizFormat.ORDERING;
+        }
 
-    @Override
-    public QuizQuestion build(QuizQuestionSpec spec) {
+        @Override
+        public QuizQuestion build(QuizQuestionSpec spec) {
 
-        List<QuizPayloadItem> items = PluginSupport.poolItemsLimited(spec, DEFAULT_ITEMS, null);
+                List<QuizPayloadItem> items = PluginSupport.poolItemsLimited(spec, DEFAULT_ITEMS, null);
 
-        QuizQuestionPayload payload = new QuizQuestionPayload.Builder()
-                .withType(QuizPayloadType.ORDERING)
-                .withItems(items)
-                .withOrderBy(QuizOrderingRule.NONE)
-                .build();
+                QuizQuestionPayload payload = new QuizQuestionPayload.Builder()
+                                .withType(QuizPayloadType.ORDERING)
+                                .withItems(items)
+                                .withOrderBy(QuizOrderingRule.NONE)
+                                .build();
 
-        QuizQuestionDisplay display = new QuizQuestionDisplay.Builder()
-                .withPrompt("Remets dans le bon ordre")
-                .withSubtitle(null)
-                .withInputPlaceholder(null)
-                .build();
+                QuizQuestionDisplay display = new QuizQuestionDisplay.Builder()
+                                .withPrompt("Remets dans le bon ordre")
+                                .withSubtitle(null)
+                                .withInputPlaceholder(null)
+                                .build();
 
-        return PluginSupport.baseQuestion(
-                spec,
-                QuizFormat.ORDERING,
-                payload,
-                null,
-                display,
-                null);
-    }
+                return PluginSupport.baseQuestion(
+                                spec,
+                                QuizFormat.ORDERING,
+                                payload,
+                                null,
+                                display,
+                                null);
+        }
 
-    @Override
-    public NormalizedSubmission normalize(QuizQuestion question, QuizAnswerSubmission submission) {
-        if (submission == null)
-            return new NormalizedOrdering(null);
-        return new NormalizedOrdering(submission.getOrderingIds());
-    }
+        @Override
+        public NormalizedAudit normalize(QuizQuestion question, QuizAnswerSubmission submission) {
+                if (submission == null)
+                        return new NormalizedOrdering(null);
+                return new NormalizedOrdering(submission.getOrderingIds());
+        }
 
-    @Override
-    public QuizValidationResult validate(QuizQuestionSnapshot snapshot, QuizAnswerSubmission submission,
-            NormalizedSubmission normalized) {
-        Objects.requireNonNull(snapshot, "snapshot");
+        @Override
+        public QuizValidationResult validate(QuizQuestionSnapshot snapshot, QuizAnswerSubmission submission,
+                        NormalizedAudit normalized) {
+                Objects.requireNonNull(snapshot, "snapshot");
 
-        NormalizedOrdering no = (normalized instanceof NormalizedOrdering o) ? o : new NormalizedOrdering(null);
+                NormalizedOrdering no = (normalized instanceof NormalizedOrdering o) ? o : new NormalizedOrdering(null);
 
-        List<String> expected = snapshot.getTruth() == null ? List.of()
-                : snapshot.getTruth().getCorrectItemKeysInOrder();
-        List<String> user = no.orderingIds() == null ? List.of()
-                : no.orderingIds().stream().filter(Objects::nonNull).map(String::valueOf).toList();
+                List<String> expected = snapshot.getTruth() == null ? List.of()
+                                : snapshot.getTruth().getCorrectItemKeysInOrder();
+                List<String> user = no.orderingIds() == null ? List.of()
+                                : no.orderingIds().stream().filter(Objects::nonNull).map(String::valueOf).toList();
 
-        boolean correct = expected.equals(user);
-        String correctDisplay = snapshot.getTruth() == null ? null : snapshot.getTruth().getCorrectAnswerDisplay();
+                boolean correct = expected.equals(user);
+                String correctDisplay = snapshot.getTruth() == null ? null
+                                : snapshot.getTruth().getCorrectAnswerDisplay();
 
-        Long attrId = QuizSnapshotGuards.requireSingleTargetAttributeId(snapshot, QuizFormat.ORDERING);
+                Long attrId = QuizSnapshotGuards.requireSingleTargetAttributeId(snapshot, QuizFormat.ORDERING);
 
-        List<ResultAttribute> attrs = List.of(
-                PluginSupport.resultAttr(attrId, no.auditString(), correct, true));
+                List<ResultAttribute> attrs = List.of(
+                                PluginSupport.resultAttr(attrId, no.auditString(), correct, true));
 
-        return new QuizValidationResult.Builder()
-                .withCorrect(correct)
-                .withCorrectAnswerDisplay(correctDisplay)
-                .withResultAttributes(attrs)
-                .build();
-    }
+                return new QuizValidationResult.Builder()
+                                .withCorrect(correct)
+                                .withCorrectAnswerDisplay(correctDisplay)
+                                .withResultAttributes(attrs)
+                                .build();
+        }
 }

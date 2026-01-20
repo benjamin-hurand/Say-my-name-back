@@ -12,6 +12,7 @@ public class GameOptions {
     private List<GameAttributeFilter> filters;
     private List<GameAttributeSort> sortBy;
     private Boolean initialGiven;
+    private Boolean trackKnowledge;
 
     public GameOptions() {
     }
@@ -24,6 +25,7 @@ public class GameOptions {
         this.filters = builder.filters;
         this.sortBy = builder.sortBy;
         this.initialGiven = builder.initialGiven;
+        this.trackKnowledge = builder.trackKnowledge;
     }
 
     // Getters
@@ -51,6 +53,10 @@ public class GameOptions {
         return initialGiven;
     }
 
+    public Boolean isTrackKnowledge() {
+        return trackKnowledge;
+    }
+
     // Builder class
     public static class Builder {
         private Long id;
@@ -59,6 +65,7 @@ public class GameOptions {
         private List<GameAttributeFilter> filters;
         private List<GameAttributeSort> sortBy;
         private Boolean initialGiven;
+        private Boolean trackKnowledge;
 
         // Setters for each field that return the builder for chaining
         public Builder withId(Long id) {
@@ -91,6 +98,11 @@ public class GameOptions {
             return this;
         }
 
+        public Builder withTrackKnowledge(Boolean trackKnowledge) {
+            this.trackKnowledge = trackKnowledge;
+            return this;
+        }
+
         // Build method to create the instance of GameOptions
         public GameOptions build() {
             return new GameOptions(this);
@@ -108,12 +120,14 @@ public class GameOptions {
                 && Objects.equals(getPopulationScope(), that.getPopulationScope())
                 && Objects.equals(getFilters(), that.getFilters())
                 && Objects.equals(getSortBy(), that.getSortBy())
-                && Objects.equals(isInitialGiven(), that.isInitialGiven());
+                && Objects.equals(isInitialGiven(), that.isInitialGiven())
+                && Objects.equals(isTrackKnowledge(), that.isTrackKnowledge());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getId(), getGameMode(), getPopulationScope(), getFilters(), getSortBy(), isInitialGiven());
+        return Objects.hash(getId(), getGameMode(), getPopulationScope(), getFilters(), getSortBy(),
+                isInitialGiven(), isTrackKnowledge());
     }
 
     @Override
@@ -125,6 +139,7 @@ public class GameOptions {
                 ", filters=" + filters +
                 ", sortBy=" + sortBy +
                 ", initialGiven=" + initialGiven +
+                ", trackKnowledge=" + trackKnowledge +
                 '}';
     }
 }

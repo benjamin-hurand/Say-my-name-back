@@ -12,20 +12,20 @@ import com.saymyname.persistence.entity.organization.course.CourseQuestionItemEn
 @Repository
 public interface CourseQuestionItemRepository extends JpaRepository<CourseQuestionItemEntity, Long> {
 
-    /** Update ciblķ des items TARGET (tenant guard explicite). */
-    @Modifying
-    @Query("""
-            UPDATE CourseQuestionItemEntity i
-               SET i.answered = :answered,
-                   i.correct = :correct,
-                   i.normalizedAnswer = :normalizedAnswer
-             WHERE i.history.id = :historyId
-               AND i.role = com.saymyname.persistence.entity.organization.course.CourseQuestionItemEntity.Role.TARGET
-               AND i.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
-            """)
-    int updateTargetItemsAnswerMeta(
-            @Param("historyId") Long historyId,
-            @Param("answered") boolean answered,
-            @Param("correct") Boolean correct,
-            @Param("normalizedAnswer") String normalizedAnswer);
+        /** Update ciblķ des items TARGET (tenant guard explicite). */
+        @Modifying
+        @Query("""
+                        UPDATE CourseQuestionItemEntity i
+                           SET i.answered = :answered,
+                               i.correct = :correct,
+                               i.normalizedAnswer = :normalizedAnswer
+                         WHERE i.attempt.id = :attemptId
+                           AND i.role = com.saymyname.persistence.entity.organization.course.CourseQuestionItemEntity.Role.TARGET
+                           AND i.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+                        """)
+        int updateTargetItemsAnswerMeta(
+                        @Param("attemptId") Long attemptId,
+                        @Param("answered") boolean answered,
+                        @Param("correct") Boolean correct,
+                        @Param("normalizedAnswer") String normalizedAnswer);
 }

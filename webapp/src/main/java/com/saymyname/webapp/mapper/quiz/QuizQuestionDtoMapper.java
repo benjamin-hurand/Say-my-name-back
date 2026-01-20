@@ -6,9 +6,20 @@ import java.util.List;
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.enums.quiz.QuizFormat;
-import com.saymyname.core.model.quiz.*;
+import com.saymyname.core.model.quiz.QuizFollowUp;
+import com.saymyname.core.model.quiz.QuizQuestion;
+import com.saymyname.core.model.quiz.QuizQuestionContext;
+import com.saymyname.core.model.quiz.QuizQuestionDisplay;
+import com.saymyname.core.model.quiz.QuizQuestionHints;
+import com.saymyname.core.model.quiz.QuizQuestionPayload;
 import com.saymyname.service.photo.PhotoUrlResolver;
-import com.saymyname.webapp.dto.quiz.*;
+import com.saymyname.webapp.dto.quiz.ChoiceDto;
+import com.saymyname.webapp.dto.quiz.QuizFollowUpDto;
+import com.saymyname.webapp.dto.quiz.QuizQuestionContextDto;
+import com.saymyname.webapp.dto.quiz.QuizQuestionDisplayDto;
+import com.saymyname.webapp.dto.quiz.QuizQuestionDto;
+import com.saymyname.webapp.dto.quiz.QuizQuestionHintsDto;
+import com.saymyname.webapp.dto.quiz.QuizQuestionPayloadDto;
 
 @Component
 public class QuizQuestionDtoMapper {
@@ -20,8 +31,9 @@ public class QuizQuestionDtoMapper {
     }
 
     public QuizQuestionDto toDto(QuizQuestion q) {
-        if (q == null)
+        if (q == null) {
             return null;
+        }
 
         QuizQuestionContextDto ctxDto = toContextDto(q.getContext());
         QuizQuestionPayloadDto payloadDto = toPayloadDto(q);
@@ -31,7 +43,7 @@ public class QuizQuestionDtoMapper {
         String reasonCode = q.getReasonCode() != null ? q.getReasonCode().name() : null;
 
         return new QuizQuestionDto(
-                q.getQuestionToken(),
+                q.getQuestionHandle(),
                 q.getGameModeId(),
                 ctxDto,
                 q.getFormat(),
@@ -44,14 +56,16 @@ public class QuizQuestionDtoMapper {
     }
 
     public List<QuizQuestionDto> toDtoList(List<QuizQuestion> list) {
-        if (list == null)
+        if (list == null) {
             return List.of();
+        }
         return list.stream().map(this::toDto).toList();
     }
 
     private QuizQuestionContextDto toContextDto(QuizQuestionContext ctx) {
-        if (ctx == null)
+        if (ctx == null) {
             return null;
+        }
         return new QuizQuestionContextDto(
                 ctx.getSource(),
                 ctx.getCourseId(),
@@ -67,11 +81,20 @@ public class QuizQuestionDtoMapper {
      * - Suppression payload.type (redondant avec format).
      * - Les infos single-target (personId/photo) sont portées par les
      * sous-payloads.
+     * - CRITICAL: aucune truth ne doit fuiter (correct flags etc.)
+     *
+     * NOTE IMPORTANT:
+     * - QuizQuestion (core) ne porte PAS l'état runtime multi-step
+     * (hangmanState/wordPuzzleState).
+     * - Donc: currentState (WORD_PUZZLE) doit rester null ici.
+     * - Le mapping du state se fait depuis QuizQuestionSnapshot, dans un mapper
+     * dédié.
      */
     private QuizQuestionPayloadDto toPayloadDto(QuizQuestion q) {
         QuizQuestionPayload p = q.getPayload();
-        if (p == null)
+        if (p == null) {
             return null;
+        }
 
         QuizFormat format = q.getFormat();
 
@@ -89,7 +112,7 @@ public class QuizQuestionDtoMapper {
                             c.getValue(),
                             c.getStorageKey() != null ? photoUrlResolver.largeUrl(c.getStorageKey()) : null,
                             c.getPersonId()
-                            // CRITICAL: c.getCorrect() deliberately omitted - never expose truth to client
+                    // CRITICAL: c.getCorrect() deliberately omitted - never expose truth to client
                     ))
                     .toList();
         }
@@ -104,7 +127,7 @@ public class QuizQuestionDtoMapper {
                     c.getValue(),
                     c.getStorageKey() != null ? photoUrlResolver.largeUrl(c.getStorageKey()) : null,
                     c.getPersonId()
-                    // CRITICAL: c.getCorrect() deliberately omitted - never expose truth to client
+            // CRITICAL: c.getCorrect() deliberately omitted - never expose truth to client
             );
         }
 
@@ -115,7 +138,7 @@ public class QuizQuestionDtoMapper {
                     .map(it -> new QuizQuestionPayloadDto.ItemDto(
                             it.getPersonId(),
                             it.getStorageKey() != null ? photoUrlResolver.largeUrl(it.getStorageKey()) : null,
-                            it.getLabelId() // ✅ ton modèle a labelId, pas label
+                            it.getLabelId() // ✅ ton modèle core a labelId (String)
                     ))
                     .toList();
         }
@@ -124,6 +147,8 @@ public class QuizQuestionDtoMapper {
         QuizQuestionPayloadDto.TextInputPayload textInput = null;
         QuizQuestionPayloadDto.ClozePayload cloze = null;
         QuizQuestionPayloadDto.HangmanPayload hangman = null;
+        QuizQuestionPayloadDto.WordPuzzlePayload wordPuzzle = null;
+
         QuizQuestionPayloadDto.ChoicePayload choicePayload = null;
         QuizQuestionPayloadDto.BinarySwipePayload binarySwipe = null;
         QuizQuestionPayloadDto.AssociationPayload association = null;
@@ -131,30 +156,55 @@ public class QuizQuestionDtoMapper {
 
         if (format != null) {
             switch (format) {
-                case TEXT_INPUT ->
+
+                case TEXT_INPUT -> {
                     textInput = new QuizQuestionPayloadDto.TextInputPayload(targetPersonId, targetPhotoUrl);
+                }
 
-                case CLOZE ->
+                case CLOZE -> {
                     cloze = new QuizQuestionPayloadDto.ClozePayload(targetPersonId, targetPhotoUrl, p.getMask());
+                }
 
-                case HANGMAN -> hangman = new QuizQuestionPayloadDto.HangmanPayload(targetPersonId, targetPhotoUrl,
-                        p.getMask(), p.getMaxErrors());
+                case HANGMAN -> {
+                    hangman = new QuizQuestionPayloadDto.HangmanPayload(
+                            targetPersonId,
+                            targetPhotoUrl,
+                            p.getMask(),
+                            p.getMaxErrors());
+                }
 
-                case MCQ ->
+                case WORD_PUZZLE -> {
+                    // QuizQuestion ne contient pas le state runtime : currentState = null ici.
+                    wordPuzzle = new QuizQuestionPayloadDto.WordPuzzlePayload(
+                            targetPersonId,
+                            targetPhotoUrl,
+                            p.getWordLength(),
+                            p.getMaxAttempts(),
+                            null);
+                }
+
+                case MCQ -> {
                     choicePayload = new QuizQuestionPayloadDto.ChoicePayload(
                             choices,
                             p.getAllowMultiple(),
                             targetPersonId,
                             targetPhotoUrl);
+                }
 
-                case BINARY_SWIPE -> binarySwipe = new QuizQuestionPayloadDto.BinarySwipePayload(
-                        proposition,
-                        targetPersonId,
-                        targetPhotoUrl);
+                case BINARY_SWIPE -> {
+                    binarySwipe = new QuizQuestionPayloadDto.BinarySwipePayload(
+                            proposition,
+                            targetPersonId,
+                            targetPhotoUrl);
+                }
 
-                case ASSOCIATION -> association = new QuizQuestionPayloadDto.AssociationPayload(items);
+                case ASSOCIATION -> {
+                    association = new QuizQuestionPayloadDto.AssociationPayload(items);
+                }
 
-                case ORDERING -> ordering = new QuizQuestionPayloadDto.OrderingPayload(items, p.getOrderBy());
+                case ORDERING -> {
+                    ordering = new QuizQuestionPayloadDto.OrderingPayload(items, p.getOrderBy());
+                }
             }
         } else {
             // fallback: on ne plante pas si format null
@@ -171,6 +221,7 @@ public class QuizQuestionDtoMapper {
                 textInput,
                 cloze,
                 hangman,
+                wordPuzzle,
                 choicePayload,
                 binarySwipe,
                 association,
@@ -178,14 +229,16 @@ public class QuizQuestionDtoMapper {
     }
 
     private QuizQuestionHintsDto toHintsDto(QuizQuestionHints h) {
-        if (h == null)
+        if (h == null) {
             return null;
+        }
         return new QuizQuestionHintsDto(h.getInitials());
     }
 
     private QuizQuestionDisplayDto toDisplayDto(QuizQuestionDisplay d) {
-        if (d == null)
+        if (d == null) {
             return null;
+        }
         return new QuizQuestionDisplayDto(
                 d.getPrompt(),
                 d.getSubtitle(),
@@ -195,8 +248,9 @@ public class QuizQuestionDtoMapper {
     }
 
     private QuizFollowUpDto toFollowUpDto(QuizFollowUp f) {
-        if (f == null)
+        if (f == null) {
             return null;
+        }
         return new QuizFollowUpDto(f.getStrategy(), f.getReason());
     }
 }

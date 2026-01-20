@@ -20,7 +20,7 @@ public class KnowledgeResultDtoMapper {
                 .withCorrect(dto.isCorrect())
                 .withHelpUsed(dto.helpUsed())
                 .withCourseId(dto.courseId())
-                .withCourseQuestionHistoryId(dto.courseQuestionHistoryId())
+                .withCourseQuestionAttemptId(dto.CourseQuestionAttemptId())
                 .withQuestionRound(dto.questionRound())
                 .build();
     }

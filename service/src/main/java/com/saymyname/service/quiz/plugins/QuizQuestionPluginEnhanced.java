@@ -5,7 +5,7 @@ import java.util.Set;
 
 import com.saymyname.core.model.quiz.QuizAnswerSubmission;
 import com.saymyname.core.model.quiz.QuizValidationResult;
-import com.saymyname.core.model.quiz.answer.NormalizedSubmission;
+import com.saymyname.core.model.quiz.answer.NormalizedAudit;
 import com.saymyname.core.model.quiz.snapshot.QuizQuestionSnapshot;
 
 /**
@@ -32,7 +32,7 @@ public interface QuizQuestionPluginEnhanced {
      * - CLOZE: "You wrote 'Pariss' - check your spelling!"
      * - ORDERING: "You got 3 out of 5 in the correct position"
      *
-     * @param snapshot The frozen question snapshot
+     * @param snapshot   The frozen question snapshot
      * @param submission User's raw submission
      * @param normalized Normalized submission
      * @param validation Validation result
@@ -41,7 +41,7 @@ public interface QuizQuestionPluginEnhanced {
     default String generateFeedback(
             QuizQuestionSnapshot snapshot,
             QuizAnswerSubmission submission,
-            NormalizedSubmission normalized,
+            NormalizedAudit normalized,
             QuizValidationResult validation) {
         return null; // Default: no custom feedback
     }
@@ -54,7 +54,7 @@ public interface QuizQuestionPluginEnhanced {
      * - Measure time to first selection
      * - A/B testing different question formats
      *
-     * @param snapshot The frozen question snapshot
+     * @param snapshot   The frozen question snapshot
      * @param submission User's submission
      */
     default void onBeforeValidation(
@@ -71,7 +71,7 @@ public interface QuizQuestionPluginEnhanced {
      * - Update distractor effectiveness metrics
      * - Log validation details for ML training
      *
-     * @param snapshot The frozen question snapshot
+     * @param snapshot   The frozen question snapshot
      * @param validation Validation result
      */
     default void onAfterValidation(

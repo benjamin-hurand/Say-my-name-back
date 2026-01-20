@@ -20,6 +20,7 @@ public class QuizQuestionContext {
 
     // TRAINING context
     private Long reducedOptionsId;
+    private Boolean knowledgeTracking;
 
     public QuizQuestionContext() {
     }
@@ -32,6 +33,7 @@ public class QuizQuestionContext {
         this.poolType = b.poolType;
         this.difficultyLevel = b.difficultyLevel;
         this.reducedOptionsId = b.reducedOptionsId;
+        this.knowledgeTracking = b.knowledgeTracking;
     }
 
     public QuizQuestionSource getSource() {
@@ -62,6 +64,10 @@ public class QuizQuestionContext {
         return reducedOptionsId;
     }
 
+    public Boolean getKnowledgeTracking() {
+        return knowledgeTracking;
+    }
+
     public void setSource(QuizQuestionSource source) {
         this.source = source;
     }
@@ -90,6 +96,10 @@ public class QuizQuestionContext {
         this.reducedOptionsId = reducedOptionsId;
     }
 
+    public void setKnowledgeTracking(Boolean knowledgeTracking) {
+        this.knowledgeTracking = knowledgeTracking;
+    }
+
     public static class Builder {
         private QuizQuestionSource source;
 
@@ -100,6 +110,7 @@ public class QuizQuestionContext {
         private DifficultyLevel difficultyLevel;
 
         private Long reducedOptionsId;
+        private Boolean knowledgeTracking;
 
         public Builder withSource(QuizQuestionSource v) {
             this.source = v;
@@ -136,6 +147,11 @@ public class QuizQuestionContext {
             return this;
         }
 
+        public Builder withKnowledgeTracking(Boolean v) {
+            this.knowledgeTracking = v;
+            return this;
+        }
+
         public QuizQuestionContext build() {
             return new QuizQuestionContext(this);
         }
@@ -154,13 +170,14 @@ public class QuizQuestionContext {
                 && Objects.equals(questionRound, that.questionRound)
                 && poolType == that.poolType
                 && difficultyLevel == that.difficultyLevel
-                && Objects.equals(reducedOptionsId, that.reducedOptionsId);
+                && Objects.equals(reducedOptionsId, that.reducedOptionsId)
+                && Objects.equals(knowledgeTracking, that.knowledgeTracking);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(source, courseId, courseQuestionId, questionRound, poolType, difficultyLevel,
-                reducedOptionsId);
+                reducedOptionsId, knowledgeTracking);
     }
 
     @Override
@@ -173,6 +190,7 @@ public class QuizQuestionContext {
                 ", poolType=" + poolType +
                 ", difficultyLevel=" + difficultyLevel +
                 ", reducedOptionsId=" + reducedOptionsId +
+                ", knowledgeTracking=" + knowledgeTracking +
                 '}';
     }
 }
