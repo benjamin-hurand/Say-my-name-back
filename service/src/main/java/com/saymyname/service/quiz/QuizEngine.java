@@ -4,8 +4,12 @@ package com.saymyname.service.quiz;
 import java.util.List;
 import java.util.Objects;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.saymyname.core.model.course.Knowledge;
 import com.saymyname.core.model.course.KnowledgeResultEvent;
@@ -50,7 +54,10 @@ public class QuizEngine {
         private static final int DEFAULT_POOL_SIZE = 30;
         private static final long DEFAULT_TRAINING_TTL_SEC = 10 * 60;
 
-        private final PersonDao personDao;
+        private static final Logger log = LoggerFactory.getLogger(QuizEngine.class);
+
+        @SuppressWarnings("unused")
+        private final PersonDao personDao; // kept because it is injected today; may be removable later
         private final QuizCandidateProvider candidateProvider;
         private final InitialCrafter initialCrafter;
 
@@ -112,7 +119,8 @@ public class QuizEngine {
                 AttemptRef ref = quizHandleCodec.decodeOrThrow(questionHandle);
 
                 if (ref.source() == QuizQuestionSource.COURSE) {
-                        throw new IllegalArgumentException(
+                        throw new ResponseStatusException(
+                                        HttpStatus.BAD_REQUEST,
                                         "COURSE questions should be answered via CourseService.answer()");
                 }
 
@@ -146,7 +154,8 @@ public class QuizEngine {
                 // If complete and options are provided, emit the next question
                 if (Boolean.TRUE.equals(result.getIsComplete()) && nextOptions != null) {
                         Long userId = userService.getCurrentIdOrThrow();
-                        QuizQuestion next = emitTraining(nextOptions, userId, nextPreferred, nextTimed, nextTimeLimitMs);
+                        QuizQuestion next = emitTraining(nextOptions, userId, nextPreferred, nextTimed,
+                                        nextTimeLimitMs);
                         return new QuizAnswerResult.Builder()
                                         .from(result)
                                         .withNextQuestion(next)
@@ -156,7 +165,7 @@ public class QuizEngine {
         }
 
         // ------------------------------------------------------------------
-        // TRAINING/REVIEW - EMIT (existing)
+        // TRAINING/REVIEW - EMIT
         // ------------------------------------------------------------------
 
         @Transactional(readOnly = true)
@@ -167,49 +176,35 @@ public class QuizEngine {
                         Boolean requestedTimed,
                         Integer requestedTimeLimitMs) {
 
-                return emitTrainingLikeOne(
-                                QuizQuestionSource.TRAINING,
-                                options,
-                                userId,
-                                preferredFormat,
-                                requestedTimed,
-                                requestedTimeLimitMs,
-                                DEFAULT_TRAINING_TTL_SEC);
-        }
+                Objects.requireNonNull(options, "options");
+                Objects.requireNonNull(options.getGameMode(), "options.gameMode");
+                Objects.requireNonNull(userId, "userId");
 
-        @Transactional(readOnly = true)
-        protected QuizQuestion emitTrainingLikeOne(
-                        QuizQuestionSource source,
-                        GameOptions options,
-                        Long userId,
-                        QuizPreferredFormat preferredFormat,
-                        Boolean requestedTimed,
-                        Integer requestedTimeLimitMs,
-                        long ttlSeconds) {
-
-                if (source == null)
-                        throw new IllegalArgumentException("source is required");
-                if (source == QuizQuestionSource.COURSE)
-                        throw new IllegalArgumentException("emitTrainingLikeOne does not support COURSE");
-
-                Objects.requireNonNull(options);
-                Objects.requireNonNull(options.getGameMode());
-                Objects.requireNonNull(userId);
-
-                List<Person> persons = personDao.findByOptions(options, userId);
-                if (persons == null || persons.isEmpty()) {
-                        throw new IllegalStateException("No candidate person found for options=" + options.getId());
-                }
-                Person person = persons.get(0);
-                if (person == null || person.getId() == null) {
-                        throw new IllegalStateException("Invalid candidate person (null or missing id)");
+                // 1) Pick a candidate from the pool driven by the user's options.
+                // Product behavior: if none available, user should change options.
+                List<Person> pool = candidateProvider.candidates(options, userId, DEFAULT_POOL_SIZE);
+                if (pool == null) {
+                        pool = List.of();
                 }
 
+                Person person = selectTrainingCandidate(pool, null);
+                if (person == null) {
+                        log.warn("No eligible candidate person found for training optionsId={}, userId={}",
+                                        options.getId(), userId);
+                        throw new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND,
+                                        "No candidate person available for training (adjust your options)");
+                }
+
+                // 2) Load Knowledge anchor (optional in training, but used by
+                // planning/anti-repetition).
                 Long gameModeId = options.getGameMode().getId();
                 Knowledge knowledge = knowledgeService.findByUserGameModeAndPerson(userId, gameModeId, person.getId());
 
+                // 3) Build planning request (training context, multi-target disabled).
                 boolean trackKnowledge = Boolean.TRUE.equals(options.isTrackKnowledge());
                 PlanningContext planningContext = PlanningContext.forTraining(trackKnowledge);
+
                 PlanningRequest planningRequest = PlanningRequest.builder()
                                 .userId(userId)
                                 .gameModeId(gameModeId)
@@ -222,16 +217,29 @@ public class QuizEngine {
                                 .requestedTimeLimitMs(requestedTimeLimitMs)
                                 .build();
 
+                // 4) Plan (format + candidates + timing + distractors).
                 QuestionPlan plan = questionPlanningService.plan(planningRequest);
+
+                // 5) In training, the planner may return a primaryCandidate; keep it if valid,
+                // else fallback.
                 Person planned = plan.primaryCandidate();
-                if (planned == null || planned.getId() == null) {
-                        throw new IllegalStateException("Question planning returned no primary candidate");
+                Person plannedCandidate = selectTrainingCandidate(
+                                planned == null ? List.of() : List.of(planned),
+                                person.getId());
+
+                if (plannedCandidate == null) {
+                        log.warn("Question planning returned no eligible primary candidate; fallback to initial person userId={}",
+                                        userId);
+                        plannedCandidate = person;
                 }
-                if (!planned.getId().equals(person.getId())) {
-                        person = planned;
+
+                // If planner changed target, refresh knowledge anchor.
+                if (!plannedCandidate.getId().equals(person.getId())) {
+                        person = plannedCandidate;
                         knowledge = knowledgeService.findByUserGameModeAndPerson(userId, gameModeId, person.getId());
                 }
 
+                // 6) Build question spec.
                 List<Long> targetAttributeIds = options.getGameMode()
                                 .getGameModeAttributes().stream()
                                 .map(gma -> gma.getAttribute().getId())
@@ -243,7 +251,7 @@ public class QuizEngine {
                 String initials = initialCrafter.computeInitials(person, options.getGameMode());
 
                 QuizQuestionContext ctx = new QuizQuestionContext.Builder()
-                                .withSource(source)
+                                .withSource(QuizQuestionSource.TRAINING)
                                 .withReducedOptionsId(options.getId())
                                 .withKnowledgeTracking(trackKnowledge)
                                 .build();
@@ -258,7 +266,7 @@ public class QuizEngine {
                 }
 
                 QuizQuestionSpec spec = new QuizQuestionSpec.Builder()
-                                .withSource(source)
+                                .withSource(QuizQuestionSource.TRAINING)
                                 .withPersonId(person.getId())
                                 .withStorageKey(storageKey)
                                 .withGameModeId(options.getGameMode().getId())
@@ -275,30 +283,30 @@ public class QuizEngine {
 
                 QuizQuestion q = questionFactory.build(spec, plan.format());
 
+                // 7) Snapshot + attempt store.
                 List<TruthAttributeValue> frozenTruth = snapshotFactory.freezeTruthForQuestion(q);
                 QuizQuestionSnapshot snapshot = snapshotFactory.fromQuestion(q, frozenTruth);
 
                 long askedAtEpochMs = System.currentTimeMillis();
                 AttemptHandle handle = attemptStore.put(
-                                source,
+                                QuizQuestionSource.TRAINING,
                                 userService.getCurrentIdOrThrow(),
                                 snapshot,
                                 askedAtEpochMs,
-                                ttlSeconds);
+                                DEFAULT_TRAINING_TTL_SEC);
 
                 if (handle instanceof AttemptHandle.TokenHandle th) {
-                        String unifiedHandle = quizHandleCodec.encode(new AttemptRef(source, th));
-                        q.setQuestionHandle(unifiedHandle); // same remark: ideally q.setQuestionHandle(...)
+                        String unifiedHandle = quizHandleCodec.encode(new AttemptRef(QuizQuestionSource.TRAINING, th));
+                        q.setQuestionHandle(unifiedHandle);
                 } else {
-                        throw new IllegalStateException("Expected TokenHandle for " + source + " but got " + handle);
+                        throw new IllegalStateException("Expected TokenHandle for TRAINING but got " + handle);
                 }
 
                 return q;
         }
 
         // ------------------------------------------------------------------
-        // TRAINING/REVIEW - ANSWER (existing, but now expects AttemptRef.handle
-        // already)
+        // TRAINING/REVIEW - ANSWER (token-based)
         // ------------------------------------------------------------------
 
         @Transactional
@@ -310,15 +318,19 @@ public class QuizEngine {
                         boolean helpUsed) {
 
                 if (source == null)
-                        throw new IllegalArgumentException("source is required");
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "source is required");
                 if (source == QuizQuestionSource.COURSE)
-                        throw new IllegalArgumentException("answerTokenBased does not support COURSE");
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                                        "answerTokenBased does not support COURSE");
                 if (!(handle instanceof AttemptHandle.TokenHandle))
-                        throw new IllegalArgumentException("answerTokenBased expects TokenHandle");
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                                        "answerTokenBased expects TokenHandle");
 
                 QuizAttemptStore.StoredAttempt stored = attemptStore
                                 .peek(source, handle, userId)
-                                .orElseThrow(() -> new IllegalArgumentException("Invalid or expired token"));
+                                .orElseThrow(() -> new ResponseStatusException(
+                                                HttpStatus.BAD_REQUEST,
+                                                "Invalid or expired token"));
 
                 QuizQuestionSnapshot snapshot = stored.snapshot();
                 SnapshotEvaluation eval = evaluateSnapshot(snapshot, submission);
@@ -337,11 +349,13 @@ public class QuizEngine {
                                         source, handle, userId, updatedSnapshot, raw, normalizedAudit);
 
                         if (!updated) {
-                                throw new IllegalStateException("Failed to update question state");
+                                log.warn("Failed to update question state for source={}, userId={}", source, userId);
+                                throw new ResponseStatusException(
+                                                HttpStatus.CONFLICT,
+                                                "Failed to update question state");
                         }
 
                         QuizQuestion currentQuestion = QuizQuestionSnapshotMapper.toQuestion(updatedSnapshot);
-                        // keep same handle
                         currentQuestion.setQuestionHandle(quizHandleCodec.encode(new AttemptRef(source, handle)));
 
                         return new QuizAnswerResult.Builder()
@@ -356,7 +370,9 @@ public class QuizEngine {
 
                 QuizAttemptStore.StoredAttempt finalStored = attemptStore
                                 .consume(source, handle, userId)
-                                .orElseThrow(() -> new IllegalArgumentException("Invalid or expired token"));
+                                .orElseThrow(() -> new ResponseStatusException(
+                                                HttpStatus.BAD_REQUEST,
+                                                "Invalid or expired token"));
 
                 QuizQuestionSnapshot effectiveSnapshot = eval.updatedSnapshot();
 
@@ -427,7 +443,8 @@ public class QuizEngine {
         }
 
         // ------------------------------------------------------------------
-        // Snapshot evaluation (used by training flow, also available for other services)
+        // Snapshot evaluation (used by training flow, also available for other
+        // services)
         // ------------------------------------------------------------------
 
         public static record SnapshotEvaluation(
@@ -454,7 +471,6 @@ public class QuizEngine {
                                 ? eval.updatedSnapshot()
                                 : snapshot;
 
-                // Build QuizValidationResult for backward compatibility within QuizEngine
                 QuizValidationResult validation = new QuizValidationResult.Builder()
                                 .withCorrect(eval.correct())
                                 .withIsComplete(eval.isComplete())
@@ -517,7 +533,7 @@ public class QuizEngine {
         }
 
         // ------------------------------------------------------------------
-        // helpers (audit + emit)
+        // helpers (audit + candidate selection)
         // ------------------------------------------------------------------
 
         private static String serializeRawSubmission(QuizAnswerSubmission submission) {
@@ -557,6 +573,35 @@ public class QuizEngine {
                                 .orElseThrow(() -> new IllegalStateException(
                                                 "Person " + person.getId() + " has no APPROVED photo"))
                                 .getStorageKey();
+        }
+
+        private static Person selectTrainingCandidate(List<Person> persons, Long avoidPersonId) {
+                if (persons == null || persons.isEmpty()) {
+                        return null;
+                }
+                Person fallback = null;
+                for (Person p : persons) {
+                        if (!isEligibleCandidate(p)) {
+                                continue;
+                        }
+                        if (fallback == null) {
+                                fallback = p;
+                        }
+                        if (avoidPersonId != null && avoidPersonId.equals(p.getId())) {
+                                continue;
+                        }
+                        return p;
+                }
+                return fallback;
+        }
+
+        private static boolean isEligibleCandidate(Person person) {
+                if (person == null || person.getId() == null) {
+                        return false;
+                }
+                return person.getPhotos() != null
+                                && person.getPhotos().stream()
+                                                .anyMatch(p -> p != null && p.getStatus() == PhotoStatus.APPROVED);
         }
 
         private static List<QuizPayloadItem> buildCandidateItems(List<Person> persons) {

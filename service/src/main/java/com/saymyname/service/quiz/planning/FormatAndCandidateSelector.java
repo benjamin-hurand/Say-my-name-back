@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.saymyname.core.model.course.Knowledge;
@@ -34,6 +36,8 @@ import com.saymyname.service.quiz.planning.DistractorSelector.DistractorSelectio
  */
 @Service
 public class FormatAndCandidateSelector {
+
+    private static final Logger log = LoggerFactory.getLogger(FormatAndCandidateSelector.class);
 
     private static final int DEFAULT_POOL_SIZE = 30;
     private static final int DEFAULT_DISTRACTOR_COUNT = 3;
@@ -128,10 +132,28 @@ public class FormatAndCandidateSelector {
         // STEP C: SELECT CANDIDATE POOL AND DISTRACTORS (difficulty-aware)
         List<Person> pool = candidateProvider.candidates(
                 request.gameOptions(), request.userId(), DEFAULT_POOL_SIZE);
+        if (pool == null) {
+            pool = List.of();
+        }
 
         List<Long> poolIds = pool.stream()
                 .map(Person::getId)
                 .collect(Collectors.toList());
+
+        if (primary == null || primary.getId() == null) {
+            log.warn("No primary candidate available for planning: contextType={}, userId={}, gameModeId={}",
+                    context != null ? context.contextType() : null,
+                    request.userId(),
+                    request.gameModeId());
+            return new FormatAndCandidates(
+                    format,
+                    null,
+                    List.of(),
+                    poolIds,
+                    DistractorStrategy.DISTINCT,
+                    0.0
+            );
+        }
 
         // For MCQ, select distractors based on difficulty
         List<Person> distractors = List.of();
@@ -262,19 +284,34 @@ public class FormatAndCandidateSelector {
         // TRAINING mode: get first from options-based query
         if (request.gameOptions() != null) {
             List<Person> persons = personDao.findByOptions(request.gameOptions(), request.userId());
-            if (!persons.isEmpty()) {
-                // Skip last person if we are avoiding repeat
-                if (request.lastPersonId() != null) {
-                    return persons.stream()
-                            .filter(p -> !p.getId().equals(request.lastPersonId()))
-                            .findFirst()
-                            .orElse(persons.get(0));
-                }
-                return persons.get(0);
+            Person chosen = selectFirstEligible(persons, request.lastPersonId());
+            if (chosen != null) {
+                return chosen;
             }
         }
 
-        throw new IllegalStateException("No candidate available for question planning");
+        return null;
+    }
+
+    private Person selectFirstEligible(List<Person> persons, Long lastPersonId) {
+        if (persons == null || persons.isEmpty()) {
+            return null;
+        }
+
+        Person fallback = null;
+        for (Person p : persons) {
+            if (p == null || p.getId() == null) {
+                continue;
+            }
+            if (fallback == null) {
+                fallback = p;
+            }
+            if (lastPersonId != null && lastPersonId.equals(p.getId())) {
+                continue;
+            }
+            return p;
+        }
+        return fallback;
     }
 
     /**

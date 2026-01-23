@@ -4,6 +4,8 @@ package com.saymyname.service.course;
 import java.util.List;
 import java.util.Objects;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.course.Course;
@@ -27,7 +29,10 @@ import com.saymyname.service.quiz.QuizQuestionFactory;
 @Component
 public class CourseQuizQuestionBuilder {
 
+        private static final Logger log = LoggerFactory.getLogger(CourseQuizQuestionBuilder.class);
+
         private static final int DEFAULT_POOL_SIZE = 30;
+        private static final int DEFAULT_MCQ_DISTRACTORS = 3;
 
         private final QuizCandidateProvider candidateProvider;
         private final QuizQuestionFactory questionFactory;
@@ -85,8 +90,43 @@ public class CourseQuizQuestionBuilder {
 
                 List<QuizPayloadItem> targetItems = toCandidateItems(targetPersons);
 
-                boolean multiTarget = plan.getFormat() == QuizFormat.ORDERING
-                                || plan.getFormat() == QuizFormat.ASSOCIATION;
+                QuizFormat format = plan.getFormat();
+                String reasonDetailsJson = plan.getReasonDetailsJson();
+
+                if (format == QuizFormat.MCQ && distractorPersons.isEmpty()) {
+                        QuizFormat fallbackFormat = resolveNonMcqFallbackFormat();
+                        if (fallbackFormat != null) {
+                                log.warn("MCQ plan missing distractors for courseQuestionId={}, fallbackFormat={}",
+                                                h.getId(), fallbackFormat);
+                                format = fallbackFormat;
+                                plan.setFormat(fallbackFormat);
+                                plan.setParamsJson(null);
+                                reasonDetailsJson = buildFallbackReasonDetails(
+                                                reasonDetailsJson,
+                                                "replan_format",
+                                                fallbackFormat);
+                                plan.setReasonDetailsJson(reasonDetailsJson);
+                        } else {
+                                log.warn("MCQ plan missing distractors for courseQuestionId={}, using candidateProvider",
+                                                h.getId());
+                                distractorPersons = candidateProvider.distractors(
+                                                options,
+                                                course.getUser().getId(),
+                                                targetPerson.getId(),
+                                                DEFAULT_MCQ_DISTRACTORS);
+                                if (distractorPersons == null) {
+                                        distractorPersons = List.of();
+                                }
+                                reasonDetailsJson = buildFallbackReasonDetails(
+                                                reasonDetailsJson,
+                                                "candidate_provider",
+                                                null);
+                                plan.setReasonDetailsJson(reasonDetailsJson);
+                        }
+                }
+
+                boolean multiTarget = format == QuizFormat.ORDERING
+                                || format == QuizFormat.ASSOCIATION;
 
                 List<Long> candidatePoolIds;
                 List<QuizPayloadItem> candidatePoolItems;
@@ -94,11 +134,7 @@ public class CourseQuizQuestionBuilder {
                 if (multiTarget) {
                         candidatePoolIds = targetPersonIds;
                         candidatePoolItems = targetItems;
-                } else if (plan.getFormat() == QuizFormat.MCQ) {
-                        if (distractorPersons.isEmpty()) {
-                                throw new IllegalStateException(
-                                                "MCQ plan missing distractors for courseQuestionId=" + h.getId());
-                        }
+                } else if (format == QuizFormat.MCQ) {
                         candidatePoolIds = distractorPersons.stream()
                                         .map(Person::getId)
                                         .filter(Objects::nonNull)
@@ -144,11 +180,20 @@ public class CourseQuizQuestionBuilder {
                                 .withTimed(plan.isTimed())
                                 .withTimeLimitMs(plan.getTimeLimitMs())
                                 .withReasonCode(plan.getReasonCode())
-                                .withReasonDetailsJson(plan.getReasonDetailsJson());
+                                .withReasonDetailsJson(reasonDetailsJson);
 
                 QuizQuestionSpec spec = specBuilder.build();
 
-                return questionFactory.pluginFor(plan.getFormat()).build(spec);
+                return questionFactory.pluginFor(format).build(spec);
+        }
+
+        private QuizFormat resolveNonMcqFallbackFormat() {
+                for (QuizFormat candidate : List.of(QuizFormat.CLOZE, QuizFormat.TEXT_INPUT)) {
+                        if (questionFactory.supportsFormat(candidate)) {
+                                return candidate;
+                        }
+                }
+                return null;
         }
 
         private static String approvedStorageKeyOrThrow(Person person) {
@@ -181,5 +226,71 @@ public class CourseQuizQuestionBuilder {
                                 })
                                 .filter(Objects::nonNull)
                                 .toList();
+        }
+
+        private static String buildFallbackReasonDetails(
+                        String baseReasonDetailsJson,
+                        String fallbackStrategy,
+                        QuizFormat fallbackFormat) {
+                return new JsonBuilder()
+                                .add("fallback_reason", "mcq_missing_distractors")
+                                .add("fallback_strategy", fallbackStrategy)
+                                .add("fallback_format", fallbackFormat != null ? fallbackFormat.name() : null)
+                                .addRaw("base_reason_details", baseReasonDetailsJson)
+                                .build();
+        }
+
+        private static final class JsonBuilder {
+                private final StringBuilder sb = new StringBuilder(160);
+                private boolean first = true;
+
+                private JsonBuilder() {
+                        sb.append('{');
+                }
+
+                JsonBuilder add(String key, String value) {
+                        if (value == null) {
+                                return this;
+                        }
+                        sep();
+                        sb.append('"').append(escape(key)).append("\":\"").append(escape(value)).append('"');
+                        return this;
+                }
+
+                JsonBuilder addRaw(String key, String rawJson) {
+                        if (rawJson == null || rawJson.isBlank()) {
+                                return this;
+                        }
+                        sep();
+                        sb.append('"').append(escape(key)).append("\":").append(rawJson);
+                        return this;
+                }
+
+                String build() {
+                        sb.append('}');
+                        return sb.toString();
+                }
+
+                private void sep() {
+                        if (!first) {
+                                sb.append(',');
+                        }
+                        first = false;
+                }
+
+                private static String escape(String s) {
+                        if (s == null) {
+                                return null;
+                        }
+                        StringBuilder out = new StringBuilder(s.length() + 8);
+                        for (int i = 0; i < s.length(); i++) {
+                                char c = s.charAt(i);
+                                if (c == '"' || c == '\\') {
+                                        out.append('\\');
+                                }
+                                out.append(c);
+                        }
+                        return out.toString();
+                }
         }
 }

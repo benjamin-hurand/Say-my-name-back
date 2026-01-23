@@ -12,7 +12,6 @@ import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +29,6 @@ import com.saymyname.core.model.course.CourseRecentStats;
 import com.saymyname.core.model.course.CourseStats;
 import com.saymyname.core.model.course.Knowledge;
 import com.saymyname.core.model.course.KnowledgeResultEvent;
-import com.saymyname.core.model.course.KnowledgeStats;
 import com.saymyname.core.model.course.RecentAnswerStat;
 import com.saymyname.core.model.enums.CourseStatus;
 import com.saymyname.core.model.enums.KnowledgeStatus;
@@ -75,10 +73,8 @@ public class CourseService {
 
     private final CourseDao courseDao;
     private final KnowledgeService knowledgeService;
-    private final KnowledgeStatsService knowledgeStatsService;
     private final CourseRecentStatsService courseRecentStatsService;
     private final KnowledgeSelectionService knowledgeSelectionService;
-    private final CourseQuizPlanPolicy courseQuizPlanPolicy;
     private final QuestionPlanningService questionPlanningService;
     private final CourseOptionsResolver courseOptionsResolver;
     private final CourseAttemptStore courseAttemptStore;
@@ -89,8 +85,6 @@ public class CourseService {
     private final QuizHandleCodec quizHandleCodec;
     private final QuizAnswerValidator quizAnswerValidator;
 
-    private final CoursePlanMode coursePlanMode;
-
     private static final List<CourseStatus> ACTIVE_STATUSES = List.of(CourseStatus.IN_PROGRESS);
 
     private static final double WEIGHT_ERROR = 5;
@@ -99,18 +93,11 @@ public class CourseService {
     private static final double WEIGHT_NEW = 3;
     private static final double WEIGHT_REVISION = 0;
 
-    private static final int MULTI_TARGET_MIN = 4;
-    private static final int MULTI_TARGET_FETCH_FACTOR = 3;
-    private static final int MULTI_TARGET_MAX_ERROR_STREAK = 0;
-    private static final double MULTI_TARGET_MAX_AVG_RT_MS = 9000;
-    private static final double MULTI_TARGET_MAX_HELP_RECENT = 1.0;
-    private static final double MULTI_TARGET_MIN_ATTEMPTS_RECENT = 1.0;
     private static final int SESSION_STATS_LIMIT = 20;
 
     public CourseService(
             CourseDao courseDao,
             KnowledgeService knowledgeService,
-            KnowledgeStatsService knowledgeStatsService,
             CourseRecentStatsService courseRecentStatsService,
             KnowledgeSelectionService knowledgeSelectionService,
             CourseAttemptStore courseAttemptStore,
@@ -118,20 +105,16 @@ public class CourseService {
             PersonService personService,
             UserService userService,
             CourseQuizQuestionBuilder courseQuizQuestionBuilder,
-            CourseQuizPlanPolicy courseQuizPlanPolicy,
             QuestionPlanningService questionPlanningService,
             CourseOptionsResolver courseOptionsResolver,
             QuizQuestionSnapshotFactory snapshotFactory,
             QuizHandleCodec quizHandleCodec,
-            QuizAnswerValidator quizAnswerValidator,
-            @Value("${quiz.planning.course.mode:NEW}") String coursePlanningMode) {
+            QuizAnswerValidator quizAnswerValidator) {
 
         this.courseDao = courseDao;
         this.knowledgeService = knowledgeService;
-        this.knowledgeStatsService = knowledgeStatsService;
         this.courseRecentStatsService = courseRecentStatsService;
         this.knowledgeSelectionService = knowledgeSelectionService;
-        this.courseQuizPlanPolicy = courseQuizPlanPolicy;
         this.questionPlanningService = questionPlanningService;
         this.courseOptionsResolver = courseOptionsResolver;
         this.courseAttemptStore = courseAttemptStore;
@@ -141,7 +124,6 @@ public class CourseService {
         this.snapshotFactory = snapshotFactory;
         this.quizHandleCodec = quizHandleCodec;
         this.quizAnswerValidator = quizAnswerValidator;
-        this.coursePlanMode = CoursePlanMode.from(coursePlanningMode);
     }
 
     // ---------------------------------------------------------------------
@@ -262,7 +244,9 @@ public class CourseService {
         CourseQuestionAttempt attempt = emitNextCourseAttempt(courseId, userId);
 
         if (attempt == null || attempt.getId() == null || attempt.getSnapshot() == null) {
-            throw new IllegalStateException("Course attempt emission failed (missing id/snapshot)");
+            log.warn("Course attempt emission failed: courseId={}, userId={}, attemptId={}",
+                    courseId, userId, attempt != null ? attempt.getId() : null);
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Course attempt emission failed");
         }
 
         QuizQuestion q = QuizQuestionSnapshotMapper.toQuestion(attempt.getSnapshot());
@@ -468,9 +452,9 @@ public class CourseService {
         }
 
         if (previous.getQuestionRound() > 0 && course.getCurrentRound() != previous.getQuestionRound()) {
-            throw new IllegalStateException(
-                    "Round mismatch: course.currentRound=" + course.getCurrentRound()
-                            + " but previous.questionRound=" + previous.getQuestionRound());
+            log.warn("Round mismatch for courseId={}: currentRound={}, previousRound={}",
+                    course.getId(), course.getCurrentRound(), previous.getQuestionRound());
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Course round mismatch");
         }
 
         // close question
@@ -785,43 +769,6 @@ public class CourseService {
 
         QuestionPlan planned = questionPlanningService.plan(request);
 
-        CourseQuizPlanPolicy.Plan legacyPlan = null;
-        List<Knowledge> extraTargets = List.of();
-        if (coursePlanMode != CoursePlanMode.NEW) {
-            extraTargets = context.multiTargetAllowed()
-                    ? selectExtraTargets(course, primary, MULTI_TARGET_MIN - 1, lastPersonId)
-                    : List.of();
-
-            KnowledgeStats primaryStats = loadKnowledgeStats(userId, gameModeId, primary);
-            List<KnowledgeStats> extraStats = loadStatsForKnowledges(userId, gameModeId, extraTargets);
-            boolean primaryEligible = isMultiTargetEligible(primaryStats);
-            boolean multiTargetAvailable = context.multiTargetAllowed()
-                    && primaryEligible
-                    && extraTargets.size() >= MULTI_TARGET_MIN - 1;
-
-            legacyPlan = courseQuizPlanPolicy.decide(
-                    course,
-                    previousAttempt,
-                    primary,
-                    primaryStats,
-                    extraStats,
-                    courseRecentStatsService.getStatsForCourse(course.getId()),
-                    preferredFormat,
-                    timed,
-                    timeLimitMs,
-                    multiTargetAvailable);
-
-            if (legacyPlan != null && coursePlanMode != CoursePlanMode.LEGACY) {
-                logPlanDiffIfNeeded(course, planned, planned.targetCount(), legacyPlan, request.selectedPoolType());
-            }
-
-            if (legacyPlan != null) {
-                List<Knowledge> targets = selectTargets(primary, extraTargets, legacyPlan.targetCount());
-                applyAttemptItems(nextAttempt, targets, List.of(), legacyPlan.format());
-                return buildCoursePlanFromLegacy(legacyPlan, targets);
-            }
-        }
-
         QuestionPlan effectivePlan = planned;
         List<Knowledge> targets = planned.targetKnowledges() != null && !planned.targetKnowledges().isEmpty()
                 ? planned.targetKnowledges()
@@ -874,66 +821,6 @@ public class CourseService {
                 .orElse(null);
     }
 
-    private KnowledgeStats loadKnowledgeStats(Long userId, Long gameModeId, Knowledge knowledge) {
-        if (knowledge == null || knowledge.getId() == null) {
-            return null;
-        }
-        Map<Long, KnowledgeStats> statsMap = knowledgeStatsService.getStatsForKnowledgeIds(
-                userId,
-                gameModeId,
-                List.of(knowledge.getId()));
-        return statsMap.get(knowledge.getId());
-    }
-
-    private List<KnowledgeStats> loadStatsForKnowledges(
-            Long userId,
-            Long gameModeId,
-            List<Knowledge> knowledges) {
-        if (knowledges == null || knowledges.isEmpty()) {
-            return List.of();
-        }
-        List<Long> ids = knowledges.stream()
-                .map(Knowledge::getId)
-                .filter(Objects::nonNull)
-                .toList();
-        Map<Long, KnowledgeStats> statsMap = knowledgeStatsService.getStatsForKnowledgeIds(userId, gameModeId, ids);
-        return ids.stream()
-                .map(statsMap::get)
-                .toList();
-    }
-
-    private List<Knowledge> selectExtraTargets(
-            Course course,
-            Knowledge primary,
-            int count,
-            Long lastPersonId) {
-        if (count <= 0) {
-            return List.of();
-        }
-        KnowledgeSelectionService.MultiTargetConstraints constraints = new KnowledgeSelectionService.MultiTargetConstraints(
-                MULTI_TARGET_MAX_ERROR_STREAK,
-                MULTI_TARGET_MAX_AVG_RT_MS,
-                MULTI_TARGET_MAX_HELP_RECENT,
-                MULTI_TARGET_MIN_ATTEMPTS_RECENT,
-                MULTI_TARGET_FETCH_FACTOR);
-        return knowledgeSelectionService.findNextDueMultiTargets(
-                course,
-                primary,
-                count,
-                lastPersonId,
-                constraints);
-    }
-
-    private boolean isMultiTargetEligible(KnowledgeStats stats) {
-        if (stats == null) {
-            return false;
-        }
-        return stats.getErrorStreak() <= MULTI_TARGET_MAX_ERROR_STREAK
-                && stats.getAvgRtRecent() <= MULTI_TARGET_MAX_AVG_RT_MS
-                && stats.getHelpRecent() <= MULTI_TARGET_MAX_HELP_RECENT
-                && stats.getAttemptsRecent() >= MULTI_TARGET_MIN_ATTEMPTS_RECENT;
-    }
-
     private PlanningContext disableMultiTarget(PlanningContext context) {
         return new PlanningContext(
                 context.contextType(),
@@ -946,29 +833,6 @@ public class CourseService {
                 context.courseId(),
                 context.challengeId(),
                 context.metadata());
-    }
-
-    private List<Knowledge> selectTargets(
-            Knowledge primary,
-            List<Knowledge> extraTargets,
-            int targetCount) {
-        List<Knowledge> targets = new ArrayList<>();
-        if (primary != null) {
-            targets.add(primary);
-        }
-        int needed = Math.max(0, targetCount - targets.size());
-        if (needed > 0 && extraTargets != null) {
-            for (Knowledge k : extraTargets) {
-                if (k == null) {
-                    continue;
-                }
-                targets.add(k);
-                if (targets.size() >= targetCount) {
-                    break;
-                }
-            }
-        }
-        return targets;
     }
 
     private void applyAttemptItems(
@@ -1039,75 +903,6 @@ public class CourseService {
                 .withReasonCode(plan.reasonCode())
                 .withReasonDetailsJson(plan.reasonDetailsJson())
                 .build();
-    }
-
-    private CourseQuestionPlan buildCoursePlanFromLegacy(
-            CourseQuizPlanPolicy.Plan plan,
-            List<Knowledge> targets) {
-        List<Long> targetKnowledgeIds = targets.stream()
-                .map(Knowledge::getId)
-                .filter(Objects::nonNull)
-                .toList();
-        return new CourseQuestionPlan.Builder()
-                .withFormat(plan.format())
-                .withTimed(plan.timed())
-                .withTimeLimitMs(plan.timeLimitMs())
-                .withTargetCount(targetKnowledgeIds.size())
-                .withTargetKnowledgeIds(targetKnowledgeIds)
-                .withParamsJson(plan.paramsJson())
-                .withReasonCode(plan.reasonCode())
-                .withReasonDetailsJson(plan.reasonDetailsJson())
-                .build();
-    }
-
-    private void logPlanDiffIfNeeded(
-            Course course,
-            QuestionPlan newPlan,
-            int newTargetCount,
-            CourseQuizPlanPolicy.Plan legacyPlan,
-            PoolType poolType) {
-        boolean different = legacyPlan.format() != newPlan.format()
-                || legacyPlan.timed() != Boolean.TRUE.equals(newPlan.timed())
-                || !Objects.equals(legacyPlan.timeLimitMs(), newPlan.timeLimitMs())
-                || legacyPlan.targetCount() != newTargetCount
-                || legacyPlan.reasonCode() != newPlan.reasonCode();
-        if (!different) {
-            return;
-        }
-        String msg = "Course plan divergence: courseId=" + course.getId()
-                + " legacyFormat=" + legacyPlan.format()
-                + " newFormat=" + newPlan.format()
-                + " legacyTimed=" + legacyPlan.timed()
-                + " newTimed=" + newPlan.timed()
-                + " legacyTimeLimitMs=" + legacyPlan.timeLimitMs()
-                + " newTimeLimitMs=" + newPlan.timeLimitMs()
-                + " legacyTargetCount=" + legacyPlan.targetCount()
-                + " newTargetCount=" + newTargetCount
-                + " poolType=" + poolType
-                + " legacyReason=" + legacyPlan.reasonCode()
-                + " newReason=" + newPlan.reasonCode();
-        if (coursePlanMode == CoursePlanMode.SHADOW) {
-            log.info(msg);
-        } else {
-            log.debug(msg);
-        }
-    }
-
-    private enum CoursePlanMode {
-        NEW,
-        LEGACY,
-        SHADOW;
-
-        private static CoursePlanMode from(String raw) {
-            if (raw == null || raw.isBlank()) {
-                return NEW;
-            }
-            try {
-                return CoursePlanMode.valueOf(raw.trim().toUpperCase());
-            } catch (IllegalArgumentException ex) {
-                return NEW;
-            }
-        }
     }
 
     private List<Long> targetPersonIds(CourseQuestionAttempt h) {

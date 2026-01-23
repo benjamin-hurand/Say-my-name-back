@@ -42,6 +42,10 @@ public class QuizQuestionFactory {
                 return plugin(fmt);
         }
 
+        public boolean supportsFormat(QuizFormat fmt) {
+                return fmt != null && plugins.containsKey(fmt);
+        }
+
         private QuizFormat resolve(QuizPreferredFormat preferred) {
                 if (preferred == null || preferred == QuizPreferredFormat.AUTO) {
                         return QuizFormat.TEXT_INPUT;

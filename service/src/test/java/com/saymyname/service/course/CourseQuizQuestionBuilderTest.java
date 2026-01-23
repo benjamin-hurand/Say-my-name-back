@@ -1,7 +1,10 @@
 package com.saymyname.service.course;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -126,6 +129,87 @@ class CourseQuizQuestionBuilderTest {
         builder.buildFromAttempt(attempt, plan);
 
         verifyNoInteractions(candidateProvider);
+    }
+
+    @Test
+    void mcqMissingDistractorsFallsBackToNonMcq() {
+        QuizCandidateProvider candidateProvider = mock(QuizCandidateProvider.class);
+        QuizQuestionFactory questionFactory = mock(QuizQuestionFactory.class);
+        CourseOptionsResolver optionsResolver = mock(CourseOptionsResolver.class);
+        QuizQuestionPlugin plugin = mock(QuizQuestionPlugin.class);
+
+        when(questionFactory.supportsFormat(QuizFormat.CLOZE)).thenReturn(true);
+        when(questionFactory.pluginFor(QuizFormat.CLOZE)).thenReturn(plugin);
+        when(plugin.build(any())).thenReturn(new QuizQuestion());
+
+        GameMode gameMode = new GameMode.Builder()
+                .withId(1L)
+                .withOperator("AND")
+                .withGameModeAttributes(List.of(new GameModeAttribute.Builder()
+                        .withAttribute(new Attribute.Builder().withId(10L).withPrimaryField(true).build())
+                        .build()))
+                .build();
+
+        GameOptions options = new GameOptions.Builder()
+                .withId(99L)
+                .withGameMode(gameMode)
+                .build();
+
+        when(optionsResolver.resolve(any())).thenReturn(options);
+
+        CourseQuizQuestionBuilder builder = new CourseQuizQuestionBuilder(
+                candidateProvider,
+                questionFactory,
+                optionsResolver);
+
+        Person targetPerson = personWithPhoto(100L, "photo_target");
+
+        Knowledge knowledge = new Knowledge.Builder()
+                .withId(500L)
+                .withPerson(targetPerson)
+                .build();
+
+        Course course = new Course.Builder()
+                .withId(1L)
+                .withUser(new User.Builder().withId(42L).build())
+                .withGameMode(gameMode)
+                .build();
+
+        List<CourseQuestionItem> items = List.of(
+                new CourseQuestionItem.Builder()
+                        .withPosition(0)
+                        .withRole(QuizQuestionItemRole.TARGET)
+                        .withKnowledge(knowledge)
+                        .withPerson(targetPerson)
+                        .withAnswered(false)
+                        .build());
+
+        CourseQuestionAttempt attempt = new CourseQuestionAttempt.Builder()
+                .withId(10L)
+                .withCourse(course)
+                .withQuestionRound(1)
+                .withAskedAt(LocalDateTime.now())
+                .withResponseTimeMs(0)
+                .withPoolType(PoolType.NEW)
+                .withItems(items)
+                .build();
+
+        CourseQuestionPlan plan = new CourseQuestionPlan.Builder()
+                .withFormat(QuizFormat.MCQ)
+                .withTimed(false)
+                .withTargetCount(1)
+                .withTargetKnowledgeIds(List.of(knowledge.getId()))
+                .withParamsJson("{\"nbChoices\":4}")
+                .withReasonCode(QuizDecisionReasonCode.EXPLICIT_USER)
+                .withReasonDetailsJson("{}")
+                .build();
+
+        when(candidateProvider.candidates(any(), any(), anyInt())).thenReturn(List.of(targetPerson));
+
+        QuizQuestion question = builder.buildFromAttempt(attempt, plan);
+
+        assertNotNull(question);
+        verify(questionFactory).pluginFor(QuizFormat.CLOZE);
     }
 
     private Person personWithPhoto(Long id, String storageKey) {
