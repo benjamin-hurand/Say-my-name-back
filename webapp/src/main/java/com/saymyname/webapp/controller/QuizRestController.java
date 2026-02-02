@@ -1,8 +1,7 @@
-// src/main/java/com/saymyname/webapp/controller/QuizRestController.java
 package com.saymyname.webapp.controller;
 
 import java.security.Principal;
-import java.util.List;
+import java.util.Objects;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,32 +9,35 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
-import com.saymyname.core.model.enums.quiz.QuizPreferredFormat;
+import com.saymyname.core.model.auth.User;
+import com.saymyname.core.model.enums.quiz.FormatMode;
+import com.saymyname.core.model.enums.quiz.QuizFormat;
 import com.saymyname.core.model.quiz.QuizAnswerResult;
 import com.saymyname.core.model.quiz.QuizAnswerSubmission;
 import com.saymyname.core.model.quiz.QuizQuestion;
+import com.saymyname.service.FreeTrainingService;
 import com.saymyname.service.UserService;
-import com.saymyname.service.quiz.QuizEngine;
 import com.saymyname.webapp.dto.quiz.QuizAnswerRequestDto;
 import com.saymyname.webapp.dto.quiz.QuizAnswerResultDto;
-import com.saymyname.webapp.dto.quiz.QuizNextRequestDto;
 import com.saymyname.webapp.dto.quiz.QuizQuestionDto;
-import com.saymyname.webapp.mapper.ReducedGameOptionsDtoMapper;
+import com.saymyname.webapp.dto.quiz.QuizQuestionRequestDto;
+import com.saymyname.webapp.mapper.TrainingOptionsDtoMapper;
 import com.saymyname.webapp.mapper.quiz.QuizAnswerResultDtoMapper;
 import com.saymyname.webapp.mapper.quiz.QuizAnswerSubmissionDtoMapper;
-import com.saymyname.webapp.mapper.quiz.QuizNextRequestDtoMapper;
 import com.saymyname.webapp.mapper.quiz.QuizQuestionDtoMapper;
+import com.saymyname.webapp.mapper.quiz.QuizQuestionRequestDtoMapper;
 
 @RestController
 @RequestMapping("/api/quiz")
 public class QuizRestController {
 
-    private final QuizEngine quizEngine;
+    private final FreeTrainingService freeTrainingService;
 
-    private final ReducedGameOptionsDtoMapper reducedGameOptionsDtoMapper;
+    private final TrainingOptionsDtoMapper trainingOptionsDtoMapper;
     private final QuizQuestionDtoMapper quizQuestionDtoMapper;
-    private final QuizNextRequestDtoMapper quizNextRequestDtoMapper;
+    private final QuizQuestionRequestDtoMapper quizQuestionRequestDtoMapper;
 
     private final QuizAnswerSubmissionDtoMapper quizAnswerSubmissionDtoMapper;
     private final QuizAnswerResultDtoMapper quizAnswerResultDtoMapper;
@@ -43,62 +45,145 @@ public class QuizRestController {
     private final UserService userService;
 
     public QuizRestController(
-            QuizEngine quizEngine,
-            ReducedGameOptionsDtoMapper reducedGameOptionsDtoMapper,
+            FreeTrainingService freeTrainingService,
+            TrainingOptionsDtoMapper trainingOptionsDtoMapper,
             QuizQuestionDtoMapper quizQuestionDtoMapper,
-            QuizNextRequestDtoMapper quizNextRequestDtoMapper,
+            QuizQuestionRequestDtoMapper quizQuestionRequestDtoMapper,
             QuizAnswerSubmissionDtoMapper quizAnswerSubmissionDtoMapper,
             QuizAnswerResultDtoMapper quizAnswerResultDtoMapper,
             UserService userService) {
 
-        this.quizEngine = quizEngine;
-        this.reducedGameOptionsDtoMapper = reducedGameOptionsDtoMapper;
-        this.quizQuestionDtoMapper = quizQuestionDtoMapper;
-        this.quizNextRequestDtoMapper = quizNextRequestDtoMapper;
-        this.quizAnswerSubmissionDtoMapper = quizAnswerSubmissionDtoMapper;
-        this.quizAnswerResultDtoMapper = quizAnswerResultDtoMapper;
-        this.userService = userService;
+        this.freeTrainingService = Objects.requireNonNull(freeTrainingService, "freeTrainingService");
+        this.trainingOptionsDtoMapper = Objects.requireNonNull(trainingOptionsDtoMapper, "trainingOptionsDtoMapper");
+        this.quizQuestionDtoMapper = Objects.requireNonNull(quizQuestionDtoMapper, "quizQuestionDtoMapper");
+        this.quizQuestionRequestDtoMapper = Objects.requireNonNull(quizQuestionRequestDtoMapper,
+                "quizQuestionRequestDtoMapper");
+        this.quizAnswerSubmissionDtoMapper = Objects.requireNonNull(quizAnswerSubmissionDtoMapper,
+                "quizAnswerSubmissionDtoMapper");
+        this.quizAnswerResultDtoMapper = Objects.requireNonNull(quizAnswerResultDtoMapper, "quizAnswerResultDtoMapper");
+        this.userService = Objects.requireNonNull(userService, "userService");
     }
 
-    /** TRAINING: émission batch (préfetch). */
+    /** TRAINING: émission 1 question. */
     @PostMapping("/continue")
     public ResponseEntity<QuizQuestionDto> getQuestion(
-            @RequestBody QuizNextRequestDto req,
+            @RequestBody QuizQuestionRequestDto req,
             Principal principal) {
 
-        Long userId = userService.getCurrentUserOrThrow(principal).getId();
+        // Auth: we capture userId here for "exclude self" downstream (non-variant)
+        User me = userService.getCurrentUserOrThrow(principal);
+        Long userId = me.getId();
 
-        var options = reducedGameOptionsDtoMapper.toModel(req.options());
-        QuizPreferredFormat preferred = quizNextRequestDtoMapper.toPreferredFormat(req);
-        Boolean timed = quizNextRequestDtoMapper.toTimed(req);
-        Integer timeLimitMs = quizNextRequestDtoMapper.toTimeLimitMs(req);
+        validateQuestionRequestOrThrow(req);
 
-        QuizQuestion q = quizEngine.emitTraining(options, userId, preferred, timed, timeLimitMs);
+        var options = trainingOptionsDtoMapper.toModel(req.options());
+
+        FormatMode formatMode = quizQuestionRequestDtoMapper.toFormatMode(req);
+        QuizFormat forcedFormat = quizQuestionRequestDtoMapper.toForcedFormat(req);
+
+        Boolean timed = quizQuestionRequestDtoMapper.toTimed(req);
+        Integer timeLimitMs = quizQuestionRequestDtoMapper.toTimeLimitMs(req);
+
+        QuizQuestion q = freeTrainingService.emitTraining(
+                userId,
+                options,
+                formatMode,
+                forcedFormat,
+                timed,
+                timeLimitMs);
+
         return new ResponseEntity<>(quizQuestionDtoMapper.toDto(q), HttpStatus.OK);
     }
 
     /**
-     * TRAINING: answer token + submission -> résultat unifié (nextQuestion souvent
-     * null car batch).
+     * TRAINING: answer token + submission -> résultat unifié.
+     * Next request is the normal path (answerWithNext).
      */
     @PostMapping("/answer")
-    public ResponseEntity<QuizAnswerResultDto> answerTraining(@RequestBody QuizAnswerRequestDto req) {
+    public ResponseEntity<QuizAnswerResultDto> answerTraining(
+            @RequestBody QuizAnswerRequestDto req,
+            Principal principal) {
+
+        User me = userService.getCurrentUserOrThrow(principal);
+        Long userId = me.getId();
+
+        if (req == null || req.questionHandle() == null || req.questionHandle().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "questionHandle is required");
+        }
+        if (req.submission() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "submission is required");
+        }
 
         String token = req.questionHandle();
-
         QuizAnswerSubmission submission = quizAnswerSubmissionDtoMapper.toModel(req.submission());
 
-        // nextRequest -> options pour réémettre 1 question
-        var nextReq = req.nextRequest();
-        var options = (nextReq != null) ? reducedGameOptionsDtoMapper.toModel(nextReq.options()) : null;
-        QuizPreferredFormat preferred = (nextReq != null) ? quizNextRequestDtoMapper.toPreferredFormat(nextReq)
-                : QuizPreferredFormat.AUTO;
-        Boolean timed = (nextReq != null) ? quizNextRequestDtoMapper.toTimed(nextReq) : null;
-        Integer timeLimitMs = (nextReq != null) ? quizNextRequestDtoMapper.toTimeLimitMs(nextReq) : null;
+        QuizQuestionRequestDto nextReq = req.nextRequest();
+        if (nextReq == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "nextRequest is required");
+        }
+        validateQuestionRequestOrThrow(nextReq);
 
-        QuizAnswerResult res = quizEngine.answerTrainingWithNext(token, submission, options, preferred, timed,
-                timeLimitMs);
+        var nextOptions = trainingOptionsDtoMapper.toModel(nextReq.options());
+
+        FormatMode nextFormatMode = quizQuestionRequestDtoMapper.toFormatMode(nextReq);
+        QuizFormat nextForcedFormat = quizQuestionRequestDtoMapper.toForcedFormat(nextReq);
+
+        Boolean nextTimed = quizQuestionRequestDtoMapper.toTimed(nextReq);
+        Integer nextTimeLimitMs = quizQuestionRequestDtoMapper.toTimeLimitMs(nextReq);
+
+        QuizAnswerResult res = freeTrainingService.answerTrainingWithNext(
+                userId,
+                token,
+                submission,
+                nextOptions,
+                nextFormatMode,
+                nextForcedFormat,
+                nextTimed,
+                nextTimeLimitMs);
 
         return ResponseEntity.ok(quizAnswerResultDtoMapper.toDto(res));
+    }
+
+    // ---------------------------------------------------------------------
+    // Contract validation (single source of truth for API input)
+    // ---------------------------------------------------------------------
+
+    private static void validateQuestionRequestOrThrow(QuizQuestionRequestDto req) {
+        if (req == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "request body is required");
+        }
+        if (req.options() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "options is required");
+        }
+        if (req.options().gameModeId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "options.gameModeId is required");
+        }
+
+        if (req.formatMode() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "formatMode is required");
+        }
+
+        if (req.formatMode() == FormatMode.AUTO) {
+            if (req.format() != null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "format must be null when formatMode=AUTO");
+            }
+        } else if (req.formatMode() == FormatMode.FORCED) {
+            if (req.format() == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "format is required when formatMode=FORCED");
+            }
+        } else {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported formatMode: " + req.formatMode());
+        }
+
+        boolean timed = Boolean.TRUE.equals(req.timed());
+        if (timed) {
+            if (req.timeLimitMs() == null || req.timeLimitMs() <= 0) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "timeLimitMs must be > 0 when timed=true");
+            }
+        } else {
+            if (req.timeLimitMs() != null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "timeLimitMs must be null when timed!=true");
+            }
+        }
     }
 }

@@ -1,92 +1,68 @@
+// core/model/quiz/planning/PlanningRequest.java
 package com.saymyname.core.model.quiz.planning;
 
-import com.saymyname.core.model.course.Course;
-import com.saymyname.core.model.course.Knowledge;
-import com.saymyname.core.model.enums.FollowFilter;
-import com.saymyname.core.model.enums.PoolType;
-import com.saymyname.core.model.enums.quiz.QuizPreferredFormat;
-import com.saymyname.core.model.quiz.options.GameOptions;
+import java.util.Objects;
+
+import com.saymyname.core.model.enums.quiz.FormatMode;
+import com.saymyname.core.model.enums.quiz.QuizFormat;
+import com.saymyname.core.model.quiz.candidate.EligibilityStats;
+import com.saymyname.core.model.quiz.options.GameMode;
 
 /**
- * Input to QuestionPlanningService.
- * Contains all information needed to plan a question.
+ * Input to FormatPlanner: all info needed to decide format.
+ *
+ * Contains the formatMode (AUTO/FORCED), eligibility counts,
+ * and gameMode context for the planner to make a decision.
  */
 public record PlanningRequest(
-        // Identity
-        Long userId,
-        Long gameModeId,
-        FollowFilter populationScope,             // FOLLOWED, ALL
+        FormatMode formatMode,
+        QuizFormat forcedFormat,
+        EligibilityStats eligibility,
+        GameMode gameMode,
+        Boolean timed,
+        Integer timeLimitMs) {
 
-        // Game options (for candidate selection)
-        GameOptions gameOptions,
+    public PlanningRequest {
+        Objects.requireNonNull(formatMode, "formatMode is required");
+        Objects.requireNonNull(eligibility, "eligibility is required");
+        Objects.requireNonNull(gameMode, "gameMode is required");
 
-        // Context configuration (replaces QuizQuestionSource)
-        PlanningContext context,
-
-        // Course context (optional, only for course planning)
-        Course course,
-
-        // Pre-selected knowledge (optional, depends on context)
-        Knowledge primaryKnowledge,        // null for random selection
-        PoolType selectedPoolType,         // null if not SRS-based
-
-        // Session stats (optional, only if context.sessionTracking=true)
-        SessionStats sessionStats,         // null if no session tracking
-
-        // User preferences
-        QuizPreferredFormat preferredFormat,
-        Boolean requestedTimed,
-        Integer requestedTimeLimitMs,
-
-        // Anti-repeat
-        Long lastPersonId,
-        Boolean lastCorrect
-) {
-
-    /**
-     * Builder for fluent construction.
-     */
-    public static Builder builder() {
-        return new Builder();
+        if (formatMode == FormatMode.FORCED && forcedFormat == null) {
+            throw new IllegalArgumentException("forcedFormat is required when formatMode=FORCED");
+        }
+        if (formatMode == FormatMode.AUTO && forcedFormat != null) {
+            throw new IllegalArgumentException("forcedFormat must be null when formatMode=AUTO");
+        }
     }
 
-    public static class Builder {
-        private Long userId;
-        private Long gameModeId;
-        private FollowFilter populationScope;
-        private GameOptions gameOptions;
-        private PlanningContext context;
-        private Course course;
-        private Knowledge primaryKnowledge;
-        private PoolType selectedPoolType;
-        private SessionStats sessionStats;
-        private QuizPreferredFormat preferredFormat;
-        private Boolean requestedTimed;
-        private Integer requestedTimeLimitMs;
-        private Long lastPersonId;
-        private Boolean lastCorrect;
+    /**
+     * Create a request for FORCED format mode.
+     */
+    public static PlanningRequest forced(
+            QuizFormat format,
+            EligibilityStats eligibility,
+            GameMode gameMode,
+            Boolean timed,
+            Integer timeLimitMs) {
+        return new PlanningRequest(FormatMode.FORCED, format, eligibility, gameMode, timed, timeLimitMs);
+    }
 
-        public Builder userId(Long val) { this.userId = val; return this; }
-        public Builder gameModeId(Long val) { this.gameModeId = val; return this; }
-        public Builder populationScope(FollowFilter val) { this.populationScope = val; return this; }
-        public Builder gameOptions(GameOptions val) { this.gameOptions = val; return this; }
-        public Builder context(PlanningContext val) { this.context = val; return this; }
-        public Builder course(Course val) { this.course = val; return this; }
-        public Builder primaryKnowledge(Knowledge val) { this.primaryKnowledge = val; return this; }
-        public Builder selectedPoolType(PoolType val) { this.selectedPoolType = val; return this; }
-        public Builder sessionStats(SessionStats val) { this.sessionStats = val; return this; }
-        public Builder preferredFormat(QuizPreferredFormat val) { this.preferredFormat = val; return this; }
-        public Builder requestedTimed(Boolean val) { this.requestedTimed = val; return this; }
-        public Builder requestedTimeLimitMs(Integer val) { this.requestedTimeLimitMs = val; return this; }
-        public Builder lastPersonId(Long val) { this.lastPersonId = val; return this; }
-        public Builder lastCorrect(Boolean val) { this.lastCorrect = val; return this; }
+    /**
+     * Create a request for AUTO format mode.
+     */
+    public static PlanningRequest auto(
+            EligibilityStats eligibility,
+            GameMode gameMode,
+            Boolean timed,
+            Integer timeLimitMs) {
+        return new PlanningRequest(FormatMode.AUTO, null, eligibility, gameMode, timed, timeLimitMs);
+    }
 
-        public PlanningRequest build() {
-            return new PlanningRequest(
-                    userId, gameModeId, populationScope, gameOptions, context,
-                    course, primaryKnowledge, selectedPoolType, sessionStats, preferredFormat,
-                    requestedTimed, requestedTimeLimitMs, lastPersonId, lastCorrect
-            );
-        }
+    public boolean isForced() {
+        return formatMode == FormatMode.FORCED;
+    }
+
+    public boolean isAuto() {
+        return formatMode == FormatMode.AUTO;
     }
 }

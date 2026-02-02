@@ -2,7 +2,7 @@
 package com.saymyname.webapp.dto.quiz;
 
 public record QuizAnswerRequestDto(
-                String questionHandle, // TRAINING: token ; COURSE: courseAttemptId
-                QuizAnswerSubmissionDto submission,
-                QuizNextRequestDto nextRequest) {
+        String questionHandle, // TRAINING: token ; COURSE: courseAttemptId
+        QuizAnswerSubmissionDto submission,
+        QuizQuestionRequestDto nextRequest) {
 }

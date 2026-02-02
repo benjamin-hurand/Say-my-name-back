@@ -69,6 +69,11 @@ public class CourseQuestionAttemptService {
     }
 
     @Transactional
+    public boolean markAnsweredAtIfNull(Long attemptId, LocalDateTime answeredAt) {
+        return dao.markAnsweredAtIfNull(attemptId, answeredAt);
+    }
+
+    @Transactional
     public List<PersonAttribute> markHelpAndGetAttributes(Long courseId, Long questionId) {
         if (courseId == null)
             throw new IllegalArgumentException("courseId cannot be null");

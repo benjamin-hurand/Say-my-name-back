@@ -23,7 +23,7 @@ import com.saymyname.core.model.persondirectory.AdminPersonSearchCriteria;
 import com.saymyname.core.model.persondirectory.AttributeValueRow;
 import com.saymyname.core.model.persondirectory.PagePersonRow;
 import com.saymyname.core.model.persondirectory.PersonSearchCriteria;
-import com.saymyname.core.model.quiz.options.GameOptions;
+import com.saymyname.core.model.quiz.options.TrainingOptions;
 import com.saymyname.persistence.entity.organization.PersonAttributeEntity;
 import com.saymyname.persistence.entity.organization.PersonEntity;
 import com.saymyname.persistence.entity.organization.PhotoEntity;
@@ -90,7 +90,7 @@ public class PersonDao {
     }
 
     @Transactional
-    public List<Person> findByOptions(GameOptions options, Long userId) {
+    public List<Person> findByOptions(TrainingOptions options, Long userId) {
         return personEntityMapper.toModelList(personRepository.findByOptions(options, userId));
     }
 

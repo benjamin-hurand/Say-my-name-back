@@ -9,7 +9,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import org.springframework.stereotype.Service;
 
 import com.saymyname.core.model.people.Person;
-import com.saymyname.core.model.quiz.options.GameOptions;
+import com.saymyname.core.model.quiz.options.TrainingOptions;
 import com.saymyname.persistence.dao.PersonDao;
 
 @Service
@@ -22,7 +22,7 @@ public class DefaultQuizCandidateProvider implements QuizCandidateProvider {
     }
 
     @Override
-    public List<Person> candidates(GameOptions options, Long userId, int limit) {
+    public List<Person> candidates(TrainingOptions options, Long userId, int limit) {
         List<Person> list = new ArrayList<>(personDao.findByOptions(options, userId));
         if (list.size() <= 1) {
             return list;
@@ -38,7 +38,7 @@ public class DefaultQuizCandidateProvider implements QuizCandidateProvider {
     }
 
     @Override
-    public List<Person> distractors(GameOptions options, Long userId, Long excludePersonId, int count) {
+    public List<Person> distractors(TrainingOptions options, Long userId, Long excludePersonId, int count) {
         List<Person> all = new ArrayList<>(personDao.findByOptions(options, userId));
         all.removeIf(p -> p != null && p.getId() != null && p.getId().equals(excludePersonId));
 

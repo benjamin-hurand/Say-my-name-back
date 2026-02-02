@@ -19,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.saymyname.core.exception.common.ForbiddenException;
 import com.saymyname.core.exception.common.NotFoundException;
 import com.saymyname.core.exception.common.ValidationException;
+import com.saymyname.core.exception.quiz.QuizUnprocessableException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -37,7 +38,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ValidationException.class)
     public ProblemDetail handleValidation(ValidationException ex, HttpServletRequest req) {
         log.warn("ValidationException on {} {}: {}", req.getMethod(), req.getRequestURI(), ex.getMessage(), ex);
-        return problem(HttpStatus.UNPROCESSABLE_ENTITY, "Validation error", ex.getMessage(), req);
+
+        ProblemDetail pd = problem(HttpStatus.UNPROCESSABLE_ENTITY, "Validation error", ex.getMessage(), req);
+
+        // Enrichissement "front-friendly" pour le quiz
+        if (ex instanceof QuizUnprocessableException qex) {
+            pd.setTitle("Quiz unprocessable");
+            pd.setProperty("errorCode", qex.getErrorCode().name());
+            pd.setProperty("details", qex.getDetails());
+        }
+
+        return pd;
     }
 
     // 404 – ressources introuvables

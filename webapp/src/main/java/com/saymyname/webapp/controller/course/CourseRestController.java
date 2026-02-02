@@ -1,4 +1,3 @@
-// src/main/java/com/saymyname/webapp/controller/course/CourseRestController.java
 package com.saymyname.webapp.controller.course;
 
 import java.security.Principal;
@@ -51,19 +50,14 @@ public class CourseRestController {
         private final CourseStatsDtoMapper courseStatsDtoMapper;
 
         private final KnowledgeService knowledgeService;
-        private final CourseQuestionAttemptService CourseQuestionAttemptService;
+        private final CourseQuestionAttemptService courseQuestionAttemptService;
 
         private final PersonAttributeDtoMapper personAttributeDtoMapper;
         private final QuizEntryDtoMapper quizEntryDtoMapper;
         private final InitialCrafter initialCrafter;
 
-        /** ✅ Quiz Question -> DTO */
         private final QuizQuestionDtoMapper quizQuestionDtoMapper;
-
-        /** ✅ Submission DTO -> Model */
         private final QuizAnswerSubmissionDtoMapper quizAnswerSubmissionDtoMapper;
-
-        /** ✅ CourseAnswerResult -> DTO (contains next QuizQuestionDto) */
         private final QuizAnswerResultDtoMapper quizAnswerResultDtoMapper;
 
         public CourseRestController(
@@ -72,7 +66,7 @@ public class CourseRestController {
                         CourseDtoMapper courseDtoMapper,
                         CourseStatsDtoMapper courseStatsDtoMapper,
                         KnowledgeService knowledgeService,
-                        CourseQuestionAttemptService CourseQuestionAttemptService,
+                        CourseQuestionAttemptService courseQuestionAttemptService,
                         PersonAttributeDtoMapper personAttributeDtoMapper,
                         QuizEntryDtoMapper quizEntryDtoMapper,
                         InitialCrafter initialCrafter,
@@ -85,7 +79,7 @@ public class CourseRestController {
                 this.courseDtoMapper = courseDtoMapper;
                 this.courseStatsDtoMapper = courseStatsDtoMapper;
                 this.knowledgeService = knowledgeService;
-                this.CourseQuestionAttemptService = CourseQuestionAttemptService;
+                this.courseQuestionAttemptService = courseQuestionAttemptService;
                 this.personAttributeDtoMapper = personAttributeDtoMapper;
                 this.quizEntryDtoMapper = quizEntryDtoMapper;
                 this.initialCrafter = initialCrafter;
@@ -94,17 +88,19 @@ public class CourseRestController {
                 this.quizAnswerResultDtoMapper = quizAnswerResultDtoMapper;
         }
 
-        // ----------------- COURSES LIST / META -----------------
-
         @GetMapping("/me/current")
-        public ResponseEntity<CourseDto> currentCourse() {
+        public ResponseEntity<CourseDto> currentCourse(Principal principal) {
+                userService.getCurrentUserOrThrow(principal);
+
                 Optional<Course> c = courseService.getLastUsedCourse();
                 return c.map(course -> ResponseEntity.ok(courseDtoMapper.toDto(course)))
                                 .orElseGet(() -> ResponseEntity.noContent().build());
         }
 
         @GetMapping("/me")
-        public ResponseEntity<List<CourseDto>> listByUser() {
+        public ResponseEntity<List<CourseDto>> listByUser(Principal principal) {
+                userService.getCurrentUserOrThrow(principal);
+
                 var list = courseService.findAllByUser().stream()
                                 .map(courseDtoMapper::toDto)
                                 .toList();
@@ -112,13 +108,17 @@ public class CourseRestController {
         }
 
         @PostMapping("/create")
-        public ResponseEntity<CourseDto> createCourse(@RequestBody CreateCourseDto dto) {
+        public ResponseEntity<CourseDto> createCourse(@RequestBody CreateCourseDto dto, Principal principal) {
+                userService.getCurrentUserOrThrow(principal);
+
                 Course created = courseService.createCourse(courseDtoMapper.toModel(dto));
                 return ResponseEntity.status(201).body(courseDtoMapper.toDto(created));
         }
 
         @PostMapping("/create-or-resume")
-        public ResponseEntity<CourseDto> createOrResume(@RequestBody CreateCourseDto dto) {
+        public ResponseEntity<CourseDto> createOrResume(@RequestBody CreateCourseDto dto, Principal principal) {
+                userService.getCurrentUserOrThrow(principal);
+
                 var course = courseService.createOrResume(courseDtoMapper.toModel(dto));
                 return ResponseEntity.ok(courseDtoMapper.toDto(course));
         }
@@ -131,42 +131,33 @@ public class CourseRestController {
         }
 
         @PostMapping("/{courseId}/focus")
-        public ResponseEntity<Void> focus(@PathVariable("courseId") Long courseId) {
+        public ResponseEntity<Void> focus(@PathVariable("courseId") Long courseId, Principal principal) {
+                userService.getCurrentUserOrThrow(principal);
+
                 courseService.touchLastAccessed(courseId);
                 return ResponseEntity.noContent().build();
         }
 
-        // ----------------- COURSE FLOW (OPTION A) -----------------
-
-        /**
-         * ✅ Option A: returns QuizQuestionDto directly
-         * Backend persists CourseQuestionAttempt and builds QuizQuestion
-         * (format-aware).
-         */
         @GetMapping("/{courseId}/continue")
-        public ResponseEntity<QuizQuestionDto> start(@PathVariable("courseId") Long courseId) {
+        public ResponseEntity<QuizQuestionDto> start(@PathVariable("courseId") Long courseId, Principal principal) {
+                userService.getCurrentUserOrThrow(principal);
 
                 QuizQuestion q = courseService.continueCourse(courseId);
                 return ResponseEntity.ok(quizQuestionDtoMapper.toDto(q));
         }
 
-        /**
-         *
-         * Uses CourseService.answer signature:
-         * answer(Course course, Long CourseQuestionAttemptId, QuizAnswerSubmission
-         * submission)
-         */
         @PostMapping("/{courseId}/answer")
         public QuizAnswerResultDto answer(
                         @PathVariable("courseId") Long courseId,
-                        @RequestBody QuizAnswerRequestDto answerDto) {
+                        @RequestBody QuizAnswerRequestDto answerDto,
+                        Principal principal) {
 
-                Course course = courseService.findById(courseId);
+                userService.getCurrentUserOrThrow(principal);
 
                 QuizAnswerSubmission submission = quizAnswerSubmissionDtoMapper.toModel(answerDto.submission());
 
                 QuizAnswerResult res = courseService.answer(
-                                course,
+                                courseId,
                                 answerDto.questionHandle(),
                                 submission);
 
@@ -176,19 +167,25 @@ public class CourseRestController {
         @PostMapping("/{courseId}/questions/{questionId}/help")
         public ResponseEntity<List<PersonAttributeLiteDto>> helpAndGetAttributes(
                         @PathVariable("courseId") Long courseId,
-                        @PathVariable("questionId") Long questionId) {
+                        @PathVariable("questionId") Long questionId,
+                        Principal principal) {
 
-                var list = CourseQuestionAttemptService
+                userService.getCurrentUserOrThrow(principal);
+
+                var list = courseQuestionAttemptService
                                 .markHelpAndGetAttributes(courseId, questionId).stream()
                                 .map(personAttributeDtoMapper::toLiteDto)
                                 .toList();
                 return ResponseEntity.ok(list);
         }
 
-        // ----------------- TRAINING VIEW (FROM COURSE) -----------------
-
         @GetMapping("/{courseId}/training")
-        public List<QuizEntryDto> getTrainingFromCourse(@PathVariable("courseId") Long courseId) {
+        public List<QuizEntryDto> getTrainingFromCourse(
+                        @PathVariable("courseId") Long courseId,
+                        Principal principal) {
+
+                userService.getCurrentUserOrThrow(principal);
+
                 Course course = courseService.findById(courseId);
                 return knowledgeService.findAllByCourse(course).stream()
                                 .map(k -> {
@@ -199,20 +196,21 @@ public class CourseRestController {
                                 .toList();
         }
 
-        // ----------------- STATS -----------------
-
         @GetMapping("/{courseId}/stats")
-        public ResponseEntity<CourseStatsDto> stats(@PathVariable("courseId") Long courseId) {
+        public ResponseEntity<CourseStatsDto> stats(@PathVariable("courseId") Long courseId, Principal principal) {
+                userService.getCurrentUserOrThrow(principal);
+
                 CourseStats cs = courseService.getStats(courseId);
                 return ResponseEntity.ok(courseStatsDtoMapper.toDto(cs));
         }
 
         @GetMapping("/me/stats")
-        public ResponseEntity<List<CourseStatsDto>> statsByUser() {
+        public ResponseEntity<List<CourseStatsDto>> statsByUser(Principal principal) {
+                userService.getCurrentUserOrThrow(principal);
+
                 var list = courseService.getStatsForUser().stream()
                                 .map(courseStatsDtoMapper::toDto)
                                 .toList();
                 return ResponseEntity.ok(list);
         }
-
 }

@@ -421,8 +421,7 @@ public class QuizQuestionSnapshotFactory {
         }
         List<String> keys = payload.getItems().stream()
                 .filter(Objects::nonNull)
-                .map(it -> it.getLabelId() != null ? it.getLabelId()
-                        : (it.getPersonId() != null ? String.valueOf(it.getPersonId()) : null))
+                .map(it -> it.getPersonId() != null ? String.valueOf(it.getPersonId()) : it.getLabelId())
                 .filter(Objects::nonNull)
                 .toList();
         if (keys.isEmpty()) {
@@ -438,8 +437,7 @@ public class QuizQuestionSnapshotFactory {
         List<TruthPair> pairs = payload.getItems().stream()
                 .filter(Objects::nonNull)
                 .map(it -> {
-                    String key = it.getLabelId() != null ? it.getLabelId()
-                            : (it.getPersonId() != null ? String.valueOf(it.getPersonId()) : null);
+                    String key = it.getPersonId() != null ? String.valueOf(it.getPersonId()) : it.getLabelId();
                     return key == null ? null : new TruthPair(key, key);
                 })
                 .filter(Objects::nonNull)

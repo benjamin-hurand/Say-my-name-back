@@ -1,34 +1,50 @@
 // src/main/java/com/saymyname/service/course/store/DbCourseAttemptStore.java
 package com.saymyname.service.course.store;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.course.Course;
 import com.saymyname.core.model.course.CourseQuestionAttempt;
-import com.saymyname.core.model.enums.quiz.QuizQuestionSource;
-import com.saymyname.core.model.people.PersonAttribute;
-import com.saymyname.core.model.quiz.snapshot.QuizQuestionSnapshot;
-import com.saymyname.service.course.CourseQuestionAttemptService;
+import com.saymyname.core.model.course.CourseQuestionItem;
+import com.saymyname.core.model.course.CourseQuestionPlan;
+import com.saymyname.core.model.course.Knowledge;
 import com.saymyname.core.model.course.RecentAnswerStat;
+import com.saymyname.core.model.enums.PoolType;
+import com.saymyname.core.model.enums.course.QuizQuestionItemRole;
+import com.saymyname.core.model.enums.quiz.QuizQuestionSource;
+import com.saymyname.core.model.people.Person;
+import com.saymyname.core.model.people.PersonAttribute;
+import com.saymyname.core.model.quiz.QuizChoice;
+import com.saymyname.core.model.quiz.QuizPayloadItem;
+import com.saymyname.core.model.quiz.QuizQuestionContext;
+import com.saymyname.core.model.quiz.QuizQuestionPayload;
+import com.saymyname.core.model.quiz.snapshot.QuizQuestionSnapshot;
+import com.saymyname.persistence.dao.course.CourseDao;
+import com.saymyname.persistence.dao.course.KnowledgeDao; // ✅ ADAPTER AU NOM RÉEL
+import com.saymyname.service.course.CourseQuestionAttemptService;
 import com.saymyname.service.quiz.store.QuizAttemptStore;
 
-/**
- * Adaptateur: CourseAttemptStore -> CourseQuestionAttemptService (DB).
- *
- * En plus, sert de backend QuizAttemptStore pour COURSE (handle = attemptId
- * DB).
- */
 @Component
 public class DbCourseAttemptStore implements CourseAttemptStore, QuizAttemptStore {
 
     private final CourseQuestionAttemptService attemptService;
+    private final CourseDao courseDao;
+    private final KnowledgeDao knowledgeDao; // ✅
 
-    public DbCourseAttemptStore(CourseQuestionAttemptService attemptService) {
+    public DbCourseAttemptStore(CourseQuestionAttemptService attemptService, CourseDao courseDao,
+            KnowledgeDao knowledgeDao) {
         this.attemptService = attemptService;
+        this.courseDao = courseDao;
+        this.knowledgeDao = knowledgeDao;
     }
 
     // -----------------------
@@ -105,8 +121,10 @@ public class DbCourseAttemptStore implements CourseAttemptStore, QuizAttemptStor
         CourseQuestionAttempt attempt = attemptService.findById(attemptId);
         if (attempt == null)
             return Optional.empty();
+        if (attempt.getAnsweredAt() != null) {
+            return Optional.empty();
+        }
 
-        // user-scoping
         Long ownerId = (attempt.getCourse() != null && attempt.getCourse().getUser() != null)
                 ? attempt.getCourse().getUser().getId()
                 : null;
@@ -139,17 +157,114 @@ public class DbCourseAttemptStore implements CourseAttemptStore, QuizAttemptStor
     // -----------------------
 
     @Override
-    public AttemptHandle put(QuizQuestionSource source, Long userId, QuizQuestionSnapshot snapshot, long askedAtEpochMs,
+    public AttemptHandle put(
+            QuizQuestionSource source,
+            Long userId,
+            QuizQuestionSnapshot snapshot,
+            long askedAtEpochMs,
             Long ttlSeconds) {
+
         if (source == null)
             throw new IllegalArgumentException("source is required");
         if (source != QuizQuestionSource.COURSE) {
             throw new UnsupportedOperationException("DbCourseAttemptStore only supports COURSE for QuizAttemptStore");
         }
-        throw new UnsupportedOperationException(
-                "COURSE put() is unsupported here because creating a course attempt requires plan/items/courseId/round. "
-                        +
-                        "Use CourseService emission (continueCourseAttempt) which persists a rich CourseQuestionAttempt.");
+        if (userId == null || userId <= 0)
+            throw new IllegalArgumentException("userId is required");
+        if (snapshot == null)
+            throw new IllegalArgumentException("snapshot is required");
+
+        QuizQuestionContext ctx = snapshot.getContext();
+        if (ctx == null) {
+            throw new IllegalStateException("snapshot.context is required for COURSE");
+        }
+
+        Long courseId = ctx.getCourseId();
+        if (courseId == null || courseId <= 0) {
+            throw new IllegalStateException("snapshot.context.courseId is required for COURSE");
+        }
+
+        Long knowledgeId = ctx.getKnowledgeId();
+        if (knowledgeId == null || knowledgeId <= 0) {
+            throw new IllegalStateException("snapshot.context.knowledgeId is required for COURSE (TARGET item)");
+        }
+
+        Course course = courseDao.findById(courseId)
+                .orElseThrow(() -> new IllegalStateException("Course not found: id=" + courseId));
+
+        Long ownerId = (course.getUser() != null) ? course.getUser().getId() : null;
+        if (ownerId == null || !ownerId.equals(userId)) {
+            throw new IllegalStateException("Forbidden: course does not belong to userId=" + userId);
+        }
+
+        Knowledge knowledge = knowledgeDao.findById(knowledgeId)
+                .orElseThrow(() -> new IllegalStateException("Knowledge not found: id=" + knowledgeId));
+
+        int round = (ctx.getQuestionRound() != null) ? ctx.getQuestionRound().intValue() : 0;
+        PoolType poolType = (ctx.getPoolType() != null) ? ctx.getPoolType() : PoolType.NEW;
+
+        LocalDateTime askedAt = LocalDateTime.ofInstant(
+                Instant.ofEpochMilli(askedAtEpochMs),
+                ZoneId.systemDefault());
+
+        // ✅ Item TARGET valide
+        Long targetPersonId = (knowledge.getPerson() != null) ? knowledge.getPerson().getId() : null;
+
+        List<CourseQuestionItem> items = new ArrayList<>();
+
+        // Target item
+        items.add(new CourseQuestionItem.Builder()
+                .withPosition(0)
+                .withRole(QuizQuestionItemRole.TARGET)
+                .withKnowledge(knowledge)
+                .withAnswered(false)
+                .withCorrect(null)
+                .withNormalizedAnswer(null)
+                .build());
+
+        List<Long> payloadPersonIds = extractPayloadPersonIds(snapshot);
+        int position = 1;
+        for (Long personId : payloadPersonIds) {
+            if (personId == null) {
+                continue;
+            }
+            if (targetPersonId != null && targetPersonId.equals(personId)) {
+                continue;
+            }
+            items.add(new CourseQuestionItem.Builder()
+                    .withPosition(position++)
+                    .withRole(QuizQuestionItemRole.DISTRACTOR)
+                    .withPerson(new Person.Builder().withId(personId).build())
+                    .withAnswered(false)
+                    .withCorrect(null)
+                    .withNormalizedAnswer(null)
+                    .build());
+        }
+
+        CourseQuestionPlan plan = new CourseQuestionPlan.Builder()
+                .withFormat(snapshot.getFormat())
+                .withTimed(Boolean.TRUE.equals(snapshot.getTimed()))
+                .withTimeLimitMs(snapshot.getTimeLimitMs())
+                .withTargetCount(1)
+                .withTargetKnowledgeIds(List.of(knowledgeId))
+                .withParamsJson(null)
+                .withReasonCode(snapshot.getReasonCode())
+                .withReasonDetailsJson(snapshot.getReasonDetailsJson())
+                .build();
+
+        CourseQuestionAttempt attempt = new CourseQuestionAttempt.Builder()
+                .withCourse(course)
+                .withQuestionRound(round)
+                .withAskedAt(askedAt)
+                .withPoolType(poolType)
+                .withSnapshot(snapshot)
+                .withPlan(plan)
+                .withItems(items)
+                .build();
+
+        CourseQuestionAttempt saved = attemptService.create(attempt);
+
+        return new AttemptHandle.DbIdHandle(saved.getId());
     }
 
     @Override
@@ -188,13 +303,57 @@ public class DbCourseAttemptStore implements CourseAttemptStore, QuizAttemptStor
         }
         return peekAttempt(dh.value(), userId);
     }
-
     @Override
     public Optional<StoredAttempt> consume(QuizQuestionSource source, AttemptHandle handle, Long userId) {
-        // COURSE: consume == peek
-        return peek(source, handle, userId);
-    }
+        if (source == null)
+            throw new IllegalArgumentException("source is required");
+        if (source != QuizQuestionSource.COURSE) {
+            throw new UnsupportedOperationException("DbCourseAttemptStore only supports COURSE");
+        }
+        if (!(handle instanceof AttemptHandle.DbIdHandle dh)) {
+            throw new IllegalArgumentException("Expected DbIdHandle for COURSE");
+        }
+        if (userId == null || userId <= 0) {
+            throw new IllegalArgumentException("userId is required");
+        }
 
+        Long attemptId = dh.value();
+
+        CourseQuestionAttempt attempt = attemptService.findById(attemptId);
+        if (attempt == null) {
+            return Optional.empty();
+        }
+
+        Long ownerId = (attempt.getCourse() != null && attempt.getCourse().getUser() != null)
+                ? attempt.getCourse().getUser().getId()
+                : null;
+        if (ownerId == null || !ownerId.equals(userId)) {
+            return Optional.empty();
+        }
+
+        if (attempt.getAnsweredAt() != null) {
+            return Optional.empty();
+        }
+
+        QuizQuestionSnapshot snapshot = attempt.getSnapshot();
+        if (snapshot == null) {
+            return Optional.empty();
+        }
+
+        boolean marked = attemptService.markAnsweredAtIfNull(attemptId, LocalDateTime.now());
+        if (!marked) {
+            return Optional.empty();
+        }
+
+        long askedAtEpochMs = QuizAttemptStore.toEpochMs(attempt.getAskedAt());
+        return Optional.of(new StoredAttempt(
+                userId,
+                snapshot,
+                askedAtEpochMs,
+                null,
+                attempt.getRawSubmission(),
+                attempt.getNormalizedAudit()));
+    }
     @Override
     public boolean updateSnapshot(QuizQuestionSource source, AttemptHandle handle, Long userId,
             QuizQuestionSnapshot updatedSnapshot) {
@@ -223,25 +382,49 @@ public class DbCourseAttemptStore implements CourseAttemptStore, QuizAttemptStor
         }
         Long attemptId = dh.value();
 
-        if (updatedSnapshot == null)
-            return false;
-
-        CourseQuestionAttempt attempt = attemptService.findById(attemptId);
-        if (attempt == null)
-            return false;
-
-        Long ownerId = (attempt.getCourse() != null && attempt.getCourse().getUser() != null)
-                ? attempt.getCourse().getUser().getId()
-                : null;
-        if (ownerId == null || !ownerId.equals(userId)) {
-            return false;
-        }
-
-        String raw = rawSubmission != null ? rawSubmission : attempt.getRawSubmission();
-        String norm = normalizedAudit != null ? normalizedAudit : attempt.getNormalizedAudit();
-
-        attemptService.updateStepState(attemptId, updatedSnapshot, raw, norm);
-        return true;
+        return updateAttempt(attemptId, userId, updatedSnapshot, rawSubmission, normalizedAudit);
     }
 
+    private static List<Long> extractPayloadPersonIds(QuizQuestionSnapshot snapshot) {
+        if (snapshot == null) {
+            return List.of();
+        }
+        QuizQuestionPayload payload = snapshot.getPayload();
+        if (payload == null) {
+            return List.of();
+        }
+
+        Set<Long> ids = new LinkedHashSet<>();
+
+        List<QuizChoice> choices = payload.getChoices();
+        if (choices != null) {
+            for (QuizChoice c : choices) {
+                if (c != null && c.getPersonId() != null) {
+                    ids.add(c.getPersonId());
+                }
+            }
+        }
+
+        QuizChoice proposition = payload.getProposition();
+        if (proposition != null && proposition.getPersonId() != null) {
+            ids.add(proposition.getPersonId());
+        }
+
+        List<QuizPayloadItem> items = payload.getItems();
+        if (items != null) {
+            for (QuizPayloadItem item : items) {
+                if (item != null && item.getPersonId() != null) {
+                    ids.add(item.getPersonId());
+                }
+            }
+        }
+
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        return List.copyOf(ids);
+    }
 }
+
+
+

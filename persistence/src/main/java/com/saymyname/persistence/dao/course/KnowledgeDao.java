@@ -33,6 +33,11 @@ public class KnowledgeDao {
                 this.knowledgeRepository = knowledgeRepository;
         }
 
+        public Optional<Knowledge> findById(Long id) {
+                Optional<KnowledgeEntity> entity = knowledgeRepository.findById(id);
+                return entity.map(knowledgeEntityMapper::toModel);
+        }
+
         /** Insère un batch d’UNKNOWN selon le scope du course (FOLLOWED / ALL) */
         public int insertBatchOfTenKnowledges(Course course) {
                 PopulationScope scope = course.getPopulationScope() != null ? course.getPopulationScope()

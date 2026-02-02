@@ -8,8 +8,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.saymyname.core.model.enums.FollowFilter;
 import com.saymyname.core.model.enums.PhotoStatus;
-import com.saymyname.core.model.quiz.options.GameAttributeFilter;
-import com.saymyname.core.model.quiz.options.GameOptions;
+import com.saymyname.core.model.quiz.options.CategorySelection;
+import com.saymyname.core.model.quiz.options.TrainingOptions;
 import com.saymyname.persistence.entity.organization.PersonAttributeEntity;
 import com.saymyname.persistence.entity.organization.PersonEntity;
 import com.saymyname.persistence.entity.organization.PhotoEntity;
@@ -34,13 +34,13 @@ public class PersonRepositoryCustomImpl implements PersonRepositoryCustom {
 
     /**
      * Recherche des personnes selon les options de jeu.
-     * 
+     *
      * @param options options de filtrage/scope
      * @param userId  identifiant de l'utilisateur connecté (requis si
      *                populationScope = FOLLOWED ou UNFOLLOWED)
      */
     @Override
-    public List<PersonEntity> findByOptions(GameOptions options, Long userId) {
+    public List<PersonEntity> findByOptions(TrainingOptions options, Long userId) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<PersonEntity> cq = cb.createQuery(PersonEntity.class);
         Root<PersonEntity> person = cq.from(PersonEntity.class);
@@ -53,34 +53,30 @@ public class PersonRepositoryCustomImpl implements PersonRepositoryCustom {
         List<Predicate> filterPredicates = new ArrayList<>();
         filterPredicates.add(cb.equal(photoJoin.get("status"), PhotoStatus.APPROVED));
 
-        // Filtrage par attributs dynamiques
-        if (options.getFilters() != null) {
-            for (GameAttributeFilter filter : options.getFilters()) {
-                // Join INNER sur les attributs
-                Join<PersonEntity, PersonAttributeEntity> filterJoin = person.join("attributes", JoinType.INNER);
+        // Filtrage par catégorie (single category selection)
+        CategorySelection category = options.getCategory();
+        if (category != null && category.getAttributeId() != null) {
+            // Join INNER sur les attributs
+            Join<PersonEntity, PersonAttributeEntity> attrJoin = person.join("attributes", JoinType.INNER);
 
-                // Attribut ciblé (par ID)
-                Predicate attributeMatch = cb.equal(
-                        filterJoin.get("attribute").get("id"),
-                        filter.getAttribute().getId());
+            // Attribut ciblé (par ID)
+            Predicate attributeMatch = cb.equal(
+                    attrJoin.get("attribute").get("id"),
+                    category.getAttributeId());
 
-                // Valeur comprise entre [minValue ; nextValue(maxValue)[
-                String minValue = filter.getMinValue();
-                String maxValue = filter.getMaxValue();
-                Predicate lowerBound = cb.greaterThanOrEqualTo(filterJoin.get("value"), minValue);
-                Predicate upperBound = cb.lessThan(filterJoin.get("value"), nextValue(maxValue));
-                Predicate valueBetween = cb.and(lowerBound, upperBound);
+            // Valeur exacte
+            Predicate valueMatch = cb.equal(attrJoin.get("value"), category.getValue());
 
-                // Validité temporelle de l'attribut
-                Predicate validFromPredicate = cb.lessThanOrEqualTo(filterJoin.get("validFrom"), cb.currentTimestamp());
-                Predicate validToPredicate = cb.or(
-                        cb.isNull(filterJoin.get("validTo")),
-                        cb.greaterThanOrEqualTo(filterJoin.get("validTo"), cb.currentTimestamp()));
-                Predicate validPredicate = cb.and(validFromPredicate, validToPredicate);
+            // Validité temporelle de l'attribut
+            Predicate validFromPredicate = cb.lessThanOrEqualTo(attrJoin.get("validFrom"), cb.currentTimestamp());
+            Predicate validToPredicate = cb.or(
+                    cb.isNull(attrJoin.get("validTo")),
+                    cb.greaterThanOrEqualTo(attrJoin.get("validTo"), cb.currentTimestamp()));
+            Predicate notPendingDelete = cb.isFalse(attrJoin.get("pendingDelete"));
+            Predicate validPredicate = cb.and(validFromPredicate, validToPredicate, notPendingDelete);
 
-                // Combinaison pour ce filtre
-                filterPredicates.add(cb.and(attributeMatch, valueBetween, validPredicate));
-            }
+            // Combinaison pour ce filtre
+            filterPredicates.add(cb.and(attributeMatch, valueMatch, validPredicate));
         }
 
         // Filtrage par population (FOLLOWED / UNFOLLOWED / ALL) via sous-requête sur
@@ -117,22 +113,5 @@ public class PersonRepositoryCustomImpl implements PersonRepositoryCustom {
         cq.select(person).distinct(true);
 
         return entityManager.createQuery(cq).getResultList();
-    }
-
-    private String nextValue(String value) {
-        if (value == null || value.isEmpty()) {
-            return value;
-        }
-        if (value.length() == 1) {
-            char c = value.charAt(0);
-            // Si c'est 'Z' ou 'z', renvoyer une borne supérieure qui capture tous les cas
-            if (c == 'Z' || c == 'z') {
-                return value.equals("Z") ? "Z\uffff" : "z\uffff";
-            } else {
-                return String.valueOf((char) (c + 1));
-            }
-        }
-        // Pour des chaînes plus longues, ajouter un caractère de fin max
-        return value + "\uffff";
     }
 }

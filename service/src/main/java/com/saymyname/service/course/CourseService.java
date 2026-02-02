@@ -2,128 +2,69 @@
 package com.saymyname.service.course;
 
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.saymyname.core.exception.course.CourseAlreadyExistsException;
-import com.saymyname.core.exception.course.NextQuestionUnavailableException;
-import com.saymyname.core.exception.course.QuestionAlreadyAnsweredException;
+import com.saymyname.core.exception.quiz.QuizUnprocessableException;
 import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.course.Course;
 import com.saymyname.core.model.course.CourseQuestionAttempt;
-import com.saymyname.core.model.course.CourseQuestionItem;
-import com.saymyname.core.model.course.CourseQuestionPlan;
-import com.saymyname.core.model.course.CourseRecentStats;
 import com.saymyname.core.model.course.CourseStats;
-import com.saymyname.core.model.course.Knowledge;
-import com.saymyname.core.model.course.KnowledgeResultEvent;
-import com.saymyname.core.model.course.RecentAnswerStat;
 import com.saymyname.core.model.enums.CourseStatus;
-import com.saymyname.core.model.enums.KnowledgeStatus;
-import com.saymyname.core.model.enums.PoolType;
 import com.saymyname.core.model.enums.PopulationScope;
-import com.saymyname.core.model.enums.course.QuizQuestionItemRole;
-import com.saymyname.core.model.enums.quiz.QuizFormat;
-import com.saymyname.core.model.enums.quiz.QuizPreferredFormat;
-import com.saymyname.core.model.leaderboard.XpAward;
-import com.saymyname.core.model.people.Person;
-import com.saymyname.core.model.quiz.QuizAnswerItemResult;
 import com.saymyname.core.model.quiz.QuizAnswerResult;
 import com.saymyname.core.model.quiz.QuizAnswerSubmission;
-import com.saymyname.core.model.quiz.QuizValidationResult;
-import com.saymyname.core.model.quiz.snapshot.QuizQuestionSnapshot;
-import com.saymyname.core.model.quiz.snapshot.TruthAttributeValue;
+import com.saymyname.core.model.quiz.QuizQuestion;
+import com.saymyname.core.model.quiz.planning.PreparedEmit;
 import com.saymyname.persistence.dao.course.CourseDao;
 import com.saymyname.service.UserService;
-import com.saymyname.service.UserSubscriptionService;
 import com.saymyname.service.course.store.CourseAttemptStore;
-import com.saymyname.service.person.PersonService;
-import com.saymyname.core.model.enums.quiz.QuizQuestionSource;
-import com.saymyname.core.model.quiz.QuizEvaluationResult;
-import com.saymyname.core.model.quiz.QuizQuestion;
-import com.saymyname.core.model.quiz.planning.PlanningContext;
-import com.saymyname.core.model.quiz.planning.PlanningRequest;
-import com.saymyname.core.model.quiz.planning.QuestionPlan;
-import com.saymyname.core.model.quiz.planning.SessionStats;
-import com.saymyname.service.quiz.QuizAnswerValidator;
-import com.saymyname.service.quiz.QuizQuestionSnapshotFactory;
-import com.saymyname.service.quiz.QuizQuestionSnapshotMapper;
-import com.saymyname.service.quiz.CourseOptionsResolver;
+import com.saymyname.service.quiz.QuizEngine;
+import com.saymyname.service.quiz.QuizOrchestrationService;
 import com.saymyname.service.quiz.handle.AttemptRef;
 import com.saymyname.service.quiz.handle.QuizHandleCodec;
-import com.saymyname.service.quiz.planning.QuestionPlanningService;
 import com.saymyname.service.quiz.store.QuizAttemptStore.AttemptHandle;
+import com.saymyname.core.model.enums.quiz.QuizQuestionSource;
+import com.saymyname.core.model.course.KnowledgeResultEvent;
+import com.saymyname.core.model.leaderboard.XpAward;
 
 @Service
 public class CourseService {
 
-    private static final Logger log = LoggerFactory.getLogger(CourseService.class);
+    private static final List<CourseStatus> ACTIVE_STATUSES = List.of(CourseStatus.IN_PROGRESS);
 
     private final CourseDao courseDao;
     private final KnowledgeService knowledgeService;
-    private final CourseRecentStatsService courseRecentStatsService;
-    private final KnowledgeSelectionService knowledgeSelectionService;
-    private final QuestionPlanningService questionPlanningService;
-    private final CourseOptionsResolver courseOptionsResolver;
     private final CourseAttemptStore courseAttemptStore;
     private final UserService userService;
 
-    private final CourseQuizQuestionBuilder courseQuizQuestionBuilder;
-    private final QuizQuestionSnapshotFactory snapshotFactory;
+    private final QuizOrchestrationService quizOrchestrationService;
+    private final QuizEngine quizEngine;
     private final QuizHandleCodec quizHandleCodec;
-    private final QuizAnswerValidator quizAnswerValidator;
-
-    private static final List<CourseStatus> ACTIVE_STATUSES = List.of(CourseStatus.IN_PROGRESS);
-
-    private static final double WEIGHT_ERROR = 5;
-    private static final double WEIGHT_SRS = 4;
-    private static final double WEIGHT_NOT_SO_NEW = 6;
-    private static final double WEIGHT_NEW = 3;
-    private static final double WEIGHT_REVISION = 0;
-
-    private static final int SESSION_STATS_LIMIT = 20;
 
     public CourseService(
             CourseDao courseDao,
             KnowledgeService knowledgeService,
-            CourseRecentStatsService courseRecentStatsService,
-            KnowledgeSelectionService knowledgeSelectionService,
             CourseAttemptStore courseAttemptStore,
-            UserSubscriptionService userSubscriptionService,
-            PersonService personService,
             UserService userService,
-            CourseQuizQuestionBuilder courseQuizQuestionBuilder,
-            QuestionPlanningService questionPlanningService,
-            CourseOptionsResolver courseOptionsResolver,
-            QuizQuestionSnapshotFactory snapshotFactory,
-            QuizHandleCodec quizHandleCodec,
-            QuizAnswerValidator quizAnswerValidator) {
+            QuizOrchestrationService quizOrchestrationService,
+            QuizEngine quizEngine,
+            QuizHandleCodec quizHandleCodec) {
 
-        this.courseDao = courseDao;
-        this.knowledgeService = knowledgeService;
-        this.courseRecentStatsService = courseRecentStatsService;
-        this.knowledgeSelectionService = knowledgeSelectionService;
-        this.questionPlanningService = questionPlanningService;
-        this.courseOptionsResolver = courseOptionsResolver;
-        this.courseAttemptStore = courseAttemptStore;
-        this.userService = userService;
-
-        this.courseQuizQuestionBuilder = courseQuizQuestionBuilder;
-        this.snapshotFactory = snapshotFactory;
-        this.quizHandleCodec = quizHandleCodec;
-        this.quizAnswerValidator = quizAnswerValidator;
+        this.courseDao = Objects.requireNonNull(courseDao, "courseDao");
+        this.knowledgeService = Objects.requireNonNull(knowledgeService, "knowledgeService");
+        this.courseAttemptStore = Objects.requireNonNull(courseAttemptStore, "courseAttemptStore");
+        this.userService = Objects.requireNonNull(userService, "userService");
+        this.quizOrchestrationService = Objects.requireNonNull(quizOrchestrationService, "quizOrchestrationService");
+        this.quizEngine = Objects.requireNonNull(quizEngine, "quizEngine");
+        this.quizHandleCodec = Objects.requireNonNull(quizHandleCodec, "quizHandleCodec");
     }
 
     // ---------------------------------------------------------------------
@@ -197,7 +138,7 @@ public class CourseService {
     public Course restartCourse(Long courseId, long userId) {
         Course course = courseDao.findById(courseId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Course not found"));
-        if (!course.getUser().getId().equals(userId)) {
+        if (course.getUser() == null || !course.getUser().getId().equals(userId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Forbidden");
         }
 
@@ -225,347 +166,22 @@ public class CourseService {
         courseDao.saveCourse(course);
     }
 
+    @Transactional(readOnly = true)
     public Course findById(Long courseId) {
         return courseDao.findById(courseId)
                 .orElseThrow(() -> new IllegalArgumentException("Course not found"));
     }
 
-    // ---------------------------------------------------------------------
-    // Public API for CourseRestController
-    // ---------------------------------------------------------------------
-
-    /**
-     * Continue course: emit next question with handle.
-     * Called by CourseRestController.
-     */
-    @Transactional
-    public QuizQuestion continueCourse(Long courseId) {
-        Long userId = userService.getCurrentIdOrThrow();
-        CourseQuestionAttempt attempt = emitNextCourseAttempt(courseId, userId);
-
-        if (attempt == null || attempt.getId() == null || attempt.getSnapshot() == null) {
-            log.warn("Course attempt emission failed: courseId={}, userId={}, attemptId={}",
-                    courseId, userId, attempt != null ? attempt.getId() : null);
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Course attempt emission failed");
-        }
-
-        QuizQuestion q = QuizQuestionSnapshotMapper.toQuestion(attempt.getSnapshot());
-
-        String handle = quizHandleCodec.encode(new AttemptRef(
-                QuizQuestionSource.COURSE,
-                new AttemptHandle.DbIdHandle(attempt.getId())));
-
-        q.setQuestionHandle(handle);
-        return q;
-    }
-
-    /**
-     * Answer course question.
-     * Handles evaluation, multi-step state, and finalization directly.
-     */
-    @Transactional
-    public QuizAnswerResult answer(Course course, String questionHandle, QuizAnswerSubmission submission) {
-        Long userId = userService.getCurrentIdOrThrow();
-
-        // Decode handle to get attempt ID
-        AttemptRef ref = quizHandleCodec.decodeOrThrow(questionHandle);
-        if (ref.source() != QuizQuestionSource.COURSE) {
-            throw new IllegalArgumentException("Expected COURSE handle but got " + ref.source());
-        }
-        if (!(ref.handle() instanceof AttemptHandle.DbIdHandle dh)) {
-            throw new IllegalArgumentException("COURSE requires DbIdHandle");
-        }
-
-        Long attemptId = dh.value();
-
-        // Load attempt
-        CourseQuestionAttempt attempt = courseAttemptStore.findById(attemptId);
-        if (attempt == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Question not found");
-        }
-        if (attempt.getAnsweredAt() != null) {
-            throw new QuestionAlreadyAnsweredException(attempt.getId());
-        }
-
-        // Evaluate using QuizAnswerValidator directly
-        QuizQuestionSnapshot snapshot = attempt.getSnapshot();
-        QuizEvaluationResult eval = quizAnswerValidator.evaluate(snapshot, submission);
-
-        // Multi-step incomplete: update state and return
-        if (eval.isMultiStepIncomplete()) {
-            QuizQuestionSnapshot updatedSnapshot = eval.updatedSnapshot();
-            String normalizedAudit = eval.normalizedAudit() != null ? eval.normalizedAudit().auditString() : null;
-
-            attempt.setSnapshot(updatedSnapshot);
-            attempt.setNormalizedAudit(normalizedAudit);
-            courseAttemptStore.updateSnapshot(attemptId, userId, updatedSnapshot);
-
-            QuizQuestion currentQuestion = QuizQuestionSnapshotMapper.toQuestion(updatedSnapshot);
-            currentQuestion.setQuestionHandle(questionHandle); // keep same handle
-
-            return new QuizAnswerResult.Builder()
-                    .withCorrect(eval.correct())
-                    .withFeedbackMessage(eval.feedbackMessage())
-                    .withIsComplete(false)
-                    .withCurrentState(eval.updatedState())
-                    .withNextQuestion(currentQuestion)
-                    .withItemResults(List.of())
-                    .build();
-        }
-
-        // Complete: finalize and emit next
-        QuizQuestionSnapshot effectiveSnapshot = eval.updatedSnapshot() != null ? eval.updatedSnapshot() : snapshot;
-        String normalizedAudit = eval.normalizedAudit() != null ? eval.normalizedAudit().auditString() : null;
-
-        // Build QuizValidationResult for finalization (backward compat)
-        QuizValidationResult validation = new QuizValidationResult.Builder()
-                .withCorrect(eval.correct())
-                .withIsComplete(eval.isComplete())
-                .withUpdatedState(eval.updatedState())
-                .build();
-
-        return finalizeCourseAnswerAndMaybeEmitNext(
-                course.getId(),
-                attemptId,
-                userId,
-                effectiveSnapshot,
-                submission,
-                normalizedAudit,
-                eval.feedbackMessage(),
-                validation);
-    }
-
-    /**
-     * List all courses for current user.
-     */
     @Transactional(readOnly = true)
     public List<Course> findAllByUser() {
         Long userId = userService.getCurrentIdOrThrow();
         return courseDao.findAllByUserAndStatusesOrderedByLastAccess(userId, ACTIVE_STATUSES);
     }
 
-    /**
-     * Touch last accessed timestamp for a course.
-     */
     @Transactional
     public void touchLastAccessed(Long courseId) {
         courseDao.touchLastAccessed(courseId, LocalDateTime.now());
     }
-
-    /**
-     * Get stats for all courses of current user.
-     */
-    @Transactional(readOnly = true)
-    public List<CourseStats> getStatsForUser() {
-        Long userId = userService.getCurrentIdOrThrow();
-        List<Course> courses = courseDao.findAllByUserAndStatusesOrderedByLastAccess(userId,
-                List.of(CourseStatus.IN_PROGRESS, CourseStatus.ARCHIVED));
-        return courses.stream()
-                .map(this::buildStatsForCourse)
-                .toList();
-    }
-
-    private CourseStats buildStatsForCourse(Course course) {
-        int totalAnswers = courseAttemptStore.countAllAnswersByCourse(course);
-        LocalDateTime lastActivity = courseAttemptStore.findLastAnsweredAt(course);
-
-        return new CourseStats.Builder()
-                .withCourseId(course.getId())
-                .withTotalAnswers(totalAnswers)
-                .withLastActivity(lastActivity)
-                .build();
-    }
-
-    // ---------------------------------------------------------------------
-    // Called by QuizEngine - emit next course attempt (persisted, with snapshot)
-    // ---------------------------------------------------------------------
-
-    @Transactional
-    public CourseQuestionAttempt emitNextCourseAttempt(Long courseId, Long userId) {
-        Course course = courseDao.findById(courseId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Course not found"));
-
-        if (course.getUser() == null || !Objects.equals(course.getUser().getId(), userId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Forbidden");
-        }
-
-        courseDao.touchLastAccessed(course.getId(), LocalDateTime.now());
-
-        if (knowledgeService.countByCourseAndStatus(course, KnowledgeStatus.UNKNOWN) == 0) {
-            knowledgeService.insertBatchOfTenKnowledges(course);
-        }
-
-        CourseQuestionAttempt attempt = findNextDue(course, null, null, true);
-        if (attempt == null)
-            throw new NextQuestionUnavailableException();
-
-        int nextRound = course.getCurrentRound() + 1;
-        attempt.setQuestionRound(nextRound);
-
-        CourseQuestionPlan plan = buildPlan(course, null, attempt, null, null, null);
-        attempt.setPlan(plan);
-
-        // Build runtime question (course-specific builder), then snapshot-freeze
-        var runtimeQuestion = courseQuizQuestionBuilder.buildFromAttempt(attempt, plan);
-
-        List<TruthAttributeValue> frozen = snapshotFactory.freezeTruthForQuestion(runtimeQuestion);
-        attempt.setSnapshot(snapshotFactory.fromQuestion(runtimeQuestion, frozen, targetPersonIds(attempt)));
-
-        CourseQuestionAttempt persisted = courseAttemptStore.create(attempt);
-        ensureSnapshotCourseQuestionId(persisted);
-
-        course.setCurrentRound(nextRound);
-        updateCourse(course);
-
-        return persisted;
-    }
-
-    // ---------------------------------------------------------------------
-    // Called by QuizEngine - finalize course answer + emit next
-    // (QuizEngine already validated and handled multi-step completion)
-    // ---------------------------------------------------------------------
-
-    @Transactional
-    public QuizAnswerResult finalizeCourseAnswerAndMaybeEmitNext(
-            Long courseId,
-            Long attemptId,
-            Long userId,
-            QuizQuestionSnapshot effectiveSnapshot,
-            QuizAnswerSubmission submission,
-            String normalizedAudit,
-            String feedbackMessage,
-            QuizValidationResult validation) {
-
-        Course course = courseDao.findById(courseId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Course not found"));
-
-        if (course.getUser() == null || !Objects.equals(course.getUser().getId(), userId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Forbidden");
-        }
-
-        CourseQuestionAttempt previous = courseAttemptStore.findById(attemptId);
-        if (previous == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Question not found");
-        }
-        if (previous.getAnsweredAt() != null) {
-            throw new QuestionAlreadyAnsweredException(previous.getId());
-        }
-
-        if (previous.getQuestionRound() > 0 && course.getCurrentRound() != previous.getQuestionRound()) {
-            log.warn("Round mismatch for courseId={}: currentRound={}, previousRound={}",
-                    course.getId(), course.getCurrentRound(), previous.getQuestionRound());
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Course round mismatch");
-        }
-
-        // close question
-        LocalDateTime now = LocalDateTime.now();
-        int deltaMs = (int) Math.max(0, ChronoUnit.MILLIS.between(previous.getAskedAt(), now));
-
-        previous.setAnsweredAt(now);
-        previous.setResponseTimeMs(deltaMs);
-
-        // rawSubmission is optional here; if you want, you can store JSON with
-        // ObjectMapper in another service.
-        previous.setRawSubmission(submission != null ? submission.getUserAnswer() : null);
-        previous.setNormalizedAudit(normalizedAudit);
-
-        if (effectiveSnapshot != null) {
-            previous.setSnapshot(effectiveSnapshot);
-        }
-
-        List<QuizAnswerItemResult> itemResults = new ArrayList<>();
-        List<KnowledgeResultEvent> srsEvents = new ArrayList<>();
-
-        boolean correctFinal = validation != null && validation.isCorrect();
-        boolean allTargetsCorrect = correctFinal;
-
-        for (CourseQuestionItem item : previous.getItems()) {
-            if (item.getRole() != QuizQuestionItemRole.TARGET) {
-                continue;
-            }
-
-            Long personId = item.getKnowledge().getPerson().getId();
-
-            item.setAnswered(true);
-            item.setCorrect(correctFinal);
-            item.setNormalizedAnswer(normalizedAudit);
-
-            itemResults.add(new QuizAnswerItemResult.Builder()
-                    .withPosition(item.getPosition())
-                    .withRole(item.getRole())
-                    .withKnowledgeId(item.getKnowledge().getId())
-                    .withPersonId(personId)
-                    .withCorrect(correctFinal)
-                    .withUserAnswerNormalized(normalizedAudit)
-                    .withCorrectAnswer(validation != null ? validation.getCorrectAnswerDisplay() : null)
-                    .withResultAttributes(validation != null ? validation.getResultAttributes() : null)
-                    .build());
-
-            srsEvents.add(new KnowledgeResultEvent.Builder()
-                    .withKnowledgeId(item.getKnowledge().getId())
-                    .withGameModeId(course.getGameMode().getId())
-                    .withPersonId(personId)
-                    .withCorrect(correctFinal)
-                    .withHelpUsed(previous.isHelpUsed())
-                    .withCourseId(course.getId())
-                    .withCourseQuestionAttemptId(previous.getId())
-                    .withQuestionRound(previous.getQuestionRound())
-                    .build());
-        }
-
-        previous.setGlobalCorrect(allTargetsCorrect);
-
-        courseAttemptStore.updateAnswerMetaAndItems(previous);
-
-        XpAward xpAward = null;
-        if (!srsEvents.isEmpty()) {
-            xpAward = knowledgeService.recordBatchResults(course.getUser(), srsEvents);
-        }
-
-        updateRecentStatsAfterAnswer(course, previous);
-
-        // Emit next attempt
-        Long lastPersonId = lastTargetPersonId(previous);
-
-        CourseQuestionAttempt nextAttempt = findNextDue(course, lastPersonId, allTargetsCorrect, false);
-        if (nextAttempt == null) {
-            throw new NextQuestionUnavailableException();
-        }
-
-        int baseRound = previous.getQuestionRound() > 0 ? previous.getQuestionRound() : course.getCurrentRound();
-        int nextRound = baseRound + 1;
-        nextAttempt.setQuestionRound(nextRound);
-
-        CourseQuestionPlan nextPlan = buildPlan(course, previous, nextAttempt, null, null, null);
-        nextAttempt.setPlan(nextPlan);
-
-        var runtimeNext = courseQuizQuestionBuilder.buildFromAttempt(nextAttempt, nextPlan);
-        List<TruthAttributeValue> frozenNext = snapshotFactory.freezeTruthForQuestion(runtimeNext);
-        nextAttempt.setSnapshot(snapshotFactory.fromQuestion(runtimeNext, frozenNext, targetPersonIds(nextAttempt)));
-
-        CourseQuestionAttempt persistedNext = courseAttemptStore.create(nextAttempt);
-        ensureSnapshotCourseQuestionId(persistedNext);
-
-        course.setCurrentRound(nextRound);
-        updateCourse(course);
-
-        var nextQuestion = QuizQuestionSnapshotMapper.toQuestion(persistedNext.getSnapshot());
-
-        // Return final result (QuizEngine will add handle on question if you want; here
-        // we only provide nextQuestion)
-        return new QuizAnswerResult.Builder()
-                .withCorrect(allTargetsCorrect)
-                .withFeedbackMessage(feedbackMessage)
-                .withIsComplete(true)
-                .withNextQuestion(nextQuestion)
-                .withItemResults(itemResults)
-                .withXpAward(xpAward)
-                .build();
-    }
-
-    // ---------------------------------------------------------------------
-    // Stats / Pools / Plan / helpers
-    // ---------------------------------------------------------------------
 
     @Transactional(readOnly = true)
     public CourseStats getStats(Long courseId) {
@@ -575,354 +191,175 @@ public class CourseService {
         if (course.getUser() == null || !Objects.equals(course.getUser().getId(), userId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Forbidden");
         }
-        return buildStatsForCourse(course);
+
+        int totalAnswers = courseAttemptStore.countAllAnswersByCourse(course);
+        LocalDateTime lastActivity = courseAttemptStore.findLastAnsweredAt(course);
+        return new CourseStats.Builder()
+                .withCourseId(course.getId())
+                .withTotalAnswers(totalAnswers)
+                .withLastActivity(lastActivity)
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public List<CourseStats> getStatsForUser() {
+        Long userId = userService.getCurrentIdOrThrow();
+        List<Course> courses = courseDao.findAllByUserAndStatusesOrderedByLastAccess(
+                userId,
+                List.of(CourseStatus.IN_PROGRESS, CourseStatus.ARCHIVED));
+
+        return courses.stream().map(c -> {
+            int totalAnswers = courseAttemptStore.countAllAnswersByCourse(c);
+            LocalDateTime lastActivity = courseAttemptStore.findLastAnsweredAt(c);
+            return new CourseStats.Builder()
+                    .withCourseId(c.getId())
+                    .withTotalAnswers(totalAnswers)
+                    .withLastActivity(lastActivity)
+                    .build();
+        }).toList();
+    }
+
+    // ---------------------------------------------------------------------
+    // Course quiz flow (stateless engine + orchestration)
+    // ---------------------------------------------------------------------
+
+    @Transactional
+    public QuizQuestion continueCourse(Long courseId) {
+        Long userId = userService.getCurrentIdOrThrow();
+
+        Course course = findById(courseId);
+        if (course.getUser() == null || !Objects.equals(course.getUser().getId(), userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Forbidden");
+        }
+
+        PreparedEmit emit = quizOrchestrationService.orchestrateCourse(
+                userId,
+                courseId,
+                null,
+                null,
+                null);
+
+        return quizEngine.emitQuestion(userId, emit);
     }
 
     @Transactional
-    private CourseQuestionAttempt findNextDue(
-            Course course,
-            Long lastPersonId,
-            Boolean correct,
-            boolean allowRepeat) {
+    public QuizAnswerResult answer(Long courseId, String questionHandle, QuizAnswerSubmission submission) {
+        Long userId = userService.getCurrentIdOrThrow();
 
-        Map<PoolType, Double> weights = new LinkedHashMap<>(Map.of(
-                PoolType.ERROR_RECENT, WEIGHT_ERROR,
-                PoolType.SRS_DUE, WEIGHT_SRS,
-                PoolType.NEW, WEIGHT_NEW,
-                PoolType.DISCOVERED, WEIGHT_NOT_SO_NEW,
-                PoolType.REVISION, WEIGHT_REVISION));
-
-        KnowledgeSelectionService.SelectionResult selection = knowledgeSelectionService.findNextDueSingleTarget(
-                course,
-                lastPersonId,
-                allowRepeat,
-                weights);
-
-        if (selection == null || selection.knowledge() == null) {
-            return null;
+        Course course = findById(courseId);
+        if (course.getUser() == null || !Objects.equals(course.getUser().getId(), userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Forbidden");
         }
 
-        Knowledge k = selection.knowledge();
-        CourseQuestionItem target = new CourseQuestionItem.Builder()
-                .withPosition(0)
-                .withRole(QuizQuestionItemRole.TARGET)
-                .withKnowledge(k)
-                .withPerson(k.getPerson())
-                .withAnswered(false)
-                .withCorrect(null)
-                .withNormalizedAnswer(null)
-                .build();
+        AttemptRef ref = quizHandleCodec.decodeOrThrow(questionHandle);
+        if (ref.source() != QuizQuestionSource.COURSE) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Not a COURSE question handle");
+        }
+        if (!(ref.handle() instanceof AttemptHandle.DbIdHandle dh)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid COURSE handle");
+        }
+        Long attemptId = dh.value();
 
-        return new CourseQuestionAttempt.Builder()
-                .withCourse(course)
-                .withQuestionRound(course.getCurrentRound() + 1)
-                .withAskedAt(LocalDateTime.now())
-                .withAnsweredAt(null)
-                .withResponseTimeMs(0)
-                .withRawSubmission(null)
-                .withNormalizedAudit(null)
-                .withGlobalCorrect(false)
-                .withPoolType(selection.poolType())
-                .withHelpUsed(false)
-                .withItems(List.of(target))
-                .build();
-    }
-
-    private void ensureSnapshotCourseQuestionId(CourseQuestionAttempt attempt) {
-        if (attempt == null || attempt.getId() == null || attempt.getSnapshot() == null) {
-            return;
+        CourseQuestionAttempt existing = courseAttemptStore.findById(attemptId);
+        if (existing == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Course attempt not found");
         }
-        if (attempt.getSnapshot().getContext() == null) {
-            return;
+        if (existing.getCourse() == null || !Objects.equals(existing.getCourse().getId(), courseId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Attempt does not belong to course");
         }
-        if (attempt.getSnapshot().getContext().getCourseQuestionId() == null) {
-            attempt.getSnapshot().getContext().setCourseQuestionId(attempt.getId());
-        }
-    }
-
-    private void updateRecentStatsAfterAnswer(Course course, CourseQuestionAttempt attempt) {
-        if (course == null || attempt == null) {
-            return;
-        }
-        QuizFormat format = null;
-        if (attempt.getSnapshot() != null) {
-            format = attempt.getSnapshot().getFormat();
-        } else if (attempt.getPlan() != null) {
-            format = attempt.getPlan().getFormat();
-        }
-        courseRecentStatsService.upsertOnAnswer(
-                course.getId(),
-                format,
-                attempt.isGlobalCorrect(),
-                attempt.isHelpUsed(),
-                attempt.getResponseTimeMs(),
-                attempt.getAnsweredAt());
-    }
-
-    private SessionStats buildSessionStats(Course course) {
-        if (course == null || course.getId() == null) {
-            return SessionStats.empty();
+        if (existing.getAnsweredAt() != null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Question already answered");
         }
 
-        CourseRecentStats recentStats = courseRecentStatsService.getStatsForCourse(course.getId());
-        List<RecentAnswerStat> recentAnswers = courseAttemptStore.findRecentAnswerStats(course, SESSION_STATS_LIMIT);
-
-        if (recentStats == null && recentAnswers.isEmpty()) {
-            return SessionStats.empty();
+        PreparedEmit nextEmit = null;
+        try {
+            nextEmit = quizOrchestrationService.orchestrateCourse(
+                    userId,
+                    courseId,
+                    null,
+                    null,
+                    null);
+        } catch (QuizUnprocessableException e) {
+            nextEmit = null;
         }
 
-        int answered = recentAnswers.size();
-        int correctCount = 0;
-        for (RecentAnswerStat stat : recentAnswers) {
-            if (stat != null && stat.correct()) {
-                correctCount++;
+        QuizAnswerResult res = quizEngine.answerQuestion(userId, questionHandle, submission, nextEmit);
+
+        if (isFinalAnswer(res)) {
+            CourseQuestionAttempt attempt = courseAttemptStore.findById(attemptId);
+            if (attempt == null) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Course attempt not found");
+            }
+            if (attempt.getCourse() == null || !Objects.equals(attempt.getCourse().getId(), courseId)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Attempt does not belong to course");
+            }
+
+            LocalDateTime answeredAt = LocalDateTime.now();
+            attempt.setAnsweredAt(answeredAt);
+            attempt.setResponseTimeMs(computeResponseTimeMs(attempt.getAskedAt(), answeredAt));
+            attempt.setGlobalCorrect(res.isCorrect());
+
+            courseAttemptStore.updateAnswerMetaAndItems(attempt);
+
+            List<KnowledgeResultEvent> events = buildKnowledgeEvents(attempt, res.isCorrect());
+            if (!events.isEmpty()) {
+                User me = userService.getCurrentAuthenticatedUserOrThrow();
+                XpAward xpAward = knowledgeService.recordCourseAnswerResults(
+                        me,
+                        course,
+                        attempt,
+                        attempt.isHelpUsed(),
+                        events);
+                res.setXpAward(xpAward);
             }
         }
 
-        int correctStreak = 0;
-        int errorStreak = 0;
-        if (!recentAnswers.isEmpty() && recentAnswers.get(0) != null) {
-            boolean lastCorrect = recentAnswers.get(0).correct();
-            int streak = 0;
-            for (RecentAnswerStat stat : recentAnswers) {
-                if (stat == null || stat.correct() != lastCorrect) {
-                    break;
-                }
-                streak++;
-            }
-            if (lastCorrect) {
-                correctStreak = streak;
-            } else {
-                errorStreak = streak;
-            }
-        } else if (recentStats != null) {
-            errorStreak = recentStats.getErrorStreak();
-        }
-
-        double accuracy = answered > 0 ? (double) correctCount / answered : 0.0;
-
-        long durationMs = 0;
-        if (!recentAnswers.isEmpty()) {
-            RecentAnswerStat oldest = recentAnswers.get(recentAnswers.size() - 1);
-            if (oldest != null && oldest.answeredAt() != null) {
-                durationMs = Math.max(0, ChronoUnit.MILLIS.between(oldest.answeredAt(), LocalDateTime.now()));
-            }
-        }
-
-        int formatStreak = recentStats != null ? recentStats.getFormatStreak() : 0;
-        QuizFormat lastFormat = recentStats != null ? recentStats.getLastFormat() : null;
-
-        return SessionStats.builder()
-                .answered(answered)
-                .correctStreak(correctStreak)
-                .errorStreak(errorStreak)
-                .accuracy(accuracy)
-                .durationMs(durationMs)
-                .formatStreak(formatStreak)
-                .lastFormat(lastFormat)
-                .build();
+        return res;
     }
 
-    private CourseQuestionPlan buildPlan(
-            Course course,
-            CourseQuestionAttempt previousAttempt,
-            CourseQuestionAttempt nextAttempt,
-            QuizPreferredFormat preferredFormat,
-            Boolean timed,
-            Integer timeLimitMs) {
-        Objects.requireNonNull(course, "course");
-        Objects.requireNonNull(nextAttempt, "nextAttempt");
-
-        Knowledge primary = primaryKnowledgeFromAttempt(nextAttempt);
-        if (primary == null) {
-            throw new IllegalStateException("CourseQuestionAttempt has no primary knowledge target");
+    private static boolean isFinalAnswer(QuizAnswerResult res) {
+        if (res == null) {
+            return false;
         }
-
-        Long userId = course.getUser() != null ? course.getUser().getId() : null;
-        if (userId == null) {
-            throw new IllegalStateException("Course.user is required");
+        if (res.getIsComplete() == null) {
+            return true;
         }
-        Long gameModeId = course.getGameMode() != null ? course.getGameMode().getId() : null;
-        if (gameModeId == null) {
-            throw new IllegalStateException("Course.gameMode is required");
-        }
-
-        Long lastPersonId = lastTargetPersonId(previousAttempt);
-
-        PlanningContext context = PlanningContext.forCourse(course.getId());
-        SessionStats sessionStats = context.sessionTracking() ? buildSessionStats(course) : null;
-        PlanningRequest request = PlanningRequest.builder()
-                .userId(userId)
-                .gameModeId(gameModeId)
-                .gameOptions(courseOptionsResolver.resolve(course))
-                .context(context)
-                .course(course)
-                .primaryKnowledge(primary)
-                .selectedPoolType(nextAttempt.getPoolType())
-                .sessionStats(sessionStats)
-                .preferredFormat(preferredFormat)
-                .requestedTimed(timed)
-                .requestedTimeLimitMs(timeLimitMs)
-                .lastPersonId(lastPersonId)
-                .lastCorrect(previousAttempt != null ? previousAttempt.isGlobalCorrect() : null)
-                .build();
-
-        QuestionPlan planned = questionPlanningService.plan(request);
-
-        QuestionPlan effectivePlan = planned;
-        List<Knowledge> targets = planned.targetKnowledges() != null && !planned.targetKnowledges().isEmpty()
-                ? planned.targetKnowledges()
-                : List.of(primary);
-
-        if (effectivePlan.isMultiTarget() && targets.size() < effectivePlan.targetCount()) {
-            effectivePlan = questionPlanningService.plan(
-                    toSingleTargetRequest(request, context, lastPersonId, previousAttempt));
-            targets = effectivePlan.targetKnowledges() != null && !effectivePlan.targetKnowledges().isEmpty()
-                    ? effectivePlan.targetKnowledges()
-                    : List.of(primary);
-        }
-
-        applyAttemptItems(nextAttempt, targets, effectivePlan.selectedDistractors(), effectivePlan.format());
-        return buildCoursePlanFromPlanning(effectivePlan, targets);
+        return Boolean.TRUE.equals(res.getIsComplete());
     }
 
-    private PlanningRequest toSingleTargetRequest(
-            PlanningRequest request,
-            PlanningContext context,
-            Long lastPersonId,
-            CourseQuestionAttempt previousAttempt) {
-        PlanningContext fallbackContext = disableMultiTarget(context);
-        return PlanningRequest.builder()
-                .userId(request.userId())
-                .gameModeId(request.gameModeId())
-                .gameOptions(request.gameOptions())
-                .context(fallbackContext)
-                .course(request.course())
-                .primaryKnowledge(request.primaryKnowledge())
-                .selectedPoolType(request.selectedPoolType())
-                .sessionStats(request.sessionStats())
-                .preferredFormat(request.preferredFormat())
-                .requestedTimed(request.requestedTimed())
-                .requestedTimeLimitMs(request.requestedTimeLimitMs())
-                .lastPersonId(lastPersonId)
-                .lastCorrect(previousAttempt != null ? previousAttempt.isGlobalCorrect() : null)
-                .build();
-    }
-
-    private Knowledge primaryKnowledgeFromAttempt(CourseQuestionAttempt attempt) {
-        if (attempt == null || attempt.getItems() == null) {
-            return null;
+    private static int computeResponseTimeMs(LocalDateTime askedAt, LocalDateTime answeredAt) {
+        if (askedAt == null || answeredAt == null) {
+            return 0;
         }
-        return attempt.getItems().stream()
-                .filter(it -> it.getRole() == QuizQuestionItemRole.TARGET)
-                .sorted((a, b) -> Integer.compare(a.getPosition(), b.getPosition()))
-                .map(CourseQuestionItem::getKnowledge)
-                .findFirst()
-                .orElse(null);
-    }
-
-    private PlanningContext disableMultiTarget(PlanningContext context) {
-        return new PlanningContext(
-                context.contextType(),
-                context.srsEnabled(),
-                context.knowledgeTracking(),
-                false,
-                context.sessionTracking(),
-                context.allowedFormats(),
-                context.difficultyRange(),
-                context.courseId(),
-                context.challengeId(),
-                context.metadata());
-    }
-
-    private void applyAttemptItems(
-            CourseQuestionAttempt attempt,
-            List<Knowledge> targets,
-            List<Person> distractors,
-            QuizFormat format) {
-        List<CourseQuestionItem> items = new ArrayList<>();
-        int position = 0;
-        List<Long> targetPersonIds = targets.stream()
-                .map(k -> k.getPerson() != null ? k.getPerson().getId() : null)
-                .filter(Objects::nonNull)
-                .toList();
-
-        for (Knowledge knowledge : targets) {
-            if (knowledge == null || knowledge.getPerson() == null) {
-                continue;
-            }
-            items.add(new CourseQuestionItem.Builder()
-                    .withPosition(position++)
-                    .withRole(QuizQuestionItemRole.TARGET)
-                    .withKnowledge(knowledge)
-                    .withPerson(knowledge.getPerson())
-                    .withAnswered(false)
-                    .withCorrect(null)
-                    .withNormalizedAnswer(null)
-                    .build());
+        long ms = java.time.Duration.between(askedAt, answeredAt).toMillis();
+        if (ms <= 0) {
+            return 0;
         }
-
-        if (format == QuizFormat.MCQ && distractors != null && !distractors.isEmpty()) {
-            for (Person p : distractors) {
-                if (p == null || p.getId() == null) {
-                    continue;
-                }
-                if (targetPersonIds.contains(p.getId())) {
-                    continue;
-                }
-                items.add(new CourseQuestionItem.Builder()
-                        .withPosition(position++)
-                        .withRole(QuizQuestionItemRole.DISTRACTOR)
-                        .withKnowledge(null)
-                        .withPerson(p)
-                        .withAnswered(false)
-                        .withCorrect(null)
-                        .withNormalizedAnswer(null)
-                        .build());
-            }
-        }
-
-        if (!items.isEmpty()) {
-            attempt.setItems(items);
-        }
+        return ms > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) ms;
     }
 
-    private CourseQuestionPlan buildCoursePlanFromPlanning(QuestionPlan plan, List<Knowledge> targets) {
-        List<Long> targetKnowledgeIds = targets.stream()
-                .map(Knowledge::getId)
-                .filter(Objects::nonNull)
-                .toList();
-        String paramsJson = plan.format() == QuizFormat.MCQ ? "{\"nbChoices\":4}" : null;
-        return new CourseQuestionPlan.Builder()
-                .withFormat(plan.format())
-                .withTimed(Boolean.TRUE.equals(plan.timed()))
-                .withTimeLimitMs(plan.timeLimitMs())
-                .withTargetCount(targetKnowledgeIds.size())
-                .withTargetKnowledgeIds(targetKnowledgeIds)
-                .withParamsJson(paramsJson)
-                .withReasonCode(plan.reasonCode())
-                .withReasonDetailsJson(plan.reasonDetailsJson())
-                .build();
-    }
-
-    private List<Long> targetPersonIds(CourseQuestionAttempt h) {
-        if (h == null || h.getItems() == null)
+    private static List<KnowledgeResultEvent> buildKnowledgeEvents(CourseQuestionAttempt attempt, boolean correct) {
+        if (attempt == null || attempt.getPlan() == null) {
             return List.of();
-        return h.getItems().stream()
-                .filter(it -> it.getRole() == QuizQuestionItemRole.TARGET)
-                .map(it -> it.getPerson() != null ? it.getPerson().getId() : null)
-                .filter(Objects::nonNull)
-                .toList();
-    }
+        }
+        List<Long> knowledgeIds = attempt.getPlan().getTargetKnowledgeIds();
+        if (knowledgeIds == null || knowledgeIds.isEmpty()) {
+            return List.of();
+        }
 
-    private Long lastTargetPersonId(CourseQuestionAttempt h) {
-        if (h == null || h.getItems() == null)
-            return null;
-        return h.getItems().stream()
-                .filter(it -> it.getRole() == QuizQuestionItemRole.TARGET)
-                .sorted((a, b) -> Integer.compare(a.getPosition(), b.getPosition()))
-                .findFirst()
-                .map(it -> it.getKnowledge().getPerson().getId())
-                .orElse(null);
+        Long courseId = attempt.getCourse() != null ? attempt.getCourse().getId() : null;
+        Integer round = attempt.getQuestionRound();
+
+        return knowledgeIds.stream()
+                .filter(Objects::nonNull)
+                .map(knowledgeId -> new KnowledgeResultEvent.Builder()
+                        .withKnowledgeId(knowledgeId)
+                        .withCorrect(correct)
+                        .withHelpUsed(attempt.isHelpUsed())
+                        .withCourseId(courseId)
+                        .withCourseQuestionAttemptId(attempt.getId())
+                        .withQuestionRound(round)
+                        .build())
+                .toList();
     }
 }

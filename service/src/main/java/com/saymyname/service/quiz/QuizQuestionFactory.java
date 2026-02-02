@@ -8,7 +8,7 @@ import java.util.Map;
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.enums.quiz.QuizFormat;
-import com.saymyname.core.model.enums.quiz.QuizPreferredFormat;
+import com.saymyname.core.model.enums.quiz.QuizFormat;
 import com.saymyname.core.model.quiz.QuizQuestion;
 import com.saymyname.core.model.quiz.QuizQuestionSpec;
 import com.saymyname.service.quiz.plugins.QuizQuestionPlugin;
@@ -26,11 +26,6 @@ public class QuizQuestionFactory {
                 this.plugins = Map.copyOf(map);
         }
 
-        public QuizQuestion build(QuizQuestionSpec spec, QuizPreferredFormat preferred) {
-                QuizFormat fmt = resolve(preferred);
-                return plugin(fmt).build(spec);
-        }
-
         public QuizQuestion build(QuizQuestionSpec spec, QuizFormat format) {
                 if (format == null) {
                         throw new IllegalArgumentException("format is required");
@@ -44,13 +39,6 @@ public class QuizQuestionFactory {
 
         public boolean supportsFormat(QuizFormat fmt) {
                 return fmt != null && plugins.containsKey(fmt);
-        }
-
-        private QuizFormat resolve(QuizPreferredFormat preferred) {
-                if (preferred == null || preferred == QuizPreferredFormat.AUTO) {
-                        return QuizFormat.TEXT_INPUT;
-                }
-                return QuizFormat.valueOf(preferred.name());
         }
 
         private QuizQuestionPlugin plugin(QuizFormat fmt) {

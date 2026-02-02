@@ -1,53 +1,110 @@
 // src/main/java/com/saymyname/service/FreeTrainingService.java
 package com.saymyname.service;
 
-import org.springframework.stereotype.Service;
+import java.util.Objects;
 
-import com.saymyname.core.model.enums.quiz.QuizPreferredFormat;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.saymyname.core.exception.quiz.QuizUnprocessableException;
+import com.saymyname.core.model.enums.quiz.FormatMode;
+import com.saymyname.core.model.enums.quiz.QuizFormat;
 import com.saymyname.core.model.quiz.QuizAnswerResult;
 import com.saymyname.core.model.quiz.QuizAnswerSubmission;
 import com.saymyname.core.model.quiz.QuizQuestion;
-import com.saymyname.core.model.quiz.options.GameOptions;
+import com.saymyname.core.model.quiz.options.TrainingOptions;
+import com.saymyname.core.model.quiz.planning.PreparedEmit;
 import com.saymyname.service.quiz.QuizEngine;
+import com.saymyname.service.quiz.QuizOrchestrationService;
 
-/**
- * Facade for free training (without course context).
- * Delegates to QuizEngine for all quiz operations.
- */
 @Service
 public class FreeTrainingService {
 
+    private final QuizOrchestrationService quizOrchestrationService;
     private final QuizEngine quizEngine;
-    private final UserService userService;
 
-    public FreeTrainingService(QuizEngine quizEngine, UserService userService) {
-        this.quizEngine = quizEngine;
-        this.userService = userService;
+    public FreeTrainingService(
+            QuizOrchestrationService quizOrchestrationService,
+            QuizEngine quizEngine) {
+
+        this.quizOrchestrationService = Objects.requireNonNull(quizOrchestrationService, "quizOrchestrationService");
+        this.quizEngine = Objects.requireNonNull(quizEngine, "quizEngine");
     }
 
-    /**
-     * Emit a training question.
-     */
-    public QuizQuestion emitTraining(GameOptions options, QuizPreferredFormat preferred,
-                                      Boolean timed, Integer timeLimitMs) {
-        Long userId = userService.getCurrentIdOrThrow();
-        return quizEngine.emitTraining(options, userId, preferred, timed, timeLimitMs);
+    @Transactional(readOnly = true)
+    public QuizQuestion emitTraining(
+            Long userId,
+            TrainingOptions options,
+            FormatMode formatMode,
+            QuizFormat forcedFormat,
+            Boolean timed,
+            Integer timeLimitMs) {
+
+        Objects.requireNonNull(userId, "userId");
+        Objects.requireNonNull(options, "options");
+        Objects.requireNonNull(formatMode, "formatMode");
+
+        if (formatMode == FormatMode.FORCED && forcedFormat == null) {
+            throw new IllegalArgumentException("forcedFormat is required when formatMode=FORCED");
+        }
+        if (formatMode == FormatMode.AUTO && forcedFormat != null) {
+            throw new IllegalArgumentException("forcedFormat must be null when formatMode=AUTO");
+        }
+
+        Long ttlSeconds = 600L;
+
+        PreparedEmit emit = quizOrchestrationService.orchestrateTraining(
+                userId,
+                options,
+                formatMode,
+                forcedFormat,
+                timed,
+                timeLimitMs,
+                ttlSeconds);
+
+        return quizEngine.emitQuestion(userId, emit);
     }
 
-    /**
-     * Answer a training question.
-     */
-    public QuizAnswerResult answerTraining(String questionHandle, QuizAnswerSubmission submission) {
-        return quizEngine.answerTraining(questionHandle, submission);
-    }
+    @Transactional
+    public QuizAnswerResult answerTrainingWithNext(
+            Long userId,
+            String questionHandle,
+            QuizAnswerSubmission submission,
+            TrainingOptions nextOptions,
+            FormatMode nextFormatMode,
+            QuizFormat nextForcedFormat,
+            Boolean nextTimed,
+            Integer nextTimeLimitMs) {
 
-    /**
-     * Answer a training question and optionally emit next question atomically.
-     */
-    public QuizAnswerResult answerTrainingWithNext(String questionHandle, QuizAnswerSubmission submission,
-                                                    GameOptions nextOptions, QuizPreferredFormat nextPreferred,
-                                                    Boolean nextTimed, Integer nextTimeLimitMs) {
-        return quizEngine.answerTrainingWithNext(questionHandle, submission, nextOptions,
-                                                  nextPreferred, nextTimed, nextTimeLimitMs);
+        Objects.requireNonNull(userId, "userId");
+        Objects.requireNonNull(questionHandle, "questionHandle");
+        Objects.requireNonNull(submission, "submission");
+        Objects.requireNonNull(nextOptions, "nextOptions");
+        Objects.requireNonNull(nextFormatMode, "nextFormatMode");
+
+        if (nextFormatMode == FormatMode.FORCED && nextForcedFormat == null) {
+            throw new IllegalArgumentException("nextForcedFormat is required when nextFormatMode=FORCED");
+        }
+        if (nextFormatMode == FormatMode.AUTO && nextForcedFormat != null) {
+            throw new IllegalArgumentException("nextForcedFormat must be null when formatMode=AUTO");
+        }
+
+        Long ttlSeconds = 600L;
+
+        PreparedEmit nextEmit = null;
+        try {
+            nextEmit = quizOrchestrationService.orchestrateTraining(
+                    userId,
+                    nextOptions,
+                    nextFormatMode,
+                    nextForcedFormat,
+                    nextTimed,
+                    nextTimeLimitMs,
+                    ttlSeconds);
+        } catch (QuizUnprocessableException e) {
+            nextEmit = null;
+        }
+
+        return quizEngine.answerQuestion(userId, questionHandle, submission, nextEmit);
     }
 }

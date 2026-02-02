@@ -146,6 +146,18 @@ public class CourseQuestionAttemptDao {
         return repo.findLastAnsweredAt(course.getId());
     }
 
+    @Transactional
+    public boolean markAnsweredAtIfNull(Long attemptId, LocalDateTime answeredAt) {
+        if (attemptId == null) {
+            throw new IllegalArgumentException("attemptId cannot be null");
+        }
+        if (answeredAt == null) {
+            throw new IllegalArgumentException("answeredAt cannot be null");
+        }
+        int n = repo.markAnsweredAtIfNull(attemptId, answeredAt);
+        return n > 0;
+    }
+
     @Transactional(readOnly = true)
     public List<RecentAnswerStat> findRecentAnswerStats(Course course, int limit) {
         if (course == null || course.getId() == null || limit <= 0) {

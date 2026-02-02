@@ -122,4 +122,16 @@ public interface CourseQuestionAttemptRepository extends JpaRepository<CourseQue
       @Param("raw") String raw,
       @Param("norm") String norm,
       @Param("globalCorrect") boolean globalCorrect);
+
+  @Modifying
+  @Query("""
+        UPDATE CourseQuestionAttemptEntity c
+           SET c.answeredAt = :answeredAt
+         WHERE c.id = :id
+           AND c.answeredAt IS NULL
+           AND c.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+      """)
+  int markAnsweredAtIfNull(
+      @Param("id") Long id,
+      @Param("answeredAt") LocalDateTime answeredAt);
 }

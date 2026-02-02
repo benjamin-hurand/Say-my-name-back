@@ -13,7 +13,8 @@ public class QuizQuestionContext {
 
     // COURSE context
     private Long courseId;
-    private Long courseQuestionId;
+    private Long courseQuestionId; // legacy
+    private Long knowledgeId; // ✅ NEW: required to build TARGET item in COURSE attempt
     private Integer questionRound;
     private PoolType poolType;
     private DifficultyLevel difficultyLevel;
@@ -29,6 +30,7 @@ public class QuizQuestionContext {
         this.source = b.source;
         this.courseId = b.courseId;
         this.courseQuestionId = b.courseQuestionId;
+        this.knowledgeId = b.knowledgeId; // ✅ NEW
         this.questionRound = b.questionRound;
         this.poolType = b.poolType;
         this.difficultyLevel = b.difficultyLevel;
@@ -46,6 +48,10 @@ public class QuizQuestionContext {
 
     public Long getCourseQuestionId() {
         return courseQuestionId;
+    }
+
+    public Long getKnowledgeId() { // ✅ NEW
+        return knowledgeId;
     }
 
     public Integer getQuestionRound() {
@@ -80,6 +86,10 @@ public class QuizQuestionContext {
         this.courseQuestionId = courseQuestionId;
     }
 
+    public void setKnowledgeId(Long knowledgeId) { // ✅ NEW
+        this.knowledgeId = knowledgeId;
+    }
+
     public void setQuestionRound(Integer questionRound) {
         this.questionRound = questionRound;
     }
@@ -105,6 +115,7 @@ public class QuizQuestionContext {
 
         private Long courseId;
         private Long courseQuestionId;
+        private Long knowledgeId; // ✅ NEW
         private Integer questionRound;
         private PoolType poolType;
         private DifficultyLevel difficultyLevel;
@@ -124,6 +135,11 @@ public class QuizQuestionContext {
 
         public Builder withCourseQuestionId(Long v) {
             this.courseQuestionId = v;
+            return this;
+        }
+
+        public Builder withKnowledgeId(Long v) { // ✅ NEW
+            this.knowledgeId = v;
             return this;
         }
 
@@ -167,6 +183,7 @@ public class QuizQuestionContext {
         return source == that.source
                 && Objects.equals(courseId, that.courseId)
                 && Objects.equals(courseQuestionId, that.courseQuestionId)
+                && Objects.equals(knowledgeId, that.knowledgeId) // ✅ NEW
                 && Objects.equals(questionRound, that.questionRound)
                 && poolType == that.poolType
                 && difficultyLevel == that.difficultyLevel
@@ -176,7 +193,7 @@ public class QuizQuestionContext {
 
     @Override
     public int hashCode() {
-        return Objects.hash(source, courseId, courseQuestionId, questionRound, poolType, difficultyLevel,
+        return Objects.hash(source, courseId, courseQuestionId, knowledgeId, questionRound, poolType, difficultyLevel,
                 reducedOptionsId, knowledgeTracking);
     }
 
@@ -186,6 +203,7 @@ public class QuizQuestionContext {
                 "source=" + source +
                 ", courseId=" + courseId +
                 ", courseQuestionId=" + courseQuestionId +
+                ", knowledgeId=" + knowledgeId +
                 ", questionRound=" + questionRound +
                 ", poolType=" + poolType +
                 ", difficultyLevel=" + difficultyLevel +
