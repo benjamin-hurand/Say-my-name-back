@@ -59,7 +59,9 @@ public class QuizAnswerValidator {
                 validation.getIsComplete(),
                 validation.getUpdatedState(),
                 updatedSnapshot,
-                normalized
+                normalized,
+                validation.getCorrectAnswerDisplay(),
+                validation.getResultAttributes()
         );
     }
 

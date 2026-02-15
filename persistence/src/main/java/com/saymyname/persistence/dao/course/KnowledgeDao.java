@@ -1,6 +1,7 @@
 package com.saymyname.persistence.dao.course;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -38,8 +39,33 @@ public class KnowledgeDao {
                 return entity.map(knowledgeEntityMapper::toModel);
         }
 
+        public Optional<Knowledge> findByIdForUser(Long userId, Long knowledgeId) {
+                if (userId == null || knowledgeId == null) {
+                        return Optional.empty();
+                }
+                return knowledgeRepository.findByIdForUser(userId, knowledgeId)
+                                .map(knowledgeEntityMapper::toModel);
+        }
+
+        public List<Knowledge> findAllByIdsForUser(Long userId, Collection<Long> ids) {
+                if (userId == null || ids == null || ids.isEmpty()) {
+                        return List.of();
+                }
+                return knowledgeRepository.findAllByIdsForUser(userId, ids).stream()
+                                .map(knowledgeEntityMapper::toModel)
+                                .toList();
+        }
+
         /** Insère un batch d’UNKNOWN selon le scope du course (FOLLOWED / ALL) */
         public int insertBatchOfTenKnowledges(Course course) {
+                return insertNextKnowledges(course, BATCH_SIZE);
+        }
+
+        /** Insert a lazy batch of UNKNOWN knowledges for this course. */
+        public int insertNextKnowledges(Course course, int limit) {
+                if (course == null || limit <= 0) {
+                        return 0;
+                }
                 PopulationScope scope = course.getPopulationScope() != null ? course.getPopulationScope()
                                 : PopulationScope.FOLLOWED;
                 return switch (scope) {
@@ -49,14 +75,14 @@ public class KnowledgeDao {
                                         INITIAL_EF,
                                         INITIAL_DIFF,
                                         INITIAL_STABILITY,
-                                        BATCH_SIZE);
+                                        limit);
                         case ALL -> knowledgeRepository.insertNextKnowledgesForCourseAll(
                                         course.getUser().getId(),
                                         course.getGameMode().getId(),
                                         INITIAL_EF,
                                         INITIAL_DIFF,
                                         INITIAL_STABILITY,
-                                        BATCH_SIZE);
+                                        limit);
                 };
         }
 

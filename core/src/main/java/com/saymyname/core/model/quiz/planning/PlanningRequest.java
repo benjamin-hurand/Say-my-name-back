@@ -3,6 +3,7 @@ package com.saymyname.core.model.quiz.planning;
 
 import java.util.Objects;
 
+import com.saymyname.core.model.enums.KnowledgeStatus;
 import com.saymyname.core.model.enums.quiz.FormatMode;
 import com.saymyname.core.model.enums.quiz.QuizFormat;
 import com.saymyname.core.model.quiz.candidate.EligibilityStats;
@@ -19,6 +20,7 @@ public record PlanningRequest(
         QuizFormat forcedFormat,
         EligibilityStats eligibility,
         GameMode gameMode,
+        KnowledgeStatus knowledgeStatus, // nullable: null for TRAINING mode, set for COURSE mode
         Boolean timed,
         Integer timeLimitMs) {
 
@@ -36,7 +38,7 @@ public record PlanningRequest(
     }
 
     /**
-     * Create a request for FORCED format mode.
+     * Create a request for FORCED format mode (TRAINING - no knowledge status).
      */
     public static PlanningRequest forced(
             QuizFormat format,
@@ -44,18 +46,31 @@ public record PlanningRequest(
             GameMode gameMode,
             Boolean timed,
             Integer timeLimitMs) {
-        return new PlanningRequest(FormatMode.FORCED, format, eligibility, gameMode, timed, timeLimitMs);
+        return new PlanningRequest(FormatMode.FORCED, format, eligibility, gameMode, null, timed, timeLimitMs);
     }
 
     /**
-     * Create a request for AUTO format mode.
+     * Create a request for AUTO format mode (TRAINING - no knowledge status).
      */
     public static PlanningRequest auto(
             EligibilityStats eligibility,
             GameMode gameMode,
             Boolean timed,
             Integer timeLimitMs) {
-        return new PlanningRequest(FormatMode.AUTO, null, eligibility, gameMode, timed, timeLimitMs);
+        return new PlanningRequest(FormatMode.AUTO, null, eligibility, gameMode, null, timed, timeLimitMs);
+    }
+
+    /**
+     * Create a request for AUTO format mode with knowledge status (COURSE mode).
+     * The knowledgeStatus enables ladder-based format selection (D1).
+     */
+    public static PlanningRequest courseAuto(
+            EligibilityStats eligibility,
+            GameMode gameMode,
+            KnowledgeStatus knowledgeStatus,
+            Boolean timed,
+            Integer timeLimitMs) {
+        return new PlanningRequest(FormatMode.AUTO, null, eligibility, gameMode, knowledgeStatus, timed, timeLimitMs);
     }
 
     public boolean isForced() {

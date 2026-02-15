@@ -105,9 +105,7 @@ public class CourseService {
         if (existing.isPresent())
             throw new CourseAlreadyExistsException();
 
-        Course created = courseDao.saveCourse(proto);
-        knowledgeService.insertBatchOfTenKnowledges(created);
-        return created;
+        return courseDao.saveCourse(proto);
     }
 
     @Transactional
@@ -129,9 +127,7 @@ public class CourseService {
         if (existing.isPresent())
             return existing.get();
 
-        Course created = courseDao.saveCourse(proto);
-        knowledgeService.insertBatchOfTenKnowledges(created);
-        return created;
+        return courseDao.saveCourse(proto);
     }
 
     @Transactional
@@ -271,19 +267,7 @@ public class CourseService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Question already answered");
         }
 
-        PreparedEmit nextEmit = null;
-        try {
-            nextEmit = quizOrchestrationService.orchestrateCourse(
-                    userId,
-                    courseId,
-                    null,
-                    null,
-                    null);
-        } catch (QuizUnprocessableException e) {
-            nextEmit = null;
-        }
-
-        QuizAnswerResult res = quizEngine.answerQuestion(userId, questionHandle, submission, nextEmit);
+        QuizAnswerResult res = quizEngine.answerQuestion(userId, questionHandle, submission, null);
 
         if (isFinalAnswer(res)) {
             CourseQuestionAttempt attempt = courseAttemptStore.findById(attemptId);
@@ -311,6 +295,29 @@ public class CourseService {
                         attempt.isHelpUsed(),
                         events);
                 res.setXpAward(xpAward);
+            }
+
+            course.setCurrentRound(course.getCurrentRound() + 1);
+            courseDao.saveCourse(course);
+
+            PreparedEmit nextEmit = null;
+            try {
+                nextEmit = quizOrchestrationService.orchestrateCourse(
+                        userId,
+                        courseId,
+                        null,
+                        null,
+                        null);
+            } catch (QuizUnprocessableException e) {
+                nextEmit = null;
+            }
+
+            if (nextEmit != null) {
+                try {
+                    res.setNextQuestion(quizEngine.emitQuestion(userId, nextEmit));
+                } catch (QuizUnprocessableException e) {
+                    res.setNextQuestion(null);
+                }
             }
         }
 

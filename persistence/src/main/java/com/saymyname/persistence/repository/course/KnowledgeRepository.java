@@ -178,6 +178,26 @@ public interface KnowledgeRepository extends JpaRepository<KnowledgeEntity, Long
   Optional<KnowledgeEntity> findByUserIdAndGameModeIdAndPersonId(
       Long userId, Long gameModeId, Long personId);
 
+  @Query("""
+        select k from KnowledgeEntity k
+         where k.id = :knowledgeId
+           and k.user.id = :userId
+           and k.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+      """)
+  Optional<KnowledgeEntity> findByIdForUser(
+      @Param("userId") Long userId,
+      @Param("knowledgeId") Long knowledgeId);
+
+  @Query("""
+        select k from KnowledgeEntity k
+         where k.id in :knowledgeIds
+           and k.user.id = :userId
+           and k.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+      """)
+  List<KnowledgeEntity> findAllByIdsForUser(
+      @Param("userId") Long userId,
+      @Param("knowledgeIds") Collection<Long> knowledgeIds);
+
   // ---- POOLS FOLLOWED (JPQL + Pageable limit 1) -------------------
 
   @Query("""

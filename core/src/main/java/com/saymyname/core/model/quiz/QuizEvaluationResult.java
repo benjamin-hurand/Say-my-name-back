@@ -1,5 +1,8 @@
 package com.saymyname.core.model.quiz;
 
+import java.util.List;
+
+import com.saymyname.core.model.course.ResultAttribute;
 import com.saymyname.core.model.quiz.answer.NormalizedAudit;
 import com.saymyname.core.model.quiz.snapshot.MultiStepState;
 import com.saymyname.core.model.quiz.snapshot.QuizQuestionSnapshot;
@@ -16,7 +19,9 @@ public record QuizEvaluationResult(
         Boolean isComplete,
         MultiStepState updatedState,
         QuizQuestionSnapshot updatedSnapshot,
-        NormalizedAudit normalizedAudit
+        NormalizedAudit normalizedAudit,
+        String correctAnswerDisplay,
+        List<ResultAttribute> resultAttributes
 ) {
     /**
      * Returns true if this is a multi-step question that is not yet complete.

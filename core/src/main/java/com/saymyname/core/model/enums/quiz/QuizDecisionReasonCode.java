@@ -15,6 +15,23 @@ public enum QuizDecisionReasonCode {
     FALLBACK_MULTI_TARGET_SHORTFALL,
     ANTI_MONOTONY_FORMAT_VARIATION,
 
+    // D1: Ladder format codes (recognition -> recall -> transfer)
+    LADDER_RECOGNITION_MCQ,
+    LADDER_RECOGNITION_SWIPE,
+    LADDER_RECALL_TEXT,
+    LADDER_RECALL_CLOZE,
+    LADDER_TRANSFER_ASSOCIATION,
+    LADDER_TRANSFER_ORDERING,
+
+    // D3: Timed gating
+    TIMED_BLOCKED_HIGH_STRESS,
+
+    // D4: Anti-monotony format switch
+    ANTI_MONOTONY_FORMAT_SWITCH,
+
+    // D6: Guardrail - fragile user protection
+    GUARDRAIL_FRAGILE_NO_ESCALATE,
+
     TRAINING_AUTO_DEFAULT,
     TRAINING_EXPLICIT_USER;
 

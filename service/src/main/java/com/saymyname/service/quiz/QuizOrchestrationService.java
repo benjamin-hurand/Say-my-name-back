@@ -10,8 +10,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.saymyname.core.exception.quiz.QuizUnprocessableException;
 import com.saymyname.core.model.course.Course;
+import com.saymyname.core.model.course.CourseRecentStats;
 import com.saymyname.core.model.course.Knowledge;
 import com.saymyname.core.model.enums.FollowFilter;
+import com.saymyname.core.model.enums.KnowledgeStatus;
 import com.saymyname.core.model.enums.PopulationScope;
 import com.saymyname.core.model.enums.PoolType;
 import com.saymyname.core.model.enums.quiz.FormatMode;
@@ -32,6 +34,7 @@ import com.saymyname.core.model.quiz.planning.PlanningRequest;
 import com.saymyname.core.model.quiz.planning.PreparedEmit;
 import com.saymyname.persistence.dao.course.CourseDao;
 import com.saymyname.service.GameModeService;
+import com.saymyname.service.course.CourseRecentStatsService;
 import com.saymyname.service.course.KnowledgeSelectionService;
 import com.saymyname.service.course.KnowledgeSelectionService.SelectionResult;
 import com.saymyname.service.quiz.candidate.CandidateAccessor;
@@ -45,13 +48,19 @@ public class QuizOrchestrationService {
         private final KnowledgeSelectionService knowledgeSelectionService;
         private final CandidateAccessor candidateAccessor;
         private final FormatPlanner formatPlanner;
+        private final CourseRecentStatsService courseRecentStatsService;
+
+        // D3: Stress thresholds for timed gating
+        private static final int STRESS_ERROR_STREAK_THRESHOLD = 2;
+        private static final double STRESS_AVG_RT_THRESHOLD_MS = 8000.0;
 
         public QuizOrchestrationService(
                         GameModeService gameModeService,
                         CourseDao courseDao,
                         KnowledgeSelectionService knowledgeSelectionService,
                         CandidateAccessor candidateAccessor,
-                        FormatPlanner formatPlanner) {
+                        FormatPlanner formatPlanner,
+                        CourseRecentStatsService courseRecentStatsService) {
 
                 this.gameModeService = Objects.requireNonNull(gameModeService, "gameModeService");
                 this.courseDao = Objects.requireNonNull(courseDao, "courseDao");
@@ -59,6 +68,8 @@ public class QuizOrchestrationService {
                                 "knowledgeSelectionService");
                 this.candidateAccessor = Objects.requireNonNull(candidateAccessor, "candidateAccessor");
                 this.formatPlanner = Objects.requireNonNull(formatPlanner, "formatPlanner");
+                this.courseRecentStatsService = Objects.requireNonNull(courseRecentStatsService,
+                                "courseRecentStatsService");
         }
 
         // ------------------------------------------------------------------
@@ -185,8 +196,14 @@ public class QuizOrchestrationService {
                                 false,
                                 null));
 
+                // D1: Pass knowledge status for ladder-based format selection
+                KnowledgeStatus knowledgeStatus = (knowledge != null) ? knowledge.getStatus() : null;
+
+                // D3: Timed gating - block timed mode when user is stressed
+                Boolean effectiveTimed = applyTimedGating(courseId, timed);
+
                 PlanningDecision decision = formatPlanner
-                                .plan(PlanningRequest.auto(stats, gameMode, timed, timeLimitMs));
+                                .plan(PlanningRequest.courseAuto(stats, gameMode, knowledgeStatus, effectiveTimed, timeLimitMs));
 
                 CandidateSample sample = candidateAccessor.sampleWithTarget(buildCandidateQuery(
                                 userId,
@@ -383,5 +400,35 @@ public class QuizOrchestrationService {
                                 .withQuestionRound(round) // optionnel MVP
                                 .withPoolType(poolType != null ? poolType : PoolType.NEW)
                                 .build();
+        }
+
+        /**
+         * D3: Timed gating - block timed mode when user is stressed.
+         * Stress is detected by high error streak or slow response times.
+         *
+         * @param courseId the course to check stats for
+         * @param requestedTimed the timed mode requested by caller
+         * @return effective timed mode (false if blocked due to stress)
+         */
+        private Boolean applyTimedGating(Long courseId, Boolean requestedTimed) {
+                if (!Boolean.TRUE.equals(requestedTimed)) {
+                        return requestedTimed; // Not requesting timed, nothing to block
+                }
+
+                CourseRecentStats recentStats = courseRecentStatsService.getStatsForCourse(courseId);
+                if (recentStats == null) {
+                        return requestedTimed; // No stats yet, allow timed
+                }
+
+                boolean isStressed = recentStats.getErrorStreak() >= STRESS_ERROR_STREAK_THRESHOLD
+                                || recentStats.getAvgRtRecent() > STRESS_AVG_RT_THRESHOLD_MS;
+
+                if (isStressed) {
+                        // D3: Block timed mode when user is stressed
+                        // TODO: Log with TIMED_BLOCKED_HIGH_STRESS reason code for analytics
+                        return false;
+                }
+
+                return requestedTimed;
         }
 }

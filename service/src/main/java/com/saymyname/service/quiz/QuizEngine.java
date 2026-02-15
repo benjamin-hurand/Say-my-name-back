@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.saymyname.core.exception.quiz.QuizUnprocessableException;
 import com.saymyname.core.model.enums.quiz.QuizQuestionSource;
+import com.saymyname.core.model.quiz.QuizAnswerItemResult;
 import com.saymyname.core.model.quiz.QuizAnswerResult;
 import com.saymyname.core.model.quiz.QuizAnswerSubmission;
 import com.saymyname.core.model.quiz.QuizEvaluationResult;
@@ -30,19 +31,22 @@ public class QuizEngine {
         private final QuizQuestionFactory quizQuestionFactory;
         private final QuizQuestionSnapshotFactory snapshotFactory;
         private final QuizAnswerValidator answerValidator;
+        private final QuizAnswerItemResultBuilder itemResultBuilder;
 
         public QuizEngine(
                         QuizHandleCodec quizHandleCodec,
                         QuizAttemptStore attemptStore,
                         QuizQuestionFactory quizQuestionFactory,
                         QuizQuestionSnapshotFactory snapshotFactory,
-                        QuizAnswerValidator answerValidator) {
+                        QuizAnswerValidator answerValidator,
+                        QuizAnswerItemResultBuilder itemResultBuilder) {
 
                 this.quizHandleCodec = Objects.requireNonNull(quizHandleCodec, "quizHandleCodec");
                 this.attemptStore = Objects.requireNonNull(attemptStore, "attemptStore");
                 this.quizQuestionFactory = Objects.requireNonNull(quizQuestionFactory, "quizQuestionFactory");
                 this.snapshotFactory = Objects.requireNonNull(snapshotFactory, "snapshotFactory");
                 this.answerValidator = Objects.requireNonNull(answerValidator, "answerValidator");
+                this.itemResultBuilder = Objects.requireNonNull(itemResultBuilder, "itemResultBuilder");
         }
 
         // ------------------------------------------------------------------
@@ -119,11 +123,14 @@ public class QuizEngine {
                                         null, // rawSubmission: optionnel (si tu veux conserver la saisie brute)
                                         normalizedAuditStr);
 
+                        List<QuizAnswerItemResult> itemResults = itemResultBuilder.build(snapshotToPersist, eval);
+
                         return new QuizAnswerResult.Builder()
                                         .withCorrect(eval.correct())
                                         .withFeedbackMessage(eval.feedbackMessage())
                                         .withIsComplete(eval.isComplete()) // false
                                         .withCurrentState(eval.updatedState())
+                                        .withItemResults(itemResults)
                                         .withNextQuestion(null)
                                         .build();
                 }
@@ -152,11 +159,14 @@ public class QuizEngine {
                         }
                 }
 
+                List<QuizAnswerItemResult> itemResults = itemResultBuilder.build(snapshotToPersist, eval);
+
                 return new QuizAnswerResult.Builder()
                                 .withCorrect(eval.correct())
                                 .withFeedbackMessage(eval.feedbackMessage())
                                 .withIsComplete(eval.isComplete()) // null (single-shot) or true (multi-step done)
                                 .withCurrentState(eval.updatedState()) // état final utile UI
+                                .withItemResults(itemResults)
                                 .withNextQuestion(next)
                                 .build();
         }

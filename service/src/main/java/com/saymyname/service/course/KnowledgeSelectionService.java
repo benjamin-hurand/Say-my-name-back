@@ -33,6 +33,7 @@ public class KnowledgeSelectionService {
             1.0,
             0.0,
             3);
+    private static final int LAZY_SEED_BATCH_SIZE = 5;
 
     private final KnowledgeService knowledgeService;
 
@@ -45,15 +46,18 @@ public class KnowledgeSelectionService {
             Long lastPersonId,
             boolean allowRepeat,
             Map<PoolType, Double> poolWeights) {
+
         if (course == null) {
             return null;
         }
 
-        Map<PoolType, Double> weights = (poolWeights != null && !poolWeights.isEmpty())
+        // IMPORTANT: weights must be mutable because we remove pools when empty.
+        final Map<PoolType, Double> weights = (poolWeights != null && !poolWeights.isEmpty())
                 ? new LinkedHashMap<>(poolWeights)
-                : defaultWeights();
+                : new LinkedHashMap<>(defaultWeights()); // <-- FIX
 
         Random rnd = new Random();
+
         while (!weights.isEmpty()) {
             double sum = weights.values().stream().mapToDouble(Double::doubleValue).sum();
             double r = rnd.nextDouble() * sum;
@@ -82,14 +86,19 @@ public class KnowledgeSelectionService {
                 return new SelectionResult(k, selected);
             }
 
+            // remove this pool and try again with remaining pools
             weights.remove(selected);
         }
 
-        if (allowRepeat) {
-            throw new NoMoreQuestionsException(course.getId());
+        if (!allowRepeat) {
+            int seeded = knowledgeService.ensureSeed(course, LAZY_SEED_BATCH_SIZE);
+            if (seeded > 0) {
+                return findNextDueSingleTarget(course, lastPersonId, false, poolWeights);
+            }
+            return findNextDueSingleTarget(course, lastPersonId, true, poolWeights);
         }
 
-        return findNextDueSingleTarget(course, lastPersonId, true, poolWeights);
+        throw new NoMoreQuestionsException(course.getId());
     }
 
     public List<Knowledge> findNextDueMultiTargets(
@@ -98,6 +107,7 @@ public class KnowledgeSelectionService {
             int targetCount,
             Long lastPersonId,
             MultiTargetConstraints constraints) {
+
         if (course == null || targetCount <= 0) {
             return List.of();
         }
@@ -139,6 +149,8 @@ public class KnowledgeSelectionService {
     }
 
     private Map<PoolType, Double> defaultWeights() {
+        // Map.of(...) is immutable, but that's fine as long as we copy it into a
+        // mutable map before modifying.
         return Map.of(
                 PoolType.ERROR_RECENT, 5.0,
                 PoolType.SRS_DUE, 4.0,

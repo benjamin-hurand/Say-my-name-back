@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -64,6 +65,21 @@ public class KnowledgeService {
         return knowledgeDao.insertBatchOfTenKnowledges(course);
     }
 
+    public int insertNextKnowledges(Course course, int limit) {
+        return knowledgeDao.insertNextKnowledges(course, limit);
+    }
+
+    /**
+     * Lazy seed for course knowledge pool.
+     * Returns how many new UNKNOWN knowledges were inserted.
+     */
+    public int ensureSeed(Course course, int limit) {
+        if (course == null || limit <= 0) {
+            return 0;
+        }
+        return knowledgeDao.insertNextKnowledges(course, limit);
+    }
+
     public void update(Knowledge knowledge) {
         knowledgeDao.update(knowledge);
     }
@@ -110,6 +126,8 @@ public class KnowledgeService {
                 .filter(Objects::nonNull)
                 .collect(Collectors.groupingBy(KnowledgeService::toEventKey));
 
+        Map<Long, Knowledge> knowledgeById = preloadKnowledgesById(user, grouped.keySet());
+
         long totalDeltaXp = 0;
         List<String> eventKeys = new ArrayList<>(8);
 
@@ -120,7 +138,7 @@ public class KnowledgeService {
                 continue;
             }
 
-            Knowledge knowledge = loadKnowledgeForKey(user, key, groupEvents);
+            Knowledge knowledge = loadKnowledgeForKey(user, key, groupEvents, knowledgeById);
 
             long totalAnswerXp = 0;
             List<StreakMilestoneHit> streakHits = new ArrayList<>();
@@ -216,33 +234,22 @@ public class KnowledgeService {
         return new ModePersonKey(gm, pid);
     }
 
-    private Knowledge loadKnowledgeForKey(User user, EventKey key, List<KnowledgeResultEvent> groupEvents) {
-        if (key instanceof KnowledgeIdKey) {
-            KnowledgeResultEvent first = groupEvents.get(0);
-            if (first.getGameModeId() == null || first.getPersonId() == null) {
-                throw new IllegalArgumentException(
-                        "Event grouped by knowledgeId requires either KnowledgeDao.findByIdForUser(...) " +
-                                "or (gameModeId, personId) fallback present on event");
+    private Knowledge loadKnowledgeForKey(
+            User user,
+            EventKey key,
+            List<KnowledgeResultEvent> groupEvents,
+            Map<Long, Knowledge> knowledgeById) {
+        if (key instanceof KnowledgeIdKey kid) {
+            Knowledge knowledge = knowledgeById != null ? knowledgeById.get(kid.knowledgeId()) : null;
+            if (knowledge == null) {
+                knowledge = knowledgeDao.findByIdForUser(user.getId(), kid.knowledgeId()).orElse(null);
             }
-
-            return knowledgeDao
-                    .findByUserGameModeAndPerson(user.getId(), first.getGameModeId(), first.getPersonId())
-                    .orElseGet(() -> new Knowledge.Builder()
-                            .withUser(user)
-                            .withGameMode(new GameMode.Builder().withId(first.getGameModeId()).build())
-                            .withPerson(new Person.Builder().withId(first.getPersonId()).build())
-                            .withStatus(KnowledgeStatus.DISCOVERED)
-                            .withNextReviewDate(LocalDateTime.now())
-                            .withLastReviewDate(LocalDateTime.now())
-                            .withTotalRepetitionCount(0)
-                            .withFailureCount(0)
-                            .withSuccessCount(0)
-                            .withSrsStreak(0)
-                            .withGlobalStreak(0)
-                            .withEaseFactor(INITIAL_EF)
-                            .withDifficulty(INITIAL_DIFF)
-                            .withStability(INITIAL_STABILITY)
-                            .build());
+            if (knowledge == null) {
+                throw new IllegalArgumentException(
+                        "Knowledge not found for user/org by knowledgeId=" + kid.knowledgeId()
+                                + ", userId=" + user.getId());
+            }
+            return knowledge;
         }
 
         ModePersonKey mp = (ModePersonKey) key;
@@ -265,6 +272,25 @@ public class KnowledgeService {
                         .withDifficulty(INITIAL_DIFF)
                         .withStability(INITIAL_STABILITY)
                         .build());
+    }
+
+    private Map<Long, Knowledge> preloadKnowledgesById(User user, Set<EventKey> keys) {
+        if (user == null || user.getId() == null || keys == null || keys.isEmpty()) {
+            return Map.of();
+        }
+        List<Long> ids = keys.stream()
+                .filter(k -> k instanceof KnowledgeIdKey)
+                .map(k -> ((KnowledgeIdKey) k).knowledgeId())
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        return knowledgeDao.findAllByIdsForUser(user.getId(), ids).stream()
+                .filter(Objects::nonNull)
+                .filter(k -> k.getId() != null)
+                .collect(Collectors.toMap(Knowledge::getId, k -> k, (a, b) -> a));
     }
 
     private static Long resolvePersonIdForXp(EventKey key, Knowledge knowledge,

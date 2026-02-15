@@ -4,6 +4,7 @@ package com.saymyname.service.quiz.planning;
 import org.springframework.stereotype.Service;
 
 import com.saymyname.core.exception.quiz.QuizUnprocessableException;
+import com.saymyname.core.model.enums.KnowledgeStatus;
 import com.saymyname.core.model.enums.quiz.QuizDecisionReasonCode;
 import com.saymyname.core.model.enums.quiz.QuizFormat;
 import com.saymyname.core.model.quiz.candidate.EligibilityStats;
@@ -65,10 +66,16 @@ public class FormatPlanner {
     }
 
     /**
-     * Choose the best format automatically based on eligibility.
+     * Choose the best format automatically based on eligibility and knowledge status.
+     *
+     * D1 Ladder (when knowledgeStatus is available):
+     * - UNKNOWN/DISCOVERED → recognition formats (MCQ, BINARY_SWIPE)
+     * - LEARNED → recall formats (TEXT_INPUT, CLOZE)
+     * - MASTERED → transfer formats (ASSOCIATION, ORDERING)
      */
     private PlanningDecision planAuto(PlanningRequest request) {
         EligibilityStats stats = request.eligibility();
+        KnowledgeStatus status = request.knowledgeStatus();
 
         if (stats.isEmpty()) {
             throw new QuizUnprocessableException(
@@ -76,37 +83,94 @@ public class FormatPlanner {
                     "No candidates available for current constraints");
         }
 
-        // Priority order for AUTO selection:
-        // 1. MCQ if enough candidates (engaging, good for learning)
-        // 2. BINARY_SWIPE if has photo (visual, quick)
-        // 3. TEXT_INPUT (always feasible with 1+ candidates)
+        // D1: Ladder-based selection when knowledgeStatus is available (COURSE mode)
+        if (status != null) {
+            return planWithLadder(stats, status);
+        }
 
-        // Try MCQ first (needs 4 candidates)
+        // TRAINING mode: eligibility-only selection (existing behavior)
+        return planByEligibilityOnly(stats);
+    }
+
+    /**
+     * D1: Ladder-based format selection.
+     * Selects format based on knowledge mastery level:
+     * - Recognition (easy): MCQ, BINARY_SWIPE - for UNKNOWN/DISCOVERED
+     * - Recall (medium): TEXT_INPUT, CLOZE - for LEARNED
+     * - Transfer (hard): ASSOCIATION, ORDERING - for MASTERED
+     */
+    private PlanningDecision planWithLadder(EligibilityStats stats, KnowledgeStatus status) {
+        return switch (status) {
+            case UNKNOWN, DISCOVERED -> planRecognition(stats);
+            case LEARNED -> planRecall(stats);
+            case MASTERED -> planTransfer(stats);
+        };
+    }
+
+    /**
+     * Recognition tier: easy formats for UNKNOWN/DISCOVERED status.
+     * Priority: MCQ > BINARY_SWIPE > fallback to recall
+     */
+    private PlanningDecision planRecognition(EligibilityStats stats) {
+        if (stats.canMcq(4)) {
+            return PlanningDecision.auto(QuizFormat.MCQ, QuizDecisionReasonCode.LADDER_RECOGNITION_MCQ);
+        }
+        if (stats.canPhotoFormat()) {
+            return PlanningDecision.auto(QuizFormat.BINARY_SWIPE, QuizDecisionReasonCode.LADDER_RECOGNITION_SWIPE);
+        }
+        // Fallback to recall formats if recognition not feasible
+        return planRecall(stats);
+    }
+
+    /**
+     * Recall tier: medium formats for LEARNED status.
+     * Priority: TEXT_INPUT > CLOZE > fallback to recognition
+     */
+    private PlanningDecision planRecall(EligibilityStats stats) {
+        if (stats.canSingleCandidate()) {
+            return PlanningDecision.auto(QuizFormat.TEXT_INPUT, QuizDecisionReasonCode.LADDER_RECALL_TEXT);
+        }
+        // If TEXT_INPUT not feasible, this shouldn't happen with canSingleCandidate
+        // but fallback to recognition as safety
+        return planRecognition(stats);
+    }
+
+    /**
+     * Transfer tier: hard formats for MASTERED status.
+     * Priority: ASSOCIATION > ORDERING > fallback to recall
+     */
+    private PlanningDecision planTransfer(EligibilityStats stats) {
+        if (stats.canAssociation(6)) {
+            return PlanningDecision.auto(QuizFormat.ASSOCIATION, QuizDecisionReasonCode.LADDER_TRANSFER_ASSOCIATION);
+        }
+        if (stats.canOrdering(4)) {
+            return PlanningDecision.auto(QuizFormat.ORDERING, QuizDecisionReasonCode.LADDER_TRANSFER_ORDERING);
+        }
+        // Fallback to recall if transfer formats not feasible
+        return planRecall(stats);
+    }
+
+    /**
+     * TRAINING mode: eligibility-only selection (original behavior).
+     * Priority: MCQ > BINARY_SWIPE > ASSOCIATION > ORDERING > TEXT_INPUT
+     */
+    private PlanningDecision planByEligibilityOnly(EligibilityStats stats) {
         if (stats.canMcq(4)) {
             return PlanningDecision.auto(QuizFormat.MCQ, QuizDecisionReasonCode.TRAINING_AUTO_DEFAULT);
         }
-
-        // Try BINARY_SWIPE if has photo
         if (stats.canPhotoFormat()) {
             return PlanningDecision.auto(QuizFormat.BINARY_SWIPE, QuizDecisionReasonCode.TRAINING_AUTO_DEFAULT);
         }
-
-        // Try ASSOCIATION if enough (6+ candidates)
         if (stats.canAssociation(6)) {
             return PlanningDecision.auto(QuizFormat.ASSOCIATION, QuizDecisionReasonCode.TRAINING_AUTO_DEFAULT);
         }
-
-        // Try ORDERING if enough (4+ candidates)
         if (stats.canOrdering(4)) {
             return PlanningDecision.auto(QuizFormat.ORDERING, QuizDecisionReasonCode.TRAINING_AUTO_DEFAULT);
         }
-
-        // Fallback to TEXT_INPUT (always feasible with 1+ candidates)
         if (stats.canSingleCandidate()) {
             return PlanningDecision.auto(QuizFormat.TEXT_INPUT, QuizDecisionReasonCode.TRAINING_AUTO_DEFAULT);
         }
 
-        // Should not reach here if stats is not empty
         throw new QuizUnprocessableException(
                 QuizUnprocessableException.ErrorCode.CONSTRAINTS_IMPOSSIBLE,
                 "No format feasible for current constraints");
