@@ -1,6 +1,10 @@
 // src/main/java/com/saymyname/persistence/mapper/UserRefreshTokenEntityMapper.java
 package com.saymyname.persistence.mapper;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.auth.UserRefreshToken;
@@ -15,17 +19,19 @@ public class UserRefreshTokenEntityMapper {
         if (e == null)
             return null;
 
+        Long userId = (e.getUser() != null) ? e.getUser().getId() : null;
+
         return UserRefreshToken.builder()
                 .id(e.getId())
-                .userId(e.getUserIdSafe())
+                .userId(userId)
                 .tokenId(e.getTokenId())
                 .tokenHash(e.getTokenHash())
                 .familyId(e.getFamilyId())
                 .replacedByTokenId(e.getReplacedByTokenId())
-                .createdAt(e.getCreatedAt())
-                .expiresAt(e.getExpiresAt())
-                .lastUsedAt(e.getLastUsedAt())
-                .revokedAt(e.getRevokedAt())
+                .createdAt(toInstant(e.getCreatedAt()))
+                .expiresAt(toInstant(e.getExpiresAt()))
+                .lastUsedAt(toInstant(e.getLastUsedAt()))
+                .revokedAt(toInstant(e.getRevokedAt()))
                 .revokeReason(e.getRevokeReason())
                 .deviceId(e.getDeviceId())
                 .deviceName(e.getDeviceName())
@@ -40,15 +46,16 @@ public class UserRefreshTokenEntityMapper {
         if (m == null)
             return null;
 
-        UserRefreshTokenEntity e = new UserRefreshTokenEntity();
+        UserRefreshTokenEntity e = UserRefreshTokenEntity.builder().build();
 
         // id (utile tests/import)
         e.setId(m.getId());
 
-        // relation: proxy UserEntity via id (évite SELECT)
+        // relation: proxy UserEntity via id (evite SELECT)
         if (m.getUserId() != null) {
-            UserEntity userRef = new UserEntity();
-            userRef.setId(m.getUserId());
+            UserEntity userRef = UserEntity.builder()
+                    .id(m.getUserId())
+                    .build();
             e.setUser(userRef);
         } else {
             e.setUser(null);
@@ -60,10 +67,10 @@ public class UserRefreshTokenEntityMapper {
         e.setReplacedByTokenId(m.getReplacedByTokenId());
 
         // timestamps/audit
-        e.setCreatedAt(m.getCreatedAt());
-        e.setExpiresAt(m.getExpiresAt());
-        e.setLastUsedAt(m.getLastUsedAt());
-        e.setRevokedAt(m.getRevokedAt());
+        e.setCreatedAt(toLocalDateTime(m.getCreatedAt()));
+        e.setExpiresAt(toLocalDateTime(m.getExpiresAt()));
+        e.setLastUsedAt(toLocalDateTime(m.getLastUsedAt()));
+        e.setRevokedAt(toLocalDateTime(m.getRevokedAt()));
         e.setRevokeReason(m.getRevokeReason());
 
         e.setDeviceId(m.getDeviceId());
@@ -73,5 +80,13 @@ public class UserRefreshTokenEntityMapper {
         e.setUserAgent(m.getUserAgent());
 
         return e;
+    }
+
+    private LocalDateTime toLocalDateTime(Instant value) {
+        return value == null ? null : LocalDateTime.ofInstant(value, ZoneOffset.UTC);
+    }
+
+    private Instant toInstant(LocalDateTime value) {
+        return value == null ? null : value.toInstant(ZoneOffset.UTC);
     }
 }

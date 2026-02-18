@@ -13,11 +13,11 @@ import com.saymyname.persistence.entity.organization.PersonEntity;
 public class PersonEntityMapper {
 
         private final PhotoEntityMapper photoEntityMapper;
-        private final PersonAttributeEntityMapper personAttributeEntityMapper;
+        private final FactEntityMapper personAttributeEntityMapper;
 
         @Autowired
         public PersonEntityMapper(PhotoEntityMapper photoEntityMapper,
-                        PersonAttributeEntityMapper personAttributeEntityMapper) {
+                        FactEntityMapper personAttributeEntityMapper) {
                 this.photoEntityMapper = photoEntityMapper;
                 this.personAttributeEntityMapper = personAttributeEntityMapper;
         }
@@ -28,25 +28,8 @@ public class PersonEntityMapper {
                         return null;
                 }
 
-                PersonEntity personEntity = new PersonEntity();
+                PersonEntity personEntity = PersonEntity.builder().build();
                 personEntity.setId(person.getId());
-
-                // Attributes
-                if (person.getAttributes() != null) {
-                        personEntity.setAttributes(
-                                        person.getAttributes().stream()
-                                                        .map(personAttributeEntityMapper::toEntity)
-                                                        .collect(Collectors.toList()));
-                }
-
-                // Photos
-                if (person.getPhotos() != null) {
-                        personEntity.setPhotos(
-                                        person.getPhotos().stream()
-                                                        .map(photoEntityMapper::toEntity)
-                                                        .collect(Collectors.toList()));
-                }
-
                 return personEntity;
         }
 
@@ -58,18 +41,6 @@ public class PersonEntityMapper {
 
                 return Person.builder()
                                 .id(personEntity.getId())
-                                .attributes(
-                                                personEntity.getAttributes() != null
-                                                                ? personEntity.getAttributes().stream()
-                                                                                .map(personAttributeEntityMapper::toModel)
-                                                                                .collect(Collectors.toList())
-                                                                : List.of())
-                                .photos(
-                                                personEntity.getPhotos() != null
-                                                                ? personEntity.getPhotos().stream()
-                                                                                .map(photoEntityMapper::toModel)
-                                                                                .collect(Collectors.toList())
-                                                                : List.of())
                                 .build();
         }
 

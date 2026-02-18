@@ -1,47 +1,59 @@
 package com.saymyname.persistence.mapper.workspace;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+
 import org.springframework.stereotype.Component;
 
+import com.saymyname.core.model.enums.workspace.PersonLinkStatus;
+import com.saymyname.core.model.enums.workspace.WorkspaceMemberStatus;
+import com.saymyname.core.model.enums.workspace.WorkspaceRole;
 import com.saymyname.core.model.workspace.WorkspaceMember;
+import com.saymyname.persistence.entity.UserEmailEntity;
 import com.saymyname.persistence.entity.workspace.WorkspaceMemberEntity;
 import com.saymyname.persistence.entity.workspace.WorkspaceMemberId;
 
 @Component
 public class WorkspaceMemberEntityMapper {
 
-    // --- Entity ⇐ Model
+    // --- Entity <= Model
     public WorkspaceMemberEntity toEntity(WorkspaceMember model) {
         if (model == null) {
             return null;
         }
 
-        WorkspaceMemberEntity entity = new WorkspaceMemberEntity();
+        WorkspaceMemberEntity entity = WorkspaceMemberEntity.builder().build();
 
         if (model.getWorkspaceId() != null && model.getUserId() != null) {
             entity.setId(new WorkspaceMemberId(model.getWorkspaceId(), model.getUserId()));
         }
 
-        // workspace/user relations non hydratées ici (Phase 0).
-        entity.setRole(model.getRole());
-        entity.setStatus(model.getStatus());
+        // workspace/user relations are not hydrated here.
+        entity.setRole(toEntityRole(model.getRole()));
+        entity.setStatus(toEntityStatus(model.getStatus()));
 
         entity.setDisplayName(model.getDisplayName());
-        entity.setCreatedAt(model.getCreatedAt());
+        entity.setCreatedAt(toLocalDateTime(model.getCreatedAt()));
 
         entity.setPersonId(model.getPersonId());
-        entity.setPersonLinkStatus(model.getPersonLinkStatus());
+        entity.setPersonLinkStatus(toEntityPersonLinkStatus(model.getPersonLinkStatus()));
 
         entity.setCanPickPerson(model.isCanPickPerson());
         entity.setCanCreatePerson(model.isCanCreatePerson());
         entity.setPickRequiresApproval(model.isPickRequiresApproval());
         entity.setCreateRequiresApproval(model.isCreateRequiresApproval());
 
-        entity.setPreferredEmailId(model.getPreferredEmailId());
+        if (model.getPreferredEmailId() != null) {
+            entity.setPreferredEmail(UserEmailEntity.builder().id(model.getPreferredEmailId()).build());
+        } else {
+            entity.setPreferredEmail(null);
+        }
 
         return entity;
     }
 
-    // --- Model ⇐ Entity
+    // --- Model <= Entity
     public WorkspaceMember toModel(WorkspaceMemberEntity entity) {
         if (entity == null) {
             return null;
@@ -49,21 +61,54 @@ public class WorkspaceMemberEntityMapper {
 
         Long workspaceId = entity.getId() != null ? entity.getId().getWorkspaceId() : null;
         Long userId = entity.getId() != null ? entity.getId().getUserId() : null;
+        Long preferredEmailId = entity.getPreferredEmail() != null ? entity.getPreferredEmail().getId() : null;
 
         return WorkspaceMember.builder()
                 .workspaceId(workspaceId)
                 .userId(userId)
-                .role(entity.getRole())
-                .status(entity.getStatus())
+                .role(toModelRole(entity.getRole()))
+                .status(toModelStatus(entity.getStatus()))
                 .displayName(entity.getDisplayName())
-                .createdAt(entity.getCreatedAt())
+                .createdAt(toInstant(entity.getCreatedAt()))
                 .personId(entity.getPersonId())
-                .personLinkStatus(entity.getPersonLinkStatus())
+                .personLinkStatus(toModelPersonLinkStatus(entity.getPersonLinkStatus()))
                 .canPickPerson(entity.isCanPickPerson())
                 .canCreatePerson(entity.isCanCreatePerson())
                 .pickRequiresApproval(entity.isPickRequiresApproval())
                 .createRequiresApproval(entity.isCreateRequiresApproval())
-                .preferredEmailId(entity.getPreferredEmailId())
+                .preferredEmailId(preferredEmailId)
                 .build();
+    }
+
+    private WorkspaceMemberEntity.WorkspaceRole toEntityRole(WorkspaceRole value) {
+        return value == null ? null : WorkspaceMemberEntity.WorkspaceRole.valueOf(value.name());
+    }
+
+    private WorkspaceRole toModelRole(WorkspaceMemberEntity.WorkspaceRole value) {
+        return value == null ? null : WorkspaceRole.valueOf(value.name());
+    }
+
+    private WorkspaceMemberEntity.WorkspaceMemberStatus toEntityStatus(WorkspaceMemberStatus value) {
+        return value == null ? null : WorkspaceMemberEntity.WorkspaceMemberStatus.valueOf(value.name());
+    }
+
+    private WorkspaceMemberStatus toModelStatus(WorkspaceMemberEntity.WorkspaceMemberStatus value) {
+        return value == null ? null : WorkspaceMemberStatus.valueOf(value.name());
+    }
+
+    private WorkspaceMemberEntity.PersonLinkStatus toEntityPersonLinkStatus(PersonLinkStatus value) {
+        return value == null ? null : WorkspaceMemberEntity.PersonLinkStatus.valueOf(value.name());
+    }
+
+    private PersonLinkStatus toModelPersonLinkStatus(WorkspaceMemberEntity.PersonLinkStatus value) {
+        return value == null ? null : PersonLinkStatus.valueOf(value.name());
+    }
+
+    private LocalDateTime toLocalDateTime(Instant value) {
+        return value == null ? null : LocalDateTime.ofInstant(value, ZoneOffset.UTC);
+    }
+
+    private Instant toInstant(LocalDateTime value) {
+        return value == null ? null : value.toInstant(ZoneOffset.UTC);
     }
 }

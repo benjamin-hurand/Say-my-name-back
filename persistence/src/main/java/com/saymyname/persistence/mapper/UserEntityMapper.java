@@ -1,6 +1,9 @@
 // src/main/java/com/saymyname/persistence/mapper/UserEntityMapper.java
 package com.saymyname.persistence.mapper;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -51,11 +54,11 @@ public class UserEntityMapper {
                 .id(e.getId())
                 .publicId(e.getPublicId())
                 .displayName(e.getDisplayName())
-                .srsAlgorithm(e.getSrsAlgorithm())
+                .srsAlgorithm(toModelSrsAlgorithm(e.getSrsAlgorithm()))
                 .roles(e.getRoles())
                 .active(e.getActive())
                 .authVersion(e.getAuthVersion())
-                .authUpdatedAt(e.getAuthUpdatedAt())
+                .authUpdatedAt(toInstant(e.getAuthUpdatedAt()))
                 .emails(emails)
                 .identities(identities)
                 .build();
@@ -86,10 +89,10 @@ public class UserEntityMapper {
                 .displayName(e.getDisplayName())
                 .emails(emails)
                 .identities(identities)
-                .srsAlgorithm(e.getSrsAlgorithm())
+                .srsAlgorithm(toModelSrsAlgorithm(e.getSrsAlgorithm()))
                 .active(e.getActive())
                 .authVersion(e.getAuthVersion())
-                .authUpdatedAt(e.getAuthUpdatedAt())
+                .authUpdatedAt(toInstant(e.getAuthUpdatedAt()))
                 .build();
     }
 
@@ -101,7 +104,7 @@ public class UserEntityMapper {
                 .id(e.getId())
                 .publicId(e.getPublicId())
                 .authVersion(e.getAuthVersion())
-                .authUpdatedAt(e.getAuthUpdatedAt())
+                .authUpdatedAt(toInstant(e.getAuthUpdatedAt()))
                 .build();
     }
 
@@ -114,7 +117,7 @@ public class UserEntityMapper {
                 .publicId(e.getPublicId())
                 .displayName(e.getDisplayName())
                 .authVersion(e.getAuthVersion())
-                .authUpdatedAt(e.getAuthUpdatedAt())
+                .authUpdatedAt(toInstant(e.getAuthUpdatedAt()))
                 .build();
     }
 
@@ -127,10 +130,10 @@ public class UserEntityMapper {
     }
 
     public User toDisplayNameUpdateModel(Long id, String displayName) {
-        User u = new User();
-        u.setId(id);
-        u.setDisplayName(displayName);
-        return u;
+        return User.builder()
+                .id(id)
+                .displayName(displayName)
+                .build();
     }
 
     // -------- Model -> Entity --------
@@ -138,12 +141,13 @@ public class UserEntityMapper {
         if (m == null)
             return null;
 
-        UserEntity e = new UserEntity(
-                m.getId(),
-                m.getDisplayName(),
-                m.getSrsAlgorithm(),
-                m.getRoles(),
-                m.isActive());
+        UserEntity e = UserEntity.builder()
+                .id(m.getId())
+                .displayName(m.getDisplayName())
+                .srsAlgorithm(toEntitySrsAlgorithm(m.getSrsAlgorithm()))
+                .roles(m.getRoles())
+                .active(m.isActive())
+                .build();
 
         if (m.getPublicId() != null) {
             e.setPublicId(m.getPublicId());
@@ -177,5 +181,17 @@ public class UserEntityMapper {
         }
 
         return e;
+    }
+
+    private SrsAlgorithm toModelSrsAlgorithm(UserEntity.SrsAlgorithm value) {
+        return value == null ? null : SrsAlgorithm.valueOf(value.name());
+    }
+
+    private UserEntity.SrsAlgorithm toEntitySrsAlgorithm(SrsAlgorithm value) {
+        return value == null ? null : UserEntity.SrsAlgorithm.valueOf(value.name());
+    }
+
+    private Instant toInstant(LocalDateTime value) {
+        return value == null ? null : value.toInstant(ZoneOffset.UTC);
     }
 }

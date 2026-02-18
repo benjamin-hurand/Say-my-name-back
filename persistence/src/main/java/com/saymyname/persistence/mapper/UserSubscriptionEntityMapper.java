@@ -1,5 +1,9 @@
 package com.saymyname.persistence.mapper;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.people.UserSubscription;
@@ -15,15 +19,29 @@ public class UserSubscriptionEntityMapper {
         return UserSubscription.builder()
                 .userId(e.getId() != null ? e.getId().getUserId() : null)
                 .personId(e.getId() != null ? e.getId().getPersonId() : null)
-                .createdAt(e.getCreatedAt())
+                .createdAt(toInstant(e.getCreatedAt()))
                 .build();
     }
 
     public UserSubscriptionEntity toEntity(UserSubscription m) {
         if (m == null)
             return null;
-        var id = new UserSubscriptionId(m.getUserId(), m.getPersonId());
-        // createdAt géré par la DB (DEFAULT CURRENT_TIMESTAMP)
-        return new UserSubscriptionEntity(id, null);
+        UserSubscriptionId id = UserSubscriptionId.builder()
+                .tenantId(null)
+                .userId(m.getUserId())
+                .personId(m.getPersonId())
+                .build();
+        return UserSubscriptionEntity.builder()
+                .id(id)
+                .createdAt(toLocalDateTime(m.getCreatedAt()))
+                .build();
+    }
+
+    private LocalDateTime toLocalDateTime(Instant value) {
+        return value == null ? null : LocalDateTime.ofInstant(value, ZoneOffset.UTC);
+    }
+
+    private Instant toInstant(LocalDateTime value) {
+        return value == null ? null : value.toInstant(ZoneOffset.UTC);
     }
 }

@@ -1,5 +1,8 @@
 package com.saymyname.persistence.mapper;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,9 +16,9 @@ import com.saymyname.persistence.entity.UserEntity;
 public class UserEmailEntityMapper {
 
     /**
-     * Mappe le modèle métier -> entité JPA.
+     * Mappe le modele metier -> entite JPA.
      * Remarque :
-     * - Si userEmail.userId est présent, on renseigne une référence UserEntity(id).
+     * - Si userEmail.userId est present, on renseigne une reference UserEntity(id).
      * - added_at / updated_at : on ne set que si fourni ; sinon on laisse la BDD
      * appliquer ses DEFAULT.
      */
@@ -24,7 +27,7 @@ public class UserEmailEntityMapper {
             return null;
         }
 
-        UserEmailEntity e = new UserEmailEntity();
+        UserEmailEntity e = UserEmailEntity.builder().build();
 
         e.setId(userEmail.getId());
         e.setEmail(userEmail.getEmail());
@@ -33,25 +36,26 @@ public class UserEmailEntityMapper {
         e.setRecoveryAllowed(userEmail.isRecoveryAllowed());
 
         // verified_at (nullable)
-        e.setVerifiedAt(userEmail.getVerifiedAt());
+        e.setVerifiedAt(toLocalDateTime(userEmail.getVerifiedAt()));
 
-        // added_at (DEFAULT CURRENT_TIMESTAMP côté DB) → set seulement si fourni
+        // added_at (DEFAULT CURRENT_TIMESTAMP cote DB) -> set seulement si fourni
         if (userEmail.getAddedAt() != null) {
-            e.setAddedAt(userEmail.getAddedAt());
+            e.setAddedAt(toLocalDateTime(userEmail.getAddedAt()));
         }
 
-        // updated_at (DEFAULT + ON UPDATE côté DB) → set seulement si fourni
+        // updated_at (DEFAULT + ON UPDATE cote DB) -> set seulement si fourni
         if (userEmail.getUpdatedAt() != null) {
-            e.setUpdatedAt(userEmail.getUpdatedAt());
+            e.setUpdatedAt(toLocalDateTime(userEmail.getUpdatedAt()));
         }
 
         // recovery_eligible_at (nullable)
-        e.setRecoveryEligibleAt(userEmail.getRecoveryEligibleAt());
+        e.setRecoveryEligibleAt(toLocalDateTime(userEmail.getRecoveryEligibleAt()));
 
-        // user (NOT NULL en BDD) : si on a l'id, on met une ref ; sinon laissé à null
+        // user (NOT NULL en BDD) : si on a l'id, on met une ref ; sinon laisse a null
         if (userEmail.getUserId() != null) {
-            UserEntity u = new UserEntity();
-            u.setId(userEmail.getUserId());
+            UserEntity u = UserEntity.builder()
+                    .id(userEmail.getUserId())
+                    .build();
             e.setUser(u);
         }
 
@@ -59,9 +63,9 @@ public class UserEmailEntityMapper {
     }
 
     /**
-     * Variante pratique : mappe le modèle -> entité en imposant l'owner UserEntity
-     * déjà connu.
-     * L’owner fourni écrase toute éventuelle userId du modèle.
+     * Variante pratique : mappe le modele -> entite en imposant l'owner UserEntity
+     * deja connu.
+     * L'owner fourni ecrase toute eventuelle userId du modele.
      */
     public UserEmailEntity toEntity(UserEmail userEmail, UserEntity owner) {
         UserEmailEntity e = toEntity(userEmail);
@@ -72,7 +76,7 @@ public class UserEmailEntityMapper {
     }
 
     /**
-     * Mappe l’entité JPA -> modèle métier.
+     * Mappe l'entite JPA -> modele metier.
      */
     public UserEmail toModel(UserEmailEntity e) {
         if (e == null) {
@@ -85,10 +89,10 @@ public class UserEmailEntityMapper {
                 .primary(e.isPrimary())
                 .loginAllowed(e.isLoginAllowed())
                 .recoveryAllowed(e.isRecoveryAllowed())
-                .verifiedAt(e.getVerifiedAt())
-                .addedAt(e.getAddedAt())
-                .updatedAt(e.getUpdatedAt())
-                .recoveryEligibleAt(e.getRecoveryEligibleAt());
+                .verifiedAt(toInstant(e.getVerifiedAt()))
+                .addedAt(toInstant(e.getAddedAt()))
+                .updatedAt(toInstant(e.getUpdatedAt()))
+                .recoveryEligibleAt(toInstant(e.getRecoveryEligibleAt()));
 
         if (e.getUser() != null && e.getUser().getId() != null) {
             b.userId(e.getUser().getId());
@@ -117,5 +121,13 @@ public class UserEmailEntityMapper {
             out.add(toModel(e));
         }
         return out;
+    }
+
+    private LocalDateTime toLocalDateTime(Instant value) {
+        return value == null ? null : LocalDateTime.ofInstant(value, ZoneOffset.UTC);
+    }
+
+    private Instant toInstant(LocalDateTime value) {
+        return value == null ? null : value.toInstant(ZoneOffset.UTC);
     }
 }

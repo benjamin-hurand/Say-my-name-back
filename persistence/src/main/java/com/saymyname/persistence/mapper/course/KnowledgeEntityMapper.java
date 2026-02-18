@@ -1,40 +1,44 @@
 package com.saymyname.persistence.mapper.course;
 
-import com.saymyname.core.model.course.Knowledge;
-import com.saymyname.persistence.entity.organization.course.KnowledgeEntity;
-import com.saymyname.persistence.mapper.GameModeEntityMapper;
-import com.saymyname.persistence.mapper.PersonEntityMapper;
-import com.saymyname.persistence.mapper.UserEntityMapper;
-import org.springframework.beans.factory.annotation.Autowired;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+
 import org.springframework.stereotype.Component;
+
+import com.saymyname.core.model.course.Knowledge;
+import com.saymyname.core.model.enums.KnowledgeStatus;
+import com.saymyname.persistence.entity.UserEntity;
+import com.saymyname.persistence.entity.organization.FactEntity;
+import com.saymyname.persistence.entity.organization.course.KnowledgeEntity;
 
 @Component
 public class KnowledgeEntityMapper {
 
-    private final UserEntityMapper userMapper;
-    private final GameModeEntityMapper gameModeMapper;
-    private final PersonEntityMapper personMapper;
-
-    @Autowired
-    public KnowledgeEntityMapper(UserEntityMapper userMapper,
-            GameModeEntityMapper gameModeMapper,
-            PersonEntityMapper personMapper) {
-        this.userMapper = userMapper;
-        this.gameModeMapper = gameModeMapper;
-        this.personMapper = personMapper;
+    public KnowledgeEntityMapper() {
     }
 
     public KnowledgeEntity toEntity(Knowledge model) {
         if (model == null)
             return null;
-        KnowledgeEntity e = new KnowledgeEntity();
+        KnowledgeEntity e = KnowledgeEntity.builder().build();
         e.setId(model.getId());
-        e.setUser(userMapper.toEntity(model.getUser()));
-        e.setGameMode(gameModeMapper.toEntity(model.getGameMode()));
-        e.setPerson(personMapper.toEntity(model.getPerson()));
-        e.setStatus(model.getStatus());
-        e.setNextReviewDate(model.getNextReviewDate());
-        e.setLastReviewDate(model.getLastReviewDate());
+
+        if (model.getUserId() != null) {
+            e.setUser(UserEntity.builder().id(model.getUserId()).build());
+        } else {
+            e.setUser(null);
+        }
+
+        if (model.getFactId() != null) {
+            e.setFact(FactEntity.builder().id(model.getFactId()).build());
+        } else {
+            e.setFact(null);
+        }
+
+        e.setStatus(toEntityStatus(model.getStatus()));
+        e.setNextReviewDate(toLocalDateTime(model.getNextReviewDate()));
+        e.setLastReviewDate(toLocalDateTime(model.getLastReviewDate()));
         e.setTotalRepetitionCount(model.getTotalRepetitionCount());
         e.setFailureCount(model.getFailureCount());
         e.setSuccessCount(model.getSuccessCount());
@@ -51,12 +55,11 @@ public class KnowledgeEntityMapper {
             return null;
         return Knowledge.builder()
                 .id(e.getId())
-                .user(userMapper.toShortModel(e.getUser()))
-                .gameMode(gameModeMapper.toModel(e.getGameMode()))
-                .person(personMapper.toModel(e.getPerson()))
-                .status(e.getStatus())
-                .nextReviewDate(e.getNextReviewDate())
-                .lastReviewDate(e.getLastReviewDate())
+                .userId(e.getUser() != null ? e.getUser().getId() : null)
+                .factId(e.getFact() != null ? e.getFact().getId() : null)
+                .status(toModelStatus(e.getStatus()))
+                .nextReviewDate(toInstant(e.getNextReviewDate()))
+                .lastReviewDate(toInstant(e.getLastReviewDate()))
                 .totalRepetitionCount(e.getTotalRepetitionCount())
                 .failureCount(e.getFailureCount())
                 .successCount(e.getSuccessCount())
@@ -66,5 +69,21 @@ public class KnowledgeEntityMapper {
                 .difficulty(e.getDifficulty())
                 .stability(e.getStability())
                 .build();
+    }
+
+    private KnowledgeEntity.KnowledgeStatus toEntityStatus(KnowledgeStatus value) {
+        return value == null ? null : KnowledgeEntity.KnowledgeStatus.valueOf(value.name());
+    }
+
+    private KnowledgeStatus toModelStatus(KnowledgeEntity.KnowledgeStatus value) {
+        return value == null ? null : KnowledgeStatus.valueOf(value.name());
+    }
+
+    private LocalDateTime toLocalDateTime(Instant value) {
+        return value == null ? null : LocalDateTime.ofInstant(value, ZoneOffset.UTC);
+    }
+
+    private Instant toInstant(LocalDateTime value) {
+        return value == null ? null : value.toInstant(ZoneOffset.UTC);
     }
 }

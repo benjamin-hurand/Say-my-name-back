@@ -5,107 +5,85 @@ import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.enums.ChangeAction;
 import com.saymyname.core.model.enums.ChangeRequestItemStatus;
-import com.saymyname.core.model.people.ChangeRequest;
 import com.saymyname.core.model.people.ChangeRequestItem;
-import com.saymyname.core.model.people.PersonAttribute;
-import com.saymyname.persistence.entity.organization.ChangeRequestEntity;
 import com.saymyname.persistence.entity.organization.ChangeRequestItemEntity;
-import com.saymyname.persistence.entity.organization.PersonAttributeEntity;
+import com.saymyname.persistence.entity.organization.FactEntity;
 
 @Component
 public class ChangeRequestItemEntityMapper {
 
-    private final PersonAttributeEntityMapper personAttributeEntityMapper;
-
-    public ChangeRequestItemEntityMapper(PersonAttributeEntityMapper personAttributeEntityMapper) {
-        this.personAttributeEntityMapper = personAttributeEntityMapper;
+    public ChangeRequestItemEntityMapper(FactEntityMapper personAttributeEntityMapper) {
     }
 
-    // ===========================
-    // MODEL -> ENTITY
-    // ===========================
     public ChangeRequestItemEntity toEntity(ChangeRequestItem m) {
         if (m == null)
             return null;
 
-        ChangeRequestItemEntity e = new ChangeRequestItemEntity();
+        ChangeRequestItemEntity e = ChangeRequestItemEntity.builder().build();
         e.setId(m.getId());
+        e.setChangeRequestId(m.getChangeRequestId());
 
-        // Parent (id-only)
-        if (m.getChangeRequest() != null && m.getChangeRequest().getId() != null) {
-            ChangeRequestEntity crRef = new ChangeRequestEntity();
-            crRef.setId(m.getChangeRequest().getId());
-            e.setChangeRequest(crRef);
-        }
-
-        // Action
         ChangeAction action = m.getAction();
-        e.setAction(action);
+        e.setAction(toEntityAction(action));
 
-        // Cible selon l'action
         if (action == ChangeAction.CREATE) {
-            e.setPersonAttribute(null);
+            e.setFact(null);
         } else if (action == ChangeAction.UPDATE || action == ChangeAction.DELETE) {
-            if (m.getPersonAttribute() != null && m.getPersonAttribute().getId() != null) {
-                PersonAttributeEntity paRef = new PersonAttributeEntity();
-                paRef.setId(m.getPersonAttribute().getId());
-                e.setPersonAttribute(paRef);
+            if (m.getFactId() != null) {
+                e.setFact(FactEntity.builder().id(m.getFactId()).build());
             } else {
-                e.setPersonAttribute(null);
+                e.setFact(null);
             }
         } else {
-            e.setPersonAttribute(null);
+            e.setFact(null);
         }
 
-        // Valeur proposée (déjà normalisée si besoin côté service)
         e.setProposedValue(m.getProposedValue());
-
-        // Résolution par item
         e.setResolutionStatus(
-                m.getResolutionStatus() != null ? m.getResolutionStatus() : ChangeRequestItemStatus.PENDING);
+                m.getResolutionStatus() != null ? toEntityResolutionStatus(m.getResolutionStatus())
+                        : ChangeRequestItemEntity.ResolutionStatus.PENDING);
         e.setResolutionComment(m.getResolutionComment());
-
         return e;
     }
 
-    // ===========================
-    // ENTITY -> MODEL
-    // ===========================
     public ChangeRequestItem toModel(ChangeRequestItemEntity e) {
         if (e == null)
             return null;
 
-        // Parent "léger"
-        ChangeRequest crRef = null;
-        if (e.getChangeRequest() != null) {
-            crRef = ChangeRequest.builder()
-                    .id(e.getChangeRequest().getId())
-                    .build();
-        }
-
-        // Cible
-        PersonAttribute pa = (e.getPersonAttribute() != null)
-                ? personAttributeEntityMapper.toModel(e.getPersonAttribute())
-                : null;
-
         return ChangeRequestItem.builder()
                 .id(e.getId())
-                .changeRequest(crRef)
-                .action(e.getAction())
-                .personAttribute(pa)
+                .changeRequestId(e.getChangeRequestId())
+                .action(toModelAction(e.getAction()))
+                .factId(e.getFact() != null ? e.getFact().getId() : null)
                 .proposedValue(e.getProposedValue())
                 .resolutionStatus(
-                        e.getResolutionStatus() != null ? e.getResolutionStatus() : ChangeRequestItemStatus.PENDING)
+                        e.getResolutionStatus() != null ? toModelResolutionStatus(e.getResolutionStatus())
+                                : ChangeRequestItemStatus.PENDING)
                 .resolutionComment(e.getResolutionComment())
                 .build();
     }
 
-    /** Variante ultra-légère (id-only). */
     public ChangeRequestItem toShortModel(ChangeRequestItemEntity e) {
         if (e == null)
             return null;
         return ChangeRequestItem.builder()
                 .id(e.getId())
                 .build();
+    }
+
+    private ChangeRequestItemEntity.ChangeAction toEntityAction(ChangeAction value) {
+        return value == null ? null : ChangeRequestItemEntity.ChangeAction.valueOf(value.name());
+    }
+
+    private ChangeAction toModelAction(ChangeRequestItemEntity.ChangeAction value) {
+        return value == null ? null : ChangeAction.valueOf(value.name());
+    }
+
+    private ChangeRequestItemEntity.ResolutionStatus toEntityResolutionStatus(ChangeRequestItemStatus value) {
+        return value == null ? null : ChangeRequestItemEntity.ResolutionStatus.valueOf(value.name());
+    }
+
+    private ChangeRequestItemStatus toModelResolutionStatus(ChangeRequestItemEntity.ResolutionStatus value) {
+        return value == null ? null : ChangeRequestItemStatus.valueOf(value.name());
     }
 }

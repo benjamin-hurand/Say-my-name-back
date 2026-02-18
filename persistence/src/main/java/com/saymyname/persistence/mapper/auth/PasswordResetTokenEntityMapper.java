@@ -1,9 +1,14 @@
 package com.saymyname.persistence.mapper.auth;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.auth.PasswordResetToken;
 import com.saymyname.persistence.entity.PasswordResetTokenEntity;
+import com.saymyname.persistence.entity.UserEntity;
 
 @Component
 public class PasswordResetTokenEntityMapper {
@@ -11,12 +16,15 @@ public class PasswordResetTokenEntityMapper {
     public PasswordResetToken toModel(PasswordResetTokenEntity e) {
         if (e == null)
             return null;
+
+        Long userId = (e.getUser() != null) ? e.getUser().getId() : null;
+
         return PasswordResetToken.builder()
                 .id(e.getId())
-                .userId(e.getUserId())
+                .userId(userId)
                 .tokenHash(e.getTokenHash())
-                .expiresAt(e.getExpiresAt())
-                .usedAt(e.getUsedAt())
+                .expiresAt(toInstant(e.getExpiresAt()))
+                .usedAt(toInstant(e.getUsedAt()))
                 .createdIp(e.getCreatedIp())
                 .userAgent(e.getUserAgent())
                 .build();
@@ -34,14 +42,29 @@ public class PasswordResetTokenEntityMapper {
     public PasswordResetTokenEntity toEntity(PasswordResetToken m) {
         if (m == null)
             return null;
-        var e = new PasswordResetTokenEntity();
+
+        PasswordResetTokenEntity e = PasswordResetTokenEntity.builder().build();
         e.setId(m.getId());
-        e.setUserId(m.getUserId());
+
+        if (m.getUserId() != null) {
+            e.setUser(UserEntity.builder().id(m.getUserId()).build());
+        } else {
+            e.setUser(null);
+        }
+
         e.setTokenHash(m.getTokenHash());
-        e.setExpiresAt(m.getExpiresAt());
-        e.setUsedAt(m.getUsedAt());
+        e.setExpiresAt(toLocalDateTime(m.getExpiresAt()));
+        e.setUsedAt(toLocalDateTime(m.getUsedAt()));
         e.setCreatedIp(m.getCreatedIp());
         e.setUserAgent(m.getUserAgent());
         return e;
+    }
+
+    private LocalDateTime toLocalDateTime(Instant value) {
+        return value == null ? null : LocalDateTime.ofInstant(value, ZoneOffset.UTC);
+    }
+
+    private Instant toInstant(LocalDateTime value) {
+        return value == null ? null : value.toInstant(ZoneOffset.UTC);
     }
 }

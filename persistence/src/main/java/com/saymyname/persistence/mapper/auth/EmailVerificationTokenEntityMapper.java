@@ -1,10 +1,16 @@
 // src/main/java/com/saymyname/persistence/mapper/auth/EmailVerificationTokenEntityMapper.java
 package com.saymyname.persistence.mapper.auth;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.auth.EmailVerificationToken;
+import com.saymyname.core.model.enums.EmailVerificationPurpose;
 import com.saymyname.persistence.entity.EmailVerificationTokenEntity;
+import com.saymyname.persistence.entity.UserEntity;
 
 @Component
 public class EmailVerificationTokenEntityMapper {
@@ -13,21 +19,23 @@ public class EmailVerificationTokenEntityMapper {
         if (e == null)
             return null;
 
+        Long userId = (e.getUser() != null) ? e.getUser().getId() : null;
+
         return EmailVerificationToken.builder()
                 .id(e.getId())
                 .publicId(e.getPublicId())
-                .userId(e.getUserId())
+                .userId(userId)
                 .email(e.getEmail())
                 .tokenHash(e.getTokenHash())
                 .codeHashPhc(e.getCodeHashPhc())
-                .purpose(e.getPurpose())
+                .purpose(toModelPurpose(e.getPurpose()))
                 .makePrimaryNow(e.isMakePrimaryNow())
                 .attempts(e.getAttempts())
                 .resendCount(e.getResendCount())
-                .lastSentAt(e.getLastSentAt())
-                .expiresAt(e.getExpiresAt())
-                .consumedAt(e.getConsumedAt())
-                .createdAt(e.getCreatedAt())
+                .lastSentAt(toInstant(e.getLastSentAt()))
+                .expiresAt(toInstant(e.getExpiresAt()))
+                .consumedAt(toInstant(e.getConsumedAt()))
+                .createdAt(toInstant(e.getCreatedAt()))
                 .build();
     }
 
@@ -35,19 +43,41 @@ public class EmailVerificationTokenEntityMapper {
         if (m == null)
             return null;
 
-        EmailVerificationTokenEntity e = new EmailVerificationTokenEntity();
+        EmailVerificationTokenEntity e = EmailVerificationTokenEntity.builder().build();
         e.setPublicId(m.getPublicId());
-        e.setUserId(m.getUserId());
+
+        if (m.getUserId() != null) {
+            e.setUser(UserEntity.builder().id(m.getUserId()).build());
+        } else {
+            e.setUser(null);
+        }
+
         e.setEmail(m.getEmail());
         e.setTokenHash(m.getTokenHash());
         e.setCodeHashPhc(m.getCodeHashPhc());
-        e.setPurpose(m.getPurpose());
+        e.setPurpose(toEntityPurpose(m.getPurpose()));
         e.setMakePrimaryNow(m.isMakePrimaryNow());
         e.setAttempts(m.getAttempts());
         e.setResendCount(m.getResendCount());
-        e.setLastSentAt(m.getLastSentAt());
-        e.setExpiresAt(m.getExpiresAt());
-        e.setConsumedAt(m.getConsumedAt());
+        e.setLastSentAt(toLocalDateTime(m.getLastSentAt()));
+        e.setExpiresAt(toLocalDateTime(m.getExpiresAt()));
+        e.setConsumedAt(toLocalDateTime(m.getConsumedAt()));
         return e;
+    }
+
+    private EmailVerificationPurpose toModelPurpose(EmailVerificationTokenEntity.EmailVerificationPurpose value) {
+        return value == null ? null : EmailVerificationPurpose.valueOf(value.name());
+    }
+
+    private EmailVerificationTokenEntity.EmailVerificationPurpose toEntityPurpose(EmailVerificationPurpose value) {
+        return value == null ? null : EmailVerificationTokenEntity.EmailVerificationPurpose.valueOf(value.name());
+    }
+
+    private LocalDateTime toLocalDateTime(Instant value) {
+        return value == null ? null : LocalDateTime.ofInstant(value, ZoneOffset.UTC);
+    }
+
+    private Instant toInstant(LocalDateTime value) {
+        return value == null ? null : value.toInstant(ZoneOffset.UTC);
     }
 }

@@ -4,52 +4,35 @@ import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.course.CourseQuestionItem;
 import com.saymyname.core.model.enums.course.QuizQuestionItemRole;
-import com.saymyname.persistence.entity.organization.PersonEntity;
 import com.saymyname.persistence.entity.organization.course.CourseQuestionItemEntity;
 import com.saymyname.persistence.entity.organization.course.KnowledgeEntity;
-import com.saymyname.persistence.mapper.PersonEntityMapper;
 
 @Component
 public class CourseQuestionItemEntityMapper {
 
-    private final KnowledgeEntityMapper knowledgeMapper;
-    private final PersonEntityMapper personMapper;
-
-    public CourseQuestionItemEntityMapper(
-            KnowledgeEntityMapper knowledgeMapper,
-            PersonEntityMapper personMapper) {
-        this.knowledgeMapper = knowledgeMapper;
-        this.personMapper = personMapper;
+    public CourseQuestionItemEntityMapper() {
     }
 
     public CourseQuestionItemEntity toEntity(CourseQuestionItem model) {
         if (model == null)
             return null;
 
-        CourseQuestionItemEntity entity = new CourseQuestionItemEntity();
+        CourseQuestionItemEntity entity = CourseQuestionItemEntity.builder().build();
         entity.setId(model.getId());
+        entity.setAttemptId(model.getAttemptId());
         entity.setPosition(model.getPosition());
         entity.setRole(mapRole(model.getRole()));
         entity.setAnswered(model.isAnswered());
         entity.setCorrect(model.getCorrect());
         entity.setNormalizedAnswer(model.getNormalizedAnswer());
 
-        // TARGET
-        if (model.getKnowledge() != null) {
-            KnowledgeEntity kn = knowledgeMapper.toEntity(model.getKnowledge());
-            entity.setKnowledge(kn);
+        if (model.getKnowledgeId() != null) {
+            entity.setKnowledge(KnowledgeEntity.builder().id(model.getKnowledgeId()).build());
         } else {
             entity.setKnowledge(null);
         }
 
-        // DISTRACTOR (et optionnel sur TARGET)
-        if (model.getPerson() != null) {
-            PersonEntity p = personMapper.toEntity(model.getPerson());
-            entity.setPerson(p);
-        } else {
-            entity.setPerson(null);
-        }
-
+        entity.setPersonId(model.getPersonId());
         return entity;
     }
 
@@ -57,25 +40,24 @@ public class CourseQuestionItemEntityMapper {
         if (entity == null)
             return null;
 
-        QuizQuestionItemRole role = mapRole(entity.getRole());
-
         return CourseQuestionItem.builder()
                 .id(entity.getId())
+                .attemptId(entity.getAttemptId())
                 .position(entity.getPosition())
-                .role(role)
-                .knowledge(entity.getKnowledge() != null ? knowledgeMapper.toModel(entity.getKnowledge()) : null)
-                .person(entity.getPerson() != null ? personMapper.toShortModel(entity.getPerson()) : null)
+                .role(mapRole(entity.getRole()))
+                .knowledgeId(entity.getKnowledge() != null ? entity.getKnowledge().getId() : null)
+                .personId(entity.getPersonId())
                 .answered(entity.isAnswered())
                 .correct(entity.getCorrect())
                 .normalizedAnswer(entity.getNormalizedAnswer())
                 .build();
     }
 
-    private CourseQuestionItemEntity.Role mapRole(QuizQuestionItemRole role) {
-        return role == null ? null : CourseQuestionItemEntity.Role.valueOf(role.name());
+    private CourseQuestionItemEntity.ItemRole mapRole(QuizQuestionItemRole role) {
+        return role == null ? null : CourseQuestionItemEntity.ItemRole.valueOf(role.name());
     }
 
-    private QuizQuestionItemRole mapRole(CourseQuestionItemEntity.Role role) {
+    private QuizQuestionItemRole mapRole(CourseQuestionItemEntity.ItemRole role) {
         return role == null ? null : QuizQuestionItemRole.valueOf(role.name());
     }
 }

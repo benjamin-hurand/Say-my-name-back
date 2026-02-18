@@ -1,9 +1,14 @@
 // src/main/java/com/saymyname/persistence/mapper/UserIdentityEntityMapper.java
 package com.saymyname.persistence.mapper;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.auth.UserIdentity;
+import com.saymyname.core.model.enums.AuthProvider;
 import com.saymyname.persistence.entity.UserEntity;
 import com.saymyname.persistence.entity.UserIdentityEntity;
 
@@ -20,13 +25,13 @@ public class UserIdentityEntityMapper {
         return UserIdentity.builder()
                 .id(e.getId())
                 .userId(userId)
-                .provider(e.getProvider())
+                .provider(toModelAuthProvider(e.getProvider()))
                 .providerSubject(e.getProviderSubject())
                 .passwordHash(e.getPasswordHash())
                 .enabled(e.isEnabled())
-                .createdAt(e.getCreatedAt())
-                .updatedAt(e.getUpdatedAt())
-                .lastUsedAt(e.getLastUsedAt())
+                .createdAt(toInstant(e.getCreatedAt()))
+                .updatedAt(toInstant(e.getUpdatedAt()))
+                .lastUsedAt(toInstant(e.getLastUsedAt()))
                 .build();
     }
 
@@ -40,12 +45,12 @@ public class UserIdentityEntityMapper {
         if (m == null)
             return null;
 
-        UserIdentityEntity e = new UserIdentityEntity();
-        e.setProvider(m.getProvider());
+        UserIdentityEntity e = UserIdentityEntity.builder().build();
+        e.setProvider(toEntityIdentityProvider(m.getProvider()));
         e.setProviderSubject(m.getProviderSubject());
         e.setPasswordHash(m.getPasswordHash());
         e.setEnabled(m.isEnabled());
-        e.setLastUsedAt(m.getLastUsedAt());
+        e.setLastUsedAt(toLocalDateTime(m.getLastUsedAt()));
 
         return e;
     }
@@ -58,5 +63,21 @@ public class UserIdentityEntityMapper {
         if (identityEntity == null)
             return;
         identityEntity.setUser(userRef);
+    }
+
+    private AuthProvider toModelAuthProvider(UserIdentityEntity.IdentityProvider value) {
+        return value == null ? null : AuthProvider.valueOf(value.name());
+    }
+
+    private UserIdentityEntity.IdentityProvider toEntityIdentityProvider(AuthProvider value) {
+        return value == null ? null : UserIdentityEntity.IdentityProvider.valueOf(value.name());
+    }
+
+    private LocalDateTime toLocalDateTime(Instant value) {
+        return value == null ? null : LocalDateTime.ofInstant(value, ZoneOffset.UTC);
+    }
+
+    private Instant toInstant(LocalDateTime value) {
+        return value == null ? null : value.toInstant(ZoneOffset.UTC);
     }
 }

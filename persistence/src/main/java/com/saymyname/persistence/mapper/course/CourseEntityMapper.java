@@ -1,41 +1,46 @@
 // src/main/java/com/saymyname/persistence/mapper/course/CourseEntityMapper.java
 package com.saymyname.persistence.mapper.course;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.course.Course;
 import com.saymyname.core.model.enums.CourseStatus;
+import com.saymyname.core.model.enums.CourseTargetScope;
 import com.saymyname.core.model.enums.PopulationScope;
+import com.saymyname.persistence.entity.UserEntity;
 import com.saymyname.persistence.entity.organization.course.CourseEntity;
-import com.saymyname.persistence.mapper.GameModeEntityMapper;
-import com.saymyname.persistence.mapper.UserEntityMapper;
 
 @Component
 public class CourseEntityMapper {
 
-    private final UserEntityMapper userMapper;
-    private final GameModeEntityMapper gameModeMapper;
-
     @Autowired
-    public CourseEntityMapper(UserEntityMapper userMapper, GameModeEntityMapper gameModeMapper) {
-        this.userMapper = userMapper;
-        this.gameModeMapper = gameModeMapper;
+    public CourseEntityMapper() {
     }
 
     public CourseEntity toEntity(Course model) {
         if (model == null)
             return null;
 
-        CourseEntity e = new CourseEntity();
+        CourseEntity e = CourseEntity.builder().build();
         e.setId(model.getId());
-        e.setUser(userMapper.toEntity(model.getUser())); // idem, potentiellement même souci
-        // ❌ e.setGameMode(gameModeMapper.toRefEntity(model.getGameMode()));
-        e.setStatus(model.getStatus() != null ? model.getStatus() : CourseStatus.IN_PROGRESS);
+        if (model.getUserId() != null) {
+            e.setUser(UserEntity.builder().id(model.getUserId()).build());
+        }
+        e.setTargetScope(model.getTargetScope() != null
+                ? toEntityTargetScope(model.getTargetScope())
+                : CourseEntity.CourseTargetScope.ATTRIBUTE);
+        e.setTargetAttributeId(model.getTargetAttributeId());
+        e.setStatus(model.getStatus() != null ? toEntityStatus(model.getStatus()) : CourseEntity.CourseStatus.IN_PROGRESS);
         e.setCurrentRound(model.getCurrentRound());
-        e.setPopulationScope(
-                model.getPopulationScope() != null ? model.getPopulationScope() : PopulationScope.FOLLOWED);
-        e.setLastAccessedAt(model.getLastAccessedAt());
+        e.setPopulationScope(model.getPopulationScope() != null
+                ? toEntityPopulationScope(model.getPopulationScope())
+                : CourseEntity.PopulationScope.FOLLOWED);
+        e.setLastAccessedAt(toLocalDateTime(model.getLastAccessedAt()));
         return e;
     }
 
@@ -45,31 +50,51 @@ public class CourseEntityMapper {
 
         return Course.builder()
                 .id(e.getId())
-                .user(userMapper.toShortModel(e.getUser()))
-                .gameMode(gameModeMapper.toModel(e.getGameMode()))
-                .status(e.getStatus())
+                .userId(e.getUser() != null ? e.getUser().getId() : null)
+                .targetScope(toModelTargetScope(e.getTargetScope()))
+                .targetAttributeId(e.getTargetAttributeId())
+                .status(toModelStatus(e.getStatus()))
                 .currentRound(e.getCurrentRound())
-                .populationScope(e.getPopulationScope())
-                .createdAt(e.getCreatedAt())
-                .updatedAt(e.getUpdatedAt())
-                .lastAccessedAt(e.getLastAccessedAt())
+                .populationScope(toModelPopulationScope(e.getPopulationScope()))
+                .createdAt(toInstant(e.getCreatedAt()))
+                .updatedAt(toInstant(e.getUpdatedAt()))
+                .lastAccessedAt(toInstant(e.getLastAccessedAt()))
                 .build();
     }
 
     public Course toShortModel(CourseEntity e) {
-        if (e == null)
-            return null;
+        return toModel(e);
+    }
 
-        return Course.builder()
-                .id(e.getId())
-                .user(userMapper.toShortModel(e.getUser()))
-                .gameMode(gameModeMapper.toShortModel(e.getGameMode()))
-                .status(e.getStatus())
-                .currentRound(e.getCurrentRound())
-                .populationScope(e.getPopulationScope())
-                .createdAt(e.getCreatedAt())
-                .updatedAt(e.getUpdatedAt())
-                .lastAccessedAt(e.getLastAccessedAt())
-                .build();
+    private CourseEntity.CourseTargetScope toEntityTargetScope(CourseTargetScope value) {
+        return value == null ? null : CourseEntity.CourseTargetScope.valueOf(value.name());
+    }
+
+    private CourseTargetScope toModelTargetScope(CourseEntity.CourseTargetScope value) {
+        return value == null ? null : CourseTargetScope.valueOf(value.name());
+    }
+
+    private CourseEntity.CourseStatus toEntityStatus(CourseStatus value) {
+        return value == null ? null : CourseEntity.CourseStatus.valueOf(value.name());
+    }
+
+    private CourseStatus toModelStatus(CourseEntity.CourseStatus value) {
+        return value == null ? null : CourseStatus.valueOf(value.name());
+    }
+
+    private CourseEntity.PopulationScope toEntityPopulationScope(PopulationScope value) {
+        return value == null ? null : CourseEntity.PopulationScope.valueOf(value.name());
+    }
+
+    private PopulationScope toModelPopulationScope(CourseEntity.PopulationScope value) {
+        return value == null ? null : PopulationScope.valueOf(value.name());
+    }
+
+    private LocalDateTime toLocalDateTime(Instant value) {
+        return value == null ? null : LocalDateTime.ofInstant(value, ZoneOffset.UTC);
+    }
+
+    private Instant toInstant(LocalDateTime value) {
+        return value == null ? null : value.toInstant(ZoneOffset.UTC);
     }
 }

@@ -1,101 +1,80 @@
 package com.saymyname.persistence.mapper;
 
-import com.saymyname.core.model.auth.User;
-import com.saymyname.core.model.people.Person;
-import com.saymyname.core.model.people.Photo;
-import com.saymyname.persistence.entity.UserEntity;
-import com.saymyname.persistence.entity.organization.PersonEntity;
-import com.saymyname.persistence.entity.organization.PhotoEntity;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 import org.springframework.stereotype.Component;
+
+import com.saymyname.core.model.enums.PhotoStatus;
+import com.saymyname.core.model.people.Photo;
+import com.saymyname.persistence.entity.UserEntity;
+import com.saymyname.persistence.entity.organization.PhotoEntity;
 
 @Component
 public class PhotoEntityMapper {
 
-    /**
-     * Mappe le modèle métier -> entité JPA.
-     * Note : si photo.submittedAt est null, on laisse la colonne à null pour que
-     * MySQL applique son DEFAULT CURRENT_TIMESTAMP (insertable=false côté entity).
-     */
     public PhotoEntity toEntity(Photo photo) {
         if (photo == null) {
             return null;
         }
 
-        PhotoEntity entity = new PhotoEntity();
-
+        PhotoEntity entity = PhotoEntity.builder().build();
         entity.setId(photo.getId());
         entity.setStorageKey(photo.getStorageKey());
-        entity.setStatus(photo.getStatus());
-        entity.setApprovedAt(photo.getApprovedAt());
+        entity.setPersonId(photo.getPersonId());
+        entity.setStatus(toEntityStatus(photo.getStatus()));
+        entity.setApprovedAt(toLocalDateTime(photo.getApprovedAt()));
 
-        // submitted_at : on ne set que si fourni (sinon laissé à la BDD)
         if (photo.getSubmittedAt() != null) {
-            entity.setSubmittedAt(photo.getSubmittedAt());
+            entity.setSubmittedAt(toLocalDateTime(photo.getSubmittedAt()));
         }
 
-        // submitted_by -> UserEntity (NOT NULL en BDD)
-        if (photo.getSubmittedBy() != null && photo.getSubmittedBy().getId() != null) {
-            UserEntity submitter = new UserEntity();
-            submitter.setId(photo.getSubmittedBy().getId());
-            entity.setSubmittedBy(submitter);
+        if (photo.getSubmittedById() != null) {
+            entity.setSubmittedBy(UserEntity.builder().id(photo.getSubmittedById()).build());
+        } else {
+            entity.setSubmittedBy(null);
         }
 
-        // approved_by -> UserEntity (NULLABLE)
-        if (photo.getApprovedBy() != null && photo.getApprovedBy().getId() != null) {
-            UserEntity approver = new UserEntity();
-            approver.setId(photo.getApprovedBy().getId());
-            entity.setApprovedBy(approver);
-        }
-
-        // person -> PersonEntity (NOT NULL en BDD)
-        if (photo.getPerson() != null && photo.getPerson().getId() != null) {
-            PersonEntity personRef = new PersonEntity();
-            personRef.setId(photo.getPerson().getId());
-            entity.setPerson(personRef);
+        if (photo.getApprovedById() != null) {
+            entity.setApprovedBy(UserEntity.builder().id(photo.getApprovedById()).build());
+        } else {
+            entity.setApprovedBy(null);
         }
 
         return entity;
     }
 
-    /**
-     * Mappe l’entité JPA -> modèle métier.
-     */
     public Photo toModel(PhotoEntity e) {
         if (e == null) {
             return null;
         }
 
-        Photo.Builder b = Photo.builder()
+        return Photo.builder()
                 .id(e.getId())
                 .storageKey(e.getStorageKey())
-                .status(e.getStatus())
-                .submittedAt(e.getSubmittedAt())
-                .approvedAt(e.getApprovedAt());
+                .personId(e.getPersonId())
+                .status(toModelStatus(e.getStatus()))
+                .submittedAt(toInstant(e.getSubmittedAt()))
+                .submittedById(e.getSubmittedBy() != null ? e.getSubmittedBy().getId() : null)
+                .approvedAt(toInstant(e.getApprovedAt()))
+                .approvedById(e.getApprovedBy() != null ? e.getApprovedBy().getId() : null)
+                .build();
+    }
 
-        // submitted_by -> User
-        if (e.getSubmittedBy() != null && e.getSubmittedBy().getId() != null) {
-            User submitter = new User();
-            submitter.setId(e.getSubmittedBy().getId());
-            submitter.setDisplayName(e.getSubmittedBy().getDisplayName()); // si dispo
-            b.submittedBy(submitter);
-        }
+    private PhotoEntity.PhotoStatus toEntityStatus(PhotoStatus value) {
+        return value == null ? null : PhotoEntity.PhotoStatus.valueOf(value.name());
+    }
 
-        // approved_by -> User
-        if (e.getApprovedBy() != null && e.getApprovedBy().getId() != null) {
-            User approver = new User();
-            approver.setId(e.getApprovedBy().getId());
-            approver.setDisplayName(e.getApprovedBy().getDisplayName()); // si dispo
-            b.approvedBy(approver);
-        }
+    private PhotoStatus toModelStatus(PhotoEntity.PhotoStatus value) {
+        return value == null ? null : PhotoStatus.valueOf(value.name());
+    }
 
-        // person -> Person
-        if (e.getPerson() != null && e.getPerson().getId() != null) {
-            Person p = new Person();
-            p.setId(e.getPerson().getId());
-            b.person(p);
-        }
+    private LocalDateTime toLocalDateTime(Instant value) {
+        return value == null ? null : LocalDateTime.ofInstant(value, ZoneOffset.UTC);
+    }
 
-        return b.build();
+    private Instant toInstant(LocalDateTime value) {
+        return value == null ? null : value.toInstant(ZoneOffset.UTC);
     }
 }

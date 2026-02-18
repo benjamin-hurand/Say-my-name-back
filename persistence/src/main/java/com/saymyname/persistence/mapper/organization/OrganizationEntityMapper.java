@@ -1,8 +1,13 @@
 // persistence/src/main/java/com/saymyname/persistence/mapper/organization/OrganizationEntityMapper.java
 package com.saymyname.persistence.mapper.organization;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+
 import org.springframework.stereotype.Component;
 
+import com.saymyname.core.model.enums.OrgType;
 import com.saymyname.core.model.organization.Organization;
 import com.saymyname.persistence.entity.organization.OrganizationEntity;
 
@@ -13,36 +18,56 @@ public class OrganizationEntityMapper {
         if (e == null)
             return null;
         return Organization.builder()
-                .id(e.getId())
-                .key(e.getKey())
+                .id(e.getTenantId())
+                .orgKey(e.getOrgKey())
                 .name(e.getName())
+                .orgType(toModelOrgType(e.getOrgType()))
                 .active(e.isActive())
-                .createdAt(e.getCreatedAt())
-                .updatedAt(e.getUpdatedAt())
+                .createdAt(toInstant(e.getCreatedAt()))
+                .updatedAt(toInstant(e.getUpdatedAt()))
                 .build();
     }
 
     public OrganizationEntity toEntity(Organization m) {
         if (m == null)
             return null;
-        OrganizationEntity e = new OrganizationEntity();
-        e.setId(m.getId());
-        e.setKey(m.getKey());
+        OrganizationEntity e = OrganizationEntity.builder().build();
+        e.setTenantId(m.getId());
+        e.setOrgKey(m.getOrgKey());
         e.setName(m.getName());
+        e.setOrgType(toEntityOrgType(m.getOrgType()));
         e.setActive(m.isActive());
-        e.setCreatedAt(m.getCreatedAt());
-        e.setUpdatedAt(m.getUpdatedAt());
+        e.setCreatedAt(toLocalDateTime(m.getCreatedAt()));
+        e.setUpdatedAt(toLocalDateTime(m.getUpdatedAt()));
         return e;
     }
 
     public void mergeIntoEntity(Organization m, OrganizationEntity e) {
         if (m == null || e == null)
             return;
-        if (m.getKey() != null)
-            e.setKey(m.getKey());
+        if (m.getOrgKey() != null)
+            e.setOrgKey(m.getOrgKey());
         if (m.getName() != null)
             e.setName(m.getName());
+        if (m.getOrgType() != null)
+            e.setOrgType(toEntityOrgType(m.getOrgType()));
         e.setActive(m.isActive());
-        // createdAt/updatedAt: laissés au SGBD + lifecycle hooks
+        // createdAt/updatedAt: managed by DB + lifecycle hooks.
+    }
+
+    private OrgType toModelOrgType(OrganizationEntity.OrgType value) {
+        return value == null ? null : OrgType.valueOf(value.name());
+    }
+
+    private OrganizationEntity.OrgType toEntityOrgType(OrgType value) {
+        return value == null ? null : OrganizationEntity.OrgType.valueOf(value.name());
+    }
+
+    private LocalDateTime toLocalDateTime(Instant value) {
+        return value == null ? null : LocalDateTime.ofInstant(value, ZoneOffset.UTC);
+    }
+
+    private Instant toInstant(LocalDateTime value) {
+        return value == null ? null : value.toInstant(ZoneOffset.UTC);
     }
 }
