@@ -1,23 +1,50 @@
-// src/main/java/com/saymyname/persistence/entity/attribute/AttributeEnumOptionEntity.java
 package com.saymyname.persistence.entity.organization.attribute;
 
-import com.saymyname.persistence.multitenancy.BaseOrgScoped;
 
-import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.experimental.SuperBuilder;
+import com.saymyname.persistence.multitenancy.BaseTenantScoped;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
+@Getter
+@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@SuperBuilder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
+@ToString(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "attribute_enum_options", uniqueConstraints = @UniqueConstraint(name = "uq_attr_enum_code", columnNames = {
-        "attribute_id", "code" }))
-public class AttributeEnumOptionEntity extends BaseOrgScoped {
+@Table(name = "attribute_enum_options", uniqueConstraints = {
+        @UniqueConstraint(name = "uq_oa_enum_code", columnNames = {"attribute_id", "code"}),
+        @UniqueConstraint(name = "uq_enum_tenant_attr_code", columnNames = {"tenant_id", "attribute_id", "code"})
+}, indexes = {
+        @Index(name = "idx_oa_enum_attr", columnList = "attribute_id"),
+        @Index(name = "idx_enum_tenant_attr", columnList = "tenant_id,attribute_id")
+})
+public class AttributeEnumOptionEntity extends BaseTenantScoped {
 
+    @EqualsAndHashCode.Include
+    @ToString.Include
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false)
     private Long id;
 
-    // FK -> attributes.id
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "attribute_id", nullable = false, foreignKey = @ForeignKey(name = "fk_attr_enum_option_attr"))
-    private AttributeEntity attribute;
+    @Column(name = "attribute_id", nullable = false)
+    private Long attributeId;
 
     @Column(name = "code", nullable = false, length = 64)
     private String code;
@@ -26,57 +53,8 @@ public class AttributeEnumOptionEntity extends BaseOrgScoped {
     private String label;
 
     @Column(name = "order_index", nullable = false)
-    private int orderIndex = 100;
+    private int orderIndex;
 
     @Column(name = "active", nullable = false)
-    private boolean active = true;
-
-    // Getters/Setters
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public AttributeEntity getAttribute() {
-        return attribute;
-    }
-
-    public void setAttribute(AttributeEntity attribute) {
-        this.attribute = attribute;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
-    }
-
-    public String getLabel() {
-        return label;
-    }
-
-    public void setLabel(String label) {
-        this.label = label;
-    }
-
-    public int getOrderIndex() {
-        return orderIndex;
-    }
-
-    public void setOrderIndex(int orderIndex) {
-        this.orderIndex = orderIndex;
-    }
-
-    public boolean isActive() {
-        return active;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
-    }
+    private boolean active;
 }

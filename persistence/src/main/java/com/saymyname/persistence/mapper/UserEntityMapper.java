@@ -54,7 +54,7 @@ public class UserEntityMapper {
                 .id(e.getId())
                 .publicId(e.getPublicId())
                 .displayName(e.getDisplayName())
-                .srsAlgorithm(toModelSrsAlgorithm(e.getSrsAlgorithm()))
+                .srsAlgorithm(e.getSrsAlgorithm())
                 .roles(e.getRoles())
                 .active(e.getActive())
                 .authVersion(e.getAuthVersion())
@@ -89,7 +89,7 @@ public class UserEntityMapper {
                 .displayName(e.getDisplayName())
                 .emails(emails)
                 .identities(identities)
-                .srsAlgorithm(toModelSrsAlgorithm(e.getSrsAlgorithm()))
+                .srsAlgorithm(e.getSrsAlgorithm())
                 .active(e.getActive())
                 .authVersion(e.getAuthVersion())
                 .authUpdatedAt(toInstant(e.getAuthUpdatedAt()))
@@ -144,7 +144,7 @@ public class UserEntityMapper {
         UserEntity e = UserEntity.builder()
                 .id(m.getId())
                 .displayName(m.getDisplayName())
-                .srsAlgorithm(toEntitySrsAlgorithm(m.getSrsAlgorithm()))
+                .srsAlgorithm(m.getSrsAlgorithm())
                 .roles(m.getRoles())
                 .active(m.isActive())
                 .build();
@@ -181,14 +181,6 @@ public class UserEntityMapper {
         }
 
         return e;
-    }
-
-    private SrsAlgorithm toModelSrsAlgorithm(UserEntity.SrsAlgorithm value) {
-        return value == null ? null : SrsAlgorithm.valueOf(value.name());
-    }
-
-    private UserEntity.SrsAlgorithm toEntitySrsAlgorithm(SrsAlgorithm value) {
-        return value == null ? null : UserEntity.SrsAlgorithm.valueOf(value.name());
     }
 
     private Instant toInstant(LocalDateTime value) {

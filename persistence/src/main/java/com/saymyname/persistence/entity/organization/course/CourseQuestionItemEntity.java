@@ -1,57 +1,74 @@
 package com.saymyname.persistence.entity.organization.course;
 
-import java.util.Objects;
 
-import com.saymyname.persistence.entity.organization.PersonEntity;
-import com.saymyname.persistence.multitenancy.BaseOrgScoped;
-
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.experimental.SuperBuilder;
+import com.saymyname.core.model.enums.course.QuizQuestionItemRole;
+import com.saymyname.persistence.entity.organization.course.KnowledgeEntity;
+import com.saymyname.persistence.multitenancy.BaseTenantScoped;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
+@Getter
+@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@SuperBuilder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
+@ToString(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "course_question_items", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_cqi_attempt_position", columnNames = { "attempt_id", "position" })
+        @UniqueConstraint(name = "uk_cqi_history_position", columnNames = {"attempt_id", "position"})
+}, indexes = {
+        @Index(name = "idx_cqi_history", columnList = "attempt_id"),
+        @Index(name = "idx_cqi_tenant_attempt", columnList = "tenant_id,attempt_id"),
+        @Index(name = "idx_cqi_tenant_person", columnList = "tenant_id,person_id"),
+        @Index(name = "idx_cqi_tenant_knowledge", columnList = "tenant_id,knowledge_id")
 })
-public class CourseQuestionItemEntity extends BaseOrgScoped {
+public class CourseQuestionItemEntity extends BaseTenantScoped {
 
-    public enum Role {
-        TARGET,
-        DISTRACTOR
-    }
-
+    @EqualsAndHashCode.Include
+    @ToString.Include
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "attempt_id", referencedColumnName = "id", nullable = false)
-    private CourseQuestionAttemptEntity attempt;
+    @Column(name = "attempt_id", nullable = false)
+    private Long attemptId;
 
     @Column(name = "position", nullable = false)
     private int position;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false)
-    private Role role;
+    @Column(name = "role", nullable = false, length = 255)
+    private QuizQuestionItemRole role;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "knowledge_id", referencedColumnName = "id")
+    @JoinColumn(name = "knowledge_id", foreignKey = @ForeignKey(name = "fk_cqi_knowledge"))
     private KnowledgeEntity knowledge;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "person_id", referencedColumnName = "id")
-    private PersonEntity person;
+    @Column(name = "person_id")
+    private Long personId;
 
     @Column(name = "answered", nullable = false)
     private boolean answered;
@@ -60,96 +77,6 @@ public class CourseQuestionItemEntity extends BaseOrgScoped {
     private Boolean correct;
 
     @Lob
-    @Column(name = "normalized_answer")
+    @Column(name = "normalized_answer", columnDefinition = "longtext")
     private String normalizedAnswer;
-
-    public CourseQuestionItemEntity() {
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public CourseQuestionAttemptEntity getAttempt() {
-        return attempt;
-    }
-
-    public void setAttempt(CourseQuestionAttemptEntity attempt) {
-        this.attempt = attempt;
-    }
-
-    public int getPosition() {
-        return position;
-    }
-
-    public void setPosition(int position) {
-        this.position = position;
-    }
-
-    public Role getRole() {
-        return role;
-    }
-
-    public void setRole(Role role) {
-        this.role = role;
-    }
-
-    public KnowledgeEntity getKnowledge() {
-        return knowledge;
-    }
-
-    public void setKnowledge(KnowledgeEntity knowledge) {
-        this.knowledge = knowledge;
-    }
-
-    public PersonEntity getPerson() {
-        return person;
-    }
-
-    public void setPerson(PersonEntity person) {
-        this.person = person;
-    }
-
-    public boolean isAnswered() {
-        return answered;
-    }
-
-    public void setAnswered(boolean answered) {
-        this.answered = answered;
-    }
-
-    public Boolean getCorrect() {
-        return correct;
-    }
-
-    public void setCorrect(Boolean correct) {
-        this.correct = correct;
-    }
-
-    public String getNormalizedAnswer() {
-        return normalizedAnswer;
-    }
-
-    public void setNormalizedAnswer(String normalizedAnswer) {
-        this.normalizedAnswer = normalizedAnswer;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (!(o instanceof CourseQuestionItemEntity))
-            return false;
-        CourseQuestionItemEntity that = (CourseQuestionItemEntity) o;
-        return Objects.equals(id, that.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
-    }
 }

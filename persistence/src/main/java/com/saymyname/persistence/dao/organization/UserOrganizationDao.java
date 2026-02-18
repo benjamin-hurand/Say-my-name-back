@@ -7,7 +7,7 @@ import com.saymyname.core.model.enums.MemberStatus;
 import com.saymyname.core.model.enums.MembershipStatus;
 import com.saymyname.core.model.organization.OrgMemberRow;
 import com.saymyname.core.model.organization.UserOrganization;
-import com.saymyname.core.multitenancy.OrgContext;
+import com.saymyname.core.multitenancy.TenantContext;
 import com.saymyname.persistence.entity.UserEntity;
 import com.saymyname.persistence.entity.organization.OrganizationEntity;
 import com.saymyname.persistence.entity.organization.PersonEntity;
@@ -63,7 +63,7 @@ public class UserOrganizationDao {
         return repository.findUserIdForPersonInCurrentOrg(personId);
     }
 
-    /** Rôle de l'utilisateur dans l'orga courante (OrgContext) */
+    /** Rôle de l'utilisateur dans l'orga courante (TenantContext) */
     public Optional<OrgRole> findRoleForCurrentOrg(Long userId) {
         if (userId == null)
             return Optional.empty();
@@ -84,7 +84,7 @@ public class UserOrganizationDao {
      * Utilise une requête dédiée pour éviter d'avoir à relister tous les membres.
      */
     public Optional<OrgMemberRow> findMemberRowForCurrentOrg(Long targetUserId) {
-        Long orgId = OrgContext.get();
+        Long orgId = TenantContext.get();
         if (orgId == null || targetUserId == null) {
             return Optional.empty();
         }
@@ -135,9 +135,9 @@ public class UserOrganizationDao {
 
     @Transactional
     public void updateRoleForUserInCurrentOrg(Long targetUserId, OrgRole newRole) {
-        Long orgId = OrgContext.get();
+        Long orgId = TenantContext.get();
         if (orgId == null || targetUserId == null) {
-            throw new IllegalStateException("OrgContext or targetUserId missing");
+            throw new IllegalStateException("TenantContext or targetUserId missing");
         }
         UserOrganizationId id = new UserOrganizationId(targetUserId, orgId);
 
@@ -150,9 +150,9 @@ public class UserOrganizationDao {
 
     @Transactional
     public void deleteMembershipForUserInCurrentOrg(Long targetUserId) {
-        Long orgId = OrgContext.get();
+        Long orgId = TenantContext.get();
         if (orgId == null || targetUserId == null) {
-            throw new IllegalStateException("OrgContext or targetUserId missing");
+            throw new IllegalStateException("TenantContext or targetUserId missing");
         }
         UserOrganizationId id = new UserOrganizationId(targetUserId, orgId);
 
@@ -169,9 +169,9 @@ public class UserOrganizationDao {
      */
     @Transactional
     public void transferOwnershipInCurrentOrg(Long oldOwnerUserId, Long newOwnerUserId) {
-        Long orgId = OrgContext.get();
+        Long orgId = TenantContext.get();
         if (orgId == null || oldOwnerUserId == null || newOwnerUserId == null) {
-            throw new IllegalStateException("OrgContext or userIds missing");
+            throw new IllegalStateException("TenantContext or userIds missing");
         }
 
         UserOrganizationEntity oldOwner = repository.findById(new UserOrganizationId(oldOwnerUserId, orgId))
@@ -378,7 +378,7 @@ public class UserOrganizationDao {
      * Projection "membres" pour l'organisation courante.
      */
     public List<OrgMemberRow> findMembersForCurrentOrg() {
-        Long orgId = OrgContext.get();
+        Long orgId = TenantContext.get();
         if (orgId == null)
             return List.of();
 

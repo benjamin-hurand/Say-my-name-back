@@ -32,14 +32,14 @@ public class CourseEntityMapper {
             e.setUser(UserEntity.builder().id(model.getUserId()).build());
         }
         e.setTargetScope(model.getTargetScope() != null
-                ? toEntityTargetScope(model.getTargetScope())
-                : CourseEntity.CourseTargetScope.ATTRIBUTE);
+                ? model.getTargetScope()
+                : CourseTargetScope.ATTRIBUTE);
         e.setTargetAttributeId(model.getTargetAttributeId());
-        e.setStatus(model.getStatus() != null ? toEntityStatus(model.getStatus()) : CourseEntity.CourseStatus.IN_PROGRESS);
+        e.setStatus(model.getStatus() != null ? model.getStatus() : CourseStatus.IN_PROGRESS);
         e.setCurrentRound(model.getCurrentRound());
         e.setPopulationScope(model.getPopulationScope() != null
-                ? toEntityPopulationScope(model.getPopulationScope())
-                : CourseEntity.PopulationScope.FOLLOWED);
+                ? model.getPopulationScope()
+                : PopulationScope.FOLLOWED);
         e.setLastAccessedAt(toLocalDateTime(model.getLastAccessedAt()));
         return e;
     }
@@ -51,11 +51,11 @@ public class CourseEntityMapper {
         return Course.builder()
                 .id(e.getId())
                 .userId(e.getUser() != null ? e.getUser().getId() : null)
-                .targetScope(toModelTargetScope(e.getTargetScope()))
+                .targetScope(e.getTargetScope())
                 .targetAttributeId(e.getTargetAttributeId())
-                .status(toModelStatus(e.getStatus()))
+                .status(e.getStatus())
                 .currentRound(e.getCurrentRound())
-                .populationScope(toModelPopulationScope(e.getPopulationScope()))
+                .populationScope(e.getPopulationScope())
                 .createdAt(toInstant(e.getCreatedAt()))
                 .updatedAt(toInstant(e.getUpdatedAt()))
                 .lastAccessedAt(toInstant(e.getLastAccessedAt()))
@@ -64,30 +64,6 @@ public class CourseEntityMapper {
 
     public Course toShortModel(CourseEntity e) {
         return toModel(e);
-    }
-
-    private CourseEntity.CourseTargetScope toEntityTargetScope(CourseTargetScope value) {
-        return value == null ? null : CourseEntity.CourseTargetScope.valueOf(value.name());
-    }
-
-    private CourseTargetScope toModelTargetScope(CourseEntity.CourseTargetScope value) {
-        return value == null ? null : CourseTargetScope.valueOf(value.name());
-    }
-
-    private CourseEntity.CourseStatus toEntityStatus(CourseStatus value) {
-        return value == null ? null : CourseEntity.CourseStatus.valueOf(value.name());
-    }
-
-    private CourseStatus toModelStatus(CourseEntity.CourseStatus value) {
-        return value == null ? null : CourseStatus.valueOf(value.name());
-    }
-
-    private CourseEntity.PopulationScope toEntityPopulationScope(PopulationScope value) {
-        return value == null ? null : CourseEntity.PopulationScope.valueOf(value.name());
-    }
-
-    private PopulationScope toModelPopulationScope(CourseEntity.PopulationScope value) {
-        return value == null ? null : PopulationScope.valueOf(value.name());
     }
 
     private LocalDateTime toLocalDateTime(Instant value) {

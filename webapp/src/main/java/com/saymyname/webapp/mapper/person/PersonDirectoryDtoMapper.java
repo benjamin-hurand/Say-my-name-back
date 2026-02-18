@@ -16,7 +16,7 @@ import com.saymyname.core.model.persondirectory.PersonSearchCriteria;
 import com.saymyname.service.photo.PhotoUrlResolver;
 import com.saymyname.webapp.dto.person.AdminPersonCardDto;
 import com.saymyname.webapp.dto.person.AdminPersonSearchRequestDto;
-import com.saymyname.webapp.dto.person.PersonAttributeExtraDto;
+import com.saymyname.webapp.dto.person.FactExtraDto;
 import com.saymyname.webapp.dto.person.PersonCardDto;
 import com.saymyname.webapp.dto.person.PersonSearchRequestDto;
 
@@ -107,10 +107,10 @@ public class PersonDirectoryDtoMapper {
         Objects.requireNonNull(model, "PersonCard model must not be null");
 
         // Primary attributes (rich -> light)
-        List<PersonAttributeExtraDto> primaryDtos = new ArrayList<>();
+        List<FactExtraDto> primaryDtos = new ArrayList<>();
         if (model.getPrimaryAttributes() != null) {
             model.getPrimaryAttributes().forEach(a -> {
-                primaryDtos.add(new PersonAttributeExtraDto(
+                primaryDtos.add(new FactExtraDto(
                         a.getAttributeId(),
                         a.getValue(),
                         a.getDisplayOrder()));
@@ -118,10 +118,10 @@ public class PersonDirectoryDtoMapper {
         }
 
         // Extra/context attributes
-        List<PersonAttributeExtraDto> extraDtos = new ArrayList<>();
+        List<FactExtraDto> extraDtos = new ArrayList<>();
         if (model.getExtraAttributes() != null) {
             model.getExtraAttributes().forEach(e -> {
-                extraDtos.add(new PersonAttributeExtraDto(
+                extraDtos.add(new FactExtraDto(
                         e.getAttributeId(),
                         e.getValue(),
                         e.getDisplayOrder()));
@@ -146,10 +146,10 @@ public class PersonDirectoryDtoMapper {
         Objects.requireNonNull(model, "PersonCard model must not be null");
 
         // Primary attributes (rich -> light)
-        List<PersonAttributeExtraDto> primaryDtos = new ArrayList<>();
+        List<FactExtraDto> primaryDtos = new ArrayList<>();
         if (model.getPrimaryAttributes() != null) {
             model.getPrimaryAttributes().forEach(a -> {
-                primaryDtos.add(new PersonAttributeExtraDto(
+                primaryDtos.add(new FactExtraDto(
                         a.getAttributeId(),
                         a.getValue(),
                         a.getDisplayOrder()));
@@ -157,10 +157,10 @@ public class PersonDirectoryDtoMapper {
         }
 
         // Extra/context attributes
-        List<PersonAttributeExtraDto> extraDtos = new ArrayList<>();
+        List<FactExtraDto> extraDtos = new ArrayList<>();
         if (model.getExtraAttributes() != null) {
             model.getExtraAttributes().forEach(e -> {
-                extraDtos.add(new PersonAttributeExtraDto(
+                extraDtos.add(new FactExtraDto(
                         e.getAttributeId(),
                         e.getValue(),
                         e.getDisplayOrder()));
@@ -184,13 +184,13 @@ public class PersonDirectoryDtoMapper {
     // ---------------------------------------
     // Helper interne pour le displayName
     // ---------------------------------------
-    private String buildDisplayNameFromPrimary(List<PersonAttributeExtraDto> primaryAttributes) {
+    private String buildDisplayNameFromPrimary(List<FactExtraDto> primaryAttributes) {
         if (primaryAttributes == null || primaryAttributes.isEmpty()) {
             return "";
         }
 
         return primaryAttributes.stream()
-                .map(PersonAttributeExtraDto::value)
+                .map(FactExtraDto::value)
                 .filter(v -> v != null && !v.isBlank())
                 .collect(Collectors.joining(" "))
                 .trim();

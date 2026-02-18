@@ -7,8 +7,8 @@ import lombok.Value;
 @Builder(toBuilder = true)
 public class EligibilityStats {
     long totalEligible;
-    long withApprovedPhoto;
-    long withTargetAttrs;
+    long approvedPhoto;
+    long targetAttrs;
 
     public static EligibilityStats empty() {
         return EligibilityStats.builder().totalEligible(0).approvedPhoto(0).targetAttrs(0).build();
@@ -19,7 +19,7 @@ public class EligibilityStats {
     }
 
     public boolean canPhotoFormat() {
-        return withApprovedPhoto >= 1;
+        return approvedPhoto >= 1;
     }
 
     public boolean canAssociation(int minItems) {

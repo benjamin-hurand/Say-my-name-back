@@ -1,36 +1,24 @@
 package com.saymyname.core.util;
 
+import com.saymyname.core.model.people.Fact;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import org.springframework.stereotype.Component;
-
-import com.saymyname.core.model.people.Person;
-import com.saymyname.core.model.people.PersonAttribute;
-import com.saymyname.core.model.quiz.options.GameMode;
 
 @Component
 public class InitialCrafter {
-    public String computeInitials(Person person, GameMode gameMode) {
-        // Récupérer la liste des attributs associés à la personne
-        List<PersonAttribute> attributes = person.getAttributes();
 
-        // Extraire les IDs des attributs à utiliser pour ce mode de jeu
-        List<Long> attributeIds = gameMode.getGameModeAttributes().stream()
-                .map(gma -> gma.getAttribute().getId())
+    public String computeInitials(List<Fact> attributes, List<Long> attributeIds, String operator) {
+        if (attributes == null || attributes.isEmpty() || attributeIds == null || attributeIds.isEmpty()) {
+            return "";
+        }
+
+        List<Fact> filteredAttributes = attributes.stream()
+                .filter(attr -> attr.getAttributeId() != null && attributeIds.contains(attr.getAttributeId()))
                 .toList();
 
-        // Filtrer la liste des PersonAttribute pour ne garder que celles dont
-        // l'attribut est concerné
-        List<PersonAttribute> filteredAttributes = attributes.stream()
-                .filter(attr -> attributeIds.contains(attr.getAttribute().getId()))
-                .collect(Collectors.toList());
-
-        // Récupérer l'opérateur (par exemple "AND" ou "OR") et définir le séparateur
-        // externe
-        String operator = gameMode.getOperator();
         String outerDelimiter;
         if ("AND".equalsIgnoreCase(operator)) {
             outerDelimiter = ".";
@@ -40,16 +28,13 @@ public class InitialCrafter {
             outerDelimiter = "";
         }
 
-        // Fonction pour extraire les initiales d'une valeur
         java.util.function.Function<String, String> extractLocalInitials = value -> {
-            if (value == null || value.isEmpty())
+            if (value == null || value.isEmpty()) {
                 return "";
-            // Séparer d'abord sur les espaces pour obtenir les mots
+            }
             String[] words = value.trim().split("\\s+");
             List<String> wordInitials = new ArrayList<>();
             for (String word : words) {
-                // Si le mot contient un tiret, on le découpe et on joint les initiales avec un
-                // tiret
                 if (word.contains("-")) {
                     String[] subWords = word.split("-");
                     String subInitials = Arrays.stream(subWords)
@@ -61,8 +46,6 @@ public class InitialCrafter {
                     wordInitials.add(word.substring(0, 1).toUpperCase());
                 }
             }
-            // Pour AND, on joint les initiales avec un point pour séparer chaque mot,
-            // Pour OR, on ajoute un point à la fin du résultat de chaque attribut.
             String localInitials = String.join(".", wordInitials);
             if ("OR".equalsIgnoreCase(operator)) {
                 localInitials += ".";
@@ -70,23 +53,18 @@ public class InitialCrafter {
             return localInitials;
         };
 
-        // Extraire les initiales pour chaque PersonAttribute filtré
         List<String> initialsList = filteredAttributes.stream()
-                .map(attr -> extractLocalInitials.apply(attr.getValue()))
+                .map(Fact::getValue)
+                .map(extractLocalInitials)
                 .filter(initial -> !initial.isEmpty())
-                .collect(Collectors.toList());
+                .toList();
 
-        // Combiner les initiales des différents attributs avec le séparateur défini
-        String result;
         if ("AND".equalsIgnoreCase(operator)) {
-            result = String.join(outerDelimiter, initialsList) + ".";
-        } else if ("OR".equalsIgnoreCase(operator)) {
-            result = String.join(outerDelimiter, initialsList);
-        } else {
-            result = String.join("", initialsList);
+            return String.join(outerDelimiter, initialsList) + ".";
         }
-
-        return result;
+        if ("OR".equalsIgnoreCase(operator)) {
+            return String.join(outerDelimiter, initialsList);
+        }
+        return String.join("", initialsList);
     }
-
 }

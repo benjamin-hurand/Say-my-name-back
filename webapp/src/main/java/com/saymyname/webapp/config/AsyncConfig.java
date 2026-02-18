@@ -1,7 +1,7 @@
 // webapp/src/main/java/com/saymyname/webapp/config/AsyncConfig.java
 package com.saymyname.webapp.config;
 
-import com.saymyname.core.multitenancy.OrgContext;
+import com.saymyname.core.multitenancy.TenantContext;
 import org.slf4j.MDC;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,17 +19,17 @@ public class AsyncConfig {
     @Bean
     public TaskDecorator contextPropagatingTaskDecorator() {
         return runnable -> {
-            final Long org = OrgContext.get();
+            final Long org = TenantContext.get();
             final Map<String, String> mdc = MDC.getCopyOfContextMap();
             return () -> {
                 try {
                     if (org != null)
-                        OrgContext.set(org);
+                        TenantContext.set(org);
                     if (mdc != null)
                         MDC.setContextMap(mdc);
                     runnable.run();
                 } finally {
-                    OrgContext.clear();
+                    TenantContext.clear();
                     MDC.clear();
                 }
             };

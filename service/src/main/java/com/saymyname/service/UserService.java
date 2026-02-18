@@ -42,7 +42,7 @@ public class UserService implements UserDetailsService {
         return userDao.save(user);
     }
 
-    public Boolean checkIfAccountExistsWithEmail(String email) {
+    public Boolean checkIfAccountExistsemail(String email) {
         return userDao.checkIfEmailExists(email);
     }
 
@@ -50,7 +50,7 @@ public class UserService implements UserDetailsService {
         return userDao.findById(id);
     }
 
-    public Optional<User> findByIdWithEmails(Long userId) {
+    public Optional<User> findByIdemails(Long userId) {
         return userDao.findByIdWithGraph(userId);
     }
 

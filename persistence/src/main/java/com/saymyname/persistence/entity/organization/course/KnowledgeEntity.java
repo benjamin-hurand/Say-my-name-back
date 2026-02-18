@@ -1,37 +1,65 @@
 package com.saymyname.persistence.entity.organization.course;
 
-import jakarta.persistence.*;
-import java.time.LocalDateTime;
-import java.util.Objects;
-import java.math.BigDecimal;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 import com.saymyname.core.model.enums.KnowledgeStatus;
 import com.saymyname.persistence.entity.UserEntity;
-import com.saymyname.persistence.entity.organization.GameModeEntity;
-import com.saymyname.persistence.entity.organization.PersonEntity;
-import com.saymyname.persistence.multitenancy.BaseOrgScoped;
+import com.saymyname.persistence.entity.organization.FactEntity;
+import com.saymyname.persistence.multitenancy.BaseTenantScoped;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
+@Getter
+@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@SuperBuilder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
+@ToString(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "knowledges")
-public class KnowledgeEntity extends BaseOrgScoped {
+@Table(name = "knowledges", indexes = {
+        @Index(name = "idx_k_select", columnList = "tenant_id,user_id,status,next_review_date"),
+        @Index(name = "idx_k_fact", columnList = "fact_id")
+})
+public class KnowledgeEntity extends BaseTenantScoped {
 
+    @EqualsAndHashCode.Include
+    @ToString.Include
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false)
     private Long id;
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_knowledge_user"))
     private UserEntity user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "game_mode_id", nullable = false)
-    private GameModeEntity gameMode;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "person_id", nullable = false)
-    private PersonEntity person;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "fact_id", nullable = false, foreignKey = @ForeignKey(name = "fk_knowledge_fact"))
+    private FactEntity fact;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", length = 10, nullable = false)
+    @Column(name = "status", nullable = false, length = 10)
     private KnowledgeStatus status;
 
     @Column(name = "next_review_date", nullable = false)
@@ -55,7 +83,7 @@ public class KnowledgeEntity extends BaseOrgScoped {
     @Column(name = "global_streak", nullable = false)
     private int globalStreak;
 
-    @Column(name = "ease_factor", nullable = false)
+    @Column(name = "ease_factor", nullable = false, precision = 10, scale = 2)
     private BigDecimal easeFactor;
 
     @Column(name = "difficulty", nullable = false)
@@ -63,180 +91,4 @@ public class KnowledgeEntity extends BaseOrgScoped {
 
     @Column(name = "stability", nullable = false)
     private double stability;
-
-    public KnowledgeEntity() {
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public UserEntity getUser() {
-        return user;
-    }
-
-    public void setUser(UserEntity user) {
-        this.user = user;
-    }
-
-    public GameModeEntity getGameMode() {
-        return gameMode;
-    }
-
-    public void setGameMode(GameModeEntity gameMode) {
-        this.gameMode = gameMode;
-    }
-
-    public PersonEntity getPerson() {
-        return person;
-    }
-
-    public void setPerson(PersonEntity person) {
-        this.person = person;
-    }
-
-    public KnowledgeStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(KnowledgeStatus status) {
-        this.status = status;
-    }
-
-    public LocalDateTime getNextReviewDate() {
-        return nextReviewDate;
-    }
-
-    public void setNextReviewDate(LocalDateTime nextReviewDate) {
-        this.nextReviewDate = nextReviewDate;
-    }
-
-    public LocalDateTime getLastReviewDate() {
-        return lastReviewDate;
-    }
-
-    public void setLastReviewDate(LocalDateTime lastReviewDate) {
-        this.lastReviewDate = lastReviewDate;
-    }
-
-    public int getTotalRepetitionCount() {
-        return totalRepetitionCount;
-    }
-
-    public void setTotalRepetitionCount(int totalRepetitionCount) {
-        this.totalRepetitionCount = totalRepetitionCount;
-    }
-
-    public int getFailureCount() {
-        return failureCount;
-    }
-
-    public void setFailureCount(int failureCount) {
-        this.failureCount = failureCount;
-    }
-
-    public int getSuccessCount() {
-        return successCount;
-    }
-
-    public void setSuccessCount(int successCount) {
-        this.successCount = successCount;
-    }
-
-    public int getSrsStreak() {
-        return srsStreak;
-    }
-
-    public void setSrsStreak(int srsStreak) {
-        this.srsStreak = srsStreak;
-    }
-
-    public int getGlobalStreak() {
-        return globalStreak;
-    }
-
-    public void setGlobalStreak(int globalStreak) {
-        this.globalStreak = globalStreak;
-    }
-
-    public BigDecimal getEaseFactor() {
-        return easeFactor;
-    }
-
-    public void setEaseFactor(BigDecimal easeFactor) {
-        this.easeFactor = easeFactor;
-    }
-
-    public double getDifficulty() {
-        return difficulty;
-    }
-
-    public void setDifficulty(double difficulty) {
-        this.difficulty = difficulty;
-    }
-
-    public double getStability() {
-        return stability;
-    }
-
-    public void setStability(double stability) {
-        this.stability = stability;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (!(o instanceof KnowledgeEntity))
-            return false;
-        KnowledgeEntity that = (KnowledgeEntity) o;
-        return id == that.id &&
-                totalRepetitionCount == that.totalRepetitionCount &&
-                failureCount == that.failureCount &&
-                successCount == that.successCount &&
-                srsStreak == that.srsStreak &&
-                globalStreak == that.globalStreak &&
-                Double.compare(that.difficulty, difficulty) == 0 &&
-                Double.compare(that.stability, stability) == 0 &&
-                Objects.equals(user, that.user) &&
-                Objects.equals(gameMode, that.gameMode) &&
-                Objects.equals(person, that.person) &&
-                status == that.status &&
-                Objects.equals(nextReviewDate, that.nextReviewDate) &&
-                Objects.equals(lastReviewDate, that.lastReviewDate) &&
-                Objects.equals(easeFactor, that.easeFactor);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, user, gameMode, person, status,
-                nextReviewDate, lastReviewDate,
-                totalRepetitionCount, failureCount, successCount,
-                srsStreak, globalStreak, easeFactor, difficulty, stability);
-    }
-
-    @Override
-    public String toString() {
-        return "KnowledgeEntity{" +
-                "id=" + id +
-                ", user=" + user +
-                ", gameMode=" + gameMode +
-                ", person=" + person +
-                ", status=" + status +
-                ", nextReviewDate=" + nextReviewDate +
-                ", lastReviewDate=" + lastReviewDate +
-                ", totalRepetitionCount=" + totalRepetitionCount +
-                ", failureCount=" + failureCount +
-                ", successCount=" + successCount +
-                ", srsStreak=" + srsStreak +
-                ", globalStreak=" + globalStreak +
-                ", easeFactor=" + easeFactor +
-                ", difficulty=" + difficulty +
-                ", stability=" + stability +
-                '}';
-    }
 }

@@ -22,7 +22,7 @@ public interface KnowledgeStatsRepository extends JpaRepository<KnowledgeStatsEn
              where ks.user.id = :userId
                and ks.gameMode.id = :gameModeId
                and ks.knowledge.id in :knowledgeIds
-               and ks.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+               and ks.organizationId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
             """)
     List<KnowledgeStatsEntity> findByUserGameModeAndKnowledgeIds(
             @Param("userId") Long userId,
@@ -37,7 +37,7 @@ public interface KnowledgeStatsRepository extends JpaRepository<KnowledgeStatsEn
                attempts_recent, correct_recent, help_recent, avg_rt_recent,
                last_answer_at, last_correct, last_help_used, last_response_time_ms, error_streak)
             VALUES
-              (:#{T(com.saymyname.core.multitenancy.OrgContext).get()}, :userId, :gameModeId, :knowledgeId, :personId,
+              (:#{T(com.saymyname.core.multitenancy.TenantContext).get()}, :userId, :gameModeId, :knowledgeId, :personId,
                :attemptsRecent, :correctRecent, :helpRecent, :avgRtRecent,
                :answeredAt, :lastCorrect, :lastHelpUsed, :responseTimeMs, :errorStreak)
             ON DUPLICATE KEY UPDATE

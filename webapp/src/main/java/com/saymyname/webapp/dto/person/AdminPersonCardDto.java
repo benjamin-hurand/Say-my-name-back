@@ -6,12 +6,12 @@ import java.util.List;
 import com.saymyname.core.model.enums.EmailStatus;
 
 public record AdminPersonCardDto(
-        Long idPerson,
-        String photoSmallUrl,
-        String photoLargeUrl,
-        String displayName,
-        List<PersonAttributeExtraDto> primaryAttributes,
-        List<PersonAttributeExtraDto> extraAttributes,
-        EmailStatus emailStatus,
-        boolean hasPendingChangeRequests) {
+                Long idPerson,
+                String photoSmallUrl,
+                String photoLargeUrl,
+                String displayName,
+                List<FactExtraDto> primaryAttributes,
+                List<FactExtraDto> extraAttributes,
+                EmailStatus emailStatus,
+                boolean hasPendingChangeRequests) {
 }

@@ -28,7 +28,7 @@ public class EmailVerificationTokenEntityMapper {
                 .email(e.getEmail())
                 .tokenHash(e.getTokenHash())
                 .codeHashPhc(e.getCodeHashPhc())
-                .purpose(toModelPurpose(e.getPurpose()))
+                .purpose(e.getPurpose())
                 .makePrimaryNow(e.isMakePrimaryNow())
                 .attempts(e.getAttempts())
                 .resendCount(e.getResendCount())
@@ -55,7 +55,7 @@ public class EmailVerificationTokenEntityMapper {
         e.setEmail(m.getEmail());
         e.setTokenHash(m.getTokenHash());
         e.setCodeHashPhc(m.getCodeHashPhc());
-        e.setPurpose(toEntityPurpose(m.getPurpose()));
+        e.setPurpose(m.getPurpose());
         e.setMakePrimaryNow(m.isMakePrimaryNow());
         e.setAttempts(m.getAttempts());
         e.setResendCount(m.getResendCount());
@@ -63,14 +63,6 @@ public class EmailVerificationTokenEntityMapper {
         e.setExpiresAt(toLocalDateTime(m.getExpiresAt()));
         e.setConsumedAt(toLocalDateTime(m.getConsumedAt()));
         return e;
-    }
-
-    private EmailVerificationPurpose toModelPurpose(EmailVerificationTokenEntity.EmailVerificationPurpose value) {
-        return value == null ? null : EmailVerificationPurpose.valueOf(value.name());
-    }
-
-    private EmailVerificationTokenEntity.EmailVerificationPurpose toEntityPurpose(EmailVerificationPurpose value) {
-        return value == null ? null : EmailVerificationTokenEntity.EmailVerificationPurpose.valueOf(value.name());
     }
 
     private LocalDateTime toLocalDateTime(Instant value) {

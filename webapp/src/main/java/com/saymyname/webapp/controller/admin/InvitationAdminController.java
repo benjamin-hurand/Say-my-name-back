@@ -33,7 +33,7 @@ public class InvitationAdminController {
 
     // -------- READS --------
 
-    /** Liste des invitations pour l'organisation courante (OrgContext). */
+    /** Liste des invitations pour l'organisation courante (TenantContext). */
     @GetMapping
     public List<InvitationDto> list() {
         return service.list().stream()

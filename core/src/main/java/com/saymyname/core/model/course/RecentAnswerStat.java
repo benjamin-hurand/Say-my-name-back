@@ -1,6 +1,12 @@
 package com.saymyname.core.model.course;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import lombok.Builder;
+import lombok.Value;
 
-public record RecentAnswerStat(boolean correct, LocalDateTime answeredAt) {
+@Value
+@Builder(toBuilder = true)
+public class RecentAnswerStat {
+    boolean correct;
+    Instant answeredAt;
 }

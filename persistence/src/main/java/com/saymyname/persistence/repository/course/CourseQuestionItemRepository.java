@@ -21,7 +21,7 @@ public interface CourseQuestionItemRepository extends JpaRepository<CourseQuesti
                                i.normalizedAnswer = :normalizedAnswer
                          WHERE i.attempt.id = :attemptId
                            AND i.role = com.saymyname.persistence.entity.organization.course.CourseQuestionItemEntity.Role.TARGET
-                           AND i.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+                           AND i.organizationId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
                         """)
         int updateTargetItemsAnswerMeta(
                         @Param("attemptId") Long attemptId,

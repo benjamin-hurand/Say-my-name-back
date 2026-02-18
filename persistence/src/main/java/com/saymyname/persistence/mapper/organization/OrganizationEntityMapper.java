@@ -21,7 +21,7 @@ public class OrganizationEntityMapper {
                 .id(e.getTenantId())
                 .orgKey(e.getOrgKey())
                 .name(e.getName())
-                .orgType(toModelOrgType(e.getOrgType()))
+                .orgType(e.getOrgType())
                 .active(e.isActive())
                 .createdAt(toInstant(e.getCreatedAt()))
                 .updatedAt(toInstant(e.getUpdatedAt()))
@@ -35,7 +35,7 @@ public class OrganizationEntityMapper {
         e.setTenantId(m.getId());
         e.setOrgKey(m.getOrgKey());
         e.setName(m.getName());
-        e.setOrgType(toEntityOrgType(m.getOrgType()));
+        e.setOrgType(m.getOrgType());
         e.setActive(m.isActive());
         e.setCreatedAt(toLocalDateTime(m.getCreatedAt()));
         e.setUpdatedAt(toLocalDateTime(m.getUpdatedAt()));
@@ -50,17 +50,9 @@ public class OrganizationEntityMapper {
         if (m.getName() != null)
             e.setName(m.getName());
         if (m.getOrgType() != null)
-            e.setOrgType(toEntityOrgType(m.getOrgType()));
+            e.setOrgType(m.getOrgType());
         e.setActive(m.isActive());
         // createdAt/updatedAt: managed by DB + lifecycle hooks.
-    }
-
-    private OrgType toModelOrgType(OrganizationEntity.OrgType value) {
-        return value == null ? null : OrgType.valueOf(value.name());
-    }
-
-    private OrganizationEntity.OrgType toEntityOrgType(OrgType value) {
-        return value == null ? null : OrganizationEntity.OrgType.valueOf(value.name());
     }
 
     private LocalDateTime toLocalDateTime(Instant value) {

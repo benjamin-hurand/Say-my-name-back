@@ -58,7 +58,7 @@ private String key;
 private String key;
 ```
 
-**File**: [persistence/src/main/java/.../PersonAttributeEntity.java](../persistence/src/main/java/com/saymyname/persistence/entity/organization/PersonAttributeEntity.java)
+**File**: [persistence/src/main/java/.../FactEntity.java](../persistence/src/main/java/com/saymyname/persistence/entity/organization/FactEntity.java)
 
 ```java
 // BEFORE
@@ -125,7 +125,7 @@ H2 doesn't accept `tinyint(1)` with size specification in CREATE TABLE (only in 
 
 ### Solution
 
-**File**: [persistence/src/main/java/.../PersonAttributeEntity.java](../persistence/src/main/java/com/saymyname/persistence/entity/organization/PersonAttributeEntity.java)
+**File**: [persistence/src/main/java/.../FactEntity.java](../persistence/src/main/java/com/saymyname/persistence/entity/organization/FactEntity.java)
 
 ```java
 // BEFORE
@@ -299,7 +299,7 @@ create index idx_organizations_org_key on organizations(org_key)  -- ✅ Fixed
    - Fixed `@Table` annotations to use `org_key` instead of `key`
    - Updated constraint and index names
 
-2. ✅ `persistence/src/main/java/.../PersonAttributeEntity.java`
+2. ✅ `persistence/src/main/java/.../FactEntity.java`
    - Renamed column `value` → `attribute_value`
    - Removed MySQL-specific `columnDefinition = "tinyint(1)"`
 

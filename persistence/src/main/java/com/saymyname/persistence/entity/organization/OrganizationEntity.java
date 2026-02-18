@@ -1,120 +1,67 @@
-// persistence/src/main/java/com/saymyname/persistence/entity/organization/OrganizationEntity.java
 package com.saymyname.persistence.entity.organization;
 
-import jakarta.persistence.*;
-import java.time.LocalDateTime;
-import java.util.Objects;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.Builder;
+import com.saymyname.core.model.enums.OrgType;
+import com.saymyname.persistence.entity.TenantEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import java.time.LocalDateTime;
+
+@Getter
+@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
+@ToString(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "organizations", uniqueConstraints = @UniqueConstraint(name = "uk_organizations_org_key", columnNames = {
-        "org_key" }), indexes = {
-                @Index(name = "idx_organizations_active", columnList = "is_active"),
-                @Index(name = "idx_organizations_org_key", columnList = "org_key")
-        })
+@Table(name = "tenant_orgs")
 public class OrganizationEntity {
 
+    @EqualsAndHashCode.Include
+    @ToString.Include
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "tenant_id", nullable = false)
+    private Long tenantId;
 
-    // "key" est un mot réservé MySQL – Hibernate gère bien, mais on peut être
-    // explicite
-    @Column(name = "org_key", nullable = false, length = 64)
-    private String key;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tenant_id", insertable = false, updatable = false,
+            foreignKey = @ForeignKey(name = "fk_tenant_orgs_tenant"))
+    private TenantEntity tenant;
+
+    @Column(name = "org_key", nullable = false, length = 255)
+    private String orgKey;
 
     @Column(name = "name", nullable = false, length = 255)
     private String name;
 
-    @Column(name = "is_active", nullable = false)
-    private boolean active = true;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "org_type", nullable = false, length = 16,
+            columnDefinition = "enum('EPHEMERAL','LONG_TERM','PUBLIC') default 'LONG_TERM'")
+    private OrgType orgType;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "is_active", nullable = false, columnDefinition = "tinyint(1) default 1")
+    private boolean active;
+
+    @Column(name = "created_at", nullable = false, columnDefinition = "datetime default current_timestamp")
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-
-    @PrePersist
-    void prePersist() {
-        // Laisse MySQL peupler created_at par défaut, mais on met une valeur pour JPA
-        if (createdAt == null)
-            createdAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    void preUpdate() {
-        // MySQL mettra updated_at via ON UPDATE CURRENT_TIMESTAMP ; ce set ne nuit pas.
-        updatedAt = LocalDateTime.now();
-    }
-
-    // Getters/Setters
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getKey() {
-        return key;
-    }
-
-    public void setKey(String key) {
-        this.key = key;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public boolean isActive() {
-        return active;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (!(o instanceof OrganizationEntity that))
-            return false;
-        if (id != null && that.id != null)
-            return Objects.equals(id, that.id);
-        return Objects.equals(key, that.key);
-    }
-
-    @Override
-    public int hashCode() {
-        return id != null ? Objects.hash(id) : Objects.hash(key);
-    }
-
-    @Override
-    public String toString() {
-        return "OrganizationEntity{id=%s,key='%s',name='%s',active=%s}"
-                .formatted(id, key, name, active);
-    }
 }

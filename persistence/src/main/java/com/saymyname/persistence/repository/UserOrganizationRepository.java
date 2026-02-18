@@ -23,7 +23,7 @@ public interface UserOrganizationRepository extends JpaRepository<UserOrganizati
       select uo.role
       from UserOrganizationEntity uo
       where uo.user.id = :userId
-        and uo.organization.id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+        and uo.organization.id = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
       """)
   Optional<OrgRole> findRoleForUserInCurrentOrg(@Param("userId") Long userId);
 
@@ -31,7 +31,7 @@ public interface UserOrganizationRepository extends JpaRepository<UserOrganizati
           select uo
           from UserOrganizationEntity uo
           where uo.user.id = :userId
-            and uo.organization.id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+            and uo.organization.id = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
       """)
   Optional<UserOrganizationEntity> findEntityForUserInCurrentOrg(@Param("userId") Long userId);
 
@@ -39,7 +39,7 @@ public interface UserOrganizationRepository extends JpaRepository<UserOrganizati
       select uo.person.id
       from UserOrganizationEntity uo
       where uo.user.id = :userId
-        and uo.organization.id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+        and uo.organization.id = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
         and uo.person is not null
       """)
   Optional<Long> findPersonIdForUserInCurrentOrg(@Param("userId") Long userId);
@@ -48,7 +48,7 @@ public interface UserOrganizationRepository extends JpaRepository<UserOrganizati
       select uo.user.id
       from UserOrganizationEntity uo
       where uo.person.id = :personId
-        and uo.organization.id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+        and uo.organization.id = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
       """)
   Optional<Long> findUserIdForPersonInCurrentOrg(@Param("personId") Long personId);
 }

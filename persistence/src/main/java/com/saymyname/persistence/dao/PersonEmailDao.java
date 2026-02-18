@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.saymyname.core.model.people.PersonEmail;
-import com.saymyname.core.multitenancy.OrgContext;
+import com.saymyname.core.multitenancy.TenantContext;
 import com.saymyname.persistence.entity.organization.PersonEntity;
 import com.saymyname.persistence.entity.organization.people.PersonEmailEntity;
 import com.saymyname.persistence.mapper.PersonEmailEntityMapper;
@@ -52,7 +52,7 @@ public class PersonEmailDao {
 
     @Transactional
     public PersonEmail save(PersonEmail model) {
-        Long orgId = OrgContext.get();
+        Long orgId = TenantContext.get();
         PersonEmailEntity e = mapper.toEntity(model);
         if (e.getOrganizationId() == null)
             e.setOrganizationId(orgId);

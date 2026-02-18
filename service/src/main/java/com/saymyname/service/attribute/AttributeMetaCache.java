@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.stereotype.Component;
 
-import com.saymyname.core.multitenancy.OrgContext;
+import com.saymyname.core.multitenancy.TenantContext;
 import com.saymyname.persistence.dao.AttributeDao;
 import com.saymyname.persistence.repository.AttributeRepository;
 
@@ -62,11 +62,11 @@ public class AttributeMetaCache {
         }
     }
 
-    /** Obtenir la map meta pour l’org courante (via OrgContext). */
+    /** Obtenir la map meta pour l’org courante (via TenantContext). */
     public Map<Long, Meta> currentOrgMeta() {
-        Long orgId = OrgContext.get();
+        Long orgId = TenantContext.get();
         if (orgId == null) {
-            throw new IllegalStateException("OrgContext.get() est null — impossible de résoudre les métadonnées.");
+            throw new IllegalStateException("TenantContext.get() est null — impossible de résoudre les métadonnées.");
         }
         return metaForOrg(orgId);
     }
@@ -107,7 +107,7 @@ public class AttributeMetaCache {
 
     /** Invalider le cache pour l’org courante. */
     public void evictCurrentOrg() {
-        Long orgId = OrgContext.get();
+        Long orgId = TenantContext.get();
         if (orgId != null) {
             cache.remove(orgId);
         }
@@ -127,7 +127,7 @@ public class AttributeMetaCache {
 
     /** Forcer un reload pour l’org courante. */
     public void reloadCurrentOrg() {
-        Long orgId = OrgContext.get();
+        Long orgId = TenantContext.get();
         if (orgId != null) {
             synchronized (cache) {
                 cache.put(orgId, load(orgId));

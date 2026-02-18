@@ -64,14 +64,14 @@ public interface UserSubscriptionRepository extends JpaRepository<UserSubscripti
           FROM user_subscriptions s
           JOIN game_modes_attributes gma
             ON gma.game_mode_id    = :gameModeId
-           AND gma.organization_id  = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+           AND gma.organization_id  = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
           LEFT JOIN person_attributes pa
             ON pa.person_id         = s.person_id
            AND pa.attribute_id      = gma.attribute_id
-           AND pa.organization_id   = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+           AND pa.organization_id   = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
            AND pa.attribute_value IS NOT NULL AND pa.attribute_value <> ''
          WHERE s.user_id            = :userId
-           AND s.organization_id    = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+           AND s.organization_id    = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
          GROUP BY s.person_id
         HAVING COUNT(DISTINCT gma.attribute_id) > 0
            AND COUNT(DISTINCT gma.attribute_id) = COUNT(DISTINCT pa.attribute_id)
@@ -92,14 +92,14 @@ public interface UserSubscriptionRepository extends JpaRepository<UserSubscripti
         FROM user_subscriptions s
         JOIN game_modes_attributes gma
           ON gma.game_mode_id    = :gameModeId
-         AND gma.organization_id  = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+         AND gma.organization_id  = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
         JOIN person_attributes pa
           ON pa.person_id         = s.person_id
          AND pa.attribute_id      = gma.attribute_id
-         AND pa.organization_id   = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+         AND pa.organization_id   = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
          AND pa.attribute_value IS NOT NULL AND pa.attribute_value <> ''
        WHERE s.user_id            = :userId
-         AND s.organization_id    = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+         AND s.organization_id    = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
       """, nativeQuery = true)
   long countFollowedEligibleOR(@Param("userId") Long userId, @Param("gameModeId") Long gameModeId);
 }

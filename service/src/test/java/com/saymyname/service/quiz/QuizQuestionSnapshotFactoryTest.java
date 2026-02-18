@@ -21,13 +21,13 @@ import com.saymyname.core.model.quiz.QuizQuestionContext;
 import com.saymyname.core.model.quiz.QuizQuestionPayload;
 import com.saymyname.core.model.quiz.snapshot.QuizQuestionSnapshot;
 import com.saymyname.core.model.quiz.snapshot.TruthAttributeValue;
-import com.saymyname.persistence.dao.PersonAttributeDao;
+import com.saymyname.persistence.dao.FactDao;
 
 class QuizQuestionSnapshotFactoryTest {
 
         @Test
         void mcqSnapshotAlwaysHasTargetAttributeIds() {
-                PersonAttributeDao personAttributeDao = Mockito.mock(PersonAttributeDao.class);
+                FactDao personAttributeDao = Mockito.mock(FactDao.class);
                 QuizQuestionSnapshotFactory factory = new QuizQuestionSnapshotFactory(personAttributeDao);
 
                 QuizQuestionPayload payload = QuizQuestionPayload.builder()
@@ -74,7 +74,7 @@ class QuizQuestionSnapshotFactoryTest {
          */
         @Test
         void mcqTruthExtraction_matchByPersonId() {
-                PersonAttributeDao personAttributeDao = Mockito.mock(PersonAttributeDao.class);
+                FactDao personAttributeDao = Mockito.mock(FactDao.class);
                 QuizQuestionSnapshotFactory factory = new QuizQuestionSnapshotFactory(personAttributeDao);
 
                 Long targetPersonId = 42L;
@@ -147,7 +147,7 @@ class QuizQuestionSnapshotFactoryTest {
          */
         @Test
         void mcqTruthExtraction_matchByValue() {
-                PersonAttributeDao personAttributeDao = Mockito.mock(PersonAttributeDao.class);
+                FactDao personAttributeDao = Mockito.mock(FactDao.class);
                 QuizQuestionSnapshotFactory factory = new QuizQuestionSnapshotFactory(personAttributeDao);
 
                 Long targetPersonId = 42L;
@@ -215,7 +215,7 @@ class QuizQuestionSnapshotFactoryTest {
          */
         @Test
         void mcqTruthExtraction_matchByValue_caseInsensitive() {
-                PersonAttributeDao personAttributeDao = Mockito.mock(PersonAttributeDao.class);
+                FactDao personAttributeDao = Mockito.mock(FactDao.class);
                 QuizQuestionSnapshotFactory factory = new QuizQuestionSnapshotFactory(personAttributeDao);
 
                 QuizQuestionPayload payload = QuizQuestionPayload.builder()
@@ -261,7 +261,7 @@ class QuizQuestionSnapshotFactoryTest {
          */
         @Test
         void mcqTruthExtraction_noMatch_throwsException() {
-                PersonAttributeDao personAttributeDao = Mockito.mock(PersonAttributeDao.class);
+                FactDao personAttributeDao = Mockito.mock(FactDao.class);
                 QuizQuestionSnapshotFactory factory = new QuizQuestionSnapshotFactory(personAttributeDao);
 
                 QuizQuestionPayload payload = QuizQuestionPayload.builder()
@@ -309,7 +309,7 @@ class QuizQuestionSnapshotFactoryTest {
          */
         @Test
         void mcqTruthExtraction_personIdTakesPrecedence() {
-                PersonAttributeDao personAttributeDao = Mockito.mock(PersonAttributeDao.class);
+                FactDao personAttributeDao = Mockito.mock(FactDao.class);
                 QuizQuestionSnapshotFactory factory = new QuizQuestionSnapshotFactory(personAttributeDao);
 
                 Long targetPersonId = 42L;

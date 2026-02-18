@@ -26,6 +26,13 @@
             <artifactId>core</artifactId>
         </dependency>
 
+        <!-- ✅ Lombok (compile-time only) -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- Database -->
         <dependency>
             <groupId>com.mysql</groupId>

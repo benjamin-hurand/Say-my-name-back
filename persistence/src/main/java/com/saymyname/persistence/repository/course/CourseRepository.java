@@ -42,7 +42,7 @@ public interface CourseRepository extends JpaRepository<CourseEntity, Long> {
       UPDATE CourseEntity c
          SET c.lastAccessedAt = :at
        WHERE c.id = :courseId
-         AND c.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+         AND c.organizationId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
       """)
   int touchLastAccessed(@Param("courseId") Long courseId, @Param("at") LocalDateTime at);
 

@@ -16,7 +16,7 @@ public interface InvitationRepository extends JpaRepository<InvitationEntity, Lo
   @Query("""
       select i
         from InvitationEntity i
-       where i.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+       where i.organizationId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
          and i.id = :id
       """)
   Optional<InvitationEntity> findByIdInCurrentOrg(@Param("id") Long id);
@@ -24,7 +24,7 @@ public interface InvitationRepository extends JpaRepository<InvitationEntity, Lo
   @Query("""
       select i
         from InvitationEntity i
-       where i.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+       where i.organizationId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
        order by i.createdAt desc
       """)
   List<InvitationEntity> findAllInCurrentOrg();
@@ -32,7 +32,7 @@ public interface InvitationRepository extends JpaRepository<InvitationEntity, Lo
   @Query("""
       select i
         from InvitationEntity i
-       where i.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+       where i.organizationId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
          and i.email = :email
        order by i.createdAt desc
       """)
@@ -41,7 +41,7 @@ public interface InvitationRepository extends JpaRepository<InvitationEntity, Lo
   @Query("""
       select i
         from InvitationEntity i
-       where i.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+       where i.organizationId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
          and i.email in :emails
        order by i.createdAt desc
       """)
@@ -53,7 +53,7 @@ public interface InvitationRepository extends JpaRepository<InvitationEntity, Lo
   @Query("""
       select count(i)
         from InvitationEntity i
-       where i.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+       where i.organizationId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
       """)
   long countInCurrentOrg();
 }

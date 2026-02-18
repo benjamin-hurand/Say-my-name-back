@@ -30,8 +30,8 @@ public class WorkspaceMemberEntityMapper {
         }
 
         // workspace/user relations are not hydrated here.
-        entity.setRole(toEntityRole(model.getRole()));
-        entity.setStatus(toEntityStatus(model.getStatus()));
+        entity.setRole(model.getRole());
+        entity.setStatus(model.getStatus());
 
         entity.setDisplayName(model.getDisplayName());
         entity.setCreatedAt(toLocalDateTime(model.getCreatedAt()));
@@ -66,8 +66,8 @@ public class WorkspaceMemberEntityMapper {
         return WorkspaceMember.builder()
                 .workspaceId(workspaceId)
                 .userId(userId)
-                .role(toModelRole(entity.getRole()))
-                .status(toModelStatus(entity.getStatus()))
+                .role(entity.getRole())
+                .status(entity.getStatus())
                 .displayName(entity.getDisplayName())
                 .createdAt(toInstant(entity.getCreatedAt()))
                 .personId(entity.getPersonId())
@@ -78,22 +78,6 @@ public class WorkspaceMemberEntityMapper {
                 .createRequiresApproval(entity.isCreateRequiresApproval())
                 .preferredEmailId(preferredEmailId)
                 .build();
-    }
-
-    private WorkspaceMemberEntity.WorkspaceRole toEntityRole(WorkspaceRole value) {
-        return value == null ? null : WorkspaceMemberEntity.WorkspaceRole.valueOf(value.name());
-    }
-
-    private WorkspaceRole toModelRole(WorkspaceMemberEntity.WorkspaceRole value) {
-        return value == null ? null : WorkspaceRole.valueOf(value.name());
-    }
-
-    private WorkspaceMemberEntity.WorkspaceMemberStatus toEntityStatus(WorkspaceMemberStatus value) {
-        return value == null ? null : WorkspaceMemberEntity.WorkspaceMemberStatus.valueOf(value.name());
-    }
-
-    private WorkspaceMemberStatus toModelStatus(WorkspaceMemberEntity.WorkspaceMemberStatus value) {
-        return value == null ? null : WorkspaceMemberStatus.valueOf(value.name());
     }
 
     private WorkspaceMemberEntity.PersonLinkStatus toEntityPersonLinkStatus(PersonLinkStatus value) {

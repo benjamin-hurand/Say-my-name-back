@@ -19,7 +19,7 @@ import org.springframework.stereotype.Repository;
 
 import com.saymyname.core.model.enums.ChangeAction;
 import com.saymyname.core.model.people.ChangeRequestListQuery;
-import com.saymyname.core.multitenancy.OrgContext;
+import com.saymyname.core.multitenancy.TenantContext;
 import com.saymyname.persistence.entity.organization.ChangeRequestEntity;
 import com.saymyname.persistence.entity.organization.ChangeRequestItemEntity;
 import com.saymyname.persistence.entity.organization.PersonEntity;
@@ -32,7 +32,7 @@ public class ChangeRequestRepositoryImpl implements ChangeRequestRepositoryCusto
 
     @Override
     public Page<ChangeRequestEntity> searchAdmin(ChangeRequestListQuery q, Pageable pageable) {
-        Long orgId = OrgContext.get();
+        Long orgId = TenantContext.get();
 
         var cb = em.getCriteriaBuilder();
 
@@ -44,23 +44,21 @@ public class ChangeRequestRepositoryImpl implements ChangeRequestRepositoryCusto
         predicates.add(cb.equal(root.get("organizationId"), orgId));
 
         // --- Filtre: liste de statuts ---
-        if (q.statuses() != null && !q.statuses().isEmpty()) {
-            predicates.add(root.get("status").in(q.statuses()));
+        if (q.getStatuses() != null && !q.getStatuses().isEmpty()) {
+            predicates.add(root.get("status").in(q.getStatuses()));
         }
 
-        if (q.personId() != null) {
-            Join<Object, Object> p = root.join("person");
-            predicates.add(cb.equal(p.get("id"), q.personId()));
+        if (q.getPersonId() != null) {
+            predicates.add(cb.equal(root.get("personId"), q.getPersonId()));
         }
-        if (q.submittedByUserId() != null) {
+        if (q.getSubmittedByUserId() != null) {
             Join<Object, Object> r = root.join("requester");
-            predicates.add(cb.equal(r.get("id"), q.submittedByUserId()));
+            predicates.add(cb.equal(r.get("id"), q.getSubmittedByUserId()));
         }
-        if (q.attributeId() != null) {
-            Join<Object, Object> a = root.join("attribute");
-            predicates.add(cb.equal(a.get("id"), q.attributeId()));
+        if (q.getAttributeId() != null) {
+            predicates.add(cb.equal(root.get("attributeId"), q.getAttributeId()));
         }
-        if (q.action() != null && !q.action().isBlank()) {
+        if (q.getAction() != null && !q.getAction().isBlank()) {
             // EXISTS item avec action donnée
             Subquery<Long> sq = idCq.subquery(Long.class);
             Root<ChangeRequestItemEntity> i = sq.from(ChangeRequestItemEntity.class);
@@ -68,43 +66,43 @@ public class ChangeRequestRepositoryImpl implements ChangeRequestRepositoryCusto
             sq.where(
                     cb.equal(i.get("changeRequest").get("id"), root.get("id")),
                     cb.equal(i.get("organizationId"), orgId),
-                    cb.equal(i.get("action"), ChangeAction.valueOf(q.action())));
+                    cb.equal(i.get("action"), ChangeAction.valueOf(q.getAction())));
             predicates.add(cb.exists(sq));
         }
-        if (q.from() != null) {
-            predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), toLdt(q.from())));
+        if (q.getFrom() != null) {
+            predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), toLdt(q.getFrom())));
         }
-        if (q.to() != null) {
-            predicates.add(cb.lessThan(root.get("createdAt"), toLdt(q.to())));
+        if (q.getTo() != null) {
+            predicates.add(cb.lessThan(root.get("createdAt"), toLdt(q.getTo())));
         }
-        if (q.q() != null && !q.q().isBlank()) {
-            String s = q.q().trim();
+        if (q.getQ() != null && !q.getQ().isBlank()) {
+            String s = q.getQ().trim();
             if (s.matches("^#?\\d+$")) {
                 long id = Long.parseLong(s.replace("#", ""));
                 predicates.add(cb.equal(root.get("id"), id));
             } else {
                 String like = "%" + escapeLike(s.toLowerCase()) + "%";
 
-                // attribute.name LIKE
-                Join<Object, Object> a = root.join("attribute");
-                Predicate onAttr = cb.like(cb.lower(a.get("name")), like, '\\');
+                // attribute.attributeName LIKE
+                Join<Object, Object> a = root.join("attribute", JoinType.LEFT);
+                Predicate onAttr = cb.like(cb.lower(a.get("attributeName")), like, '\\');
 
-                // requester.display_name LIKE
-                Join<Object, Object> r = root.join("requester");
-                Predicate onRequester = cb.like(cb.lower(r.get("display_name")), like, '\\');
+                // requester.displayName LIKE
+                Join<Object, Object> r = root.join("requester", JoinType.LEFT);
+                Predicate onRequester = cb.like(cb.lower(r.get("displayName")), like, '\\');
 
-                // EXISTS item.proposedValue LIKE OR item.personAttribute.value LIKE
+                // EXISTS item.proposedValue LIKE OR item.fact.value LIKE
                 Subquery<Long> sq = idCq.subquery(Long.class);
                 Root<ChangeRequestItemEntity> i = sq.from(ChangeRequestItemEntity.class);
                 Predicate onProp = cb.like(cb.lower(i.get("proposedValue")), like, '\\');
-                Predicate onPaVal = cb.like(
-                        cb.lower(i.join("personAttribute", JoinType.LEFT).get("value")),
+                Predicate onFactVal = cb.like(
+                        cb.lower(i.join("fact", JoinType.LEFT).get("value")),
                         like, '\\');
                 sq.select(i.get("id"));
                 sq.where(
                         cb.equal(i.get("changeRequest").get("id"), root.get("id")),
                         cb.equal(i.get("organizationId"), orgId),
-                        cb.or(onProp, onPaVal));
+                        cb.or(onProp, onFactVal));
 
                 predicates.add(cb.or(onAttr, onRequester, cb.exists(sq)));
             }
@@ -130,61 +128,59 @@ public class ChangeRequestRepositoryImpl implements ChangeRequestRepositoryCusto
         countPreds.add(cb.equal(countRoot.get("organizationId"), orgId));
 
         // --- Filtre: liste de statuts (count) ---
-        if (q.statuses() != null && !q.statuses().isEmpty()) {
-            countPreds.add(countRoot.get("status").in(q.statuses()));
+        if (q.getStatuses() != null && !q.getStatuses().isEmpty()) {
+            countPreds.add(countRoot.get("status").in(q.getStatuses()));
         }
 
-        if (q.personId() != null) {
-            Join<Object, Object> p = countRoot.join("person");
-            countPreds.add(cb.equal(p.get("id"), q.personId()));
+        if (q.getPersonId() != null) {
+            countPreds.add(cb.equal(countRoot.get("personId"), q.getPersonId()));
         }
-        if (q.submittedByUserId() != null) {
+        if (q.getSubmittedByUserId() != null) {
             Join<Object, Object> r = countRoot.join("requester");
-            countPreds.add(cb.equal(r.get("id"), q.submittedByUserId()));
+            countPreds.add(cb.equal(r.get("id"), q.getSubmittedByUserId()));
         }
-        if (q.attributeId() != null) {
-            Join<Object, Object> a = countRoot.join("attribute");
-            countPreds.add(cb.equal(a.get("id"), q.attributeId()));
+        if (q.getAttributeId() != null) {
+            countPreds.add(cb.equal(countRoot.get("attributeId"), q.getAttributeId()));
         }
-        if (q.action() != null && !q.action().isBlank()) {
+        if (q.getAction() != null && !q.getAction().isBlank()) {
             Subquery<Long> sq = countCq.subquery(Long.class);
             Root<ChangeRequestItemEntity> i = sq.from(ChangeRequestItemEntity.class);
             sq.select(i.get("id"));
             sq.where(
                     cb.equal(i.get("changeRequest").get("id"), countRoot.get("id")),
                     cb.equal(i.get("organizationId"), orgId),
-                    cb.equal(i.get("action"), ChangeAction.valueOf(q.action())));
+                    cb.equal(i.get("action"), ChangeAction.valueOf(q.getAction())));
             countPreds.add(cb.exists(sq));
         }
-        if (q.from() != null) {
-            countPreds.add(cb.greaterThanOrEqualTo(countRoot.get("createdAt"), toLdt(q.from())));
+        if (q.getFrom() != null) {
+            countPreds.add(cb.greaterThanOrEqualTo(countRoot.get("createdAt"), toLdt(q.getFrom())));
         }
-        if (q.to() != null) {
-            countPreds.add(cb.lessThan(countRoot.get("createdAt"), toLdt(q.to())));
+        if (q.getTo() != null) {
+            countPreds.add(cb.lessThan(countRoot.get("createdAt"), toLdt(q.getTo())));
         }
-        if (q.q() != null && !q.q().isBlank()) {
-            String s = q.q().trim();
+        if (q.getQ() != null && !q.getQ().isBlank()) {
+            String s = q.getQ().trim();
             if (s.matches("^#?\\d+$")) {
                 long id = Long.parseLong(s.replace("#", ""));
                 countPreds.add(cb.equal(countRoot.get("id"), id));
             } else {
                 String like = "%" + escapeLike(s.toLowerCase()) + "%";
-                Join<Object, Object> a = countRoot.join("attribute");
-                Predicate onAttr = cb.like(cb.lower(a.get("name")), like, '\\');
-                Join<Object, Object> r = countRoot.join("requester");
-                Predicate onRequester = cb.like(cb.lower(r.get("display_name")), like, '\\');
+                Join<Object, Object> a = countRoot.join("attribute", JoinType.LEFT);
+                Predicate onAttr = cb.like(cb.lower(a.get("attributeName")), like, '\\');
+                Join<Object, Object> r = countRoot.join("requester", JoinType.LEFT);
+                Predicate onRequester = cb.like(cb.lower(r.get("displayName")), like, '\\');
 
                 Subquery<Long> sq = countCq.subquery(Long.class);
                 Root<ChangeRequestItemEntity> i = sq.from(ChangeRequestItemEntity.class);
                 Predicate onProp = cb.like(cb.lower(i.get("proposedValue")), like, '\\');
-                Predicate onPaVal = cb.like(
-                        cb.lower(i.join("personAttribute", JoinType.LEFT).get("value")),
+                Predicate onFactVal = cb.like(
+                        cb.lower(i.join("fact", JoinType.LEFT).get("value")),
                         like, '\\');
                 sq.select(i.get("id"));
                 sq.where(
                         cb.equal(i.get("changeRequest").get("id"), countRoot.get("id")),
                         cb.equal(i.get("organizationId"), orgId),
-                        cb.or(onProp, onPaVal));
+                        cb.or(onProp, onFactVal));
                 countPreds.add(cb.or(onAttr, onRequester, cb.exists(sq)));
             }
         }
@@ -192,15 +188,13 @@ public class ChangeRequestRepositoryImpl implements ChangeRequestRepositoryCusto
         countCq.select(cb.countDistinct(countRoot)).where(countPreds.toArray(Predicate[]::new));
         long total = em.createQuery(countCq).getSingleResult();
 
-        // -------- 3) Deep fetch (1 seule "bag" : items) --------
+        // -------- 3) Deep fetch (items) --------
         CriteriaQuery<ChangeRequestEntity> deepCq = cb.createQuery(ChangeRequestEntity.class);
         Root<ChangeRequestEntity> deepRoot = deepCq.from(ChangeRequestEntity.class);
         deepRoot.fetch("requester", JoinType.INNER);
-        deepRoot.fetch("person", JoinType.INNER);
-        deepRoot.fetch("attribute", JoinType.INNER);
         deepRoot.fetch("resolvedBy", JoinType.LEFT);
         Fetch<ChangeRequestEntity, ChangeRequestItemEntity> itemsFetch = deepRoot.fetch("items", JoinType.LEFT);
-        itemsFetch.fetch("personAttribute", JoinType.LEFT);
+        itemsFetch.fetch("fact", JoinType.LEFT);
 
         deepCq.select(deepRoot).distinct(true)
                 .where(
@@ -208,22 +202,19 @@ public class ChangeRequestRepositoryImpl implements ChangeRequestRepositoryCusto
                         cb.equal(deepRoot.get("organizationId"), orgId));
 
         List<ChangeRequestEntity> deepList = em.createQuery(deepCq).getResultList();
-        // préserver l’ordre de la page
+        // préserver l'ordre de la page
         deepList.sort((a, b) -> Integer.compare(ids.indexOf(a.getId()), ids.indexOf(b.getId())));
 
-        // -------- 4) Initialiser person.attributes (+ attribute) et person.photos en 2
-        // requêtes --------
+        // -------- 4) Initialiser les collections lazy de Person --------
         initializePersonCollections(deepList, orgId);
 
         return new PageImpl<>(deepList, pageable, total);
     }
 
-    // Initialise les collections lazy de Person sans "multiple bag fetch".
+    // Pré-charge les collections de Person pour éviter les N+1.
     private void initializePersonCollections(List<ChangeRequestEntity> deepList, Long orgId) {
         List<Long> personIds = deepList.stream()
-                .map(ChangeRequestEntity::getPerson)
-                .filter(Objects::nonNull)
-                .map(PersonEntity::getId)
+                .map(ChangeRequestEntity::getPersonId)
                 .filter(Objects::nonNull)
                 .distinct()
                 .toList();
@@ -231,28 +222,15 @@ public class ChangeRequestRepositoryImpl implements ChangeRequestRepositoryCusto
         if (personIds.isEmpty())
             return;
 
-        // A) attributes + attribute
+        // A) facts de chaque person
         TypedQuery<PersonEntity> qAttr = em.createQuery(
                 "select distinct p " +
                         "from PersonEntity p " +
-                        "left join fetch p.attributes pa " +
-                        "left join fetch pa.attribute a " +
-                        "where p.organizationId = :orgId and p.id in :ids",
+                        "where p.tenantId = :orgId and p.id in :ids",
                 PersonEntity.class);
         qAttr.setParameter("orgId", orgId);
         qAttr.setParameter("ids", personIds);
-        qAttr.getResultList(); // init p.attributes
-
-        // B) photos
-        TypedQuery<PersonEntity> qPhoto = em.createQuery(
-                "select distinct p " +
-                        "from PersonEntity p " +
-                        "left join fetch p.photos ph " +
-                        "where p.organizationId = :orgId and p.id in :ids",
-                PersonEntity.class);
-        qPhoto.setParameter("orgId", orgId);
-        qPhoto.setParameter("ids", personIds);
-        qPhoto.getResultList(); // init p.photos
+        qAttr.getResultList(); // init persons in L1 cache
     }
 
     private static String escapeLike(String s) {

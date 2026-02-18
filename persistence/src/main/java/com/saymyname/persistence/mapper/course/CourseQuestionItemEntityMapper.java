@@ -21,7 +21,7 @@ public class CourseQuestionItemEntityMapper {
         entity.setId(model.getId());
         entity.setAttemptId(model.getAttemptId());
         entity.setPosition(model.getPosition());
-        entity.setRole(mapRole(model.getRole()));
+        entity.setRole(model.getRole());
         entity.setAnswered(model.isAnswered());
         entity.setCorrect(model.getCorrect());
         entity.setNormalizedAnswer(model.getNormalizedAnswer());
@@ -44,20 +44,12 @@ public class CourseQuestionItemEntityMapper {
                 .id(entity.getId())
                 .attemptId(entity.getAttemptId())
                 .position(entity.getPosition())
-                .role(mapRole(entity.getRole()))
+                .role(entity.getRole())
                 .knowledgeId(entity.getKnowledge() != null ? entity.getKnowledge().getId() : null)
                 .personId(entity.getPersonId())
                 .answered(entity.isAnswered())
                 .correct(entity.getCorrect())
                 .normalizedAnswer(entity.getNormalizedAnswer())
                 .build();
-    }
-
-    private CourseQuestionItemEntity.ItemRole mapRole(QuizQuestionItemRole role) {
-        return role == null ? null : CourseQuestionItemEntity.ItemRole.valueOf(role.name());
-    }
-
-    private QuizQuestionItemRole mapRole(CourseQuestionItemEntity.ItemRole role) {
-        return role == null ? null : QuizQuestionItemRole.valueOf(role.name());
     }
 }

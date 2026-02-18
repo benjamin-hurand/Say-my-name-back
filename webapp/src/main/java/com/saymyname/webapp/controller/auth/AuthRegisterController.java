@@ -86,7 +86,7 @@ public class AuthRegisterController {
                 dto.verificationId(),
                 code);
 
-        User user = userService.findByIdWithEmails(userId).orElseGet(() -> userService.findById(userId));
+        User user = userService.findByIdemails(userId).orElseGet(() -> userService.findById(userId));
 
         // Issue refresh token (DB) + cookies (refresh + XSRF)
         String refreshOpaque = refreshTokenService.issueNewRefreshToken(

@@ -3,22 +3,26 @@ package com.saymyname.persistence.mapper;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.enums.ChangeRequestStatus;
 import com.saymyname.core.model.people.ChangeRequest;
+import com.saymyname.core.model.people.ChangeRequestItem;
 import com.saymyname.persistence.entity.UserEntity;
 import com.saymyname.persistence.entity.organization.ChangeRequestEntity;
 
 @Component
 public class ChangeRequestEntityMapper {
 
-    public ChangeRequestEntityMapper(
-            PersonEntityMapper personEntityMapper,
-            UserEntityMapper userEntityMapper,
-            ChangeRequestItemEntityMapper itemEntityMapper,
-            AttributeEntityMapper attributeEntityMapper) {
+    private final ChangeRequestItemEntityMapper itemEntityMapper;
+    private final PersonEntityMapper personEntityMapper;
+
+    public ChangeRequestEntityMapper(ChangeRequestItemEntityMapper itemEntityMapper,
+            PersonEntityMapper personEntityMapper) {
+        this.itemEntityMapper = itemEntityMapper;
+        this.personEntityMapper = personEntityMapper;
     }
 
     public ChangeRequestEntity toEntity(ChangeRequest m) {
@@ -27,10 +31,10 @@ public class ChangeRequestEntityMapper {
 
         ChangeRequestEntity e = ChangeRequestEntity.builder().build();
         e.setId(m.getId());
-        e.setPersonId(m.getPersonId());
+        e.setPerson(personEntityMapper.toShortEntity(m.getPerson()));
         e.setAttributeId(m.getAttributeId());
         e.setRequestReason(m.getRequestReason());
-        e.setStatus(m.getStatus() != null ? toEntityStatus(m.getStatus()) : ChangeRequestEntity.ChangeRequestStatus.PENDING);
+        e.setStatus(m.getStatus() != null ? m.getStatus() : ChangeRequestStatus.PENDING);
         e.setCreatedAt(toLocalDateTime(m.getCreatedAt()));
         e.setUpdatedAt(toLocalDateTime(m.getUpdatedAt()));
         e.setResolvedAt(toLocalDateTime(m.getResolvedAt()));
@@ -55,18 +59,23 @@ public class ChangeRequestEntityMapper {
         if (e == null)
             return null;
 
+        List<ChangeRequestItem> items = (e.getItems() != null)
+                ? e.getItems().stream().map(itemEntityMapper::toModel).toList()
+                : List.of();
+
         return ChangeRequest.builder()
                 .id(e.getId())
-                .personId(e.getPersonId())
+                .person(personEntityMapper.toModel(e.getPerson()))
                 .requesterId(e.getRequester() != null ? e.getRequester().getId() : null)
                 .attributeId(e.getAttributeId())
                 .requestReason(e.getRequestReason())
-                .status(e.getStatus() != null ? toModelStatus(e.getStatus()) : ChangeRequestStatus.PENDING)
+                .status(e.getStatus() != null ? e.getStatus() : ChangeRequestStatus.PENDING)
                 .createdAt(toInstant(e.getCreatedAt()))
                 .updatedAt(toInstant(e.getUpdatedAt()))
                 .resolvedById(e.getResolvedBy() != null ? e.getResolvedBy().getId() : null)
                 .resolvedAt(toInstant(e.getResolvedAt()))
                 .resolutionComment(e.getResolutionComment())
+                .items(items)
                 .build();
     }
 
@@ -80,14 +89,6 @@ public class ChangeRequestEntityMapper {
         return ChangeRequest.builder()
                 .id(e.getId())
                 .build();
-    }
-
-    private ChangeRequestEntity.ChangeRequestStatus toEntityStatus(ChangeRequestStatus value) {
-        return value == null ? null : ChangeRequestEntity.ChangeRequestStatus.valueOf(value.name());
-    }
-
-    private ChangeRequestStatus toModelStatus(ChangeRequestEntity.ChangeRequestStatus value) {
-        return value == null ? null : ChangeRequestStatus.valueOf(value.name());
     }
 
     private LocalDateTime toLocalDateTime(Instant value) {

@@ -26,7 +26,7 @@ import com.saymyname.core.model.enums.KnowledgeStatus;
 import com.saymyname.core.model.enums.SrsAlgorithm;
 import com.saymyname.core.model.people.Person;
 import com.saymyname.core.model.quiz.options.GameMode;
-import com.saymyname.persistence.dao.PersonAttributeDao;
+import com.saymyname.persistence.dao.FactDao;
 import com.saymyname.persistence.dao.course.KnowledgeDao;
 import com.saymyname.service.course.scheduler.SchedulerStrategy;
 import com.saymyname.service.leaderboard.LeaderboardService;
@@ -134,7 +134,7 @@ class KnowledgeServiceTest {
                                 knowledgeDao,
                                 Map.of(SrsAlgorithm.SM2, scheduler),
                                 SrsAlgorithm.SM2,
-                                mock(PersonAttributeDao.class),
+                                mock(FactDao.class),
                                 leaderboardService);
         }
 

@@ -3,7 +3,7 @@ package com.saymyname.core.validation;
 import com.saymyname.core.model.people.AttributeType;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.regex.Pattern;
 
@@ -32,7 +32,7 @@ public final class AttributeValueValidator {
                 }
                 case ENUM -> true; // tout accepté (vérifié côté contrainte)
                 case DATETIME -> {
-                    LocalDateTime.parse(value); // ISO-8601 "yyyy-MM-ddTHH:mm:ss"
+                    Instant.parse(value);
                     yield true;
                 }
                 case BOOLEAN -> value.equalsIgnoreCase("true") || value.equalsIgnoreCase("false");

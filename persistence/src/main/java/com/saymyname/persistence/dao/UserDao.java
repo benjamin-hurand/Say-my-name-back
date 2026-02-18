@@ -56,7 +56,7 @@ public class UserDao {
 
         // ✅ Query côté UserEmailRepository doit fetch emails + identities (ok si
         // identities = Set)
-        return userEmailRepository.findUserWithEmailsByLoginEmailIgnoreCase(trimmed)
+        return userEmailRepository.findUseremailsByLoginEmailIgnoreCase(trimmed)
                 .map(userEntityMapper::toModel);
     }
 
@@ -103,7 +103,7 @@ public class UserDao {
         if (trimmed.isBlank())
             return Optional.empty();
 
-        return userEmailRepository.findUserWithEmailsByEmailIgnoreCase(trimmed)
+        return userEmailRepository.findUseremailsByEmailIgnoreCase(trimmed)
                 .map(userEntityMapper::toModel);
     }
 

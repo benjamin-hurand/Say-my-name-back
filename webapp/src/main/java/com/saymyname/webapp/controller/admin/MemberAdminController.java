@@ -34,7 +34,7 @@ public class MemberAdminController {
     }
 
     /**
-     * Liste les membres pour l'organisation courante (OrgContext).
+     * Liste les membres pour l'organisation courante (TenantContext).
      *
      * Paramètre optionnel "search" pour filtrer côté serveur
      * sur le nom affiché, l'e-mail ou le label de la personne liée.

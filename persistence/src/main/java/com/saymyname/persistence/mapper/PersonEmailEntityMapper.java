@@ -92,20 +92,20 @@ public class PersonEmailEntityMapper {
                 .collect(Collectors.toList());
     }
 
-    private PersonEmailEntity.EmailKind toEntityKind(EmailKind value) {
-        return value == null ? null : PersonEmailEntity.EmailKind.valueOf(value.name());
+    private EmailKind toEntityKind(EmailKind value) {
+        return value;
     }
 
-    private EmailKind toModelKind(PersonEmailEntity.EmailKind value) {
-        return value == null ? null : EmailKind.valueOf(value.name());
+    private EmailKind toModelKind(EmailKind value) {
+        return value;
     }
 
-    private PersonEmailEntity.SourceKind toEntitySourceKind(EmailSourceKind value) {
-        return value == null ? null : PersonEmailEntity.SourceKind.valueOf(value.name());
+    private EmailSourceKind toEntitySourceKind(EmailSourceKind value) {
+        return value;
     }
 
-    private EmailSourceKind toModelSourceKind(PersonEmailEntity.SourceKind value) {
-        return value == null ? null : EmailSourceKind.valueOf(value.name());
+    private EmailSourceKind toModelSourceKind(EmailSourceKind value) {
+        return value;
     }
 
     private LocalDateTime toLocalDateTime(Instant value) {

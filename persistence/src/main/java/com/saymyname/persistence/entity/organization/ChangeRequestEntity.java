@@ -1,59 +1,95 @@
 package com.saymyname.persistence.entity.organization;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 import com.saymyname.core.model.enums.ChangeRequestStatus;
 import com.saymyname.persistence.entity.UserEntity;
 import com.saymyname.persistence.entity.organization.attribute.AttributeEntity;
-import com.saymyname.persistence.multitenancy.BaseOrgScoped;
+import com.saymyname.persistence.multitenancy.BaseTenantScoped;
 
-import jakarta.persistence.*;
-
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
+import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
+@Getter
+@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@SuperBuilder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
+@ToString(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "change_requests")
-public class ChangeRequestEntity extends BaseOrgScoped {
+@Table(name = "change_requests", indexes = {
+        @Index(name = "idx_cr_tenant_status", columnList = "tenant_id,status,created_at"),
+        @Index(name = "idx_cr_tenant_person", columnList = "tenant_id,person_id"),
+        @Index(name = "idx_cr_tenant_attr", columnList = "tenant_id,attribute_id")
+})
+public class ChangeRequestEntity extends BaseTenantScoped {
 
+    @EqualsAndHashCode.Include
+    @ToString.Include
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(nullable = false)
+    @Column(name = "id", nullable = false)
     private Long id;
 
-    /** Porteur fonctionnel principal (liste par personne, etc.) */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "person_id", nullable = false)
     private PersonEntity person;
 
-    /** Membre qui a soumis la demande (parent) */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "requester_id", nullable = false)
+    @JoinColumn(name = "requester_id", nullable = false, foreignKey = @ForeignKey(name = "fk_cr_requester"))
     private UserEntity requester;
 
-    /** Attribut ciblé par l'enveloppe (obligatoire) */
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "attribute_id", nullable = false)
+    @Column(name = "attribute_id", nullable = false)
+    private Long attributeId;
+
+    /**
+     * Read-only association for JPQL joins/filters (attribute_id column owned by
+     * attributeId field).
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "attribute_id", insertable = false, updatable = false)
     private AttributeEntity attribute;
 
-    /** Motif global de la demande (obligatoire) */
     @Column(name = "request_reason", nullable = false, length = 1024)
     private String requestReason;
 
-    /** Statut de l'enveloppe (généralement calé sur l’agrégation des items) */
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 16)
-    private ChangeRequestStatus status = ChangeRequestStatus.PENDING;
+    private ChangeRequestStatus status;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    /** Qui a “résolu” l’enveloppe (souvent un admin) */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "resolved_by")
+    @JoinColumn(name = "resolved_by", foreignKey = @ForeignKey(name = "fk_cr_resolved_by"))
     private UserEntity resolvedBy;
 
     @Column(name = "resolved_at")
@@ -62,192 +98,8 @@ public class ChangeRequestEntity extends BaseOrgScoped {
     @Column(name = "resolution_comment", length = 500)
     private String resolutionComment;
 
-    /** Nouvel axe: tous les items (la vérité métier) */
+    @Builder.Default
     @OneToMany(mappedBy = "changeRequest", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("id ASC")
     private List<ChangeRequestItemEntity> items = new ArrayList<>();
-
-    // --- Constructeurs ---
-    public ChangeRequestEntity() {
-    }
-
-    public ChangeRequestEntity(
-            Long id,
-            PersonEntity person,
-            UserEntity requester,
-            AttributeEntity attribute,
-            String requestReason,
-            ChangeRequestStatus status,
-            LocalDateTime createdAt,
-            LocalDateTime updatedAt,
-            UserEntity resolvedBy,
-            LocalDateTime resolvedAt,
-            String resolutionComment,
-            List<ChangeRequestItemEntity> items) {
-        this.id = id;
-        this.person = person;
-        this.requester = requester;
-        this.attribute = attribute;
-        this.requestReason = requestReason;
-        this.status = (status != null ? status : ChangeRequestStatus.PENDING);
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-        this.resolvedBy = resolvedBy;
-        this.resolvedAt = resolvedAt;
-        this.resolutionComment = resolutionComment;
-        this.items = (items != null ? items : new ArrayList<>());
-    }
-
-    // --- Lifecycle ---
-    @PrePersist
-    public void prePersist() {
-        if (this.createdAt == null) {
-            this.createdAt = LocalDateTime.now();
-        }
-    }
-
-    @PreUpdate
-    public void preUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    // --- Helpers bidirectionnels ---
-    public void addItem(ChangeRequestItemEntity item) {
-        if (item == null)
-            return;
-        items.add(item);
-        item.setChangeRequest(this);
-    }
-
-    public void removeItem(ChangeRequestItemEntity item) {
-        if (item == null)
-            return;
-        items.remove(item);
-        item.setChangeRequest(null);
-    }
-
-    // --- Getters / Setters ---
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public PersonEntity getPerson() {
-        return person;
-    }
-
-    public void setPerson(PersonEntity person) {
-        this.person = person;
-    }
-
-    public UserEntity getRequester() {
-        return requester;
-    }
-
-    public void setRequester(UserEntity requester) {
-        this.requester = requester;
-    }
-
-    public AttributeEntity getAttribute() {
-        return attribute;
-    }
-
-    public void setAttribute(AttributeEntity attribute) {
-        this.attribute = attribute;
-    }
-
-    public String getRequestReason() {
-        return requestReason;
-    }
-
-    public void setRequestReason(String requestReason) {
-        this.requestReason = requestReason;
-    }
-
-    public ChangeRequestStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(ChangeRequestStatus status) {
-        this.status = status;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    public UserEntity getResolvedBy() {
-        return resolvedBy;
-    }
-
-    public void setResolvedBy(UserEntity resolvedBy) {
-        this.resolvedBy = resolvedBy;
-    }
-
-    public LocalDateTime getResolvedAt() {
-        return resolvedAt;
-    }
-
-    public void setResolvedAt(LocalDateTime resolvedAt) {
-        this.resolvedAt = resolvedAt;
-    }
-
-    public String getResolutionComment() {
-        return resolutionComment;
-    }
-
-    public void setResolutionComment(String resolutionComment) {
-        this.resolutionComment = resolutionComment;
-    }
-
-    public List<ChangeRequestItemEntity> getItems() {
-        return items;
-    }
-
-    public void setItems(List<ChangeRequestItemEntity> items) {
-        this.items = (items != null ? items : new ArrayList<>());
-    }
-
-    // --- equals / hashCode sur id ---
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (!(o instanceof ChangeRequestEntity))
-            return false;
-        ChangeRequestEntity that = (ChangeRequestEntity) o;
-        return Objects.equals(id, that.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(id);
-    }
-
-    // toString limité
-    @Override
-    public String toString() {
-        return "ChangeRequestEntity{" +
-                "id=" + id +
-                ", personId=" + (person != null ? person.getId() : null) +
-                ", requesterId=" + (requester != null ? requester.getId() : null) +
-                ", attributeId=" + (attribute != null ? attribute.getId() : null) +
-                ", status=" + status +
-                ", itemsCount=" + (items != null ? items.size() : 0) +
-                '}';
-    }
 }

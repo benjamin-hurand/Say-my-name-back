@@ -25,7 +25,7 @@ public class UserIdentityEntityMapper {
         return UserIdentity.builder()
                 .id(e.getId())
                 .userId(userId)
-                .provider(toModelAuthProvider(e.getProvider()))
+                .provider(e.getProvider())
                 .providerSubject(e.getProviderSubject())
                 .passwordHash(e.getPasswordHash())
                 .enabled(e.isEnabled())
@@ -46,7 +46,7 @@ public class UserIdentityEntityMapper {
             return null;
 
         UserIdentityEntity e = UserIdentityEntity.builder().build();
-        e.setProvider(toEntityIdentityProvider(m.getProvider()));
+        e.setProvider(m.getProvider());
         e.setProviderSubject(m.getProviderSubject());
         e.setPasswordHash(m.getPasswordHash());
         e.setEnabled(m.isEnabled());
@@ -63,14 +63,6 @@ public class UserIdentityEntityMapper {
         if (identityEntity == null)
             return;
         identityEntity.setUser(userRef);
-    }
-
-    private AuthProvider toModelAuthProvider(UserIdentityEntity.IdentityProvider value) {
-        return value == null ? null : AuthProvider.valueOf(value.name());
-    }
-
-    private UserIdentityEntity.IdentityProvider toEntityIdentityProvider(AuthProvider value) {
-        return value == null ? null : UserIdentityEntity.IdentityProvider.valueOf(value.name());
     }
 
     private LocalDateTime toLocalDateTime(Instant value) {

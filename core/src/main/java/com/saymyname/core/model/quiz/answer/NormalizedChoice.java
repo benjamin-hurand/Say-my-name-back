@@ -1,13 +1,19 @@
 package com.saymyname.core.model.quiz.answer;
 
-public record NormalizedChoice(
-        Long selectedChoiceId,
-        String selectedValue) implements NormalizedAudit {
+import lombok.Builder;
+import lombok.Value;
+
+@Value
+@Builder(toBuilder = true)
+public class NormalizedChoice implements NormalizedAudit {
+    Long selectedChoiceId;
+    String selectedValue;
 
     @Override
     public String auditString() {
-        if (selectedChoiceId == null)
+        if (selectedChoiceId == null) {
             return null;
+        }
         return selectedChoiceId + ":" + (selectedValue == null ? "" : selectedValue);
     }
 }

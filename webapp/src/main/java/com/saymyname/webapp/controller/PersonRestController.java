@@ -11,13 +11,13 @@ import org.springframework.web.bind.annotation.*;
 
 import com.saymyname.core.model.persondirectory.PersonCard;
 import com.saymyname.core.model.persondirectory.PersonSearchCriteria;
-import com.saymyname.service.PersonAttributeService;
+import com.saymyname.service.FactService;
 import com.saymyname.service.UserService;
 import com.saymyname.service.person.PersonService;
-import com.saymyname.webapp.dto.PersonAttributeLiteDto;
+import com.saymyname.webapp.dto.FactLiteDto;
 import com.saymyname.webapp.dto.person.PersonCardDto;
 import com.saymyname.webapp.dto.person.PersonSearchRequestDto;
-import com.saymyname.webapp.mapper.PersonAttributeDtoMapper;
+import com.saymyname.webapp.mapper.FactDtoMapper;
 import com.saymyname.webapp.mapper.person.PersonDirectoryDtoMapper;
 
 @RestController
@@ -25,15 +25,15 @@ import com.saymyname.webapp.mapper.person.PersonDirectoryDtoMapper;
 public class PersonRestController {
 
     private final PersonService personService;
-    private final PersonAttributeService personAttributeService;
-    private final PersonAttributeDtoMapper personAttributeDtoMapper;
+    private final FactService personAttributeService;
+    private final FactDtoMapper personAttributeDtoMapper;
     private final PersonDirectoryDtoMapper personDirectoryDtoMapper;
     private final UserService userService;
 
     public PersonRestController(
             PersonService personService,
-            PersonAttributeService personAttributeService,
-            PersonAttributeDtoMapper personAttributeDtoMapper,
+            FactService personAttributeService,
+            FactDtoMapper personAttributeDtoMapper,
             PersonDirectoryDtoMapper personDirectoryDtoMapper,
             UserService userService) {
         this.personService = personService;
@@ -45,9 +45,9 @@ public class PersonRestController {
 
     /** EXISTANT — on garde tel quel */
     @GetMapping("/{id}/attributes")
-    public ResponseEntity<List<PersonAttributeLiteDto>> getAttributesById(@PathVariable(name = "id") Long id) {
-        List<PersonAttributeLiteDto> personAttributeDtoList = personAttributeService
-                .getAttributesByPersonId(id)
+    public ResponseEntity<List<FactLiteDto>> getAttributesById(@PathVariable(name = "id") Long id) {
+        List<FactLiteDto> personAttributeDtoList = personAttributeService
+                .getFactsByPersonId(id)
                 .stream()
                 .map(personAttributeDtoMapper::toLiteDto)
                 .toList();

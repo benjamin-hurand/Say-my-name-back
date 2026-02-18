@@ -32,13 +32,13 @@ public class AttributeEntityMapper {
         e.setType(attribute.getType() != null ? attribute.getType() : "TEXT");
         e.setEditPolicy(
                 attribute.getEditPolicy() != null ? toEntityEditPolicy(attribute.getEditPolicy())
-                        : AttributeEntity.EditPolicy.FREE);
+                        : EditPolicy.FREE);
         e.setConstraintKind(
                 attribute.getConstraintKind() != null ? toEntityConstraintKind(attribute.getConstraintKind())
-                        : AttributeEntity.ConstraintKind.NONE);
+                        : ConstraintKind.NONE);
         e.setCasingStrategy(
                 attribute.getCasingStrategy() != null ? toEntityCasingStrategy(attribute.getCasingStrategy())
-                        : AttributeEntity.CasingStrategy.NONE);
+                        : CasingStrategy.NONE);
         e.setConstraintPayload(attribute.getConstraintPayload());
 
         return e;
@@ -75,27 +75,27 @@ public class AttributeEntityMapper {
                 .build();
     }
 
-    private AttributeEntity.EditPolicy toEntityEditPolicy(EditPolicy value) {
-        return value == null ? null : AttributeEntity.EditPolicy.valueOf(value.name());
+    private EditPolicy toEntityEditPolicy(EditPolicy value) {
+        return value;
     }
 
-    private EditPolicy toModelEditPolicy(AttributeEntity.EditPolicy value) {
-        return value == null ? null : EditPolicy.valueOf(value.name());
+    private EditPolicy toModelEditPolicy(EditPolicy value) {
+        return value;
     }
 
-    private AttributeEntity.CasingStrategy toEntityCasingStrategy(CasingStrategy value) {
-        return value == null ? null : AttributeEntity.CasingStrategy.valueOf(value.name());
+    private CasingStrategy toEntityCasingStrategy(CasingStrategy value) {
+        return value;
     }
 
-    private CasingStrategy toModelCasingStrategy(AttributeEntity.CasingStrategy value) {
-        return value == null ? null : CasingStrategy.valueOf(value.name());
+    private CasingStrategy toModelCasingStrategy(CasingStrategy value) {
+        return value;
     }
 
-    private AttributeEntity.ConstraintKind toEntityConstraintKind(ConstraintKind value) {
-        return value == null ? null : AttributeEntity.ConstraintKind.valueOf(value.name());
+    private ConstraintKind toEntityConstraintKind(ConstraintKind value) {
+        return value;
     }
 
-    private ConstraintKind toModelConstraintKind(AttributeEntity.ConstraintKind value) {
-        return value == null ? null : ConstraintKind.valueOf(value.name());
+    private ConstraintKind toModelConstraintKind(ConstraintKind value) {
+        return value;
     }
 }

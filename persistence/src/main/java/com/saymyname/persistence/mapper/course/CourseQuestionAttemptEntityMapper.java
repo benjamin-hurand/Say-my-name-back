@@ -38,7 +38,7 @@ public class CourseQuestionAttemptEntityMapper {
         entity.setRawSubmission(model.getRawSubmission());
         entity.setNormalizedAudit(model.getNormalizedAudit());
         entity.setGlobalCorrect(model.isGlobalCorrect());
-        entity.setPoolType(toEntityPoolType(model.getPoolType()));
+        entity.setPoolType(model.getPoolType());
         entity.setHelpUsed(model.isHelpUsed());
 
         entity.setQuestionFormat(toEntityQuestionFormat(model.getQuestionFormat()));
@@ -74,7 +74,7 @@ public class CourseQuestionAttemptEntityMapper {
                 .rawSubmission(entity.getRawSubmission())
                 .normalizedAudit(entity.getNormalizedAudit())
                 .globalCorrect(entity.isGlobalCorrect())
-                .poolType(toModelPoolType(entity.getPoolType()))
+                .poolType(entity.getPoolType())
                 .helpUsed(entity.isHelpUsed())
                 .questionFormat(toModelQuestionFormat(entity.getQuestionFormat()))
                 .snapshotSchemaVersion(entity.getSnapshotSchemaVersion())
@@ -113,14 +113,6 @@ public class CourseQuestionAttemptEntityMapper {
                     + " attemptId=" + (attemptId != null ? attemptId : null)
                     + " format=" + snapshot.getFormat(), e);
         }
-    }
-
-    private CourseQuestionAttemptEntity.PoolType toEntityPoolType(PoolType value) {
-        return value == null ? null : CourseQuestionAttemptEntity.PoolType.valueOf(value.name());
-    }
-
-    private PoolType toModelPoolType(CourseQuestionAttemptEntity.PoolType value) {
-        return value == null ? null : PoolType.valueOf(value.name());
     }
 
     private CourseQuestionAttemptEntity.QuestionFormat toEntityQuestionFormat(CourseQuestionAttempt.QuestionFormat value) {

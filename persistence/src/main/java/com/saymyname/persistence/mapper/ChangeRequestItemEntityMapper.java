@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 import com.saymyname.core.model.enums.ChangeAction;
 import com.saymyname.core.model.enums.ChangeRequestItemStatus;
 import com.saymyname.core.model.people.ChangeRequestItem;
+import com.saymyname.persistence.entity.organization.ChangeRequestEntity;
 import com.saymyname.persistence.entity.organization.ChangeRequestItemEntity;
 import com.saymyname.persistence.entity.organization.FactEntity;
 
@@ -21,7 +22,9 @@ public class ChangeRequestItemEntityMapper {
 
         ChangeRequestItemEntity e = ChangeRequestItemEntity.builder().build();
         e.setId(m.getId());
-        e.setChangeRequestId(m.getChangeRequestId());
+        if (m.getChangeRequestId() != null) {
+            e.setChangeRequest(ChangeRequestEntity.builder().id(m.getChangeRequestId()).build());
+        }
 
         ChangeAction action = m.getAction();
         e.setAction(toEntityAction(action));
@@ -41,7 +44,7 @@ public class ChangeRequestItemEntityMapper {
         e.setProposedValue(m.getProposedValue());
         e.setResolutionStatus(
                 m.getResolutionStatus() != null ? toEntityResolutionStatus(m.getResolutionStatus())
-                        : ChangeRequestItemEntity.ResolutionStatus.PENDING);
+                        : ChangeRequestItemStatus.PENDING);
         e.setResolutionComment(m.getResolutionComment());
         return e;
     }
@@ -52,7 +55,7 @@ public class ChangeRequestItemEntityMapper {
 
         return ChangeRequestItem.builder()
                 .id(e.getId())
-                .changeRequestId(e.getChangeRequestId())
+                .changeRequestId(e.getChangeRequest() != null ? e.getChangeRequest().getId() : null)
                 .action(toModelAction(e.getAction()))
                 .factId(e.getFact() != null ? e.getFact().getId() : null)
                 .proposedValue(e.getProposedValue())
@@ -71,19 +74,19 @@ public class ChangeRequestItemEntityMapper {
                 .build();
     }
 
-    private ChangeRequestItemEntity.ChangeAction toEntityAction(ChangeAction value) {
-        return value == null ? null : ChangeRequestItemEntity.ChangeAction.valueOf(value.name());
+    private ChangeAction toEntityAction(ChangeAction value) {
+        return value;
     }
 
-    private ChangeAction toModelAction(ChangeRequestItemEntity.ChangeAction value) {
-        return value == null ? null : ChangeAction.valueOf(value.name());
+    private ChangeAction toModelAction(ChangeAction value) {
+        return value;
     }
 
-    private ChangeRequestItemEntity.ResolutionStatus toEntityResolutionStatus(ChangeRequestItemStatus value) {
-        return value == null ? null : ChangeRequestItemEntity.ResolutionStatus.valueOf(value.name());
+    private ChangeRequestItemStatus toEntityResolutionStatus(ChangeRequestItemStatus value) {
+        return value;
     }
 
-    private ChangeRequestItemStatus toModelResolutionStatus(ChangeRequestItemEntity.ResolutionStatus value) {
-        return value == null ? null : ChangeRequestItemStatus.valueOf(value.name());
+    private ChangeRequestItemStatus toModelResolutionStatus(ChangeRequestItemStatus value) {
+        return value;
     }
 }

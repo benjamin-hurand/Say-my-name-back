@@ -45,13 +45,13 @@ public interface PersonRepository extends JpaRepository<PersonEntity, Long>, Per
           FROM persons p
           JOIN game_modes_attributes gma
             ON gma.game_mode_id    = :gameModeId
-           AND gma.organization_id  = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+           AND gma.organization_id  = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
           LEFT JOIN person_attributes pa
             ON pa.person_id         = p.id
            AND pa.attribute_id      = gma.attribute_id
-           AND pa.organization_id   = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+           AND pa.organization_id   = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
            AND pa.attribute_value IS NOT NULL AND pa.attribute_value <> ''
-         WHERE p.organization_id    = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+         WHERE p.organization_id    = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
          GROUP BY p.id
         HAVING COUNT(DISTINCT gma.attribute_id) > 0
            AND COUNT(DISTINCT gma.attribute_id) = COUNT(DISTINCT pa.attribute_id)
@@ -69,13 +69,13 @@ public interface PersonRepository extends JpaRepository<PersonEntity, Long>, Per
         FROM persons p
         JOIN game_modes_attributes gma
           ON gma.game_mode_id    = :gameModeId
-         AND gma.organization_id  = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+         AND gma.organization_id  = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
         JOIN person_attributes pa
           ON pa.person_id         = p.id
          AND pa.attribute_id      = gma.attribute_id
-         AND pa.organization_id   = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+         AND pa.organization_id   = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
          AND pa.attribute_value IS NOT NULL AND pa.attribute_value <> ''
-       WHERE p.organization_id    = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+       WHERE p.organization_id    = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
       """, nativeQuery = true)
   long countUniverseEligibleOR(@Param("gameModeId") Long gameModeId);
 }

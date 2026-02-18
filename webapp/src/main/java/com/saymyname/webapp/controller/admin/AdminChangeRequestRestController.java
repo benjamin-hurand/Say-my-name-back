@@ -25,7 +25,7 @@ import com.saymyname.webapp.mapper.ChangeRequestDtoMapper;
 import com.saymyname.webapp.mapper.admin.ChangeRequestResolutionDtoMapper;
 import com.saymyname.webapp.mapper.admin.ChangeRequestsListDtoMapper;
 
-@PreAuthorize("@orgSecurity.hasRole(null, 'ADMIN') or @orgSecurity.hasRole(null, 'OWNER')")
+@PreAuthorize("@tenantSecurity.hasRole(null, 'ADMIN') or @tenantSecurity.hasRole(null, 'OWNER')")
 @RestController
 @RequestMapping("/api/admin/change-requests")
 public class AdminChangeRequestRestController {

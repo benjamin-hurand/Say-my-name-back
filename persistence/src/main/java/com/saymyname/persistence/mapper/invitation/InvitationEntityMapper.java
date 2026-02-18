@@ -32,7 +32,7 @@ public class InvitationEntityMapper {
 
         InvitationEntity e = InvitationEntity.builder().build();
         e.setId(model.getId());
-        e.setType(toEntityType(model.getType()));
+        e.setType(model.getType());
         e.setLabel(model.getLabel());
         e.setNote(model.getNote());
         e.setConstraintsJson(model.getConstraintsJson());
@@ -69,7 +69,7 @@ public class InvitationEntityMapper {
 
         return Invitation.builder()
                 .id(e.getId())
-                .type(toModelType(e.getType()))
+                .type(e.getType())
                 .label(e.getLabel())
                 .note(e.getNote())
                 .constraintsJson(e.getConstraintsJson())
@@ -92,14 +92,6 @@ public class InvitationEntityMapper {
 
     public Invitation toModelWithPerson(InvitationEntity e) {
         return toModel(e);
-    }
-
-    private InvitationEntity.InvitationType toEntityType(InvitationType value) {
-        return value == null ? null : InvitationEntity.InvitationType.valueOf(value.name());
-    }
-
-    private InvitationType toModelType(InvitationEntity.InvitationType value) {
-        return value == null ? null : InvitationType.valueOf(value.name());
     }
 
     private InvitationEntity.InvitationRole toEntityRole(OrgRole value) {

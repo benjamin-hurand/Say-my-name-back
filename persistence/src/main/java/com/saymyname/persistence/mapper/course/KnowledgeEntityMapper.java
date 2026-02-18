@@ -36,7 +36,7 @@ public class KnowledgeEntityMapper {
             e.setFact(null);
         }
 
-        e.setStatus(toEntityStatus(model.getStatus()));
+        e.setStatus(model.getStatus());
         e.setNextReviewDate(toLocalDateTime(model.getNextReviewDate()));
         e.setLastReviewDate(toLocalDateTime(model.getLastReviewDate()));
         e.setTotalRepetitionCount(model.getTotalRepetitionCount());
@@ -57,7 +57,7 @@ public class KnowledgeEntityMapper {
                 .id(e.getId())
                 .userId(e.getUser() != null ? e.getUser().getId() : null)
                 .factId(e.getFact() != null ? e.getFact().getId() : null)
-                .status(toModelStatus(e.getStatus()))
+                .status(e.getStatus())
                 .nextReviewDate(toInstant(e.getNextReviewDate()))
                 .lastReviewDate(toInstant(e.getLastReviewDate()))
                 .totalRepetitionCount(e.getTotalRepetitionCount())
@@ -69,14 +69,6 @@ public class KnowledgeEntityMapper {
                 .difficulty(e.getDifficulty())
                 .stability(e.getStability())
                 .build();
-    }
-
-    private KnowledgeEntity.KnowledgeStatus toEntityStatus(KnowledgeStatus value) {
-        return value == null ? null : KnowledgeEntity.KnowledgeStatus.valueOf(value.name());
-    }
-
-    private KnowledgeStatus toModelStatus(KnowledgeEntity.KnowledgeStatus value) {
-        return value == null ? null : KnowledgeStatus.valueOf(value.name());
     }
 
     private LocalDateTime toLocalDateTime(Instant value) {

@@ -10,7 +10,7 @@ import com.saymyname.service.GameModeService;
 import com.saymyname.webapp.dto.gamemode.GameModeAdminDtos.*;
 import com.saymyname.webapp.mapper.admin.AdminGameModeDtoMapper;
 
-@PreAuthorize("@orgSecurity.hasRole(null, 'ADMIN') or @orgSecurity.hasRole(null, 'OWNER')")
+@PreAuthorize("@tenantSecurity.hasRole(null, 'ADMIN') or @tenantSecurity.hasRole(null, 'OWNER')")
 @RestController
 @RequestMapping("/api/admin/gamemodes")
 public class AdminGameModeRestController {

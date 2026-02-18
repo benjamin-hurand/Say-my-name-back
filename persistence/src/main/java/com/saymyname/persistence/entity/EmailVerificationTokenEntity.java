@@ -1,36 +1,62 @@
-// src/main/java/com/saymyname/persistence/entity/EmailVerificationTokenEntity.java
 package com.saymyname.persistence.entity;
 
-import java.time.LocalDateTime;
-import java.util.Objects;
-import java.util.UUID;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.Builder;
 import com.saymyname.core.model.enums.EmailVerificationPurpose;
-import com.saymyname.persistence.jpa.UuidBytesConverter;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import java.time.LocalDateTime;
 
-import jakarta.persistence.*;
-
+@Getter
+@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
+@ToString(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "email_verification_tokens", indexes = {
+@Table(name = "email_verification_tokens", uniqueConstraints = {
+        @UniqueConstraint(name = "uq_evt_public_id", columnNames = {"public_id"}),
+        @UniqueConstraint(name = "uq_evt_token", columnNames = {"token_hash"})
+}, indexes = {
         @Index(name = "ix_evt_user_email", columnList = "user_id,email"),
         @Index(name = "ix_evt_expires", columnList = "expires_at,consumed_at"),
-        @Index(name = "uq_evt_token", columnList = "token_hash", unique = true),
-        @Index(name = "uq_evt_public_id", columnList = "public_id", unique = true),
         @Index(name = "ix_evt_last_sent", columnList = "last_sent_at")
 })
 public class EmailVerificationTokenEntity {
 
+    @EqualsAndHashCode.Include
+    @ToString.Include
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false)
     private Long id;
 
-    /** Identifiant public exposable côté front. */
-    @Convert(converter = UuidBytesConverter.class)
-    @Column(name = "public_id", columnDefinition = "BINARY(16)", nullable = false, unique = true, updatable = false)
-    private UUID publicId;
+    @Column(name = "public_id", nullable = false, columnDefinition = "binary(16)")
+    private byte[] publicId;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_evt_user"))
+    private UserEntity user;
 
     @Column(name = "email", nullable = false, length = 320)
     private String email;
@@ -43,16 +69,16 @@ public class EmailVerificationTokenEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "purpose", nullable = false, length = 32)
-    private EmailVerificationPurpose purpose = EmailVerificationPurpose.ADD_EMAIL;
+    private EmailVerificationPurpose purpose;
 
     @Column(name = "make_primary_now", nullable = false)
-    private boolean makePrimaryNow = false;
+    private boolean makePrimaryNow;
 
     @Column(name = "attempts", nullable = false)
     private int attempts;
 
     @Column(name = "resend_count", nullable = false)
-    private int resendCount = 0;
+    private int resendCount;
 
     @Column(name = "expires_at", nullable = false)
     private LocalDateTime expiresAt;
@@ -60,139 +86,9 @@ public class EmailVerificationTokenEntity {
     @Column(name = "consumed_at")
     private LocalDateTime consumedAt;
 
-    @Column(name = "created_at", nullable = false, updatable = false, insertable = false)
+    @Column(name = "created_at", nullable = false, columnDefinition = "datetime default current_timestamp")
     private LocalDateTime createdAt;
 
     @Column(name = "last_sent_at")
     private LocalDateTime lastSentAt;
-
-    @PrePersist
-    protected void onPrePersist() {
-        if (this.publicId == null) {
-            this.publicId = UUID.randomUUID();
-        }
-        if (this.purpose == null) {
-            this.purpose = EmailVerificationPurpose.ADD_EMAIL;
-        }
-    }
-
-    // --- getters/setters
-
-    public Long getId() {
-        return id;
-    }
-
-    public UUID getPublicId() {
-        return publicId;
-    }
-
-    public void setPublicId(UUID publicId) {
-        this.publicId = publicId;
-    }
-
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public byte[] getTokenHash() {
-        return tokenHash;
-    }
-
-    public void setTokenHash(byte[] tokenHash) {
-        this.tokenHash = tokenHash;
-    }
-
-    public String getCodeHashPhc() {
-        return codeHashPhc;
-    }
-
-    public void setCodeHashPhc(String codeHashPhc) {
-        this.codeHashPhc = codeHashPhc;
-    }
-
-    public EmailVerificationPurpose getPurpose() {
-        return purpose;
-    }
-
-    public void setPurpose(EmailVerificationPurpose purpose) {
-        this.purpose = purpose;
-    }
-
-    public boolean isMakePrimaryNow() {
-        return makePrimaryNow;
-    }
-
-    public void setMakePrimaryNow(boolean makePrimaryNow) {
-        this.makePrimaryNow = makePrimaryNow;
-    }
-
-    public int getAttempts() {
-        return attempts;
-    }
-
-    public void setAttempts(int attempts) {
-        this.attempts = attempts;
-    }
-
-    public int getResendCount() {
-        return resendCount;
-    }
-
-    public void setResendCount(int resendCount) {
-        this.resendCount = resendCount;
-    }
-
-    public LocalDateTime getExpiresAt() {
-        return expiresAt;
-    }
-
-    public void setExpiresAt(LocalDateTime expiresAt) {
-        this.expiresAt = expiresAt;
-    }
-
-    public LocalDateTime getConsumedAt() {
-        return consumedAt;
-    }
-
-    public void setConsumedAt(LocalDateTime consumedAt) {
-        this.consumedAt = consumedAt;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getLastSentAt() {
-        return lastSentAt;
-    }
-
-    public void setLastSentAt(LocalDateTime lastSentAt) {
-        this.lastSentAt = lastSentAt;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (!(o instanceof EmailVerificationTokenEntity that))
-            return false;
-        return Objects.equals(id, that.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
-    }
 }

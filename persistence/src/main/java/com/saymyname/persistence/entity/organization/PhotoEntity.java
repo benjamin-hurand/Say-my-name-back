@@ -1,164 +1,79 @@
 package com.saymyname.persistence.entity.organization;
 
+
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 import com.saymyname.core.model.enums.PhotoStatus;
 import com.saymyname.persistence.entity.UserEntity;
-import com.saymyname.persistence.multitenancy.BaseOrgScoped;
-
-import jakarta.persistence.*;
-
+import com.saymyname.persistence.multitenancy.BaseTenantScoped;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
-import java.util.Objects;
 
+@Getter
+@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@SuperBuilder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
+@ToString(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "photos", indexes = {
+@Table(name = "photos", uniqueConstraints = {
+        @UniqueConstraint(name = "uq_photos_tenant_id", columnNames = {"tenant_id", "id"})
+}, indexes = {
         @Index(name = "idx_photos_person", columnList = "person_id"),
         @Index(name = "idx_photos_status", columnList = "status"),
-        @Index(name = "idx_photos_approved_by", columnList = "approved_by")
-// NB: les contraintes uniques fonctionnelles (IF(status='...')) restent gérées
-// en SQL.
+        @Index(name = "idx_photos_approved_by", columnList = "approved_by"),
+        @Index(name = "idx_photos_tenant_person", columnList = "tenant_id,person_id")
 })
-public class PhotoEntity extends BaseOrgScoped {
+public class PhotoEntity extends BaseTenantScoped {
 
+    @EqualsAndHashCode.Include
+    @ToString.Include
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false)
     private Long id;
 
-    /** NOT NULL en base */
     @Column(name = "storage_key", nullable = false, length = 255)
     private String storageKey;
 
-    /** FK obligatoire vers persons */
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "person_id", nullable = false, foreignKey = @ForeignKey(name = "fk_photos_person"))
-    private PersonEntity person;
+    @Column(name = "person_id", nullable = false)
+    private Long personId;
 
-    /** ENUM('PENDING','APPROVED') NOT NULL DEFAULT 'PENDING' */
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 20, columnDefinition = "ENUM('PENDING','APPROVED')")
-    private PhotoStatus status = PhotoStatus.PENDING;
+    @Column(name = "status", nullable = false, length = 16, columnDefinition = "varchar(16) default 'PENDING'")
+    private PhotoStatus status;
 
-    /**
-     * NOT NULL DEFAULT CURRENT_TIMESTAMP en base.
-     * On délègue au DEFAULT MySQL : insertable=false pour laisser la BDD poser la
-     * valeur.
-     */
-    @Column(name = "submitted_at", nullable = false, updatable = false, insertable = false)
+    @Column(name = "submitted_at", nullable = false, columnDefinition = "datetime default current_timestamp")
     private LocalDateTime submittedAt;
 
-    /** User ayant soumis la photo (NOT NULL) */
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "submitted_by", nullable = false, foreignKey = @ForeignKey(name = "fk_photos_submitted_by"))
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "submitted_by", foreignKey = @ForeignKey(name = "fk_photos_submitted_by"))
     private UserEntity submittedBy;
 
-    /** Date d’approbation (nullable) */
     @Column(name = "approved_at")
     private LocalDateTime approvedAt;
 
-    /** User ayant approuvé la photo (nullable) */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "approved_by", foreignKey = @ForeignKey(name = "fk_photos_approved_by"))
     private UserEntity approvedBy;
-
-    // ==== Constructeurs ====
-    public PhotoEntity() {
-    }
-
-    public PhotoEntity(Long id, String storageKey) {
-        this.id = id;
-        this.storageKey = storageKey;
-    }
-
-    // ==== Getters/Setters ====
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getStorageKey() {
-        return storageKey;
-    }
-
-    public void setStorageKey(String storageKey) {
-        this.storageKey = storageKey;
-    }
-
-    public PersonEntity getPerson() {
-        return person;
-    }
-
-    public void setPerson(PersonEntity person) {
-        this.person = person;
-    }
-
-    public PhotoStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(PhotoStatus status) {
-        this.status = status;
-    }
-
-    public LocalDateTime getSubmittedAt() {
-        return submittedAt;
-    }
-
-    public void setSubmittedAt(LocalDateTime submittedAt) {
-        this.submittedAt = submittedAt;
-    }
-
-    public UserEntity getSubmittedBy() {
-        return submittedBy;
-    }
-
-    public void setSubmittedBy(UserEntity submittedBy) {
-        this.submittedBy = submittedBy;
-    }
-
-    public LocalDateTime getApprovedAt() {
-        return approvedAt;
-    }
-
-    public void setApprovedAt(LocalDateTime approvedAt) {
-        this.approvedAt = approvedAt;
-    }
-
-    public UserEntity getApprovedBy() {
-        return approvedBy;
-    }
-
-    public void setApprovedBy(UserEntity approvedBy) {
-        this.approvedBy = approvedBy;
-    }
-
-    // ==== equals/hashCode/toString ====
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (!(o instanceof PhotoEntity))
-            return false;
-        PhotoEntity that = (PhotoEntity) o;
-        return Objects.equals(id, that.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
-    }
-
-    @Override
-    public String toString() {
-        return "PhotoEntity{" +
-                "id=" + id +
-                ", storageKey='" + storageKey + '\'' +
-                ", status=" + status +
-                ", submittedAt=" + submittedAt +
-                ", submittedBy=" + (submittedBy != null ? submittedBy.getId() : null) +
-                ", approvedAt=" + approvedAt +
-                ", approvedBy=" + (approvedBy != null ? approvedBy.getId() : null) +
-                '}';
-    }
 }

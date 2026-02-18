@@ -20,7 +20,7 @@ public class PhotoReportEntityMapper {
 
         PhotoReportEntity e = PhotoReportEntity.builder().build();
         e.setId(model.getId());
-        e.setReasonType(toEntityReason(model.getReasonType()));
+        e.setReasonType(model.getReasonType());
         e.setReasonText(model.getReasonText());
         e.setPersonId(model.getPersonId());
 
@@ -45,7 +45,7 @@ public class PhotoReportEntityMapper {
                 .id(e.getId())
                 .personId(e.getPersonId())
                 .reportedById(e.getReportedBy() != null ? e.getReportedBy().getId() : null)
-                .reasonType(toModelReason(e.getReasonType()))
+                .reasonType(e.getReasonType())
                 .reasonText(e.getReasonText())
                 .createdAt(toInstant(e.getCreatedAt()))
                 .build();
@@ -56,7 +56,7 @@ public class PhotoReportEntityMapper {
             return;
 
         if (src.getReasonType() != null) {
-            target.setReasonType(toEntityReason(src.getReasonType()));
+            target.setReasonType(src.getReasonType());
         }
         if (src.getReasonText() != null) {
             target.setReasonText(src.getReasonText());
@@ -68,14 +68,6 @@ public class PhotoReportEntityMapper {
             target.setReportedBy(UserEntity.builder().id(src.getReportedById()).build());
         }
         // created_at is historical and not overwritten.
-    }
-
-    private PhotoReportEntity.PhotoReportReasonType toEntityReason(PhotoReportReason value) {
-        return value == null ? null : PhotoReportEntity.PhotoReportReasonType.valueOf(value.name());
-    }
-
-    private PhotoReportReason toModelReason(PhotoReportEntity.PhotoReportReasonType value) {
-        return value == null ? null : PhotoReportReason.valueOf(value.name());
     }
 
     private LocalDateTime toLocalDateTime(Instant value) {

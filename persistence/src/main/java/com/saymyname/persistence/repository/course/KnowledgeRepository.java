@@ -33,7 +33,7 @@ public interface KnowledgeRepository extends JpaRepository<KnowledgeEntity, Long
            success_count, failure_count, stability, difficulty)
         VALUES
           (:userId, :gameModeId, :personId,
-           :#{T(com.saymyname.core.multitenancy.OrgContext).get()},
+           :#{T(com.saymyname.core.multitenancy.TenantContext).get()},
            :nextReviewDate, :totalCount,
            :srs_streak, :global_streak, :easeFactor,
            :status, :lastReviewDate,
@@ -82,7 +82,7 @@ public interface KnowledgeRepository extends JpaRepository<KnowledgeEntity, Long
         :userId        AS user_id,
         :gameModeId    AS game_mode_id,
         s.person_id    AS person_id,
-        :#{T(com.saymyname.core.multitenancy.OrgContext).get()} AS organization_id,
+        :#{T(com.saymyname.core.multitenancy.TenantContext).get()} AS organization_id,
         'UNKNOWN'      AS status,
         CURRENT_TIMESTAMP AS next_review_date,
         NULL           AS last_review_date,
@@ -90,11 +90,11 @@ public interface KnowledgeRepository extends JpaRepository<KnowledgeEntity, Long
         :initialEf, :initialDiff, :initialStab
       FROM user_subscriptions s
       WHERE s.user_id = :userId
-        AND s.organization_id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+        AND s.organization_id = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
         AND NOT EXISTS (
           SELECT 1
           FROM knowledges k
-          WHERE k.organization_id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+          WHERE k.organization_id = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
             AND k.user_id = :userId
             AND k.game_mode_id = :gameModeId
             AND k.person_id = s.person_id
@@ -123,15 +123,15 @@ public interface KnowledgeRepository extends JpaRepository<KnowledgeEntity, Long
       )
       SELECT
         :userId, :gameModeId, p.id,
-        :#{T(com.saymyname.core.multitenancy.OrgContext).get()},
+        :#{T(com.saymyname.core.multitenancy.TenantContext).get()},
         'UNKNOWN', CURRENT_TIMESTAMP, NULL,
         0,0,0,0,0, :initialEf, :initialDiff, :initialStab
       FROM persons p
-      WHERE p.organization_id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+      WHERE p.organization_id = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
         AND NOT EXISTS (
           SELECT 1
           FROM knowledges k
-          WHERE k.organization_id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+          WHERE k.organization_id = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
             AND k.user_id = :userId
             AND k.game_mode_id = :gameModeId
             AND k.person_id = p.id
@@ -182,7 +182,7 @@ public interface KnowledgeRepository extends JpaRepository<KnowledgeEntity, Long
         select k from KnowledgeEntity k
          where k.id = :knowledgeId
            and k.user.id = :userId
-           and k.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+           and k.organizationId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
       """)
   Optional<KnowledgeEntity> findByIdForUser(
       @Param("userId") Long userId,
@@ -192,7 +192,7 @@ public interface KnowledgeRepository extends JpaRepository<KnowledgeEntity, Long
         select k from KnowledgeEntity k
          where k.id in :knowledgeIds
            and k.user.id = :userId
-           and k.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+           and k.organizationId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
       """)
   List<KnowledgeEntity> findAllByIdsForUser(
       @Param("userId") Long userId,
@@ -415,7 +415,7 @@ public interface KnowledgeRepository extends JpaRepository<KnowledgeEntity, Long
          AND ks2.user_id = k2.user_id
          AND ks2.game_mode_id = k2.game_mode_id
          AND ks2.knowledge_id = k2.id
-        WHERE k2.organization_id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+        WHERE k2.organization_id = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
           AND k2.user_id = :userId
           AND k2.game_mode_id = :gameModeId
           AND k2.status IN (:statuses)
@@ -424,7 +424,7 @@ public interface KnowledgeRepository extends JpaRepository<KnowledgeEntity, Long
           AND ( :followed = false OR EXISTS (
               SELECT 1
               FROM user_subscriptions s
-              WHERE s.organization_id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+              WHERE s.organization_id = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
                 AND s.user_id = :userId
                 AND s.person_id = k2.person_id
           ))

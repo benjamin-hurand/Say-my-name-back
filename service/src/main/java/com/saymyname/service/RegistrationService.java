@@ -59,7 +59,7 @@ public class RegistrationService {
         if (rawPassword == null || rawPassword.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mot de passe requis");
         }
-        if (userService.checkIfAccountExistsWithEmail(e)) {
+        if (userService.checkIfAccountExistsemail(e)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email déjà utilisé");
         }
 
@@ -111,7 +111,7 @@ public class RegistrationService {
         final String sub = subject.trim();
 
         // Si email existe => on récupère le user et on attache identité GOOGLE
-        if (userService.checkIfAccountExistsWithEmail(e)) {
+        if (userService.checkIfAccountExistsemail(e)) {
             User user = userService.findByEmailIgnoreCaseOrThrow(e);
             if (!Boolean.TRUE.equals(user.isActive())) {
                 user = userService.setActive(user);

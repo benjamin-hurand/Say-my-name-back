@@ -7,7 +7,7 @@ import java.util.Optional;
 
 import com.saymyname.core.model.course.Course;
 import com.saymyname.core.model.course.CourseQuestionAttempt;
-import com.saymyname.core.model.people.PersonAttribute;
+import com.saymyname.core.model.people.Fact;
 import com.saymyname.core.model.quiz.snapshot.QuizQuestionSnapshot;
 import com.saymyname.core.model.course.RecentAnswerStat;
 import com.saymyname.service.quiz.store.QuizAttemptStore;
@@ -37,7 +37,7 @@ public interface CourseAttemptStore {
     void updateAnswerMetaAndItems(CourseQuestionAttempt courseQuestion);
 
     // --- Help ---
-    List<PersonAttribute> markHelpAndGetAttributes(Long courseId, Long questionId);
+    List<Fact> markHelpAndGetAttributes(Long courseId, Long questionId);
 
     void markHelpUsed(Long id);
 

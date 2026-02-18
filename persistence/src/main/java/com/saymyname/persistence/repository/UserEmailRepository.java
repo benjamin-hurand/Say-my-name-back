@@ -79,7 +79,7 @@ public interface UserEmailRepository extends JpaRepository<UserEmailEntity, Long
       left join fetch u.identities
       where lower(ue.email) = lower(:email)
       """)
-  Optional<UserEntity> findUserWithEmailsByEmailIgnoreCase(@Param("email") String email);
+  Optional<UserEntity> findUseremailsByEmailIgnoreCase(@Param("email") String email);
 
   /**
    * ✅ Renvoie le User associé à l'email de login (case-insensitive)
@@ -97,7 +97,7 @@ public interface UserEmailRepository extends JpaRepository<UserEmailEntity, Long
         and ue.loginAllowed = true
         and ue.verifiedAt is not null
       """)
-  Optional<UserEntity> findUserWithEmailsByLoginEmailIgnoreCase(@Param("email") String email);
+  Optional<UserEntity> findUseremailsByLoginEmailIgnoreCase(@Param("email") String email);
 
   // --------- Email primaire / flags ----------
 

@@ -24,7 +24,7 @@ import com.saymyname.core.model.persondirectory.AttributeValueRow;
 import com.saymyname.core.model.persondirectory.PagePersonRow;
 import com.saymyname.core.model.persondirectory.PersonSearchCriteria;
 import com.saymyname.core.model.quiz.options.TrainingOptions;
-import com.saymyname.persistence.entity.organization.PersonAttributeEntity;
+import com.saymyname.persistence.entity.organization.FactEntity;
 import com.saymyname.persistence.entity.organization.PersonEntity;
 import com.saymyname.persistence.entity.organization.PhotoEntity;
 import com.saymyname.persistence.entity.organization.attribute.AttributeEntity;
@@ -102,7 +102,7 @@ public class PersonDao {
      * multi-tenant).
      */
     @Transactional(readOnly = true)
-    public Optional<Person> loadWithAttributesAndPhotos(Long personId) {
+    public Optional<Person> loadattributesAndPhotos(Long personId) {
         if (personId == null)
             return Optional.empty();
 
@@ -141,7 +141,7 @@ public class PersonDao {
 
     /**
      * Page des personnes filtrée/triée (sur attributs et/ou champs simples).
-     * - Filtrage par attributs: EXISTS sur PersonAttributeEntity
+     * - Filtrage par attributs: EXISTS sur FactEntity
      * - FollowFilter: EXISTS / NOT EXISTS sur UserSubscriptionEntity (id.userId,
      * id.personId)
      * - Photo: storageKey de la dernière photo APPROVED (max approvedAt)
@@ -341,8 +341,8 @@ public class PersonDao {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<Tuple> cq = cb.createTupleQuery();
 
-        Root<PersonAttributeEntity> pa = cq.from(PersonAttributeEntity.class);
-        Join<PersonAttributeEntity, AttributeEntity> a = pa.join("attribute", JoinType.INNER);
+        Root<FactEntity> pa = cq.from(FactEntity.class);
+        Join<FactEntity, AttributeEntity> a = pa.join("attribute", JoinType.INNER);
 
         var now = cb.currentTimestamp();
 
@@ -388,8 +388,8 @@ public class PersonDao {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<Tuple> cq = cb.createTupleQuery();
 
-        Root<PersonAttributeEntity> pa = cq.from(PersonAttributeEntity.class);
-        Join<PersonAttributeEntity, AttributeEntity> a = pa.join("attribute", JoinType.INNER);
+        Root<FactEntity> pa = cq.from(FactEntity.class);
+        Join<FactEntity, AttributeEntity> a = pa.join("attribute", JoinType.INNER);
 
         var now = cb.currentTimestamp();
 
@@ -505,8 +505,8 @@ public class PersonDao {
                 if (!vals.isEmpty()) {
                     String pattern = toPatternLike(vals.get(0));
                     Subquery<Long> sq = cq.subquery(Long.class);
-                    Root<PersonAttributeEntity> pa = sq.from(PersonAttributeEntity.class);
-                    Join<PersonAttributeEntity, AttributeEntity> a = pa.join("attribute", JoinType.INNER);
+                    Root<FactEntity> pa = sq.from(FactEntity.class);
+                    Join<FactEntity, AttributeEntity> a = pa.join("attribute", JoinType.INNER);
 
                     Predicate attrScope = cb.or(
                             cb.isTrue(a.get("primaryField")),
@@ -530,8 +530,8 @@ public class PersonDao {
                 continue;
 
             Subquery<Long> sq = cq.subquery(Long.class);
-            Root<PersonAttributeEntity> pa = sq.from(PersonAttributeEntity.class);
-            Join<PersonAttributeEntity, AttributeEntity> a = pa.join("attribute", JoinType.INNER);
+            Root<FactEntity> pa = sq.from(FactEntity.class);
+            Join<FactEntity, AttributeEntity> a = pa.join("attribute", JoinType.INNER);
 
             sq.select(cb.literal(1L));
 
@@ -592,7 +592,7 @@ public class PersonDao {
 
             if ("ATTRIBUTE".equalsIgnoreCase(s.getKind()) && s.getAttributeId() != null) {
                 Subquery<String> sub = cq.subquery(String.class);
-                Root<PersonAttributeEntity> pa = sub.from(PersonAttributeEntity.class);
+                Root<FactEntity> pa = sub.from(FactEntity.class);
                 sub.select(cb.least(pa.<String>get("value")));
                 sub.where(
                         cb.equal(pa.get("person").get("id"), root.get("id")),
@@ -634,8 +634,8 @@ public class PersonDao {
                     String pattern = toPatternLike(vals.get(0));
 
                     Subquery<Long> sq = cq.subquery(Long.class);
-                    Root<PersonAttributeEntity> pa = sq.from(PersonAttributeEntity.class);
-                    Join<PersonAttributeEntity, AttributeEntity> a = pa.join("attribute", JoinType.INNER);
+                    Root<FactEntity> pa = sq.from(FactEntity.class);
+                    Join<FactEntity, AttributeEntity> a = pa.join("attribute", JoinType.INNER);
 
                     Predicate attrScope = cb.or(
                             cb.isTrue(a.get("primaryField")),
@@ -658,8 +658,8 @@ public class PersonDao {
                 continue;
 
             Subquery<Long> sq = cq.subquery(Long.class);
-            Root<PersonAttributeEntity> pa = sq.from(PersonAttributeEntity.class);
-            Join<PersonAttributeEntity, AttributeEntity> a = pa.join("attribute", JoinType.INNER);
+            Root<FactEntity> pa = sq.from(FactEntity.class);
+            Join<FactEntity, AttributeEntity> a = pa.join("attribute", JoinType.INNER);
 
             sq.select(cb.literal(1L));
 
@@ -712,7 +712,7 @@ public class PersonDao {
 
             if ("ATTRIBUTE".equalsIgnoreCase(s.getKind()) && s.getAttributeId() != null) {
                 Subquery<String> sub = cq.subquery(String.class);
-                Root<PersonAttributeEntity> pa = sub.from(PersonAttributeEntity.class);
+                Root<FactEntity> pa = sub.from(FactEntity.class);
                 sub.select(cb.least(pa.<String>get("value")));
                 sub.where(
                         cb.equal(pa.get("person").get("id"), root.get("id")),

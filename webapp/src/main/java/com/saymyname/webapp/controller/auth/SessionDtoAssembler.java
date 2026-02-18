@@ -35,7 +35,7 @@ public class SessionDtoAssembler {
      *
      * NOTE: On utilise user.getEmails() si l'entité a été chargée avec graph/join.
      * Si ce n'est pas le cas, la liste peut être vide -> à toi de garantir
-     * findByIdWithEmails()
+     * findByIdemails()
      * dans les flows où tu en as besoin (login/refresh/session).
      */
     public SessionDto toSession(User user) {

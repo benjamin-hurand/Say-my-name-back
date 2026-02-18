@@ -22,7 +22,7 @@ import com.saymyname.core.model.enums.PoolType;
 import com.saymyname.core.model.enums.course.QuizQuestionItemRole;
 import com.saymyname.core.model.enums.quiz.QuizQuestionSource;
 import com.saymyname.core.model.people.Person;
-import com.saymyname.core.model.people.PersonAttribute;
+import com.saymyname.core.model.people.Fact;
 import com.saymyname.core.model.quiz.QuizChoice;
 import com.saymyname.core.model.quiz.QuizPayloadItem;
 import com.saymyname.core.model.quiz.QuizQuestionContext;
@@ -78,7 +78,7 @@ public class DbCourseAttemptStore implements CourseAttemptStore, QuizAttemptStor
     }
 
     @Override
-    public List<PersonAttribute> markHelpAndGetAttributes(Long courseId, Long questionId) {
+    public List<Fact> markHelpAndGetAttributes(Long courseId, Long questionId) {
         return attemptService.markHelpAndGetAttributes(courseId, questionId);
     }
 

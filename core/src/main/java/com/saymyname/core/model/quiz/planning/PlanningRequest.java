@@ -1,76 +1,83 @@
-// core/model/quiz/planning/PlanningRequest.java
 package com.saymyname.core.model.quiz.planning;
-
-import java.util.Objects;
 
 import com.saymyname.core.model.enums.KnowledgeStatus;
 import com.saymyname.core.model.enums.quiz.FormatMode;
 import com.saymyname.core.model.enums.quiz.QuizFormat;
 import com.saymyname.core.model.quiz.candidate.EligibilityStats;
-import com.saymyname.core.model.quiz.options.GameMode;
+import java.util.List;
+import lombok.Builder;
+import lombok.Value;
 
-/**
- * Input to FormatPlanner: all info needed to decide format.
- *
- * Contains the formatMode (AUTO/FORCED), eligibility counts,
- * and gameMode context for the planner to make a decision.
- */
-public record PlanningRequest(
-        FormatMode formatMode,
-        QuizFormat forcedFormat,
-        EligibilityStats eligibility,
-        GameMode gameMode,
-        KnowledgeStatus knowledgeStatus, // nullable: null for TRAINING mode, set for COURSE mode
-        Boolean timed,
-        Integer timeLimitMs) {
+@Value
+@Builder(toBuilder = true)
+public class PlanningRequest {
+    FormatMode formatMode;
+    QuizFormat forcedFormat;
+    EligibilityStats eligibility;
+    Long gameModeId;
+    @Builder.Default
+    List<Long> targetAttributeIds = List.of();
+    String operator;
+    KnowledgeStatus knowledgeStatus;
+    Boolean timed;
+    Integer timeLimitMs;
 
-    public PlanningRequest {
-        Objects.requireNonNull(formatMode, "formatMode is required");
-        Objects.requireNonNull(eligibility, "eligibility is required");
-        Objects.requireNonNull(gameMode, "gameMode is required");
-
-        if (formatMode == FormatMode.FORCED && forcedFormat == null) {
-            throw new IllegalArgumentException("forcedFormat is required when formatMode=FORCED");
-        }
-        if (formatMode == FormatMode.AUTO && forcedFormat != null) {
-            throw new IllegalArgumentException("forcedFormat must be null when formatMode=AUTO");
-        }
-    }
-
-    /**
-     * Create a request for FORCED format mode (TRAINING - no knowledge status).
-     */
     public static PlanningRequest forced(
             QuizFormat format,
             EligibilityStats eligibility,
-            GameMode gameMode,
+            Long gameModeId,
+            List<Long> targetAttributeIds,
+            String operator,
             Boolean timed,
             Integer timeLimitMs) {
-        return new PlanningRequest(FormatMode.FORCED, format, eligibility, gameMode, null, timed, timeLimitMs);
+        return PlanningRequest.builder()
+                .formatMode(FormatMode.FORCED)
+                .forcedFormat(format)
+                .eligibility(eligibility)
+                .gameModeId(gameModeId)
+                .targetAttributeIds(targetAttributeIds == null ? List.of() : targetAttributeIds)
+                .operator(operator)
+                .timed(timed)
+                .timeLimitMs(timeLimitMs)
+                .build();
     }
 
-    /**
-     * Create a request for AUTO format mode (TRAINING - no knowledge status).
-     */
     public static PlanningRequest auto(
             EligibilityStats eligibility,
-            GameMode gameMode,
+            Long gameModeId,
+            List<Long> targetAttributeIds,
+            String operator,
             Boolean timed,
             Integer timeLimitMs) {
-        return new PlanningRequest(FormatMode.AUTO, null, eligibility, gameMode, null, timed, timeLimitMs);
+        return PlanningRequest.builder()
+                .formatMode(FormatMode.AUTO)
+                .eligibility(eligibility)
+                .gameModeId(gameModeId)
+                .targetAttributeIds(targetAttributeIds == null ? List.of() : targetAttributeIds)
+                .operator(operator)
+                .timed(timed)
+                .timeLimitMs(timeLimitMs)
+                .build();
     }
 
-    /**
-     * Create a request for AUTO format mode with knowledge status (COURSE mode).
-     * The knowledgeStatus enables ladder-based format selection (D1).
-     */
     public static PlanningRequest courseAuto(
             EligibilityStats eligibility,
-            GameMode gameMode,
+            Long gameModeId,
+            List<Long> targetAttributeIds,
+            String operator,
             KnowledgeStatus knowledgeStatus,
             Boolean timed,
             Integer timeLimitMs) {
-        return new PlanningRequest(FormatMode.AUTO, null, eligibility, gameMode, knowledgeStatus, timed, timeLimitMs);
+        return PlanningRequest.builder()
+                .formatMode(FormatMode.AUTO)
+                .eligibility(eligibility)
+                .gameModeId(gameModeId)
+                .targetAttributeIds(targetAttributeIds == null ? List.of() : targetAttributeIds)
+                .operator(operator)
+                .knowledgeStatus(knowledgeStatus)
+                .timed(timed)
+                .timeLimitMs(timeLimitMs)
+                .build();
     }
 
     public boolean isForced() {

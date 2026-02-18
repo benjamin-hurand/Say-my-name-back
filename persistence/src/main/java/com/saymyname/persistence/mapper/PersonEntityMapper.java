@@ -54,6 +54,15 @@ public class PersonEntityMapper {
                                 .build();
         }
 
+        public PersonEntity toShortEntity(Person person) {
+                if (person == null) {
+                        return null;
+                }
+                PersonEntity personEntity = PersonEntity.builder().build();
+                personEntity.setId(person.getId());
+                return personEntity;
+        }
+
         // --- List conversions
         public List<Person> toModelList(List<PersonEntity> personEntities) {
                 return personEntities.stream()

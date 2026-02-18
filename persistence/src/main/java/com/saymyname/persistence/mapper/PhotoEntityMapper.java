@@ -23,7 +23,7 @@ public class PhotoEntityMapper {
         entity.setId(photo.getId());
         entity.setStorageKey(photo.getStorageKey());
         entity.setPersonId(photo.getPersonId());
-        entity.setStatus(toEntityStatus(photo.getStatus()));
+        entity.setStatus(photo.getStatus());
         entity.setApprovedAt(toLocalDateTime(photo.getApprovedAt()));
 
         if (photo.getSubmittedAt() != null) {
@@ -54,20 +54,12 @@ public class PhotoEntityMapper {
                 .id(e.getId())
                 .storageKey(e.getStorageKey())
                 .personId(e.getPersonId())
-                .status(toModelStatus(e.getStatus()))
+                .status(e.getStatus())
                 .submittedAt(toInstant(e.getSubmittedAt()))
                 .submittedById(e.getSubmittedBy() != null ? e.getSubmittedBy().getId() : null)
                 .approvedAt(toInstant(e.getApprovedAt()))
                 .approvedById(e.getApprovedBy() != null ? e.getApprovedBy().getId() : null)
                 .build();
-    }
-
-    private PhotoEntity.PhotoStatus toEntityStatus(PhotoStatus value) {
-        return value == null ? null : PhotoEntity.PhotoStatus.valueOf(value.name());
-    }
-
-    private PhotoStatus toModelStatus(PhotoEntity.PhotoStatus value) {
-        return value == null ? null : PhotoStatus.valueOf(value.name());
     }
 
     private LocalDateTime toLocalDateTime(Instant value) {

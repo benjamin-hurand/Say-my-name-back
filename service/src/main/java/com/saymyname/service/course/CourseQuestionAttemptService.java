@@ -12,20 +12,20 @@ import com.saymyname.core.model.course.CourseQuestionAttempt;
 import com.saymyname.core.model.course.CourseQuestionItem;
 import com.saymyname.core.model.course.RecentAnswerStat;
 import com.saymyname.core.model.enums.course.QuizQuestionItemRole;
-import com.saymyname.core.model.people.PersonAttribute;
+import com.saymyname.core.model.people.Fact;
 import com.saymyname.core.model.quiz.snapshot.QuizQuestionSnapshot;
 import com.saymyname.persistence.dao.course.CourseQuestionAttemptDao;
-import com.saymyname.service.PersonAttributeService;
+import com.saymyname.service.FactService;
 
 @Service
 public class CourseQuestionAttemptService {
 
     private final CourseQuestionAttemptDao dao;
-    private final PersonAttributeService personAttributeService;
+    private final FactService personAttributeService;
 
     public CourseQuestionAttemptService(
             CourseQuestionAttemptDao dao,
-            PersonAttributeService personAttributeService) {
+            FactService personAttributeService) {
         this.dao = dao;
         this.personAttributeService = personAttributeService;
     }
@@ -74,7 +74,7 @@ public class CourseQuestionAttemptService {
     }
 
     @Transactional
-    public List<PersonAttribute> markHelpAndGetAttributes(Long courseId, Long questionId) {
+    public List<Fact> markHelpAndGetAttributes(Long courseId, Long questionId) {
         if (courseId == null)
             throw new IllegalArgumentException("courseId cannot be null");
         if (questionId == null)
@@ -98,7 +98,7 @@ public class CourseQuestionAttemptService {
         // 2) Déterminer la personne cible (robuste aux futurs formats)
         Long personId = extractTargetPersonId(questionMarked);
 
-        return personAttributeService.getAttributesByPersonId(personId);
+        return personAttributeService.getFactsByPersonId(personId);
     }
 
     private Long extractTargetPersonId(CourseQuestionAttempt attempt) {
