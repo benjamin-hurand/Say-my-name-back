@@ -75,13 +75,13 @@ public class UserEmailDao {
 
     @Transactional
     public UserEmail attachPrimaryOnRegister(Long userId, String email, boolean verified) {
-        UserEmail model = new UserEmail.Builder()
-                .withUserId(userId)
-                .withEmail(email)
-                .withPrimary(true)
-                .withLoginAllowed(true)
-                .withRecoveryAllowed(true)
-                .withVerifiedAt(verified ? LocalDateTime.now() : null)
+        UserEmail model = UserEmail.builder()
+                .userId(userId)
+                .email(email)
+                .primary(true)
+                .loginAllowed(true)
+                .recoveryAllowed(true)
+                .verifiedAt(verified ? LocalDateTime.now() : null)
                 .build();
 
         UserEmailEntity e = mapper.toEntity(model);

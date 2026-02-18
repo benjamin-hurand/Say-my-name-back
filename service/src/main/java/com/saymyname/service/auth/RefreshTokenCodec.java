@@ -19,13 +19,13 @@ public class RefreshTokenCodec {
         // 64 chars max: on fait simple et URL-safe, 32 bytes -> ~43 chars
         byte[] b = new byte[32];
         RNG.nextBytes(b);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(b);
+        return Base64.getUrlEncoder().outPadding().encodeToString(b);
     }
 
     public String newSecret() {
         byte[] b = new byte[32];
         RNG.nextBytes(b);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(b);
+        return Base64.getUrlEncoder().outPadding().encodeToString(b);
     }
 
     public UUID newFamilyId() {

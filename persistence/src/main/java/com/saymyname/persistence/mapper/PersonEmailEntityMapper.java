@@ -56,19 +56,19 @@ public class PersonEmailEntityMapper {
         if (e == null)
             return null;
 
-        return new PersonEmail.Builder()
-                .withId(e.getId())
-                .withPerson(personEntityMapper.toShortModel(e.getPerson()))
-                .withEmail(e.getEmail())
-                .withKind(e.getKind())
-                .withSourceKind(e.getSourceKind())
-                .withSourceLabel(e.getSourceLabel())
-                .withPrimary(e.isPrimary())
-                .withActive(e.isActive())
-                .withVerifiedAt(e.getVerifiedAt())
-                .withBouncedAt(e.getBouncedAt())
-                .withCreatedAt(e.getCreatedAt())
-                .withUpdatedAt(e.getUpdatedAt())
+        return PersonEmail.builder()
+                .id(e.getId())
+                .person(personEntityMapper.toShortModel(e.getPerson()))
+                .email(e.getEmail())
+                .kind(e.getKind())
+                .sourceKind(e.getSourceKind())
+                .sourceLabel(e.getSourceLabel())
+                .primary(e.isPrimary())
+                .active(e.isActive())
+                .verifiedAt(e.getVerifiedAt())
+                .bouncedAt(e.getBouncedAt())
+                .createdAt(e.getCreatedAt())
+                .updatedAt(e.getUpdatedAt())
                 .build();
     }
 

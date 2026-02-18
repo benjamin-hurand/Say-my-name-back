@@ -50,20 +50,20 @@ public class WorkspaceMemberEntityMapper {
         Long workspaceId = entity.getId() != null ? entity.getId().getWorkspaceId() : null;
         Long userId = entity.getId() != null ? entity.getId().getUserId() : null;
 
-        return new WorkspaceMember.Builder()
-                .withWorkspaceId(workspaceId)
-                .withUserId(userId)
-                .withRole(entity.getRole())
-                .withStatus(entity.getStatus())
-                .withDisplayName(entity.getDisplayName())
-                .withCreatedAt(entity.getCreatedAt())
-                .withPersonId(entity.getPersonId())
-                .withPersonLinkStatus(entity.getPersonLinkStatus())
-                .withCanPickPerson(entity.isCanPickPerson())
-                .withCanCreatePerson(entity.isCanCreatePerson())
-                .withPickRequiresApproval(entity.isPickRequiresApproval())
-                .withCreateRequiresApproval(entity.isCreateRequiresApproval())
-                .withPreferredEmailId(entity.getPreferredEmailId())
+        return WorkspaceMember.builder()
+                .workspaceId(workspaceId)
+                .userId(userId)
+                .role(entity.getRole())
+                .status(entity.getStatus())
+                .displayName(entity.getDisplayName())
+                .createdAt(entity.getCreatedAt())
+                .personId(entity.getPersonId())
+                .personLinkStatus(entity.getPersonLinkStatus())
+                .canPickPerson(entity.isCanPickPerson())
+                .canCreatePerson(entity.isCanCreatePerson())
+                .pickRequiresApproval(entity.isPickRequiresApproval())
+                .createRequiresApproval(entity.isCreateRequiresApproval())
+                .preferredEmailId(entity.getPreferredEmailId())
                 .build();
     }
 }

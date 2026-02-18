@@ -213,13 +213,13 @@ public class DbCourseAttemptStore implements CourseAttemptStore, QuizAttemptStor
         List<CourseQuestionItem> items = new ArrayList<>();
 
         // Target item
-        items.add(new CourseQuestionItem.Builder()
-                .withPosition(0)
-                .withRole(QuizQuestionItemRole.TARGET)
-                .withKnowledge(knowledge)
-                .withAnswered(false)
-                .withCorrect(null)
-                .withNormalizedAnswer(null)
+        items.add(CourseQuestionItem.builder()
+                .position(0)
+                .role(QuizQuestionItemRole.TARGET)
+                .knowledge(knowledge)
+                .answered(false)
+                .correct(null)
+                .normalizedAnswer(null)
                 .build());
 
         List<Long> payloadPersonIds = extractPayloadPersonIds(snapshot);
@@ -231,35 +231,35 @@ public class DbCourseAttemptStore implements CourseAttemptStore, QuizAttemptStor
             if (targetPersonId != null && targetPersonId.equals(personId)) {
                 continue;
             }
-            items.add(new CourseQuestionItem.Builder()
-                    .withPosition(position++)
-                    .withRole(QuizQuestionItemRole.DISTRACTOR)
-                    .withPerson(new Person.Builder().withId(personId).build())
-                    .withAnswered(false)
-                    .withCorrect(null)
-                    .withNormalizedAnswer(null)
+            items.add(CourseQuestionItem.builder()
+                    .position(position++)
+                    .role(QuizQuestionItemRole.DISTRACTOR)
+                    .person(Person.builder().id(personId).build())
+                    .answered(false)
+                    .correct(null)
+                    .normalizedAnswer(null)
                     .build());
         }
 
-        CourseQuestionPlan plan = new CourseQuestionPlan.Builder()
-                .withFormat(snapshot.getFormat())
-                .withTimed(Boolean.TRUE.equals(snapshot.getTimed()))
-                .withTimeLimitMs(snapshot.getTimeLimitMs())
-                .withTargetCount(1)
-                .withTargetKnowledgeIds(List.of(knowledgeId))
-                .withParamsJson(null)
-                .withReasonCode(snapshot.getReasonCode())
-                .withReasonDetailsJson(snapshot.getReasonDetailsJson())
+        CourseQuestionPlan plan = CourseQuestionPlan.builder()
+                .format(snapshot.getFormat())
+                .timed(Boolean.TRUE.equals(snapshot.getTimed()))
+                .timeLimitMs(snapshot.getTimeLimitMs())
+                .targetCount(1)
+                .targetKnowledgeIds(List.of(knowledgeId))
+                .paramsJson(null)
+                .reasonCode(snapshot.getReasonCode())
+                .reasonDetailsJson(snapshot.getReasonDetailsJson())
                 .build();
 
-        CourseQuestionAttempt attempt = new CourseQuestionAttempt.Builder()
-                .withCourse(course)
-                .withQuestionRound(round)
-                .withAskedAt(askedAt)
-                .withPoolType(poolType)
-                .withSnapshot(snapshot)
-                .withPlan(plan)
-                .withItems(items)
+        CourseQuestionAttempt attempt = CourseQuestionAttempt.builder()
+                .course(course)
+                .questionRound(round)
+                .askedAt(askedAt)
+                .poolType(poolType)
+                .snapshot(snapshot)
+                .plan(plan)
+                .items(items)
                 .build();
 
         CourseQuestionAttempt saved = attemptService.create(attempt);
@@ -303,6 +303,7 @@ public class DbCourseAttemptStore implements CourseAttemptStore, QuizAttemptStor
         }
         return peekAttempt(dh.value(), userId);
     }
+
     @Override
     public Optional<StoredAttempt> consume(QuizQuestionSource source, AttemptHandle handle, Long userId) {
         if (source == null)
@@ -354,6 +355,7 @@ public class DbCourseAttemptStore implements CourseAttemptStore, QuizAttemptStor
                 attempt.getRawSubmission(),
                 attempt.getNormalizedAudit()));
     }
+
     @Override
     public boolean updateSnapshot(QuizQuestionSource source, AttemptHandle handle, Long userId,
             QuizQuestionSnapshot updatedSnapshot) {
@@ -425,6 +427,3 @@ public class DbCourseAttemptStore implements CourseAttemptStore, QuizAttemptStor
         return List.copyOf(ids);
     }
 }
-
-
-

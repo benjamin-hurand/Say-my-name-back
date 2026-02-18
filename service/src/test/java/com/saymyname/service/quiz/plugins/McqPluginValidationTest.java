@@ -18,49 +18,49 @@ import com.saymyname.service.quiz.AnswerKeyService;
 
 class McqPluginValidationTest {
 
-    @Test
-    void validateProducesNonNullResultAttributesForValidSnapshot() {
-        AnswerKeyService answerKeyService = (personId, targetAttributeIds, operator) ->
-                new AnswerKeyService.AnswerKey(false, List.of("A"), "A");
-        McqPlugin plugin = new McqPlugin(answerKeyService);
+        @Test
+        void validateProducesNonNullResultAttributesForValidSnapshot() {
+                AnswerKeyService answerKeyService = (personId, targetAttributeIds,
+                                operator) -> new AnswerKeyService.AnswerKey(false, List.of("A"), "A");
+                McqPlugin plugin = new McqPlugin(answerKeyService);
 
-        QuizQuestionTruth truth = new QuizQuestionTruth.Builder()
-                .withType(QuizTruthType.MCQ)
-                .withCorrectChoiceKeys(List.of("1"))
-                .withCorrectAnswerDisplay("A")
-                .build();
+                QuizQuestionTruth truth = QuizQuestionTruth.builder()
+                                .type(QuizTruthType.MCQ)
+                                .correctChoiceKeys(List.of("1"))
+                                .correctAnswerDisplay("A")
+                                .build();
 
-        QuizQuestionSnapshot snapshot = new QuizQuestionSnapshot();
-        snapshot.setTruth(truth);
-        snapshot.setTargetAttributeIds(List.of(42L));
+                QuizQuestionSnapshot snapshot = new QuizQuestionSnapshot();
+                snapshot.setTruth(truth);
+                snapshot.setTargetAttributeIds(List.of(42L));
 
-        NormalizedChoice normalized = new NormalizedChoice(1L, "A");
+                NormalizedChoice normalized = new NormalizedChoice(1L, "A");
 
-        QuizValidationResult validation = assertDoesNotThrow(() ->
-                plugin.validate(snapshot, new QuizAnswerSubmission(), normalized));
+                QuizValidationResult validation = assertDoesNotThrow(
+                                () -> plugin.validate(snapshot, new QuizAnswerSubmission(), normalized));
 
-        assertTrue(validation.getResultAttributes().stream().noneMatch(java.util.Objects::isNull));
-    }
+                assertTrue(validation.getResultAttributes().stream().noneMatch(java.util.Objects::isNull));
+        }
 
-    @Test
-    void validateThrowsWhenTargetAttributeIdsMissing() {
-        AnswerKeyService answerKeyService = (personId, targetAttributeIds, operator) ->
-                new AnswerKeyService.AnswerKey(false, List.of("A"), "A");
-        McqPlugin plugin = new McqPlugin(answerKeyService);
+        @Test
+        void validateThrowsWhenTargetAttributeIdsMissing() {
+                AnswerKeyService answerKeyService = (personId, targetAttributeIds,
+                                operator) -> new AnswerKeyService.AnswerKey(false, List.of("A"), "A");
+                McqPlugin plugin = new McqPlugin(answerKeyService);
 
-        QuizQuestionTruth truth = new QuizQuestionTruth.Builder()
-                .withType(QuizTruthType.MCQ)
-                .withCorrectChoiceKeys(List.of("1"))
-                .withCorrectAnswerDisplay("A")
-                .build();
+                QuizQuestionTruth truth = QuizQuestionTruth.builder()
+                                .type(QuizTruthType.MCQ)
+                                .correctChoiceKeys(List.of("1"))
+                                .correctAnswerDisplay("A")
+                                .build();
 
-        QuizQuestionSnapshot snapshot = new QuizQuestionSnapshot();
-        snapshot.setTruth(truth);
-        snapshot.setTargetAttributeIds(null);
+                QuizQuestionSnapshot snapshot = new QuizQuestionSnapshot();
+                snapshot.setTruth(truth);
+                snapshot.setTargetAttributeIds(null);
 
-        NormalizedChoice normalized = new NormalizedChoice(1L, "A");
+                NormalizedChoice normalized = new NormalizedChoice(1L, "A");
 
-        assertThrows(IllegalStateException.class, () ->
-                plugin.validate(snapshot, new QuizAnswerSubmission(), normalized));
-    }
+                assertThrows(IllegalStateException.class,
+                                () -> plugin.validate(snapshot, new QuizAnswerSubmission(), normalized));
+        }
 }

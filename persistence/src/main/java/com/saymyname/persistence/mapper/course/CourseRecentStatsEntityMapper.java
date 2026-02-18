@@ -38,17 +38,17 @@ public class CourseRecentStatsEntityMapper {
         if (entity == null)
             return null;
 
-        return new CourseRecentStats.Builder()
-                .withId(entity.getId())
-                .withCourseId(entity.getCourse() != null ? entity.getCourse().getId() : null)
-                .withErrorStreak(entity.getErrorStreak())
-                .withHelpStreak(entity.getHelpStreak())
-                .withLastFormat(entity.getLastFormat())
-                .withFormatStreak(entity.getFormatStreak())
-                .withAvgRtRecent(entity.getAvgRtRecent())
-                .withLastAnswerAt(entity.getLastAnswerAt())
-                .withCreatedAt(entity.getCreatedAt())
-                .withUpdatedAt(entity.getUpdatedAt())
+        return CourseRecentStats.builder()
+                .id(entity.getId())
+                .courseId(entity.getCourse() != null ? entity.getCourse().getId() : null)
+                .errorStreak(entity.getErrorStreak())
+                .helpStreak(entity.getHelpStreak())
+                .lastFormat(entity.getLastFormat())
+                .formatStreak(entity.getFormatStreak())
+                .avgRtRecent(entity.getAvgRtRecent())
+                .lastAnswerAt(entity.getLastAnswerAt())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
                 .build();
     }
 }

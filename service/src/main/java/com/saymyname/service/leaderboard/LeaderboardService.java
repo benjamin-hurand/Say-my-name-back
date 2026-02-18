@@ -54,14 +54,14 @@ public class LeaderboardService {
 
         LocalDateTime at = (eventAt != null) ? eventAt : LocalDateTime.now();
 
-        XpEvent ev = new XpEvent.Builder()
-                .withUser(user)
-                .withEventId(UUID.randomUUID()) // ✅ stable
-                .withEventKey(eventKey)
-                .withSourceType(sourceType)
-                .withSourceId(sourceId)
-                .withDeltaXp(deltaXp)
-                .withCreatedAt(at)
+        XpEvent ev = XpEvent.builder()
+                .user(user)
+                .eventId(UUID.randomUUID()) // ✅ stable
+                .eventKey(eventKey)
+                .sourceType(sourceType)
+                .sourceId(sourceId)
+                .deltaXp(deltaXp)
+                .createdAt(at)
                 .build();
 
         leaderboardDao.insertEventAndAddXp(ev, at, correct, helpUsed);

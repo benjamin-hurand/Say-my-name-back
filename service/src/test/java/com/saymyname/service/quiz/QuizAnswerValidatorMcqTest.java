@@ -23,100 +23,100 @@ import com.saymyname.service.quiz.plugins.McqPlugin;
 
 class QuizAnswerValidatorMcqTest {
 
-    @Test
-    void evaluateThrowsWhenTargetAttributeIdsMissing() {
-        AnswerKeyService answerKeyService = (personId, targetAttributeIds, operator) ->
-                new AnswerKeyService.AnswerKey(false, List.of("A"), "A");
-        QuizQuestionFactory factory = new QuizQuestionFactory(List.of(new McqPlugin(answerKeyService)));
-        QuizAnswerValidator validator = new QuizAnswerValidator(factory);
+        @Test
+        void evaluateThrowsWhenTargetAttributeIdsMissing() {
+                AnswerKeyService answerKeyService = (personId, targetAttributeIds,
+                                operator) -> new AnswerKeyService.AnswerKey(false, List.of("A"), "A");
+                QuizQuestionFactory factory = new QuizQuestionFactory(List.of(new McqPlugin(answerKeyService)));
+                QuizAnswerValidator validator = new QuizAnswerValidator(factory);
 
-        QuizQuestionTruth truth = new QuizQuestionTruth.Builder()
-                .withType(QuizTruthType.MCQ)
-                .withCorrectChoiceKeys(List.of("1"))
-                .withCorrectAnswerDisplay("A")
-                .build();
+                QuizQuestionTruth truth = QuizQuestionTruth.builder()
+                                .type(QuizTruthType.MCQ)
+                                .correctChoiceKeys(List.of("1"))
+                                .correctAnswerDisplay("A")
+                                .build();
 
-        QuizQuestionPayload payload = new QuizQuestionPayload.Builder()
-                .withType(QuizPayloadType.MCQ)
-                .withChoices(List.of(new QuizChoice.Builder()
-                        .withId(1L)
-                        .withLabel("A")
-                        .withValue("A")
-                        .build()))
-                .withAllowMultiple(false)
-                .build();
+                QuizQuestionPayload payload = QuizQuestionPayload.builder()
+                                .type(QuizPayloadType.MCQ)
+                                .choices(List.of(QuizChoice.builder()
+                                                .id(1L)
+                                                .label("A")
+                                                .value("A")
+                                                .build()))
+                                .allowMultiple(false)
+                                .build();
 
-        QuizQuestionSnapshot snapshot = new QuizQuestionSnapshot();
-        snapshot.setSnapshotSchemaVersion(1);
-        snapshot.setGeneratorVersion("test");
-        snapshot.setNormalizerVersion("test");
-        snapshot.setFormat(QuizFormat.MCQ);
-        snapshot.setContext(new QuizQuestionContext.Builder()
-                .withSource(QuizQuestionSource.COURSE)
-                .withCourseId(1L)
-                .withCourseQuestionId(2L)
-                .withQuestionRound(1)
-                .build());
-        snapshot.setGameModeId(1L);
-        snapshot.setOperator("op");
-        snapshot.setPayload(payload);
-        snapshot.setTruth(truth);
-        snapshot.setTargetPersonIds(List.of(10L));
-        snapshot.setTargetAttributeIds(null);
+                QuizQuestionSnapshot snapshot = new QuizQuestionSnapshot();
+                snapshot.setSnapshotSchemaVersion(1);
+                snapshot.setGeneratorVersion("test");
+                snapshot.setNormalizerVersion("test");
+                snapshot.setFormat(QuizFormat.MCQ);
+                snapshot.setContext(QuizQuestionContext.builder()
+                                .source(QuizQuestionSource.COURSE)
+                                .courseId(1L)
+                                .courseQuestionId(2L)
+                                .questionRound(1)
+                                .build());
+                snapshot.setGameModeId(1L);
+                snapshot.setOperator("op");
+                snapshot.setPayload(payload);
+                snapshot.setTruth(truth);
+                snapshot.setTargetPersonIds(List.of(10L));
+                snapshot.setTargetAttributeIds(null);
 
-        QuizAnswerSubmission submission = new QuizAnswerSubmission();
-        submission.setSelectedChoiceId(1L);
+                QuizAnswerSubmission submission = new QuizAnswerSubmission();
+                submission.setSelectedChoiceId(1L);
 
-        IllegalStateException ex = assertThrows(IllegalStateException.class,
-                () -> validator.evaluate(snapshot, submission));
-        assertTrue(ex.getMessage().contains("courseId=1"));
-    }
+                IllegalStateException ex = assertThrows(IllegalStateException.class,
+                                () -> validator.evaluate(snapshot, submission));
+                assertTrue(ex.getMessage().contains("courseId=1"));
+        }
 
-    @Test
-    void evaluateSucceedsWithValidTargetAttributeIds() {
-        AnswerKeyService answerKeyService = (personId, targetAttributeIds, operator) ->
-                new AnswerKeyService.AnswerKey(false, List.of("A"), "A");
-        QuizQuestionFactory factory = new QuizQuestionFactory(List.of(new McqPlugin(answerKeyService)));
-        QuizAnswerValidator validator = new QuizAnswerValidator(factory);
+        @Test
+        void evaluateSucceedsWithValidTargetAttributeIds() {
+                AnswerKeyService answerKeyService = (personId, targetAttributeIds,
+                                operator) -> new AnswerKeyService.AnswerKey(false, List.of("A"), "A");
+                QuizQuestionFactory factory = new QuizQuestionFactory(List.of(new McqPlugin(answerKeyService)));
+                QuizAnswerValidator validator = new QuizAnswerValidator(factory);
 
-        QuizQuestionTruth truth = new QuizQuestionTruth.Builder()
-                .withType(QuizTruthType.MCQ)
-                .withCorrectChoiceKeys(List.of("1"))
-                .withCorrectAnswerDisplay("A")
-                .build();
+                QuizQuestionTruth truth = QuizQuestionTruth.builder()
+                                .type(QuizTruthType.MCQ)
+                                .correctChoiceKeys(List.of("1"))
+                                .correctAnswerDisplay("A")
+                                .build();
 
-        QuizQuestionPayload payload = new QuizQuestionPayload.Builder()
-                .withType(QuizPayloadType.MCQ)
-                .withChoices(List.of(new QuizChoice.Builder()
-                        .withId(1L)
-                        .withLabel("A")
-                        .withValue("A")
-                        .build()))
-                .withAllowMultiple(false)
-                .build();
+                QuizQuestionPayload payload = QuizQuestionPayload.builder()
+                                .type(QuizPayloadType.MCQ)
+                                .choices(List.of(QuizChoice.builder()
+                                                .id(1L)
+                                                .label("A")
+                                                .value("A")
+                                                .build()))
+                                .allowMultiple(false)
+                                .build();
 
-        QuizQuestionSnapshot snapshot = new QuizQuestionSnapshot();
-        snapshot.setSnapshotSchemaVersion(1);
-        snapshot.setGeneratorVersion("test");
-        snapshot.setNormalizerVersion("test");
-        snapshot.setFormat(QuizFormat.MCQ);
-        snapshot.setContext(new QuizQuestionContext.Builder()
-                .withSource(QuizQuestionSource.COURSE)
-                .withCourseId(1L)
-                .withCourseQuestionId(2L)
-                .withQuestionRound(1)
-                .build());
-        snapshot.setGameModeId(1L);
-        snapshot.setOperator("op");
-        snapshot.setPayload(payload);
-        snapshot.setTruth(truth);
-        snapshot.setTargetPersonIds(List.of(10L));
-        snapshot.setTargetAttributeIds(List.of(42L));
+                QuizQuestionSnapshot snapshot = new QuizQuestionSnapshot();
+                snapshot.setSnapshotSchemaVersion(1);
+                snapshot.setGeneratorVersion("test");
+                snapshot.setNormalizerVersion("test");
+                snapshot.setFormat(QuizFormat.MCQ);
+                snapshot.setContext(QuizQuestionContext.builder()
+                                .source(QuizQuestionSource.COURSE)
+                                .courseId(1L)
+                                .courseQuestionId(2L)
+                                .questionRound(1)
+                                .build());
+                snapshot.setGameModeId(1L);
+                snapshot.setOperator("op");
+                snapshot.setPayload(payload);
+                snapshot.setTruth(truth);
+                snapshot.setTargetPersonIds(List.of(10L));
+                snapshot.setTargetAttributeIds(List.of(42L));
 
-        QuizAnswerSubmission submission = new QuizAnswerSubmission();
-        submission.setSelectedChoiceId(1L);
+                QuizAnswerSubmission submission = new QuizAnswerSubmission();
+                submission.setSelectedChoiceId(1L);
 
-        QuizEvaluationResult res = assertDoesNotThrow(() -> validator.evaluate(snapshot, submission));
-        assertTrue(res.correct());
-    }
+                QuizEvaluationResult res = assertDoesNotThrow(() -> validator.evaluate(snapshot, submission));
+                assertTrue(res.correct());
+        }
 }

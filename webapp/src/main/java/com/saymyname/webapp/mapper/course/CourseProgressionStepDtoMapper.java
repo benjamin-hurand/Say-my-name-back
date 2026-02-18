@@ -20,14 +20,14 @@
 // }
 
 // public CourseProgressionStep toModel(CourseProgressionStepDto dto) {
-// return new CourseProgressionStep.Builder()
-// .withPersonId(dto.personId())
-// .withStorageKey(dto.storageKey())
-// .withDiscoveredCount(dto.discoveredCount())
-// .withMasteredCount(dto.masteredCount())
-// .withCorrect(dto.correct())
-// .withPool(dto.pool())
-// .withFeedbackMessage(dto.feedbackMessage())
+// return CourseProgressionStep.builder()
+// .personId(dto.personId())
+// .storageKey(dto.storageKey())
+// .discoveredCount(dto.discoveredCount())
+// .masteredCount(dto.masteredCount())
+// .correct(dto.correct())
+// .pool(dto.pool())
+// .feedbackMessage(dto.feedbackMessage())
 // .build();
 // }
 // }

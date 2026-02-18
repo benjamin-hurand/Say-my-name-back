@@ -44,15 +44,15 @@ public class LeaderboardStatEntityMapper {
         if (e == null)
             return null;
 
-        return new LeaderboardStat.Builder()
-                .withId(e.getId())
-                .withUser(userMapper.toShortModel(e.getUser()))
-                .withXp(e.getXp())
-                .withTotalAnswers(e.getTotalAnswers())
-                .withCorrectAnswers(e.getCorrectAnswers())
+        return LeaderboardStat.builder()
+                .id(e.getId())
+                .user(userMapper.toShortModel(e.getUser()))
+                .xp(e.getXp())
+                .totalAnswers(e.getTotalAnswers())
+                .correctAnswers(e.getCorrectAnswers())
                 // entity lastAnswerAt <-> core lastEventAt
-                .withLastEventAt(e.getLastAnswerAt())
-                .withUpdatedAt(e.getUpdatedAt())
+                .lastEventAt(e.getLastAnswerAt())
+                .updatedAt(e.getUpdatedAt())
                 .build();
     }
 }

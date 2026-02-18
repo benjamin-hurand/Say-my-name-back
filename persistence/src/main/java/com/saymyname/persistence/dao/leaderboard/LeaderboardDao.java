@@ -78,12 +78,12 @@ public class LeaderboardDao {
     @Transactional(readOnly = true)
     public List<LeaderboardEntry> getTop(int limit) {
         return leaderboardStatRepository.findTop(limit).stream()
-                .map(row -> new LeaderboardEntry.Builder()
-                        .withUserId(row.getUserId())
-                        .withDisplayName(row.getDisplayName())
-                        .withXp(row.getXp())
-                        .withRank(row.getRowNum())
-                        .withLastEventAt(row.getLastAnswerAt())
+                .map(row -> LeaderboardEntry.builder()
+                        .userId(row.getUserId())
+                        .displayName(row.getDisplayName())
+                        .xp(row.getXp())
+                        .rank(row.getRowNum())
+                        .lastEventAt(row.getLastAnswerAt())
                         .build())
                 .toList();
     }
@@ -104,12 +104,12 @@ public class LeaderboardDao {
                 ? stat.getUser().getDisplayName()
                 : fallbackDisplayName;
 
-        return new LeaderboardEntry.Builder()
-                .withUserId(userId)
-                .withDisplayName(name)
-                .withXp(stat.getXp())
-                .withRank(rank)
-                .withLastEventAt(stat.getLastAnswerAt())
+        return LeaderboardEntry.builder()
+                .userId(userId)
+                .displayName(name)
+                .xp(stat.getXp())
+                .rank(rank)
+                .lastEventAt(stat.getLastAnswerAt())
                 .build();
     }
 }

@@ -27,21 +27,21 @@ public class ChangeRequestResolutionDtoMapper {
                 ? in.decisions().stream().map(this::toItem).toList()
                 : List.of();
 
-        return new ChangeRequestResolution.Builder()
-                .withChangeRequestId(changeRequestId)
-                .withResolver(resolver)
-                .withResolutionComment(in != null ? in.resolutionComment() : null)
-                .withDecisions(items)
+        return ChangeRequestResolution.builder()
+                .changeRequestId(changeRequestId)
+                .resolver(resolver)
+                .resolutionComment(in != null ? in.resolutionComment() : null)
+                .decisions(items)
                 .build();
     }
 
     private ChangeRequestResolutionItem toItem(ResolveChangeRequestItemDto d) {
         if (d == null)
             return null;
-        return new ChangeRequestResolutionItem.Builder()
-                .withItemId(d.itemId())
-                .withDecision(d.decision())
-                .withResolutionComment(d.resolutionComment())
+        return ChangeRequestResolutionItem.builder()
+                .itemId(d.itemId())
+                .decision(d.decision())
+                .resolutionComment(d.resolutionComment())
                 .build();
     }
 

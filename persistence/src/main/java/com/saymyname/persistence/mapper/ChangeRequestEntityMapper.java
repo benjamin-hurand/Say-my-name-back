@@ -125,19 +125,19 @@ public class ChangeRequestEntityMapper {
                 ? e.getItems().stream().map(itemEntityMapper::toModel).collect(Collectors.toList())
                 : null;
 
-        return new ChangeRequest.Builder()
-                .withId(e.getId())
-                .withPerson(personModel)
-                .withRequester(requesterModel)
-                .withAttribute(attributeModel)
-                .withRequestReason(e.getRequestReason())
-                .withStatus(e.getStatus() != null ? e.getStatus() : ChangeRequestStatus.PENDING)
-                .withCreatedAt(e.getCreatedAt())
-                .withUpdatedAt(e.getUpdatedAt())
-                .withResolvedBy(resolvedByModel)
-                .withResolvedAt(e.getResolvedAt())
-                .withResolutionComment(e.getResolutionComment())
-                .withItems(items)
+        return ChangeRequest.builder()
+                .id(e.getId())
+                .person(personModel)
+                .requester(requesterModel)
+                .attribute(attributeModel)
+                .requestReason(e.getRequestReason())
+                .status(e.getStatus() != null ? e.getStatus() : ChangeRequestStatus.PENDING)
+                .createdAt(e.getCreatedAt())
+                .updatedAt(e.getUpdatedAt())
+                .resolvedBy(resolvedByModel)
+                .resolvedAt(e.getResolvedAt())
+                .resolutionComment(e.getResolutionComment())
+                .items(items)
                 .build();
     }
 
@@ -175,19 +175,19 @@ public class ChangeRequestEntityMapper {
                 ? e.getItems().stream().map(itemEntityMapper::toModel).toList()
                 : List.of();
 
-        return new ChangeRequest.Builder()
-                .withId(e.getId())
-                .withPerson(personModel)
-                .withRequester(requesterModel)
-                .withAttribute(attributeModel)
-                .withRequestReason(e.getRequestReason())
-                .withStatus(e.getStatus() != null ? e.getStatus() : ChangeRequestStatus.PENDING)
-                .withCreatedAt(e.getCreatedAt())
-                .withUpdatedAt(e.getUpdatedAt())
-                .withResolvedBy(resolvedByModel)
-                .withResolvedAt(e.getResolvedAt())
-                .withResolutionComment(e.getResolutionComment())
-                .withItems(items)
+        return ChangeRequest.builder()
+                .id(e.getId())
+                .person(personModel)
+                .requester(requesterModel)
+                .attribute(attributeModel)
+                .requestReason(e.getRequestReason())
+                .status(e.getStatus() != null ? e.getStatus() : ChangeRequestStatus.PENDING)
+                .createdAt(e.getCreatedAt())
+                .updatedAt(e.getUpdatedAt())
+                .resolvedBy(resolvedByModel)
+                .resolvedAt(e.getResolvedAt())
+                .resolutionComment(e.getResolutionComment())
+                .items(items)
                 .build();
     }
 
@@ -195,8 +195,8 @@ public class ChangeRequestEntityMapper {
     public ChangeRequest toShortModel(ChangeRequestEntity e) {
         if (e == null)
             return null;
-        return new ChangeRequest.Builder()
-                .withId(e.getId())
+        return ChangeRequest.builder()
+                .id(e.getId())
                 .build();
     }
 }

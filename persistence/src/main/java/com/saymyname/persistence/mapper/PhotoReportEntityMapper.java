@@ -53,18 +53,18 @@ public class PhotoReportEntityMapper {
         if (e == null)
             return null;
 
-        PhotoReport.Builder b = new PhotoReport.Builder()
-                .withId(e.getId())
-                .withReasonType(e.getReasonType())
-                .withReasonText(e.getReasonText())
-                .withCreatedAt(e.getCreatedAt());
+        PhotoReport.Builder b = PhotoReport.builder()
+                .id(e.getId())
+                .reasonType(e.getReasonType())
+                .reasonText(e.getReasonText())
+                .createdAt(e.getCreatedAt());
 
         if (e.getPerson() != null && e.getPerson().getId() != null) {
-            b.withPersonId(e.getPerson().getId());
+            b.personId(e.getPerson().getId());
         }
 
         if (e.getReportedBy() != null && e.getReportedBy().getId() != null) {
-            b.withReportedById(e.getReportedBy().getId());
+            b.reportedById(e.getReportedBy().getId());
         }
 
         return b.build();

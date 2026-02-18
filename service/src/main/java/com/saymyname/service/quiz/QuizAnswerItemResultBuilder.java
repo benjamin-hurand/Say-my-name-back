@@ -24,46 +24,49 @@ import com.saymyname.core.model.quiz.snapshot.WordPuzzleSnapshotState;
  * SPÉCIFICATIONS PAR FORMAT:
  *
  * TEXT_INPUT/CLOZE:
- *   - 1 item
- *   - userAnswerNormalized = texte saisi normalisé (NormalizedText.raw())
- *   - correctAnswer = texte attendu (correctAnswerDisplay)
+ * - 1 item
+ * - userAnswerNormalized = texte saisi normalisé (NormalizedText.raw())
+ * - correctAnswer = texte attendu (correctAnswerDisplay)
  *
  * MCQ (single, allowMultiple=false):
- *   - 1 item
- *   - userAnswerNormalized = label du choix sélectionné
- *   - correctAnswer = label du choix correct
+ * - 1 item
+ * - userAnswerNormalized = label du choix sélectionné
+ * - correctAnswer = label du choix correct
  *
  * MCQ (multiple, allowMultiple=true):
- *   - 1 item
- *   - userAnswerNormalized = "Label1, Label2" (labels sélectionnés, séparés par ", ")
- *   - correctAnswer = "CorrectLabel1, CorrectLabel2" (labels corrects, même format)
+ * - 1 item
+ * - userAnswerNormalized = "Label1, Label2" (labels sélectionnés, séparés par
+ * ", ")
+ * - correctAnswer = "CorrectLabel1, CorrectLabel2" (labels corrects, même
+ * format)
  *
  * BINARY_SWIPE:
- *   - 1 item
- *   - userAnswerNormalized = "Vrai" ou "Faux"
- *   - correctAnswer = valeur attendue ("Vrai" ou "Faux")
+ * - 1 item
+ * - userAnswerNormalized = "Vrai" ou "Faux"
+ * - correctAnswer = valeur attendue ("Vrai" ou "Faux")
  *
  * HANGMAN (multi-step):
- *   - 1 item
- *   - userAnswerNormalized = masque actuel (ex: "T _ f f _ n y")
- *   - correctAnswer = solution complète (ex: "Tiffany")
- *   - Note: état complet (wrongLetters, triedLetters, errorsCount) dans currentState
+ * - 1 item
+ * - userAnswerNormalized = masque actuel (ex: "T _ f f _ n y")
+ * - correctAnswer = solution complète (ex: "Tiffany")
+ * - Note: état complet (wrongLetters, triedLetters, errorsCount) dans
+ * currentState
  *
  * WORD_PUZZLE (multi-step):
- *   - 1 item (dernière tentative uniquement)
- *   - userAnswerNormalized = dernier mot tenté
- *   - correctAnswer = solution
- *   - Note: historique complet des tentatives dans currentState.attempts[]
+ * - 1 item (dernière tentative uniquement)
+ * - userAnswerNormalized = dernier mot tenté
+ * - correctAnswer = solution
+ * - Note: historique complet des tentatives dans currentState.attempts[]
  *
  * ASSOCIATION (futur):
- *   - 1 item global
- *   - userAnswerNormalized = représentation JSON des paires soumises
- *   - correctAnswer = représentation JSON des paires correctes
+ * - 1 item global
+ * - userAnswerNormalized = représentation JSON des paires soumises
+ * - correctAnswer = représentation JSON des paires correctes
  *
  * ORDERING (futur):
- *   - 1 item global
- *   - userAnswerNormalized = représentation de l'ordre soumis
- *   - correctAnswer = représentation de l'ordre correct
+ * - 1 item global
+ * - userAnswerNormalized = représentation de l'ordre soumis
+ * - correctAnswer = représentation de l'ordre correct
  */
 @Service
 public class QuizAnswerItemResultBuilder {
@@ -73,7 +76,8 @@ public class QuizAnswerItemResultBuilder {
      *
      * @param snapshot Le snapshot figé de la question
      * @param eval     Le résultat d'évaluation contenant les données de correction
-     * @return Liste de QuizAnswerItemResult (généralement 1 item, sauf cas spéciaux)
+     * @return Liste de QuizAnswerItemResult (généralement 1 item, sauf cas
+     *         spéciaux)
      */
     public List<QuizAnswerItemResult> build(
             QuizQuestionSnapshot snapshot,
@@ -111,14 +115,14 @@ public class QuizAnswerItemResultBuilder {
             userAnswer = nt.raw();
         }
 
-        return List.of(new QuizAnswerItemResult.Builder()
-                .withPosition(0)
-                .withRole(QuizQuestionItemRole.TARGET)
-                .withPersonId(snapshot.getPersonId())
-                .withCorrect(eval.correct())
-                .withUserAnswerNormalized(userAnswer)
-                .withCorrectAnswer(eval.correctAnswerDisplay())
-                .withResultAttributes(eval.resultAttributes())
+        return List.of(QuizAnswerItemResult.builder()
+                .position(0)
+                .role(QuizQuestionItemRole.TARGET)
+                .personId(snapshot.getPersonId())
+                .correct(eval.correct())
+                .userAnswerNormalized(userAnswer)
+                .correctAnswer(eval.correctAnswerDisplay())
+                .resultAttributes(eval.resultAttributes())
                 .build());
     }
 
@@ -169,14 +173,14 @@ public class QuizAnswerItemResultBuilder {
             correctAnswer = eval.correctAnswerDisplay();
         }
 
-        return List.of(new QuizAnswerItemResult.Builder()
-                .withPosition(0)
-                .withRole(QuizQuestionItemRole.TARGET)
-                .withPersonId(snapshot.getPersonId())
-                .withCorrect(eval.correct())
-                .withUserAnswerNormalized(userAnswerNormalized)
-                .withCorrectAnswer(correctAnswer)
-                .withResultAttributes(eval.resultAttributes())
+        return List.of(QuizAnswerItemResult.builder()
+                .position(0)
+                .role(QuizQuestionItemRole.TARGET)
+                .personId(snapshot.getPersonId())
+                .correct(eval.correct())
+                .userAnswerNormalized(userAnswerNormalized)
+                .correctAnswer(correctAnswer)
+                .resultAttributes(eval.resultAttributes())
                 .build());
     }
 
@@ -198,14 +202,14 @@ public class QuizAnswerItemResultBuilder {
             correctAnswer = snapshot.getTruth().getCorrectSwipeRight() ? "Vrai" : "Faux";
         }
 
-        return List.of(new QuizAnswerItemResult.Builder()
-                .withPosition(0)
-                .withRole(QuizQuestionItemRole.TARGET)
-                .withPersonId(snapshot.getPersonId())
-                .withCorrect(eval.correct())
-                .withUserAnswerNormalized(userAnswer)
-                .withCorrectAnswer(correctAnswer)
-                .withResultAttributes(eval.resultAttributes())
+        return List.of(QuizAnswerItemResult.builder()
+                .position(0)
+                .role(QuizQuestionItemRole.TARGET)
+                .personId(snapshot.getPersonId())
+                .correct(eval.correct())
+                .userAnswerNormalized(userAnswer)
+                .correctAnswer(correctAnswer)
+                .resultAttributes(eval.resultAttributes())
                 .build());
     }
 
@@ -224,14 +228,14 @@ public class QuizAnswerItemResultBuilder {
             mask = snapshot.getHangmanState().getMask();
         }
 
-        return List.of(new QuizAnswerItemResult.Builder()
-                .withPosition(0)
-                .withRole(QuizQuestionItemRole.TARGET)
-                .withPersonId(snapshot.getPersonId())
-                .withCorrect(eval.correct())
-                .withUserAnswerNormalized(mask)
-                .withCorrectAnswer(eval.correctAnswerDisplay())
-                .withResultAttributes(eval.resultAttributes())
+        return List.of(QuizAnswerItemResult.builder()
+                .position(0)
+                .role(QuizQuestionItemRole.TARGET)
+                .personId(snapshot.getPersonId())
+                .correct(eval.correct())
+                .userAnswerNormalized(mask)
+                .correctAnswer(eval.correctAnswerDisplay())
+                .resultAttributes(eval.resultAttributes())
                 .build());
     }
 
@@ -259,14 +263,14 @@ public class QuizAnswerItemResultBuilder {
             lastAttempt = attempts.get(attempts.size() - 1).getWord();
         }
 
-        return List.of(new QuizAnswerItemResult.Builder()
-                .withPosition(0)
-                .withRole(QuizQuestionItemRole.TARGET)
-                .withPersonId(snapshot.getPersonId())
-                .withCorrect(eval.correct())
-                .withUserAnswerNormalized(lastAttempt)
-                .withCorrectAnswer(eval.correctAnswerDisplay())
-                .withResultAttributes(eval.resultAttributes())
+        return List.of(QuizAnswerItemResult.builder()
+                .position(0)
+                .role(QuizQuestionItemRole.TARGET)
+                .personId(snapshot.getPersonId())
+                .correct(eval.correct())
+                .userAnswerNormalized(lastAttempt)
+                .correctAnswer(eval.correctAnswerDisplay())
+                .resultAttributes(eval.resultAttributes())
                 .build());
     }
 
@@ -280,12 +284,12 @@ public class QuizAnswerItemResultBuilder {
 
         // TODO: Implémenter quand le frontend en aura besoin
         // Pour l'instant, retourner un item simple avec correctAnswerDisplay
-        return List.of(new QuizAnswerItemResult.Builder()
-                .withPosition(0)
-                .withRole(QuizQuestionItemRole.TARGET)
-                .withCorrect(eval.correct())
-                .withCorrectAnswer(eval.correctAnswerDisplay())
-                .withResultAttributes(eval.resultAttributes())
+        return List.of(QuizAnswerItemResult.builder()
+                .position(0)
+                .role(QuizQuestionItemRole.TARGET)
+                .correct(eval.correct())
+                .correctAnswer(eval.correctAnswerDisplay())
+                .resultAttributes(eval.resultAttributes())
                 .build());
     }
 
@@ -299,12 +303,12 @@ public class QuizAnswerItemResultBuilder {
 
         // TODO: Implémenter quand le frontend en aura besoin
         // Pour l'instant, retourner un item simple avec correctAnswerDisplay
-        return List.of(new QuizAnswerItemResult.Builder()
-                .withPosition(0)
-                .withRole(QuizQuestionItemRole.TARGET)
-                .withCorrect(eval.correct())
-                .withCorrectAnswer(eval.correctAnswerDisplay())
-                .withResultAttributes(eval.resultAttributes())
+        return List.of(QuizAnswerItemResult.builder()
+                .position(0)
+                .role(QuizQuestionItemRole.TARGET)
+                .correct(eval.correct())
+                .correctAnswer(eval.correctAnswerDisplay())
+                .resultAttributes(eval.resultAttributes())
                 .build());
     }
 }

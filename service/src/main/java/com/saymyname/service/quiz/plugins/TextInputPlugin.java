@@ -35,14 +35,14 @@ public class TextInputPlugin implements QuizQuestionPlugin {
 
         QuizQuestionHints hints = PluginSupport.hintsFromSpec(spec);
 
-        QuizQuestionPayload payload = new QuizQuestionPayload.Builder()
-                .withType(QuizPayloadType.TEXT_INPUT)
+        QuizQuestionPayload payload = QuizQuestionPayload.builder()
+                .type(QuizPayloadType.TEXT_INPUT)
                 .build();
 
-        QuizQuestionDisplay display = new QuizQuestionDisplay.Builder()
-                .withPrompt("Ecris la bonne reponse")
-                .withSubtitle(null)
-                .withInputPlaceholder("Tape ici")
+        QuizQuestionDisplay display = QuizQuestionDisplay.builder()
+                .prompt("Ecris la bonne reponse")
+                .subtitle(null)
+                .inputPlaceholder("Tape ici")
                 .build();
 
         return PluginSupport.baseQuestion(
@@ -102,10 +102,10 @@ public class TextInputPlugin implements QuizQuestionPlugin {
             }
         }
 
-        return new QuizValidationResult.Builder()
-                .withCorrect(correct)
-                .withCorrectAnswerDisplay(correctDisplay)
-                .withResultAttributes(attrs)
+        return QuizValidationResult.builder()
+                .correct(correct)
+                .correctAnswerDisplay(correctDisplay)
+                .resultAttributes(attrs)
                 .build();
     }
 }

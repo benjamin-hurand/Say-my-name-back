@@ -125,13 +125,13 @@ public class QuizEngine {
 
                         List<QuizAnswerItemResult> itemResults = itemResultBuilder.build(snapshotToPersist, eval);
 
-                        return new QuizAnswerResult.Builder()
-                                        .withCorrect(eval.correct())
-                                        .withFeedbackMessage(eval.feedbackMessage())
-                                        .withIsComplete(eval.isComplete()) // false
-                                        .withCurrentState(eval.updatedState())
-                                        .withItemResults(itemResults)
-                                        .withNextQuestion(null)
+                        return QuizAnswerResult.builder()
+                                        .correct(eval.correct())
+                                        .feedbackMessage(eval.feedbackMessage())
+                                        .isComplete(eval.isComplete()) // false
+                                        .currentState(eval.updatedState())
+                                        .itemResults(itemResults)
+                                        .nextQuestion(null)
                                         .build();
                 }
 
@@ -161,13 +161,13 @@ public class QuizEngine {
 
                 List<QuizAnswerItemResult> itemResults = itemResultBuilder.build(snapshotToPersist, eval);
 
-                return new QuizAnswerResult.Builder()
-                                .withCorrect(eval.correct())
-                                .withFeedbackMessage(eval.feedbackMessage())
-                                .withIsComplete(eval.isComplete()) // null (single-shot) or true (multi-step done)
-                                .withCurrentState(eval.updatedState()) // état final utile UI
-                                .withItemResults(itemResults)
-                                .withNextQuestion(next)
+                return QuizAnswerResult.builder()
+                                .correct(eval.correct())
+                                .feedbackMessage(eval.feedbackMessage())
+                                .isComplete(eval.isComplete()) // null (single-shot) or true (multi-step done)
+                                .currentState(eval.updatedState()) // état final utile UI
+                                .itemResults(itemResults)
+                                .nextQuestion(next)
                                 .build();
         }
 }

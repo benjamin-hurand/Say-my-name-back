@@ -14,22 +14,22 @@ public final class QuizQuestionSnapshotMapper {
             return null;
         }
 
-        return new QuizQuestion.Builder()
-                .withPersonId(s.getPersonId())
-                .withStorageKey(s.getStorageKey())
-                .withGameModeId(s.getGameModeId())
-                .withTargetAttributeIds(s.getTargetAttributeIds())
-                .withOperator(s.getOperator())
-                .withContext(s.getContext())
-                .withFormat(s.getFormat())
-                .withPayload(s.getPayload())
-                .withHints(s.getHints())
-                .withDisplay(s.getDisplay())
-                .withFollowUp(s.getFollowUp())
-                .withReasonCode(s.getReasonCode())
-                .withReasonDetailsJson(s.getReasonDetailsJson())
+        return QuizQuestion.builder()
+                .personId(s.getPersonId())
+                .storageKey(s.getStorageKey())
+                .gameModeId(s.getGameModeId())
+                .targetAttributeIds(s.getTargetAttributeIds())
+                .operator(s.getOperator())
+                .context(s.getContext())
+                .format(s.getFormat())
+                .payload(s.getPayload())
+                .hints(s.getHints())
+                .display(s.getDisplay())
+                .followUp(s.getFollowUp())
+                .reasonCode(s.getReasonCode())
+                .reasonDetailsJson(s.getReasonDetailsJson())
                 // ✅ NEW: inject runtime multi-step state into QuizQuestion
-                .withMultiStepState(extractMultiStepState(s))
+                .multiStepState(extractMultiStepState(s))
                 .build();
     }
 

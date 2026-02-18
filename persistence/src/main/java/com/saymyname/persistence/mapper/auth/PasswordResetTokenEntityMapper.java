@@ -11,14 +11,14 @@ public class PasswordResetTokenEntityMapper {
     public PasswordResetToken toModel(PasswordResetTokenEntity e) {
         if (e == null)
             return null;
-        return new PasswordResetToken.Builder()
-                .withId(e.getId())
-                .withUserId(e.getUserId())
-                .withTokenHash(e.getTokenHash())
-                .withExpiresAt(e.getExpiresAt())
-                .withUsedAt(e.getUsedAt())
-                .withCreatedIp(e.getCreatedIp())
-                .withUserAgent(e.getUserAgent())
+        return PasswordResetToken.builder()
+                .id(e.getId())
+                .userId(e.getUserId())
+                .tokenHash(e.getTokenHash())
+                .expiresAt(e.getExpiresAt())
+                .usedAt(e.getUsedAt())
+                .createdIp(e.getCreatedIp())
+                .userAgent(e.getUserAgent())
                 .build();
     }
 
@@ -26,8 +26,8 @@ public class PasswordResetTokenEntityMapper {
     public PasswordResetToken toShortModel(PasswordResetTokenEntity e) {
         if (e == null)
             return null;
-        return new PasswordResetToken.Builder()
-                .withId(e.getId())
+        return PasswordResetToken.builder()
+                .id(e.getId())
                 .build();
     }
 

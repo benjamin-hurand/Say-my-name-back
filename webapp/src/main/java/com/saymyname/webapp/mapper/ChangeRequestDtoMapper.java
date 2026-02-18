@@ -59,11 +59,11 @@ public class ChangeRequestDtoMapper {
         if (in == null)
             return null;
 
-        ChangeRequest.Builder b = new ChangeRequest.Builder()
-                .withPerson(new Person.Builder().withId(in.personId()).build())
-                .withRequester(new User.Builder().withId(requester.getId()).build())
-                .withAttribute(new Attribute.Builder().withId(in.attributeId()).build()) // <- porté par l’enveloppe
-                .withRequestReason(in.requestReason());
+        ChangeRequest.Builder b = ChangeRequest.builder()
+                .person(Person.builder().id(in.personId()).build())
+                .requester(User.builder().id(requester.getId()).build())
+                .attribute(Attribute.builder().id(in.attributeId()).build()) // <- porté par l’enveloppe
+                .requestReason(in.requestReason());
 
         List<ChangeRequestItem> items = new ArrayList<>();
         if (in.items() != null) {
@@ -73,7 +73,7 @@ public class ChangeRequestDtoMapper {
                 items.add(mapped);
             }
         }
-        b.withItems(items);
+        b.items(items);
         return b.build();
     }
 
@@ -85,9 +85,9 @@ public class ChangeRequestDtoMapper {
         if (in == null)
             return null;
 
-        ChangeRequest.Builder b = new ChangeRequest.Builder()
-                .withRequester(new User.Builder().withId(requester.getId()).build())
-                .withRequestReason(in.requestReason());
+        ChangeRequest.Builder b = ChangeRequest.builder()
+                .requester(User.builder().id(requester.getId()).build())
+                .requestReason(in.requestReason());
 
         List<ChangeRequestItem> items = new ArrayList<>();
         if (in.items() != null) {
@@ -97,7 +97,7 @@ public class ChangeRequestDtoMapper {
                 items.add(mapped);
             }
         }
-        b.withItems(items);
+        b.items(items);
         return b.build();
     }
 

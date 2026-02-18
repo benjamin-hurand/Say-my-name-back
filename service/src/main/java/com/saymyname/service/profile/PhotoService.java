@@ -105,11 +105,11 @@ public class PhotoService {
             photoDao.deletePendingByPersonId(personId);
 
             // 3) Persiste la nouvelle PENDING
-            Photo toCreate = new Photo.Builder()
-                    .withPerson(new Person.Builder().withId(personId).build())
-                    .withStorageKey(stored.key())
-                    .withStatus(PhotoStatus.PENDING)
-                    .withSubmittedBy(new User.Builder().withId(principal.getId()).build())
+            Photo toCreate = Photo.builder()
+                    .person(Person.builder().id(personId).build())
+                    .storageKey(stored.key())
+                    .status(PhotoStatus.PENDING)
+                    .submittedBy(User.builder().id(principal.getId()).build())
                     .build();
 
             return photoDao.save(toCreate);

@@ -18,11 +18,11 @@ public class TrainingOptionsDtoMapper {
 
         CategorySelection category = toCategoryModel(dto.category());
 
-        return new TrainingOptions.Builder()
-                .withGameModeId(dto.gameModeId())
-                .withPopulationScope(dto.populationScope())
-                .withCategory(category)
-                .withTrackKnowledge(dto.trackKnowledge())
+        return TrainingOptions.builder()
+                .gameModeId(dto.gameModeId())
+                .populationScope(dto.populationScope())
+                .category(category)
+                .trackKnowledge(dto.trackKnowledge())
                 .build();
     }
 
@@ -30,9 +30,9 @@ public class TrainingOptionsDtoMapper {
         if (dto == null) {
             return null;
         }
-        return new CategorySelection.Builder()
-                .withAttributeId(dto.attributeId())
-                .withValue(dto.value())
+        return CategorySelection.builder()
+                .attributeId(dto.attributeId())
+                .value(dto.value())
                 .build();
     }
 }

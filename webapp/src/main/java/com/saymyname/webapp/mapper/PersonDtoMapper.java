@@ -31,8 +31,8 @@ public class PersonDtoMapper {
         }
 
         public Person toModel(Long personId) {
-                return new Person.Builder()
-                                .withId(personId)
+                return Person.builder()
+                                .id(personId)
                                 .build();
         }
 

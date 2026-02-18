@@ -56,15 +56,15 @@ public class PersonEntityMapper {
                         return null;
                 }
 
-                return new Person.Builder()
-                                .withId(personEntity.getId())
-                                .withAttributes(
+                return Person.builder()
+                                .id(personEntity.getId())
+                                .attributes(
                                                 personEntity.getAttributes() != null
                                                                 ? personEntity.getAttributes().stream()
                                                                                 .map(personAttributeEntityMapper::toModel)
                                                                                 .collect(Collectors.toList())
                                                                 : List.of())
-                                .withPhotos(
+                                .photos(
                                                 personEntity.getPhotos() != null
                                                                 ? personEntity.getPhotos().stream()
                                                                                 .map(photoEntityMapper::toModel)
@@ -78,8 +78,8 @@ public class PersonEntityMapper {
                 if (personEntity == null) {
                         return null;
                 }
-                return new Person.Builder()
-                                .withId(personEntity.getId())
+                return Person.builder()
+                                .id(personEntity.getId())
                                 .build();
         }
 

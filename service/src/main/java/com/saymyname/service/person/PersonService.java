@@ -104,11 +104,11 @@ public class PersonService {
                 .toList();
 
         if (personIds.isEmpty()) {
-            return page.map(p -> new PersonCard.Builder()
-                    .withIdPerson(p.getPersonId())
-                    .withPhotoStorageKey(p.getPhotoStorageKey())
-                    .withAttributes(List.of())
-                    .withFollowed(false)
+            return page.map(p -> PersonCard.builder()
+                    .idPerson(p.getPersonId())
+                    .photoStorageKey(p.getPhotoStorageKey())
+                    .attributes(List.of())
+                    .followed(false)
                     .build());
         }
 
@@ -166,11 +166,11 @@ public class PersonService {
         }
 
         // 6) Assemblage final
-        return page.map(p -> new PersonCard.Builder()
-                .withIdPerson(p.getPersonId())
-                .withPhotoStorageKey(p.getPhotoStorageKey())
-                .withAttributes(allAttributesByPerson.getOrDefault(p.getPersonId(), List.of()))
-                .withFollowed(followedIds.contains(p.getPersonId()))
+        return page.map(p -> PersonCard.builder()
+                .idPerson(p.getPersonId())
+                .photoStorageKey(p.getPhotoStorageKey())
+                .attributes(allAttributesByPerson.getOrDefault(p.getPersonId(), List.of()))
+                .followed(followedIds.contains(p.getPersonId()))
                 .build());
     }
 
@@ -191,11 +191,11 @@ public class PersonService {
                 .toList();
 
         if (personIds.isEmpty()) {
-            return page.map(p -> new AdminPersonCard.Builder()
-                    .withIdPerson(p.getPersonId())
-                    .withPhotoStorageKey(p.getPhotoStorageKey())
-                    .withAttributes(List.of())
-                    .withHasPendingChangeRequests(false)
+            return page.map(p -> AdminPersonCard.builder()
+                    .idPerson(p.getPersonId())
+                    .photoStorageKey(p.getPhotoStorageKey())
+                    .attributes(List.of())
+                    .hasPendingChangeRequests(false)
                     .build());
         }
 
@@ -251,11 +251,11 @@ public class PersonService {
         }
 
         // 6) Assemblage final
-        return page.map(p -> new AdminPersonCard.Builder()
-                .withIdPerson(p.getPersonId())
-                .withPhotoStorageKey(p.getPhotoStorageKey())
-                .withAttributes(allAttributesByPerson.getOrDefault(p.getPersonId(), List.of()))
-                .withHasPendingChangeRequests(pendingCR.contains(p.getPersonId()))
+        return page.map(p -> AdminPersonCard.builder()
+                .idPerson(p.getPersonId())
+                .photoStorageKey(p.getPhotoStorageKey())
+                .attributes(allAttributesByPerson.getOrDefault(p.getPersonId(), List.of()))
+                .hasPendingChangeRequests(pendingCR.contains(p.getPersonId()))
                 .build());
     }
 
@@ -301,11 +301,11 @@ public class PersonService {
         return rows.stream().collect(Collectors.groupingBy(
                 AttributeValueRow::getPersonId,
                 Collectors.mapping(
-                        r -> new AttributeValueView.Builder()
-                                .withAttributeId(r.getAttributeId())
-                                .withValue(r.getValue())
-                                .withDisplayOrder(r.getDisplayOrder())
-                                .withPrimaryField(primaryFlag) // ⬅️ important
+                        r -> AttributeValueView.builder()
+                                .attributeId(r.getAttributeId())
+                                .value(r.getValue())
+                                .displayOrder(r.getDisplayOrder())
+                                .primaryField(primaryFlag) // ⬅️ important
                                 .build(),
                         Collectors.toList())));
     }

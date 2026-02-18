@@ -43,16 +43,16 @@ public class CourseEntityMapper {
         if (e == null)
             return null;
 
-        return new Course.Builder()
-                .withId(e.getId())
-                .withUser(userMapper.toShortModel(e.getUser()))
-                .withGameMode(gameModeMapper.toModel(e.getGameMode()))
-                .withStatus(e.getStatus())
-                .withCurrentRound(e.getCurrentRound())
-                .withPopulationScope(e.getPopulationScope())
-                .withCreatedAt(e.getCreatedAt())
-                .withUpdatedAt(e.getUpdatedAt())
-                .withLastAccessedAt(e.getLastAccessedAt())
+        return Course.builder()
+                .id(e.getId())
+                .user(userMapper.toShortModel(e.getUser()))
+                .gameMode(gameModeMapper.toModel(e.getGameMode()))
+                .status(e.getStatus())
+                .currentRound(e.getCurrentRound())
+                .populationScope(e.getPopulationScope())
+                .createdAt(e.getCreatedAt())
+                .updatedAt(e.getUpdatedAt())
+                .lastAccessedAt(e.getLastAccessedAt())
                 .build();
     }
 
@@ -60,16 +60,16 @@ public class CourseEntityMapper {
         if (e == null)
             return null;
 
-        return new Course.Builder()
-                .withId(e.getId())
-                .withUser(userMapper.toShortModel(e.getUser()))
-                .withGameMode(gameModeMapper.toShortModel(e.getGameMode()))
-                .withStatus(e.getStatus())
-                .withCurrentRound(e.getCurrentRound())
-                .withPopulationScope(e.getPopulationScope())
-                .withCreatedAt(e.getCreatedAt())
-                .withUpdatedAt(e.getUpdatedAt())
-                .withLastAccessedAt(e.getLastAccessedAt())
+        return Course.builder()
+                .id(e.getId())
+                .user(userMapper.toShortModel(e.getUser()))
+                .gameMode(gameModeMapper.toShortModel(e.getGameMode()))
+                .status(e.getStatus())
+                .currentRound(e.getCurrentRound())
+                .populationScope(e.getPopulationScope())
+                .createdAt(e.getCreatedAt())
+                .updatedAt(e.getUpdatedAt())
+                .lastAccessedAt(e.getLastAccessedAt())
                 .build();
     }
 }

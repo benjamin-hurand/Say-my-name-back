@@ -79,19 +79,19 @@ public class UserEmailEntityMapper {
             return null;
         }
 
-        UserEmail.Builder b = new UserEmail.Builder()
-                .withId(e.getId())
-                .withEmail(e.getEmail())
-                .withPrimary(e.isPrimary())
-                .withLoginAllowed(e.isLoginAllowed())
-                .withRecoveryAllowed(e.isRecoveryAllowed())
-                .withVerifiedAt(e.getVerifiedAt())
-                .withAddedAt(e.getAddedAt())
-                .withUpdatedAt(e.getUpdatedAt())
-                .withRecoveryEligibleAt(e.getRecoveryEligibleAt());
+        UserEmail.Builder b = UserEmail.builder()
+                .id(e.getId())
+                .email(e.getEmail())
+                .primary(e.isPrimary())
+                .loginAllowed(e.isLoginAllowed())
+                .recoveryAllowed(e.isRecoveryAllowed())
+                .verifiedAt(e.getVerifiedAt())
+                .addedAt(e.getAddedAt())
+                .updatedAt(e.getUpdatedAt())
+                .recoveryEligibleAt(e.getRecoveryEligibleAt());
 
         if (e.getUser() != null && e.getUser().getId() != null) {
-            b.withUserId(e.getUser().getId());
+            b.userId(e.getUser().getId());
         }
 
         return b.build();

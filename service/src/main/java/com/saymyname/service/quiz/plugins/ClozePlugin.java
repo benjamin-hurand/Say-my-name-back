@@ -55,15 +55,15 @@ public class ClozePlugin implements QuizQuestionPlugin {
                 // Ex: "Abarna" => "A____a" plutôt que "______"
                 String mask = PluginSupport.clozeMaskRevealSome(answer, seed);
 
-                QuizQuestionDisplay display = new QuizQuestionDisplay.Builder()
-                                .withPrompt("Complète les trous")
-                                .withSubtitle(null)
-                                .withInputPlaceholder("Ta réponse")
+                QuizQuestionDisplay display = QuizQuestionDisplay.builder()
+                                .prompt("Complète les trous")
+                                .subtitle(null)
+                                .inputPlaceholder("Ta réponse")
                                 .build();
 
-                QuizQuestionPayload payload = new QuizQuestionPayload.Builder()
-                                .withType(QuizPayloadType.CLOZE)
-                                .withMask(mask)
+                QuizQuestionPayload payload = QuizQuestionPayload.builder()
+                                .type(QuizPayloadType.CLOZE)
+                                .mask(mask)
                                 .build();
 
                 return PluginSupport.baseQuestion(
@@ -108,10 +108,10 @@ public class ClozePlugin implements QuizQuestionPlugin {
                                 correct,
                                 true));
 
-                return new QuizValidationResult.Builder()
-                                .withCorrect(correct)
-                                .withCorrectAnswerDisplay(expected)
-                                .withResultAttributes(attrs)
+                return QuizValidationResult.builder()
+                                .correct(correct)
+                                .correctAnswerDisplay(expected)
+                                .resultAttributes(attrs)
                                 .build();
         }
 }

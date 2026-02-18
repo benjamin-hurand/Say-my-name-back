@@ -53,16 +53,16 @@ public class WordPuzzlePlugin implements QuizQuestionPlugin {
                 ? Math.max(1, spec.getMaxErrorsOverride())
                 : DEFAULT_MAX_ATTEMPTS;
 
-        QuizQuestionDisplay display = new QuizQuestionDisplay.Builder()
-                .withPrompt("Trouve le mot en " + maxAttempts + " essais")
-                .withSubtitle("Chaque lettre te donne un indice")
-                .withInputPlaceholder("Tape un mot de " + solution.length() + " lettres")
+        QuizQuestionDisplay display = QuizQuestionDisplay.builder()
+                .prompt("Trouve le mot en " + maxAttempts + " essais")
+                .subtitle("Chaque lettre te donne un indice")
+                .inputPlaceholder("Tape un mot de " + solution.length() + " lettres")
                 .build();
 
-        QuizQuestionPayload payload = new QuizQuestionPayload.Builder()
-                .withType(QuizPayloadType.WORD_PUZZLE)
-                .withWordLength(solution.length())
-                .withMaxAttempts(maxAttempts)
+        QuizQuestionPayload payload = QuizQuestionPayload.builder()
+                .type(QuizPayloadType.WORD_PUZZLE)
+                .wordLength(solution.length())
+                .maxAttempts(maxAttempts)
                 .build();
 
         return PluginSupport.baseQuestion(
@@ -119,9 +119,9 @@ public class WordPuzzlePlugin implements QuizQuestionPlugin {
 
         // Add attempt
         WordPuzzleSnapshotState.AttemptEntry attempt = new WordPuzzleSnapshotState.AttemptEntry.Builder()
-                .withWord(guess)
-                .withFeedback(feedback)
-                .withPosition(currentState.getAttempts().size())
+                .word(guess)
+                .feedback(feedback)
+                .position(currentState.getAttempts().size())
                 .build();
 
         newState.getAttempts().add(attempt);
@@ -138,12 +138,12 @@ public class WordPuzzlePlugin implements QuizQuestionPlugin {
 
         Boolean isComplete = Boolean.TRUE.equals(newState.getSolved()) || Boolean.TRUE.equals(newState.getFailed());
 
-        return new QuizValidationResult.Builder()
-                .withCorrect(correct)
-                .withCorrectAnswerDisplay(solution)
-                .withUpdatedState(newState)
-                .withIsComplete(isComplete)
-                .withErrorMessage(null)
+        return QuizValidationResult.builder()
+                .correct(correct)
+                .correctAnswerDisplay(solution)
+                .updatedState(newState)
+                .isComplete(isComplete)
+                .errorMessage(null)
                 .build();
     }
 
@@ -198,11 +198,11 @@ public class WordPuzzlePlugin implements QuizQuestionPlugin {
      * Clones the current state for mutation.
      */
     private WordPuzzleSnapshotState cloneState(WordPuzzleSnapshotState current) {
-        return new WordPuzzleSnapshotState.Builder()
-                .withAttempts(new ArrayList<>(current.getAttempts()))
-                .withAttemptsRemaining(current.getAttemptsRemaining())
-                .withSolved(current.getSolved())
-                .withFailed(current.getFailed())
+        return WordPuzzleSnapshotState.builder()
+                .attempts(new ArrayList<>(current.getAttempts()))
+                .attemptsRemaining(current.getAttemptsRemaining())
+                .solved(current.getSolved())
+                .failed(current.getFailed())
                 .build();
     }
 
@@ -210,12 +210,12 @@ public class WordPuzzlePlugin implements QuizQuestionPlugin {
      * Builds error result.
      */
     private QuizValidationResult buildErrorResult(String error, WordPuzzleSnapshotState state, String correctDisplay) {
-        return new QuizValidationResult.Builder()
-                .withCorrect(false)
-                .withCorrectAnswerDisplay(correctDisplay)
-                .withUpdatedState(state)
-                .withIsComplete(false)
-                .withErrorMessage(error)
+        return QuizValidationResult.builder()
+                .correct(false)
+                .correctAnswerDisplay(correctDisplay)
+                .updatedState(state)
+                .isComplete(false)
+                .errorMessage(error)
                 .build();
     }
 }

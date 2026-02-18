@@ -160,15 +160,15 @@ public class CourseQuestionAttemptEntityMapper {
                 : null;
         QuizDecisionReasonCode resolvedReason = QuizDecisionReasonCode.fromString(reasonCode);
 
-        CourseQuestionPlan plan = new CourseQuestionPlan.Builder()
-                .withFormat(entity.getPlannedFormat())
-                .withTimed(entity.isPlannedTimed())
-                .withTimeLimitMs(entity.getPlannedTimeLimitMs())
-                .withTargetCount(entity.getPlannedTargetCount())
-                .withTargetKnowledgeIds(readJsonList(entity.getPlannedTargetKnowledgeIdsJson(), entity))
-                .withParamsJson(entity.getPlannedParamsJson())
-                .withReasonCode(resolvedReason)
-                .withReasonDetailsJson(entity.getPlannedReasonDetailsJson())
+        CourseQuestionPlan plan = CourseQuestionPlan.builder()
+                .format(entity.getPlannedFormat())
+                .timed(entity.isPlannedTimed())
+                .timeLimitMs(entity.getPlannedTimeLimitMs())
+                .targetCount(entity.getPlannedTargetCount())
+                .targetKnowledgeIds(readJsonList(entity.getPlannedTargetKnowledgeIdsJson(), entity))
+                .paramsJson(entity.getPlannedParamsJson())
+                .reasonCode(resolvedReason)
+                .reasonDetailsJson(entity.getPlannedReasonDetailsJson())
                 .build();
 
         try {
@@ -181,21 +181,21 @@ public class CourseQuestionAttemptEntityMapper {
                     + " targetCount=" + entity.getPlannedTargetCount(), e);
         }
 
-        return new CourseQuestionAttempt.Builder()
-                .withId(entity.getId())
-                .withCourse(courseMapper.toShortModel(entity.getCourse()))
-                .withQuestionRound(entity.getQuestionRound())
-                .withAskedAt(entity.getAskedAt())
-                .withAnsweredAt(entity.getAnsweredAt())
-                .withResponseTimeMs(entity.getResponseTimeMs())
-                .withRawSubmission(entity.getRawSubmission())
-                .withNormalizedAudit(entity.getNormalizedAudit())
-                .withGlobalCorrect(entity.isGlobalCorrect())
-                .withPoolType(entity.getPoolType())
-                .withHelpUsed(entity.isHelpUsed())
-                .withSnapshot(snapshot)
-                .withPlan(plan)
-                .withItems(items)
+        return CourseQuestionAttempt.builder()
+                .id(entity.getId())
+                .course(courseMapper.toShortModel(entity.getCourse()))
+                .questionRound(entity.getQuestionRound())
+                .askedAt(entity.getAskedAt())
+                .answeredAt(entity.getAnsweredAt())
+                .responseTimeMs(entity.getResponseTimeMs())
+                .rawSubmission(entity.getRawSubmission())
+                .normalizedAudit(entity.getNormalizedAudit())
+                .globalCorrect(entity.isGlobalCorrect())
+                .poolType(entity.getPoolType())
+                .helpUsed(entity.isHelpUsed())
+                .snapshot(snapshot)
+                .plan(plan)
+                .items(items)
                 .build();
     }
 

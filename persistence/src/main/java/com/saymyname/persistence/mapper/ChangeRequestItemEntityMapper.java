@@ -78,8 +78,8 @@ public class ChangeRequestItemEntityMapper {
         // Parent "léger"
         ChangeRequest crRef = null;
         if (e.getChangeRequest() != null) {
-            crRef = new ChangeRequest.Builder()
-                    .withId(e.getChangeRequest().getId())
+            crRef = ChangeRequest.builder()
+                    .id(e.getChangeRequest().getId())
                     .build();
         }
 
@@ -88,15 +88,15 @@ public class ChangeRequestItemEntityMapper {
                 ? personAttributeEntityMapper.toModel(e.getPersonAttribute())
                 : null;
 
-        return new ChangeRequestItem.Builder()
-                .withId(e.getId())
-                .withChangeRequest(crRef)
-                .withAction(e.getAction())
-                .withPersonAttribute(pa)
-                .withProposedValue(e.getProposedValue())
-                .withResolutionStatus(
+        return ChangeRequestItem.builder()
+                .id(e.getId())
+                .changeRequest(crRef)
+                .action(e.getAction())
+                .personAttribute(pa)
+                .proposedValue(e.getProposedValue())
+                .resolutionStatus(
                         e.getResolutionStatus() != null ? e.getResolutionStatus() : ChangeRequestItemStatus.PENDING)
-                .withResolutionComment(e.getResolutionComment())
+                .resolutionComment(e.getResolutionComment())
                 .build();
     }
 
@@ -104,8 +104,8 @@ public class ChangeRequestItemEntityMapper {
     public ChangeRequestItem toShortModel(ChangeRequestItemEntity e) {
         if (e == null)
             return null;
-        return new ChangeRequestItem.Builder()
-                .withId(e.getId())
+        return ChangeRequestItem.builder()
+                .id(e.getId())
                 .build();
     }
 }

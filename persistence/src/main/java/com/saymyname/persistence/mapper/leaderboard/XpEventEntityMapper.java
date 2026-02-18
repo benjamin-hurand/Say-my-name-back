@@ -41,15 +41,15 @@ public class XpEventEntityMapper {
         if (e == null)
             return null;
 
-        return new XpEvent.Builder()
-                .withId(e.getId())
-                .withUser(userMapper.toShortModel(e.getUser()))
-                .withEventId(e.getEventId())
-                .withEventKey(e.getEventKey())
-                .withSourceType(e.getSourceType())
-                .withSourceId(e.getSourceId())
-                .withDeltaXp(e.getDeltaXp())
-                .withCreatedAt(e.getCreatedAt())
+        return XpEvent.builder()
+                .id(e.getId())
+                .user(userMapper.toShortModel(e.getUser()))
+                .eventId(e.getEventId())
+                .eventKey(e.getEventKey())
+                .sourceType(e.getSourceType())
+                .sourceId(e.getSourceId())
+                .deltaXp(e.getDeltaXp())
+                .createdAt(e.getCreatedAt())
                 .build();
     }
 }

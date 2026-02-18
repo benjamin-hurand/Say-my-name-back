@@ -88,11 +88,11 @@ public class UserSubscriptionService {
     private PersonSearchCriteria sanitizeForBulk(PersonSearchCriteria criteria) {
         // IMPORTANT : bulk = sur l'ensemble des résultats, on ignore
         // suivis/tri/pagination
-        PersonSearchCriteria copy = new PersonSearchCriteria.Builder()
-                .withFilters(criteria.getFilters())
-                .withFollowFilter(FollowFilter.ALL)
-                .withIncludeContextAttributes(criteria.isIncludeContextAttributes())
-                .withSort(null)
+        PersonSearchCriteria copy = PersonSearchCriteria.builder()
+                .filters(criteria.getFilters())
+                .followFilter(FollowFilter.ALL)
+                .includeContextAttributes(criteria.isIncludeContextAttributes())
+                .sort(null)
                 .build();
         return copy;
     }

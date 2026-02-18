@@ -62,9 +62,9 @@ public class PersonAttributeDtoMapper {
     }
 
     public PersonAttribute patchDtoToModel(PersonAttributePatch dto) {
-        return new PersonAttribute.Builder()
-                .withId(dto.id())
-                .withValue(dto.value())
+        return PersonAttribute.builder()
+                .id(dto.id())
+                .value(dto.value())
                 .build();
     }
 }

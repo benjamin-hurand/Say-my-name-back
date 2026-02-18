@@ -36,14 +36,14 @@ public class XpEventDao {
 
                 return rows.stream()
                                 // ✅ IMPORTANT : typer le lambda
-                                .map((XpEventRepository.XpEventRow r) -> new XpEventHistoryItem.Builder()
-                                                .withId(r.getId())
-                                                .withEventId(r.getEventId())
-                                                .withEventKey(r.getEventKey())
-                                                .withSourceType(r.getSourceType())
-                                                .withSourceId(r.getSourceId())
-                                                .withDeltaXp(r.getDeltaXp())
-                                                .withCreatedAt(r.getCreatedAt())
+                                .map((XpEventRepository.XpEventRow r) -> XpEventHistoryItem.builder()
+                                                .id(r.getId())
+                                                .eventId(r.getEventId())
+                                                .eventKey(r.getEventKey())
+                                                .sourceType(r.getSourceType())
+                                                .sourceId(r.getSourceId())
+                                                .deltaXp(r.getDeltaXp())
+                                                .createdAt(r.getCreatedAt())
                                                 .build())
                                 // si ton projet n’est pas en Java 16+, utilise plutôt collect:
                                 .collect(Collectors.toList());

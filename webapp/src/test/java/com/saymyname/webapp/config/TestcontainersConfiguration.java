@@ -17,9 +17,9 @@ public class TestcontainersConfiguration {
     static {
         @SuppressWarnings("resource")
         MySQLContainer<?> container = new MySQLContainer<>("mysql:8.4")
-                .withDatabaseName("saymyname_test")
-                .withUsername("test")
-                .withPassword("test");
+                .databaseName("saymyname_test")
+                .username("test")
+                .password("test");
         mysql = container;
 
         Startables.deepStart(mysql).join();

@@ -12,8 +12,8 @@ public class ReducedPersonDtoMapper {
     }
 
     public Person toModel(ReducedPersonDto personDto) {
-        return new Person.Builder()
-                .withId(personDto.id())
+        return Person.builder()
+                .id(personDto.id())
                 .build();
     }
 }

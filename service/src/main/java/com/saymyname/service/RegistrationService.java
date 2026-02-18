@@ -63,11 +63,11 @@ public class RegistrationService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email déjà utilisé");
         }
 
-        User newUser = new User.Builder()
-                .withDisplayName(dn)
-                .withRoles("ROLE_USER")
-                .withActive(true)
-                .withSrsAlgorithm(SrsAlgorithm.SM2)
+        User newUser = User.builder()
+                .displayName(dn)
+                .roles("ROLE_USER")
+                .active(true)
+                .srsAlgorithm(SrsAlgorithm.SM2)
                 .build();
 
         User saved = userService.save(newUser);
@@ -128,11 +128,11 @@ public class RegistrationService {
 
         String dn = deriveDisplayNameFromEmail(e);
 
-        User user = new User.Builder()
-                .withDisplayName(dn)
-                .withRoles("ROLE_USER")
-                .withActive(true)
-                .withSrsAlgorithm(SrsAlgorithm.SM2)
+        User user = User.builder()
+                .displayName(dn)
+                .roles("ROLE_USER")
+                .active(true)
+                .srsAlgorithm(SrsAlgorithm.SM2)
                 .build();
 
         user = userService.save(user);

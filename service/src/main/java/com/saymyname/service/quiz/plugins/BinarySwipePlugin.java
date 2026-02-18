@@ -44,22 +44,22 @@ public class BinarySwipePlugin implements QuizQuestionPlugin {
                 .compute(spec.getPersonId(), spec.getTargetAttributeIds(), spec.getOperator())
                 .correctAnswerJoined();
 
-        QuizChoice proposition = new QuizChoice.Builder()
-                .withId(1L)
-                .withLabel("Ce prénom est " + (correct == null ? "…" : correct) + " ?")
-                .withValue(correct == null ? "" : correct)
-                .withPersonId(spec.getPersonId())
+        QuizChoice proposition = QuizChoice.builder()
+                .id(1L)
+                .label("Ce prénom est " + (correct == null ? "…" : correct) + " ?")
+                .value(correct == null ? "" : correct)
+                .personId(spec.getPersonId())
                 .build();
 
-        QuizQuestionPayload payload = new QuizQuestionPayload.Builder()
-                .withType(QuizPayloadType.BINARY_SWIPE)
-                .withProposition(proposition)
+        QuizQuestionPayload payload = QuizQuestionPayload.builder()
+                .type(QuizPayloadType.BINARY_SWIPE)
+                .proposition(proposition)
                 .build();
 
-        QuizQuestionDisplay display = new QuizQuestionDisplay.Builder()
-                .withPrompt("Vrai ou faux ?")
-                .withSubtitle("Swipe à gauche/droite")
-                .withInputPlaceholder(null)
+        QuizQuestionDisplay display = QuizQuestionDisplay.builder()
+                .prompt("Vrai ou faux ?")
+                .subtitle("Swipe à gauche/droite")
+                .inputPlaceholder(null)
                 .build();
 
         return PluginSupport.baseQuestion(
@@ -114,10 +114,10 @@ public class BinarySwipePlugin implements QuizQuestionPlugin {
         List<ResultAttribute> attrs = List.of(
                 PluginSupport.resultAttr(attrId, nb.auditString(), correct, true));
 
-        return new QuizValidationResult.Builder()
-                .withCorrect(correct)
-                .withCorrectAnswerDisplay(expectedDisplay)
-                .withResultAttributes(attrs)
+        return QuizValidationResult.builder()
+                .correct(correct)
+                .correctAnswerDisplay(expectedDisplay)
+                .resultAttributes(attrs)
                 .build();
     }
 }

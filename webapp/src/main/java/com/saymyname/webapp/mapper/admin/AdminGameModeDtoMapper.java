@@ -41,10 +41,10 @@ public class AdminGameModeDtoMapper {
 
                 return attrs.stream()
                                 .filter(a -> a != null && a.attributeId() != null)
-                                .map(a -> new GameModeAttribute.Builder()
-                                                .withId(a.id())
-                                                .withGameMode(owner) // important si ton modèle s'en sert
-                                                .withAttribute(new Attribute.Builder().withId(a.attributeId()).build())
+                                .map(a -> GameModeAttribute.builder()
+                                                .id(a.id())
+                                                .gameMode(owner) // important si ton modèle s'en sert
+                                                .attribute(Attribute.builder().id(a.attributeId()).build())
                                                 .build())
                                 .toList();
         }

@@ -37,16 +37,16 @@ public class OrderingPlugin implements QuizQuestionPlugin {
 
                 List<QuizPayloadItem> items = PluginSupport.poolItemsLimited(spec, DEFAULT_ITEMS, null);
 
-                QuizQuestionPayload payload = new QuizQuestionPayload.Builder()
-                                .withType(QuizPayloadType.ORDERING)
-                                .withItems(items)
-                                .withOrderBy(QuizOrderingRule.NONE)
+                QuizQuestionPayload payload = QuizQuestionPayload.builder()
+                                .type(QuizPayloadType.ORDERING)
+                                .items(items)
+                                .orderBy(QuizOrderingRule.NONE)
                                 .build();
 
-                QuizQuestionDisplay display = new QuizQuestionDisplay.Builder()
-                                .withPrompt("Remets dans le bon ordre")
-                                .withSubtitle(null)
-                                .withInputPlaceholder(null)
+                QuizQuestionDisplay display = QuizQuestionDisplay.builder()
+                                .prompt("Remets dans le bon ordre")
+                                .subtitle(null)
+                                .inputPlaceholder(null)
                                 .build();
 
                 return PluginSupport.baseQuestion(
@@ -86,10 +86,10 @@ public class OrderingPlugin implements QuizQuestionPlugin {
                 List<ResultAttribute> attrs = List.of(
                                 PluginSupport.resultAttr(attrId, no.auditString(), correct, true));
 
-                return new QuizValidationResult.Builder()
-                                .withCorrect(correct)
-                                .withCorrectAnswerDisplay(correctDisplay)
-                                .withResultAttributes(attrs)
+                return QuizValidationResult.builder()
+                                .correct(correct)
+                                .correctAnswerDisplay(correctDisplay)
+                                .resultAttributes(attrs)
                                 .build();
         }
 }

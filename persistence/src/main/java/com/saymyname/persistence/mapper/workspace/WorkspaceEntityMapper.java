@@ -34,15 +34,15 @@ public class WorkspaceEntityMapper {
             return null;
         }
 
-        return new Workspace.Builder()
-                .withId(entity.getId())
-                .withType(entity.getType())
-                .withOrganizationId(entity.getOrganization() != null ? entity.getOrganization().getId() : null)
-                .withOwnerUserId(entity.getOwnerUser() != null ? entity.getOwnerUser().getId() : null)
-                .withName(entity.getName())
-                .withActive(entity.isActive())
-                .withCreatedAt(entity.getCreatedAt())
-                .withUpdatedAt(entity.getUpdatedAt())
+        return Workspace.builder()
+                .id(entity.getId())
+                .type(entity.getType())
+                .organizationId(entity.getOrganization() != null ? entity.getOrganization().getId() : null)
+                .ownerUserId(entity.getOwnerUser() != null ? entity.getOwnerUser().getId() : null)
+                .name(entity.getName())
+                .active(entity.isActive())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
                 .build();
     }
 }

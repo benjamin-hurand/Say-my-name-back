@@ -23,7 +23,7 @@ public class EmailVerificationCrypto {
     public String newRawToken() {
         byte[] bytes = new byte[32];
         rng.nextBytes(bytes);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        return Base64.getUrlEncoder().outPadding().encodeToString(bytes);
     }
 
     /** Code court (6 chiffres). */

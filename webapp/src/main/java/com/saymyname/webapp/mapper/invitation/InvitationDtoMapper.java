@@ -37,17 +37,17 @@ public class InvitationDtoMapper {
             person.setId(dto.personId());
         }
 
-        return new Invitation.Builder()
-                .withType(dto.type())
-                .withLabel(nullIfBlank(dto.label()))
-                .withNote(nullIfBlank(dto.note()))
-                .withConstraintsJson(nullIfBlank(dto.constraintsJson()))
-                .withRole(dto.role())
-                .withEmail(nullIfBlank(dto.email()))
-                .withPerson(person)
-                .withExpiresAt(dto.expiresAt())
-                .withMaxUses(dto.maxUses())
-                .withUsesCount(0) // init
+        return Invitation.builder()
+                .type(dto.type())
+                .label(nullIfBlank(dto.label()))
+                .note(nullIfBlank(dto.note()))
+                .constraintsJson(nullIfBlank(dto.constraintsJson()))
+                .role(dto.role())
+                .email(nullIfBlank(dto.email()))
+                .person(person)
+                .expiresAt(dto.expiresAt())
+                .maxUses(dto.maxUses())
+                .usesCount(0) // init
                 .build();
     }
 

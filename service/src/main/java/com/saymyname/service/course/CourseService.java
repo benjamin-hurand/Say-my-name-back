@@ -190,10 +190,10 @@ public class CourseService {
 
         int totalAnswers = courseAttemptStore.countAllAnswersByCourse(course);
         LocalDateTime lastActivity = courseAttemptStore.findLastAnsweredAt(course);
-        return new CourseStats.Builder()
-                .withCourseId(course.getId())
-                .withTotalAnswers(totalAnswers)
-                .withLastActivity(lastActivity)
+        return CourseStats.builder()
+                .courseId(course.getId())
+                .totalAnswers(totalAnswers)
+                .lastActivity(lastActivity)
                 .build();
     }
 
@@ -207,10 +207,10 @@ public class CourseService {
         return courses.stream().map(c -> {
             int totalAnswers = courseAttemptStore.countAllAnswersByCourse(c);
             LocalDateTime lastActivity = courseAttemptStore.findLastAnsweredAt(c);
-            return new CourseStats.Builder()
-                    .withCourseId(c.getId())
-                    .withTotalAnswers(totalAnswers)
-                    .withLastActivity(lastActivity)
+            return CourseStats.builder()
+                    .courseId(c.getId())
+                    .totalAnswers(totalAnswers)
+                    .lastActivity(lastActivity)
                     .build();
         }).toList();
     }
@@ -359,13 +359,13 @@ public class CourseService {
 
         return knowledgeIds.stream()
                 .filter(Objects::nonNull)
-                .map(knowledgeId -> new KnowledgeResultEvent.Builder()
-                        .withKnowledgeId(knowledgeId)
-                        .withCorrect(correct)
-                        .withHelpUsed(attempt.isHelpUsed())
-                        .withCourseId(courseId)
-                        .withCourseQuestionAttemptId(attempt.getId())
-                        .withQuestionRound(round)
+                .map(knowledgeId -> KnowledgeResultEvent.builder()
+                        .knowledgeId(knowledgeId)
+                        .correct(correct)
+                        .helpUsed(attempt.isHelpUsed())
+                        .courseId(courseId)
+                        .courseQuestionAttemptId(attempt.getId())
+                        .questionRound(round)
                         .build())
                 .toList();
     }

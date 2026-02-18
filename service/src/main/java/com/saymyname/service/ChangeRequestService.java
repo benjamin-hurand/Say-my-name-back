@@ -234,8 +234,8 @@ public class ChangeRequestService {
                 ChangeAction action = it.getAction();
                 switch (action) {
                     case CREATE -> {
-                        PersonAttribute pa = new PersonAttribute.Builder()
-                                .withValue(it.getProposedValue())
+                        PersonAttribute pa = PersonAttribute.builder()
+                                .value(it.getProposedValue())
                                 .build();
                         toCreate.add(pa);
                     }
@@ -244,9 +244,9 @@ public class ChangeRequestService {
                             log.error("[CR][RESOLVE][SIMU] UPDATE sans personAttribute sur item #{}", it.getId());
                             throw new IllegalStateException("UPDATE sans personAttribute sur item #" + it.getId());
                         }
-                        PersonAttribute updated = new PersonAttribute.Builder()
-                                .withId(it.getPersonAttribute().getId())
-                                .withValue(it.getProposedValue())
+                        PersonAttribute updated = PersonAttribute.builder()
+                                .id(it.getPersonAttribute().getId())
+                                .value(it.getProposedValue())
                                 .build();
                         toUpdate.add(updated);
                     }
@@ -255,8 +255,8 @@ public class ChangeRequestService {
                             log.error("[CR][RESOLVE][SIMU] DELETE sans personAttribute sur item #{}", it.getId());
                             throw new IllegalStateException("DELETE sans personAttribute sur item #" + it.getId());
                         }
-                        PersonAttribute paToDelete = new PersonAttribute.Builder()
-                                .withId(it.getPersonAttribute().getId())
+                        PersonAttribute paToDelete = PersonAttribute.builder()
+                                .id(it.getPersonAttribute().getId())
                                 .build();
                         toDelete.add(paToDelete);
                     }
@@ -567,18 +567,18 @@ public class ChangeRequestService {
             }
 
             List<ChangeRequestResolutionItem> decisions = pendingIds.stream()
-                    .map(id -> new ChangeRequestResolutionItem.Builder()
-                            .withItemId(id)
-                            .withDecision(dec)
-                            .withResolutionComment(null)
+                    .map(id -> ChangeRequestResolutionItem.builder()
+                            .itemId(id)
+                            .decision(dec)
+                            .resolutionComment(null)
                             .build())
                     .toList();
 
-            ChangeRequestResolution cmd = new ChangeRequestResolution.Builder()
-                    .withChangeRequestId(crId)
-                    .withResolver(bulk.getResolver())
-                    .withResolutionComment(bulk.getResolutionComment())
-                    .withDecisions(decisions)
+            ChangeRequestResolution cmd = ChangeRequestResolution.builder()
+                    .changeRequestId(crId)
+                    .resolver(bulk.getResolver())
+                    .resolutionComment(bulk.getResolutionComment())
+                    .decisions(decisions)
                     .build();
 
             resolve(cmd);

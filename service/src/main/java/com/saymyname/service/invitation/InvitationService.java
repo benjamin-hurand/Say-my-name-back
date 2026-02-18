@@ -291,11 +291,11 @@ public class InvitationService {
                     policy.createRequiresApproval());
 
             // 8) Journal d’usage (append-only)
-            InvitationUsage usage = new InvitationUsage.Builder()
-                    .withInvitationId(inv.getId())
-                    .withUser(user)
-                    .withPerson(personNullable)
-                    .withUsedAt(now)
+            InvitationUsage usage = InvitationUsage.builder()
+                    .invitationId(inv.getId())
+                    .user(user)
+                    .person(personNullable)
+                    .usedAt(now)
                     .build();
             usageDao.appendUsage(orgId, usage, parent);
 

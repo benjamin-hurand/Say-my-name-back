@@ -13,15 +13,15 @@ public class KnowledgeResultDtoMapper {
         if (dto == null)
             return null;
 
-        return new KnowledgeResultEvent.Builder()
-                .withKnowledgeId(dto.knowledgeId())
-                .withGameModeId(dto.gameModeId())
-                .withPersonId(dto.personId())
-                .withCorrect(dto.isCorrect())
-                .withHelpUsed(dto.helpUsed())
-                .withCourseId(dto.courseId())
-                .withCourseQuestionAttemptId(dto.CourseQuestionAttemptId())
-                .withQuestionRound(dto.questionRound())
+        return KnowledgeResultEvent.builder()
+                .knowledgeId(dto.knowledgeId())
+                .gameModeId(dto.gameModeId())
+                .personId(dto.personId())
+                .correct(dto.isCorrect())
+                .helpUsed(dto.helpUsed())
+                .courseId(dto.courseId())
+                .courseQuestionAttemptId(dto.CourseQuestionAttemptId())
+                .questionRound(dto.questionRound())
                 .build();
     }
 }

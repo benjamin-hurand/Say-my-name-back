@@ -51,13 +51,13 @@ public class PersonAttributeEntityMapper {
             return null;
         }
 
-        return new PersonAttribute.Builder()
-                .withId(personAttributeEntity.getId())
-                .withAttribute(attributeEntityMapper.toModel(personAttributeEntity.getAttribute()))
-                .withValue(personAttributeEntity.getValue())
-                .withValidFrom(personAttributeEntity.getValidFrom())
-                .withValidTo(personAttributeEntity.getValidTo())
-                .withPendingDelete(personAttributeEntity.isPendingDelete())
+        return PersonAttribute.builder()
+                .id(personAttributeEntity.getId())
+                .attribute(attributeEntityMapper.toModel(personAttributeEntity.getAttribute()))
+                .value(personAttributeEntity.getValue())
+                .validFrom(personAttributeEntity.getValidFrom())
+                .validTo(personAttributeEntity.getValidTo())
+                .pendingDelete(personAttributeEntity.isPendingDelete())
                 .build();
     }
 
@@ -65,8 +65,8 @@ public class PersonAttributeEntityMapper {
         if (personAttributeEntity == null) {
             return null;
         }
-        return new PersonAttribute.Builder()
-                .withId(personAttributeEntity.getId())
+        return PersonAttribute.builder()
+                .id(personAttributeEntity.getId())
                 .build();
     }
 
@@ -77,19 +77,19 @@ public class PersonAttributeEntityMapper {
 
         Person personModel = null;
         if (personAttributeEntity.getPerson() != null) {
-            personModel = new Person.Builder()
-                    .withId(personAttributeEntity.getPerson().getId())
+            personModel = Person.builder()
+                    .id(personAttributeEntity.getPerson().getId())
                     .build();
         }
 
-        return new PersonAttribute.Builder()
-                .withId(personAttributeEntity.getId())
-                .withAttribute(attributeEntityMapper.toModel(personAttributeEntity.getAttribute()))
-                .withValue(personAttributeEntity.getValue())
-                .withValidFrom(personAttributeEntity.getValidFrom())
-                .withValidTo(personAttributeEntity.getValidTo())
-                .withPendingDelete(personAttributeEntity.isPendingDelete())
-                .withPerson(personModel)
+        return PersonAttribute.builder()
+                .id(personAttributeEntity.getId())
+                .attribute(attributeEntityMapper.toModel(personAttributeEntity.getAttribute()))
+                .value(personAttributeEntity.getValue())
+                .validFrom(personAttributeEntity.getValidFrom())
+                .validTo(personAttributeEntity.getValidTo())
+                .pendingDelete(personAttributeEntity.isPendingDelete())
+                .person(personModel)
                 .build();
     }
 }

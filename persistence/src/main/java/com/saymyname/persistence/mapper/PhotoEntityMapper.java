@@ -66,19 +66,19 @@ public class PhotoEntityMapper {
             return null;
         }
 
-        Photo.Builder b = new Photo.Builder()
-                .withId(e.getId())
-                .withStorageKey(e.getStorageKey())
-                .withStatus(e.getStatus())
-                .withSubmittedAt(e.getSubmittedAt())
-                .withApprovedAt(e.getApprovedAt());
+        Photo.Builder b = Photo.builder()
+                .id(e.getId())
+                .storageKey(e.getStorageKey())
+                .status(e.getStatus())
+                .submittedAt(e.getSubmittedAt())
+                .approvedAt(e.getApprovedAt());
 
         // submitted_by -> User
         if (e.getSubmittedBy() != null && e.getSubmittedBy().getId() != null) {
             User submitter = new User();
             submitter.setId(e.getSubmittedBy().getId());
             submitter.setDisplayName(e.getSubmittedBy().getDisplayName()); // si dispo
-            b.withSubmittedBy(submitter);
+            b.submittedBy(submitter);
         }
 
         // approved_by -> User
@@ -86,14 +86,14 @@ public class PhotoEntityMapper {
             User approver = new User();
             approver.setId(e.getApprovedBy().getId());
             approver.setDisplayName(e.getApprovedBy().getDisplayName()); // si dispo
-            b.withApprovedBy(approver);
+            b.approvedBy(approver);
         }
 
         // person -> Person
         if (e.getPerson() != null && e.getPerson().getId() != null) {
             Person p = new Person();
             p.setId(e.getPerson().getId());
-            b.withPerson(p);
+            b.person(p);
         }
 
         return b.build();

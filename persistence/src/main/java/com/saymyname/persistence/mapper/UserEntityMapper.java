@@ -47,17 +47,17 @@ public class UserEntityMapper {
                         .map(identityMapper::toModel)
                         .collect(Collectors.toCollection(LinkedHashSet::new));
 
-        return new User.Builder()
-                .withId(e.getId())
-                .withPublicId(e.getPublicId())
-                .withDisplayName(e.getDisplayName())
-                .withSrsAlgorithm(e.getSrsAlgorithm())
-                .withRoles(e.getRoles())
-                .withActive(e.getActive())
-                .withAuthVersion(e.getAuthVersion())
-                .withAuthUpdatedAt(e.getAuthUpdatedAt())
-                .withEmails(emails)
-                .withIdentities(identities)
+        return User.builder()
+                .id(e.getId())
+                .publicId(e.getPublicId())
+                .displayName(e.getDisplayName())
+                .srsAlgorithm(e.getSrsAlgorithm())
+                .roles(e.getRoles())
+                .active(e.getActive())
+                .authVersion(e.getAuthVersion())
+                .authUpdatedAt(e.getAuthUpdatedAt())
+                .emails(emails)
+                .identities(identities)
                 .build();
     }
 
@@ -80,16 +80,16 @@ public class UserEntityMapper {
                         .map(identityMapper::toModel)
                         .collect(Collectors.toCollection(LinkedHashSet::new));
 
-        return new User.Builder()
-                .withId(e.getId())
-                .withPublicId(e.getPublicId())
-                .withDisplayName(e.getDisplayName())
-                .withEmails(emails)
-                .withIdentities(identities)
-                .withSrsAlgorithm(e.getSrsAlgorithm())
-                .withActive(e.getActive())
-                .withAuthVersion(e.getAuthVersion())
-                .withAuthUpdatedAt(e.getAuthUpdatedAt())
+        return User.builder()
+                .id(e.getId())
+                .publicId(e.getPublicId())
+                .displayName(e.getDisplayName())
+                .emails(emails)
+                .identities(identities)
+                .srsAlgorithm(e.getSrsAlgorithm())
+                .active(e.getActive())
+                .authVersion(e.getAuthVersion())
+                .authUpdatedAt(e.getAuthUpdatedAt())
                 .build();
     }
 
@@ -97,11 +97,11 @@ public class UserEntityMapper {
     public User toShortModel(UserEntity e) {
         if (e == null)
             return null;
-        return new User.Builder()
-                .withId(e.getId())
-                .withPublicId(e.getPublicId())
-                .withAuthVersion(e.getAuthVersion())
-                .withAuthUpdatedAt(e.getAuthUpdatedAt())
+        return User.builder()
+                .id(e.getId())
+                .publicId(e.getPublicId())
+                .authVersion(e.getAuthVersion())
+                .authUpdatedAt(e.getAuthUpdatedAt())
                 .build();
     }
 
@@ -109,20 +109,20 @@ public class UserEntityMapper {
     public User toPublicModel(UserEntity e) {
         if (e == null)
             return null;
-        return new User.Builder()
-                .withId(e.getId())
-                .withPublicId(e.getPublicId())
-                .withDisplayName(e.getDisplayName())
-                .withAuthVersion(e.getAuthVersion())
-                .withAuthUpdatedAt(e.getAuthUpdatedAt())
+        return User.builder()
+                .id(e.getId())
+                .publicId(e.getPublicId())
+                .displayName(e.getDisplayName())
+                .authVersion(e.getAuthVersion())
+                .authUpdatedAt(e.getAuthUpdatedAt())
                 .build();
     }
 
     // -------- util pour update SRS sans SELECT --------
     public User toSrsUpdateModel(Long id, SrsAlgorithm srs) {
-        return new User.Builder()
-                .withId(id)
-                .withSrsAlgorithm(srs)
+        return User.builder()
+                .id(id)
+                .srsAlgorithm(srs)
                 .build();
     }
 

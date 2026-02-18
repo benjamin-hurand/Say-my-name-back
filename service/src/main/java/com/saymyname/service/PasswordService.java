@@ -76,12 +76,12 @@ public class PasswordService {
         String raw = randomUrlSafeToken(32);
         String hash = sha256Base64(raw);
 
-        PasswordResetToken token = new PasswordResetToken.Builder()
-                .withUserId(user.getId())
-                .withTokenHash(hash)
-                .withExpiresAt(OffsetDateTime.now().plusMinutes(30))
-                .withCreatedIp(clientIp(req))
-                .withUserAgent(userAgent(req))
+        PasswordResetToken token = PasswordResetToken.builder()
+                .userId(user.getId())
+                .tokenHash(hash)
+                .expiresAt(OffsetDateTime.now().plusMinutes(30))
+                .createdIp(clientIp(req))
+                .userAgent(userAgent(req))
                 .build();
 
         tokenDao.save(token);
@@ -130,7 +130,7 @@ public class PasswordService {
     private static String randomUrlSafeToken(int bytes) {
         byte[] buf = new byte[bytes];
         SECURE_RANDOM.nextBytes(buf);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(buf);
+        return Base64.getUrlEncoder().outPadding().encodeToString(buf);
     }
 
     private static String sha256Base64(String s) {

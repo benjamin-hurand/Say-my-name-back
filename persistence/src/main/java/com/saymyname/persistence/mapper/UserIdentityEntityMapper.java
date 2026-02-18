@@ -17,16 +17,16 @@ public class UserIdentityEntityMapper {
 
         Long userId = (e.getUser() != null) ? e.getUser().getId() : null;
 
-        return new UserIdentity.Builder()
-                .withId(e.getId())
-                .withUserId(userId)
-                .withProvider(e.getProvider())
-                .withProviderSubject(e.getProviderSubject())
-                .withPasswordHash(e.getPasswordHash())
-                .withEnabled(e.isEnabled())
-                .withCreatedAt(e.getCreatedAt())
-                .withUpdatedAt(e.getUpdatedAt())
-                .withLastUsedAt(e.getLastUsedAt())
+        return UserIdentity.builder()
+                .id(e.getId())
+                .userId(userId)
+                .provider(e.getProvider())
+                .providerSubject(e.getProviderSubject())
+                .passwordHash(e.getPasswordHash())
+                .enabled(e.isEnabled())
+                .createdAt(e.getCreatedAt())
+                .updatedAt(e.getUpdatedAt())
+                .lastUsedAt(e.getLastUsedAt())
                 .build();
     }
 

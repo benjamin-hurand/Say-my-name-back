@@ -33,28 +33,28 @@ public class CourseDtoMapper {
 
         /** DTO -> Model (si jamais utilisé en entrée) */
         public Course toModel(CourseDto courseDto) {
-                return new Course.Builder()
-                                .withId(courseDto.id())
-                                .withUser(new User.Builder().withId(courseDto.userId()).build())
-                                .withGameMode(new GameMode.Builder().withId(courseDto.gameModeId()).build())
-                                .withStatus(courseDto.status())
+                return Course.builder()
+                                .id(courseDto.id())
+                                .user(User.builder().id(courseDto.userId()).build())
+                                .gameMode(GameMode.builder().id(courseDto.gameModeId()).build())
+                                .status(courseDto.status())
                                 .build();
         }
 
         /** Utilitaire existant (inchangé) */
         public Course toModel(Long courseId, Long userId) {
-                return new Course.Builder()
-                                .withId(courseId)
-                                .withUser(userDtoMapper.toModel(userId))
+                return Course.builder()
+                                .id(courseId)
+                                .user(userDtoMapper.toModel(userId))
                                 .build();
         }
 
         /** CreateCourseDto -> Model pour la création */
         public Course toModel(CreateCourseDto dto) {
-                return new Course.Builder()
-                                .withGameMode(new GameMode.Builder().withId(dto.gameModeId()).build())
-                                .withStatus(CourseStatus.IN_PROGRESS)
-                                .withPopulationScope(dto.populationScope() != null ? dto.populationScope()
+                return Course.builder()
+                                .gameMode(GameMode.builder().id(dto.gameModeId()).build())
+                                .status(CourseStatus.IN_PROGRESS)
+                                .populationScope(dto.populationScope() != null ? dto.populationScope()
                                                 : PopulationScope.FOLLOWED)
                                 .build();
         }

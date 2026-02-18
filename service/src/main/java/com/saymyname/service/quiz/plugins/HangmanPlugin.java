@@ -48,16 +48,16 @@ public class HangmanPlugin implements QuizQuestionPlugin {
                 ? Math.max(1, spec.getMaxErrorsOverride())
                 : DEFAULT_MAX_ERRORS;
 
-        QuizQuestionDisplay display = new QuizQuestionDisplay.Builder()
-                .withPrompt("Trouve le prénom lettre par lettre")
-                .withSubtitle("Fais des erreurs, mais pas trop")
-                .withInputPlaceholder(null)
+        QuizQuestionDisplay display = QuizQuestionDisplay.builder()
+                .prompt("Trouve le prénom lettre par lettre")
+                .subtitle("Fais des erreurs, mais pas trop")
+                .inputPlaceholder(null)
                 .build();
 
-        QuizQuestionPayload payload = new QuizQuestionPayload.Builder()
-                .withType(QuizPayloadType.HANGMAN)
-                .withMask(mask)
-                .withMaxErrors(maxErrors)
+        QuizQuestionPayload payload = QuizQuestionPayload.builder()
+                .type(QuizPayloadType.HANGMAN)
+                .mask(mask)
+                .maxErrors(maxErrors)
                 .build();
 
         return PluginSupport.baseQuestion(
@@ -161,12 +161,12 @@ public class HangmanPlugin implements QuizQuestionPlugin {
         boolean isFailed = newState.getErrorsCount() >= rules.getMaxErrors();
         Boolean isComplete = (isSolved || isFailed) ? true : false;
 
-        return new QuizValidationResult.Builder()
-                .withCorrect(correct)
-                .withCorrectAnswerDisplay(solution)
-                .withUpdatedState(newState)
-                .withIsComplete(isComplete)
-                .withErrorMessage(null)
+        return QuizValidationResult.builder()
+                .correct(correct)
+                .correctAnswerDisplay(solution)
+                .updatedState(newState)
+                .isComplete(isComplete)
+                .errorMessage(null)
                 .build();
     }
 
@@ -187,11 +187,11 @@ public class HangmanPlugin implements QuizQuestionPlugin {
      * Clones the current state for mutation.
      */
     private HangmanSnapshotState cloneState(HangmanSnapshotState current) {
-        return new HangmanSnapshotState.Builder()
-                .withMask(current.getMask())
-                .withErrorsCount(current.getErrorsCount())
-                .withTriedLetters(new ArrayList<>(current.getTriedLetters()))
-                .withWrongLetters(new ArrayList<>(current.getWrongLetters()))
+        return HangmanSnapshotState.builder()
+                .mask(current.getMask())
+                .errorsCount(current.getErrorsCount())
+                .triedLetters(new ArrayList<>(current.getTriedLetters()))
+                .wrongLetters(new ArrayList<>(current.getWrongLetters()))
                 .build();
     }
 
@@ -199,12 +199,12 @@ public class HangmanPlugin implements QuizQuestionPlugin {
      * Builds error result.
      */
     private QuizValidationResult buildErrorResult(String error, HangmanSnapshotState state, String correctDisplay) {
-        return new QuizValidationResult.Builder()
-                .withCorrect(false)
-                .withCorrectAnswerDisplay(correctDisplay)
-                .withUpdatedState(state)
-                .withIsComplete(false)
-                .withErrorMessage(error)
+        return QuizValidationResult.builder()
+                .correct(false)
+                .correctAnswerDisplay(correctDisplay)
+                .updatedState(state)
+                .isComplete(false)
+                .errorMessage(error)
                 .build();
     }
 }

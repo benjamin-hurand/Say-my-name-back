@@ -24,11 +24,11 @@ public class UserDtoMapper {
     }
 
     public User toModel(ReducedUserDto dto) {
-        return new User.Builder().withId(dto.id()).withDisplayName(dto.displayName()).build();
+        return User.builder().id(dto.id()).displayName(dto.displayName()).build();
     }
 
     public User toModel(Long userId) {
-        return new User.Builder().withId(userId).build();
+        return User.builder().id(userId).build();
     }
 
     // ---- Full DTO ----
@@ -54,14 +54,14 @@ public class UserDtoMapper {
     public User toModel(UserDto dto) {
         if (dto == null)
             return null;
-        return new User.Builder()
-                .withPublicId(dto.publicId() != null ? UUID.fromString(dto.publicId()) : null)
-                .withDisplayName(dto.displayName())
-                .withSrsAlgorithm(dto.srsAlgorithm())
-                .withRoles(dto.roles())
-                .withActive(dto.active())
+        return User.builder()
+                .publicId(dto.publicId() != null ? UUID.fromString(dto.publicId()) : null)
+                .displayName(dto.displayName())
+                .srsAlgorithm(dto.srsAlgorithm())
+                .roles(dto.roles())
+                .active(dto.active())
                 // On reconstruit la liste d'emails du modèle à partir des DTOs
-                .withEmails(emailMapper.toModelList(dto.emails()))
+                .emails(emailMapper.toModelList(dto.emails()))
                 .build();
     }
 }

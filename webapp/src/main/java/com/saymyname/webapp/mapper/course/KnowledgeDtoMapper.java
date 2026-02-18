@@ -45,28 +45,28 @@ public class KnowledgeDtoMapper {
     }
 
     public Knowledge toModel(KnowledgeDto dto) {
-        return new Knowledge.Builder()
-                .withId(dto.id())
-                .withUser(userDtoMapper.toModel(dto.user()))
-                .withGameMode(gameModeDtoMapper.toModel(dto.gameMode()))
-                .withPerson(reducedPersonDtoMapper.toModel(dto.person()))
-                .withStatus(dto.status())
-                .withNextReviewDate(dto.nextReviewDate())
-                .withLastReviewDate(dto.lastReviewDate())
-                .withTotalRepetitionCount(dto.totalRepetitionCount())
-                .withFailureCount(dto.failureCount())
-                .withSuccessCount(dto.successCount())
-                .withSrsStreak(dto.srsStreak())
-                .withGlobalStreak(dto.globalStreak())
-                .withEaseFactor(dto.easeFactor())
-                .withDifficulty(dto.difficulty())
-                .withStability(dto.stability())
+        return Knowledge.builder()
+                .id(dto.id())
+                .user(userDtoMapper.toModel(dto.user()))
+                .gameMode(gameModeDtoMapper.toModel(dto.gameMode()))
+                .person(reducedPersonDtoMapper.toModel(dto.person()))
+                .status(dto.status())
+                .nextReviewDate(dto.nextReviewDate())
+                .lastReviewDate(dto.lastReviewDate())
+                .totalRepetitionCount(dto.totalRepetitionCount())
+                .failureCount(dto.failureCount())
+                .successCount(dto.successCount())
+                .srsStreak(dto.srsStreak())
+                .globalStreak(dto.globalStreak())
+                .easeFactor(dto.easeFactor())
+                .difficulty(dto.difficulty())
+                .stability(dto.stability())
                 .build();
     }
 
     public Knowledge toModel(Long personId) {
-        return new Knowledge.Builder()
-                .withPerson(personDtoMapper.toModel(personId))
+        return Knowledge.builder()
+                .person(personDtoMapper.toModel(personId))
                 .build();
     }
 

@@ -30,35 +30,35 @@ class QuizQuestionSnapshotFactoryTest {
                 PersonAttributeDao personAttributeDao = Mockito.mock(PersonAttributeDao.class);
                 QuizQuestionSnapshotFactory factory = new QuizQuestionSnapshotFactory(personAttributeDao);
 
-                QuizQuestionPayload payload = new QuizQuestionPayload.Builder()
-                                .withType(QuizPayloadType.MCQ)
-                                .withChoices(List.of(new QuizChoice.Builder()
-                                                .withId(1L)
-                                                .withLabel("A")
-                                                .withValue("A")
+                QuizQuestionPayload payload = QuizQuestionPayload.builder()
+                                .type(QuizPayloadType.MCQ)
+                                .choices(List.of(QuizChoice.builder()
+                                                .id(1L)
+                                                .label("A")
+                                                .value("A")
                                                 // ✅ IMPORTANT : la factory matche d'abord par personId
                                                 // (question.personId=10L)
-                                                .withPersonId(10L)
+                                                .personId(10L)
                                                 .build()))
-                                .withAllowMultiple(false)
+                                .allowMultiple(false)
                                 .build();
 
-                QuizQuestion question = new QuizQuestion.Builder()
-                                .withPersonId(10L)
-                                .withStorageKey("sk")
-                                .withGameModeId(1L)
-                                .withTargetAttributeIds(List.of(42L))
-                                .withOperator("op")
-                                .withContext(new QuizQuestionContext.Builder()
-                                                .withSource(QuizQuestionSource.COURSE)
-                                                .withCourseId(1L)
-                                                .withCourseQuestionId(2L)
-                                                .withQuestionRound(1)
+                QuizQuestion question = QuizQuestion.builder()
+                                .personId(10L)
+                                .storageKey("sk")
+                                .gameModeId(1L)
+                                .targetAttributeIds(List.of(42L))
+                                .operator("op")
+                                .context(QuizQuestionContext.builder()
+                                                .source(QuizQuestionSource.COURSE)
+                                                .courseId(1L)
+                                                .courseQuestionId(2L)
+                                                .questionRound(1)
                                                 .build())
-                                .withFormat(QuizFormat.MCQ)
-                                .withPayload(payload)
-                                .withReasonCode(QuizDecisionReasonCode.FALLBACK_MULTI_TARGET_SHORTFALL)
-                                .withReasonDetailsJson("{}")
+                                .format(QuizFormat.MCQ)
+                                .payload(payload)
+                                .reasonCode(QuizDecisionReasonCode.FALLBACK_MULTI_TARGET_SHORTFALL)
+                                .reasonDetailsJson("{}")
                                 .build();
 
                 // Note : ici tu passes frozenTruth vide, mais c'est OK si une choice match par
@@ -80,55 +80,55 @@ class QuizQuestionSnapshotFactoryTest {
                 Long targetPersonId = 42L;
 
                 // Create MCQ with 4 choices, one matches targetPersonId
-                QuizQuestionPayload payload = new QuizQuestionPayload.Builder()
-                                .withType(QuizPayloadType.MCQ)
-                                .withChoices(List.of(
-                                                new QuizChoice.Builder()
-                                                                .withId(1L)
-                                                                .withLabel("Marie")
-                                                                .withValue("marie")
-                                                                .withPersonId(10L)
+                QuizQuestionPayload payload = QuizQuestionPayload.builder()
+                                .type(QuizPayloadType.MCQ)
+                                .choices(List.of(
+                                                QuizChoice.builder()
+                                                                .id(1L)
+                                                                .label("Marie")
+                                                                .value("marie")
+                                                                .personId(10L)
                                                                 .build(),
-                                                new QuizChoice.Builder()
-                                                                .withId(2L)
-                                                                .withLabel("Jean")
-                                                                .withValue("jean")
-                                                                .withPersonId(targetPersonId) // CORRECT
+                                                QuizChoice.builder()
+                                                                .id(2L)
+                                                                .label("Jean")
+                                                                .value("jean")
+                                                                .personId(targetPersonId) // CORRECT
                                                                 .build(),
-                                                new QuizChoice.Builder()
-                                                                .withId(3L)
-                                                                .withLabel("Sophie")
-                                                                .withValue("sophie")
-                                                                .withPersonId(20L)
+                                                QuizChoice.builder()
+                                                                .id(3L)
+                                                                .label("Sophie")
+                                                                .value("sophie")
+                                                                .personId(20L)
                                                                 .build(),
-                                                new QuizChoice.Builder()
-                                                                .withId(4L)
-                                                                .withLabel("Paul")
-                                                                .withValue("paul")
-                                                                .withPersonId(30L)
+                                                QuizChoice.builder()
+                                                                .id(4L)
+                                                                .label("Paul")
+                                                                .value("paul")
+                                                                .personId(30L)
                                                                 .build()))
-                                .withAllowMultiple(false)
+                                .allowMultiple(false)
                                 .build();
 
-                TruthAttributeValue frozenTruth = new TruthAttributeValue.Builder()
-                                .withAttributeId(100L)
-                                .withValue("Jean Dupont")
+                TruthAttributeValue frozenTruth = TruthAttributeValue.builder()
+                                .attributeId(100L)
+                                .value("Jean Dupont")
                                 .build();
 
-                QuizQuestion question = new QuizQuestion.Builder()
-                                .withPersonId(targetPersonId)
-                                .withStorageKey("photo_jean.jpg")
-                                .withGameModeId(1L)
-                                .withTargetAttributeIds(List.of(100L))
-                                .withOperator("equals")
-                                .withContext(new QuizQuestionContext.Builder()
-                                                .withSource(QuizQuestionSource.TRAINING)
-                                                .withQuestionRound(1)
+                QuizQuestion question = QuizQuestion.builder()
+                                .personId(targetPersonId)
+                                .storageKey("photo_jean.jpg")
+                                .gameModeId(1L)
+                                .targetAttributeIds(List.of(100L))
+                                .operator("equals")
+                                .context(QuizQuestionContext.builder()
+                                                .source(QuizQuestionSource.TRAINING)
+                                                .questionRound(1)
                                                 .build())
-                                .withFormat(QuizFormat.MCQ)
-                                .withPayload(payload)
-                                .withReasonCode(QuizDecisionReasonCode.TRAINING_AUTO_DEFAULT)
-                                .withReasonDetailsJson("{}")
+                                .format(QuizFormat.MCQ)
+                                .payload(payload)
+                                .reasonCode(QuizDecisionReasonCode.TRAINING_AUTO_DEFAULT)
+                                .reasonDetailsJson("{}")
                                 .build();
 
                 // Act
@@ -153,51 +153,51 @@ class QuizQuestionSnapshotFactoryTest {
                 Long targetPersonId = 42L;
 
                 // Create MCQ with 4 choices, one matches frozenTruthValue
-                QuizQuestionPayload payload = new QuizQuestionPayload.Builder()
-                                .withType(QuizPayloadType.MCQ)
-                                .withChoices(List.of(
-                                                new QuizChoice.Builder()
-                                                                .withId(1L)
-                                                                .withLabel("Martin")
-                                                                .withValue("Martin")
+                QuizQuestionPayload payload = QuizQuestionPayload.builder()
+                                .type(QuizPayloadType.MCQ)
+                                .choices(List.of(
+                                                QuizChoice.builder()
+                                                                .id(1L)
+                                                                .label("Martin")
+                                                                .value("Martin")
                                                                 .build(),
-                                                new QuizChoice.Builder()
-                                                                .withId(2L)
-                                                                .withLabel("Dupont")
-                                                                .withValue("Dupont") // CORRECT - matches frozen truth
+                                                QuizChoice.builder()
+                                                                .id(2L)
+                                                                .label("Dupont")
+                                                                .value("Dupont") // CORRECT - matches frozen truth
                                                                 .build(),
-                                                new QuizChoice.Builder()
-                                                                .withId(3L)
-                                                                .withLabel("Bernard")
-                                                                .withValue("Bernard")
+                                                QuizChoice.builder()
+                                                                .id(3L)
+                                                                .label("Bernard")
+                                                                .value("Bernard")
                                                                 .build(),
-                                                new QuizChoice.Builder()
-                                                                .withId(4L)
-                                                                .withLabel("Durand")
-                                                                .withValue("Durand")
+                                                QuizChoice.builder()
+                                                                .id(4L)
+                                                                .label("Durand")
+                                                                .value("Durand")
                                                                 .build()))
-                                .withAllowMultiple(false)
+                                .allowMultiple(false)
                                 .build();
 
-                TruthAttributeValue frozenTruth = new TruthAttributeValue.Builder()
-                                .withAttributeId(100L)
-                                .withValue("Dupont") // Matches choice ID 2
+                TruthAttributeValue frozenTruth = TruthAttributeValue.builder()
+                                .attributeId(100L)
+                                .value("Dupont") // Matches choice ID 2
                                 .build();
 
-                QuizQuestion question = new QuizQuestion.Builder()
-                                .withPersonId(targetPersonId)
-                                .withStorageKey("photo_jean.jpg")
-                                .withGameModeId(1L)
-                                .withTargetAttributeIds(List.of(100L))
-                                .withOperator("equals")
-                                .withContext(new QuizQuestionContext.Builder()
-                                                .withSource(QuizQuestionSource.TRAINING)
-                                                .withQuestionRound(1)
+                QuizQuestion question = QuizQuestion.builder()
+                                .personId(targetPersonId)
+                                .storageKey("photo_jean.jpg")
+                                .gameModeId(1L)
+                                .targetAttributeIds(List.of(100L))
+                                .operator("equals")
+                                .context(QuizQuestionContext.builder()
+                                                .source(QuizQuestionSource.TRAINING)
+                                                .questionRound(1)
                                                 .build())
-                                .withFormat(QuizFormat.MCQ)
-                                .withPayload(payload)
-                                .withReasonCode(QuizDecisionReasonCode.TRAINING_AUTO_DEFAULT)
-                                .withReasonDetailsJson("{}")
+                                .format(QuizFormat.MCQ)
+                                .payload(payload)
+                                .reasonCode(QuizDecisionReasonCode.TRAINING_AUTO_DEFAULT)
+                                .reasonDetailsJson("{}")
                                 .build();
 
                 // Act
@@ -218,33 +218,33 @@ class QuizQuestionSnapshotFactoryTest {
                 PersonAttributeDao personAttributeDao = Mockito.mock(PersonAttributeDao.class);
                 QuizQuestionSnapshotFactory factory = new QuizQuestionSnapshotFactory(personAttributeDao);
 
-                QuizQuestionPayload payload = new QuizQuestionPayload.Builder()
-                                .withType(QuizPayloadType.MCQ)
-                                .withChoices(List.of(
-                                                new QuizChoice.Builder()
-                                                                .withId(1L)
-                                                                .withValue("DUPONT")
+                QuizQuestionPayload payload = QuizQuestionPayload.builder()
+                                .type(QuizPayloadType.MCQ)
+                                .choices(List.of(
+                                                QuizChoice.builder()
+                                                                .id(1L)
+                                                                .value("DUPONT")
                                                                 .build()))
                                 .build();
 
-                TruthAttributeValue frozenTruth = new TruthAttributeValue.Builder()
-                                .withAttributeId(100L)
-                                .withValue("dupont") // Different case
+                TruthAttributeValue frozenTruth = TruthAttributeValue.builder()
+                                .attributeId(100L)
+                                .value("dupont") // Different case
                                 .build();
 
-                QuizQuestion question = new QuizQuestion.Builder()
-                                .withPersonId(10L)
-                                .withGameModeId(1L)
-                                .withTargetAttributeIds(List.of(100L))
-                                .withOperator("equals")
-                                .withContext(new QuizQuestionContext.Builder()
-                                                .withSource(QuizQuestionSource.TRAINING)
-                                                .withQuestionRound(1)
+                QuizQuestion question = QuizQuestion.builder()
+                                .personId(10L)
+                                .gameModeId(1L)
+                                .targetAttributeIds(List.of(100L))
+                                .operator("equals")
+                                .context(QuizQuestionContext.builder()
+                                                .source(QuizQuestionSource.TRAINING)
+                                                .questionRound(1)
                                                 .build())
-                                .withFormat(QuizFormat.MCQ)
-                                .withPayload(payload)
-                                .withReasonCode(QuizDecisionReasonCode.TRAINING_AUTO_DEFAULT)
-                                .withReasonDetailsJson("{}")
+                                .format(QuizFormat.MCQ)
+                                .payload(payload)
+                                .reasonCode(QuizDecisionReasonCode.TRAINING_AUTO_DEFAULT)
+                                .reasonDetailsJson("{}")
                                 .build();
 
                 // Act
@@ -264,34 +264,34 @@ class QuizQuestionSnapshotFactoryTest {
                 PersonAttributeDao personAttributeDao = Mockito.mock(PersonAttributeDao.class);
                 QuizQuestionSnapshotFactory factory = new QuizQuestionSnapshotFactory(personAttributeDao);
 
-                QuizQuestionPayload payload = new QuizQuestionPayload.Builder()
-                                .withType(QuizPayloadType.MCQ)
-                                .withChoices(List.of(
-                                                new QuizChoice.Builder()
-                                                                .withId(1L)
-                                                                .withValue("Wrong")
-                                                                .withPersonId(99L) // Doesn't match
+                QuizQuestionPayload payload = QuizQuestionPayload.builder()
+                                .type(QuizPayloadType.MCQ)
+                                .choices(List.of(
+                                                QuizChoice.builder()
+                                                                .id(1L)
+                                                                .value("Wrong")
+                                                                .personId(99L) // Doesn't match
                                                                 .build()))
                                 .build();
 
-                TruthAttributeValue frozenTruth = new TruthAttributeValue.Builder()
-                                .withAttributeId(100L)
-                                .withValue("Correct") // No choice has this value
+                TruthAttributeValue frozenTruth = TruthAttributeValue.builder()
+                                .attributeId(100L)
+                                .value("Correct") // No choice has this value
                                 .build();
 
-                QuizQuestion question = new QuizQuestion.Builder()
-                                .withPersonId(42L) // Doesn't match any choice
-                                .withGameModeId(1L)
-                                .withTargetAttributeIds(List.of(100L))
-                                .withOperator("equals")
-                                .withContext(new QuizQuestionContext.Builder()
-                                                .withSource(QuizQuestionSource.TRAINING)
-                                                .withQuestionRound(1)
+                QuizQuestion question = QuizQuestion.builder()
+                                .personId(42L) // Doesn't match any choice
+                                .gameModeId(1L)
+                                .targetAttributeIds(List.of(100L))
+                                .operator("equals")
+                                .context(QuizQuestionContext.builder()
+                                                .source(QuizQuestionSource.TRAINING)
+                                                .questionRound(1)
                                                 .build())
-                                .withFormat(QuizFormat.MCQ)
-                                .withPayload(payload)
-                                .withReasonCode(QuizDecisionReasonCode.TRAINING_AUTO_DEFAULT)
-                                .withReasonDetailsJson("{}")
+                                .format(QuizFormat.MCQ)
+                                .payload(payload)
+                                .reasonCode(QuizDecisionReasonCode.TRAINING_AUTO_DEFAULT)
+                                .reasonDetailsJson("{}")
                                 .build();
 
                 // Act & Assert
@@ -315,39 +315,39 @@ class QuizQuestionSnapshotFactoryTest {
                 Long targetPersonId = 42L;
 
                 // Create choices where BOTH personId and value could match
-                QuizQuestionPayload payload = new QuizQuestionPayload.Builder()
-                                .withType(QuizPayloadType.MCQ)
-                                .withChoices(List.of(
-                                                new QuizChoice.Builder()
-                                                                .withId(1L)
-                                                                .withValue("Dupont") // Value matches frozen truth
-                                                                .withPersonId(99L)
+                QuizQuestionPayload payload = QuizQuestionPayload.builder()
+                                .type(QuizPayloadType.MCQ)
+                                .choices(List.of(
+                                                QuizChoice.builder()
+                                                                .id(1L)
+                                                                .value("Dupont") // Value matches frozen truth
+                                                                .personId(99L)
                                                                 .build(),
-                                                new QuizChoice.Builder()
-                                                                .withId(2L)
-                                                                .withValue("Martin")
-                                                                .withPersonId(targetPersonId) // PersonId matches
+                                                QuizChoice.builder()
+                                                                .id(2L)
+                                                                .value("Martin")
+                                                                .personId(targetPersonId) // PersonId matches
                                                                 .build()))
                                 .build();
 
-                TruthAttributeValue frozenTruth = new TruthAttributeValue.Builder()
-                                .withAttributeId(100L)
-                                .withValue("Dupont")
+                TruthAttributeValue frozenTruth = TruthAttributeValue.builder()
+                                .attributeId(100L)
+                                .value("Dupont")
                                 .build();
 
-                QuizQuestion question = new QuizQuestion.Builder()
-                                .withPersonId(targetPersonId)
-                                .withGameModeId(1L)
-                                .withTargetAttributeIds(List.of(100L))
-                                .withOperator("equals")
-                                .withContext(new QuizQuestionContext.Builder()
-                                                .withSource(QuizQuestionSource.TRAINING)
-                                                .withQuestionRound(1)
+                QuizQuestion question = QuizQuestion.builder()
+                                .personId(targetPersonId)
+                                .gameModeId(1L)
+                                .targetAttributeIds(List.of(100L))
+                                .operator("equals")
+                                .context(QuizQuestionContext.builder()
+                                                .source(QuizQuestionSource.TRAINING)
+                                                .questionRound(1)
                                                 .build())
-                                .withFormat(QuizFormat.MCQ)
-                                .withPayload(payload)
-                                .withReasonCode(QuizDecisionReasonCode.TRAINING_AUTO_DEFAULT)
-                                .withReasonDetailsJson("{}")
+                                .format(QuizFormat.MCQ)
+                                .payload(payload)
+                                .reasonCode(QuizDecisionReasonCode.TRAINING_AUTO_DEFAULT)
+                                .reasonDetailsJson("{}")
                                 .build();
 
                 // Act

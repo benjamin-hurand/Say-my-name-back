@@ -92,30 +92,30 @@ public class AttributeEntityMapper {
             payload = Collections.emptyMap();
         }
 
-        return new Attribute.Builder()
-                .withId(entity.getId())
-                .withName(entity.getAttributeName())
-                .withDisplayOrder(entity.getDisplayOrder())
-                .withPrimaryField(entity.isPrimaryField())
-                .withCategory(entity.isCategory())
-                .withMaxValues(entity.getMaxValues())
-                .withFilter(entity.isFilter())
-                .withSort(entity.isSort())
-                .withInitializable(entity.isInitializable())
-                .withRequired(entity.isRequired())
-                .withType(type)
-                .withEditPolicy(policy)
-                .withCasingStrategy(casing)
-                .withConstraintKind(cKind)
-                .withConstraintPayload(payload)
+        return Attribute.builder()
+                .id(entity.getId())
+                .name(entity.getAttributeName())
+                .displayOrder(entity.getDisplayOrder())
+                .primaryField(entity.isPrimaryField())
+                .category(entity.isCategory())
+                .maxValues(entity.getMaxValues())
+                .filter(entity.isFilter())
+                .sort(entity.isSort())
+                .initializable(entity.isInitializable())
+                .required(entity.isRequired())
+                .type(type)
+                .editPolicy(policy)
+                .casingStrategy(casing)
+                .constraintKind(cKind)
+                .constraintPayload(payload)
                 .build();
     }
 
     public Attribute toShortModel(AttributeEntity entity) {
         if (entity == null)
             return null;
-        return new Attribute.Builder()
-                .withId(entity.getId())
+        return Attribute.builder()
+                .id(entity.getId())
                 .build();
     }
 }

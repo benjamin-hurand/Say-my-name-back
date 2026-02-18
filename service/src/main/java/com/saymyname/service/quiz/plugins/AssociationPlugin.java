@@ -39,15 +39,15 @@ public class AssociationPlugin implements QuizQuestionPlugin {
 
                 List<QuizPayloadItem> items = PluginSupport.poolItemsLimited(spec, DEFAULT_ITEMS, null);
 
-                QuizQuestionPayload payload = new QuizQuestionPayload.Builder()
-                                .withType(QuizPayloadType.ASSOCIATION)
-                                .withItems(items)
+                QuizQuestionPayload payload = QuizQuestionPayload.builder()
+                                .type(QuizPayloadType.ASSOCIATION)
+                                .items(items)
                                 .build();
 
-                QuizQuestionDisplay display = new QuizQuestionDisplay.Builder()
-                                .withPrompt("Associe les bons éléments")
-                                .withSubtitle(null)
-                                .withInputPlaceholder(null)
+                QuizQuestionDisplay display = QuizQuestionDisplay.builder()
+                                .prompt("Associe les bons éléments")
+                                .subtitle(null)
+                                .inputPlaceholder(null)
                                 .build();
 
                 return PluginSupport.baseQuestion(
@@ -92,10 +92,10 @@ public class AssociationPlugin implements QuizQuestionPlugin {
                 List<ResultAttribute> attrs = List.of(
                                 PluginSupport.resultAttr(attrId, na.auditString(), correct, true));
 
-                return new QuizValidationResult.Builder()
-                                .withCorrect(correct)
-                                .withCorrectAnswerDisplay(correctDisplay)
-                                .withResultAttributes(attrs)
+                return QuizValidationResult.builder()
+                                .correct(correct)
+                                .correctAnswerDisplay(correctDisplay)
+                                .resultAttributes(attrs)
                                 .build();
         }
 }

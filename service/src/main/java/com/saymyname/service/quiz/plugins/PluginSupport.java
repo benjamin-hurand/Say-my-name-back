@@ -49,9 +49,9 @@ final class PluginSupport {
         }
 
         // Placeholder Attribute (id + name) pour rester compatible DTO sans lookup DB
-        Attribute a = new Attribute.Builder()
-                .withId(attributeId)
-                .withName("attribute#" + attributeId)
+        Attribute a = Attribute.builder()
+                .id(attributeId)
+                .name("attribute#" + attributeId)
                 .build();
 
         return new ResultAttribute(a, value, correct, target);
@@ -83,9 +83,9 @@ final class PluginSupport {
         QuizQuestionDisplay resolvedDisplay = display;
         if (spec.getTimed() != null || spec.getTimeLimitMs() != null) {
             if (resolvedDisplay == null) {
-                resolvedDisplay = new QuizQuestionDisplay.Builder()
-                        .withTimed(spec.getTimed())
-                        .withTimeLimitMs(spec.getTimeLimitMs())
+                resolvedDisplay = QuizQuestionDisplay.builder()
+                        .timed(spec.getTimed())
+                        .timeLimitMs(spec.getTimeLimitMs())
                         .build();
             } else {
                 resolvedDisplay.setTimed(spec.getTimed());
@@ -93,20 +93,20 @@ final class PluginSupport {
             }
         }
 
-        return new QuizQuestion.Builder()
-                .withPersonId(spec.getPersonId())
-                .withStorageKey(spec.getStorageKey())
-                .withGameModeId(spec.getGameModeId())
-                .withTargetAttributeIds(spec.getTargetAttributeIds())
-                .withOperator(spec.getOperator())
-                .withContext(ctx)
-                .withFormat(format)
-                .withPayload(payload)
-                .withHints(hints)
-                .withDisplay(resolvedDisplay)
-                .withFollowUp(followUp)
-                .withReasonCode(spec.getReasonCode())
-                .withReasonDetailsJson(spec.getReasonDetailsJson())
+        return QuizQuestion.builder()
+                .personId(spec.getPersonId())
+                .storageKey(spec.getStorageKey())
+                .gameModeId(spec.getGameModeId())
+                .targetAttributeIds(spec.getTargetAttributeIds())
+                .operator(spec.getOperator())
+                .context(ctx)
+                .format(format)
+                .payload(payload)
+                .hints(hints)
+                .display(resolvedDisplay)
+                .followUp(followUp)
+                .reasonCode(spec.getReasonCode())
+                .reasonDetailsJson(spec.getReasonDetailsJson())
                 .build();
     }
 
@@ -148,10 +148,10 @@ final class PluginSupport {
                 if (excludePersonId != null && excludePersonId.equals(id))
                     continue;
                 String labelId = item.getLabelId() != null ? item.getLabelId() : String.valueOf(id);
-                out.add(new QuizPayloadItem.Builder()
-                        .withPersonId(id)
-                        .withStorageKey(item.getStorageKey())
-                        .withLabelId(labelId)
+                out.add(QuizPayloadItem.builder()
+                        .personId(id)
+                        .storageKey(item.getStorageKey())
+                        .labelId(labelId)
                         .build());
                 if (out.size() >= limit)
                     break;
@@ -167,10 +167,10 @@ final class PluginSupport {
         for (Long id : ids) {
             if (id == null)
                 continue;
-            out.add(new QuizPayloadItem.Builder()
-                    .withPersonId(id)
-                    .withStorageKey(null)
-                    .withLabelId(String.valueOf(id))
+            out.add(QuizPayloadItem.builder()
+                    .personId(id)
+                    .storageKey(null)
+                    .labelId(String.valueOf(id))
                     .build());
             if (out.size() >= limit)
                 break;

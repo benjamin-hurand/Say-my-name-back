@@ -66,14 +66,14 @@ public class InvitationUsageEntityMapper {
         if (e == null)
             return null;
 
-        return new InvitationUsage.Builder()
-                .withId(e.getId())
-                .withInvitationId(e.getInvitation() != null ? e.getInvitation().getId() : null)
-                .withUser(userMapper.toShortModel(e.getUser()))
-                .withPerson(personMapper.toShortModel(e.getPerson()))
-                .withUsedAt(e.getUsedAt())
-                .withUsedIp(e.getUsedIp())
-                .withUserAgent(e.getUserAgent())
+        return InvitationUsage.builder()
+                .id(e.getId())
+                .invitationId(e.getInvitation() != null ? e.getInvitation().getId() : null)
+                .user(userMapper.toShortModel(e.getUser()))
+                .person(personMapper.toShortModel(e.getPerson()))
+                .usedAt(e.getUsedAt())
+                .usedIp(e.getUsedIp())
+                .userAgent(e.getUserAgent())
                 .build();
     }
 }

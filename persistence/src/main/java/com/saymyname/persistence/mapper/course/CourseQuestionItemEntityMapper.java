@@ -59,15 +59,15 @@ public class CourseQuestionItemEntityMapper {
 
         QuizQuestionItemRole role = mapRole(entity.getRole());
 
-        return new CourseQuestionItem.Builder()
-                .withId(entity.getId())
-                .withPosition(entity.getPosition())
-                .withRole(role)
-                .withKnowledge(entity.getKnowledge() != null ? knowledgeMapper.toModel(entity.getKnowledge()) : null)
-                .withPerson(entity.getPerson() != null ? personMapper.toShortModel(entity.getPerson()) : null)
-                .withAnswered(entity.isAnswered())
-                .withCorrect(entity.getCorrect())
-                .withNormalizedAnswer(entity.getNormalizedAnswer())
+        return CourseQuestionItem.builder()
+                .id(entity.getId())
+                .position(entity.getPosition())
+                .role(role)
+                .knowledge(entity.getKnowledge() != null ? knowledgeMapper.toModel(entity.getKnowledge()) : null)
+                .person(entity.getPerson() != null ? personMapper.toShortModel(entity.getPerson()) : null)
+                .answered(entity.isAnswered())
+                .correct(entity.getCorrect())
+                .normalizedAnswer(entity.getNormalizedAnswer())
                 .build();
     }
 

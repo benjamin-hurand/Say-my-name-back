@@ -203,7 +203,8 @@ public class QuizOrchestrationService {
                 Boolean effectiveTimed = applyTimedGating(courseId, timed);
 
                 PlanningDecision decision = formatPlanner
-                                .plan(PlanningRequest.courseAuto(stats, gameMode, knowledgeStatus, effectiveTimed, timeLimitMs));
+                                .plan(PlanningRequest.courseAuto(stats, gameMode, knowledgeStatus, effectiveTimed,
+                                                timeLimitMs));
 
                 CandidateSample sample = candidateAccessor.sampleWithTarget(buildCandidateQuery(
                                 userId,
@@ -247,23 +248,23 @@ public class QuizOrchestrationService {
                         Integer timeLimitMs,
                         PlanningDecision decision) {
 
-                return new QuizQuestionSpec.Builder()
-                                .withSource(source)
-                                .withPersonId(personId)
-                                .withStorageKey(storageKey)
-                                .withGameModeId(gameModeId)
-                                .withTargetAttributeIds(targetAttributeIds)
-                                .withOperator(operator)
-                                .withContext(context)
+                return QuizQuestionSpec.builder()
+                                .source(source)
+                                .personId(personId)
+                                .storageKey(storageKey)
+                                .gameModeId(gameModeId)
+                                .targetAttributeIds(targetAttributeIds)
+                                .operator(operator)
+                                .context(context)
 
                                 // Pool minimal: ids only
-                                .withCandidatePoolPersonIds(sample != null ? sample.personIds() : List.of())
-                                .withCandidatePoolItems(buildCandidatePoolItems(sample, targetAttributeIds))
+                                .candidatePoolPersonIds(sample != null ? sample.personIds() : List.of())
+                                .candidatePoolItems(buildCandidatePoolItems(sample, targetAttributeIds))
 
-                                .withTimed(timed)
-                                .withTimeLimitMs(timeLimitMs)
-                                .withReasonCode(decision.reasonCode())
-                                .withReasonDetailsJson(decision.reasonDetailsJson())
+                                .timed(timed)
+                                .timeLimitMs(timeLimitMs)
+                                .reasonCode(decision.reasonCode())
+                                .reasonDetailsJson(decision.reasonDetailsJson())
                                 .build();
         }
 
@@ -282,10 +283,10 @@ public class QuizOrchestrationService {
                         }
 
                         String label = resolveLabel(item, targetAttributeIds);
-                        out.add(new QuizPayloadItem.Builder()
-                                        .withPersonId(item.personId())
-                                        .withStorageKey(item.photoStorageKey())
-                                        .withLabel(label)
+                        out.add(QuizPayloadItem.builder()
+                                        .personId(item.personId())
+                                        .storageKey(item.photoStorageKey())
+                                        .label(label)
                                         .build());
                 }
 
@@ -321,22 +322,22 @@ public class QuizOrchestrationService {
                         boolean requireApprovedPhoto,
                         Integer limit) {
 
-                CandidateQuery.Builder builder = new CandidateQuery.Builder()
-                                .withUserId(userId)
-                                .withExcludePersonId(userId)
-                                .withPopulationScope(scope)
-                                .withGameModeId(gameModeId)
-                                .withGameModeAttributeIds(targetAttributeIds)
-                                .withAttributeOperator(operator)
+                CandidateQuery.Builder builder = CandidateQuery.builder()
+                                .userId(userId)
+                                .excludePersonId(userId)
+                                .populationScope(scope)
+                                .gameModeId(gameModeId)
+                                .gameModeAttributeIds(targetAttributeIds)
+                                .attributeOperator(operator)
                                 .countOnly(countOnly)
                                 .requireApprovedPhoto(requireApprovedPhoto)
                                 .requireCategoryMatch(category != null);
 
                 if (category != null) {
-                        builder.withCategory(category.getAttributeId(), category.getValue());
+                        builder.category(category.getAttributeId(), category.getValue());
                 }
                 if (limit != null) {
-                        builder.withLimit(limit);
+                        builder.limit(limit);
                 }
 
                 return builder.build();
@@ -378,9 +379,9 @@ public class QuizOrchestrationService {
         }
 
         private QuizQuestionContext buildTrainingContext(TrainingOptions options) {
-                return new QuizQuestionContext.Builder()
-                                .withSource(com.saymyname.core.model.enums.quiz.QuizQuestionSource.TRAINING)
-                                .withKnowledgeTracking(null)
+                return QuizQuestionContext.builder()
+                                .source(com.saymyname.core.model.enums.quiz.QuizQuestionSource.TRAINING)
+                                .knowledgeTracking(null)
                                 .build();
         }
 
@@ -393,12 +394,12 @@ public class QuizOrchestrationService {
 
                 Long knowledgeId = (knowledge != null) ? knowledge.getId() : null;
 
-                return new QuizQuestionContext.Builder()
-                                .withSource(com.saymyname.core.model.enums.quiz.QuizQuestionSource.COURSE)
-                                .withCourseId(course.getId())
-                                .withKnowledgeId(knowledgeId) // ✅ crucial pour put()
-                                .withQuestionRound(round) // optionnel MVP
-                                .withPoolType(poolType != null ? poolType : PoolType.NEW)
+                return QuizQuestionContext.builder()
+                                .source(com.saymyname.core.model.enums.quiz.QuizQuestionSource.COURSE)
+                                .courseId(course.getId())
+                                .knowledgeId(knowledgeId) // ✅ crucial pour put()
+                                .questionRound(round) // optionnel MVP
+                                .poolType(poolType != null ? poolType : PoolType.NEW)
                                 .build();
         }
 
@@ -406,7 +407,7 @@ public class QuizOrchestrationService {
          * D3: Timed gating - block timed mode when user is stressed.
          * Stress is detected by high error streak or slow response times.
          *
-         * @param courseId the course to check stats for
+         * @param courseId       the course to check stats for
          * @param requestedTimed the timed mode requested by caller
          * @return effective timed mode (false if blocked due to stress)
          */

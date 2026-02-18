@@ -38,16 +38,16 @@ public class ChangeRequestItemDtoMapper {
 
         PersonAttribute paRef = null;
         if ((action == ChangeAction.UPDATE || action == ChangeAction.DELETE) && in.personAttributeId() != null) {
-            paRef = new PersonAttribute.Builder().withId(in.personAttributeId()).build();
+            paRef = PersonAttribute.builder().id(in.personAttributeId()).build();
         }
         // CREATE : pas de personAttribute ; l’Attribute est sur l’enveloppe
 
         String proposed = StringUtils.hasText(in.proposedValue()) ? in.proposedValue().trim() : null;
 
-        return new ChangeRequestItem.Builder()
-                .withAction(action)
-                .withPersonAttribute(paRef)
-                .withProposedValue(proposed)
+        return ChangeRequestItem.builder()
+                .action(action)
+                .personAttribute(paRef)
+                .proposedValue(proposed)
                 .build();
     }
 

@@ -70,9 +70,9 @@ public class QuizQuestionSnapshotFactory {
                 if (pa.getValue() == null || pa.getValue().isBlank())
                     continue;
 
-                out.add(new TruthAttributeValue.Builder()
-                        .withAttributeId(attrId)
-                        .withValue(pa.getValue())
+                out.add(TruthAttributeValue.builder()
+                        .attributeId(attrId)
+                        .value(pa.getValue())
                         .build());
             }
         }
@@ -158,21 +158,21 @@ public class QuizQuestionSnapshotFactory {
             }
 
             // Règles (tu peux ajuster selon ton produit)
-            hangmanRules = new HangmanRules.Builder()
-                    .withMaxErrors(maxErrors)
-                    .withNormalized(true) // ignore accents/case (recommandé)
-                    .withCanSolveWholeWord(true) // option UX
-                    .withAlphabet(List.of(
+            hangmanRules = HangmanRules.builder()
+                    .maxErrors(maxErrors)
+                    .normalized(true) // ignore accents/case (recommandé)
+                    .canSolveWholeWord(true) // option UX
+                    .alphabet(List.of(
                             "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
                             "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"))
                     .build();
 
             // État initial
-            hangmanState = new HangmanSnapshotState.Builder()
-                    .withMask(mask)
-                    .withErrorsCount(0)
-                    .withTriedLetters(new ArrayList<>())
-                    .withWrongLetters(new ArrayList<>())
+            hangmanState = HangmanSnapshotState.builder()
+                    .mask(mask)
+                    .errorsCount(0)
+                    .triedLetters(new ArrayList<>())
+                    .wrongLetters(new ArrayList<>())
                     .build();
         }
 
@@ -198,66 +198,66 @@ public class QuizQuestionSnapshotFactory {
             }
 
             // Rules
-            wordPuzzleRules = new WordPuzzleRules.Builder()
-                    .withMaxAttempts(maxAttempts)
-                    .withWordLength(wordLength)
-                    .withCaseSensitive(false)
-                    .withAllowRepeatedLetters(true)
+            wordPuzzleRules = WordPuzzleRules.builder()
+                    .maxAttempts(maxAttempts)
+                    .wordLength(wordLength)
+                    .caseSensitive(false)
+                    .allowRepeatedLetters(true)
                     .build();
 
             // Initial state
-            wordPuzzleState = new WordPuzzleSnapshotState.Builder()
-                    .withAttempts(new ArrayList<>())
-                    .withAttemptsRemaining(maxAttempts)
-                    .withSolved(false)
-                    .withFailed(false)
+            wordPuzzleState = WordPuzzleSnapshotState.builder()
+                    .attempts(new ArrayList<>())
+                    .attemptsRemaining(maxAttempts)
+                    .solved(false)
+                    .failed(false)
                     .build();
         }
 
-        return new QuizQuestionSnapshot.Builder()
-                .withSnapshotSchemaVersion(SNAPSHOT_SCHEMA_VERSION)
-                .withGeneratorVersion(GENERATOR_VERSION)
-                .withNormalizerVersion(NORMALIZER_VERSION)
+        return QuizQuestionSnapshot.builder()
+                .snapshotSchemaVersion(SNAPSHOT_SCHEMA_VERSION)
+                .generatorVersion(GENERATOR_VERSION)
+                .normalizerVersion(NORMALIZER_VERSION)
 
-                .withFormat(q.getFormat())
-                .withContext(q.getContext())
+                .format(q.getFormat())
+                .context(q.getContext())
 
                 // auditable spec
-                .withGameModeId(q.getGameModeId())
-                .withTargetAttributeIds(new ArrayList<>(q.getTargetAttributeIds()))
-                .withOperator(q.getOperator())
-                .withPersonId(q.getPersonId())
-                .withStorageKey(q.getStorageKey())
+                .gameModeId(q.getGameModeId())
+                .targetAttributeIds(new ArrayList<>(q.getTargetAttributeIds()))
+                .operator(q.getOperator())
+                .personId(q.getPersonId())
+                .storageKey(q.getStorageKey())
 
                 // renderable parts
-                .withDisplay(q.getDisplay())
-                .withHints(q.getHints())
-                .withPayload(q.getPayload())
-                .withFollowUp(q.getFollowUp())
-                .withTimed(timed)
-                .withTimeLimitMs(timeLimitMs)
-                .withReasonCode(q.getReasonCode())
-                .withReasonDetailsJson(q.getReasonDetailsJson())
+                .display(q.getDisplay())
+                .hints(q.getHints())
+                .payload(q.getPayload())
+                .followUp(q.getFollowUp())
+                .timed(timed)
+                .timeLimitMs(timeLimitMs)
+                .reasonCode(q.getReasonCode())
+                .reasonDetailsJson(q.getReasonDetailsJson())
 
                 // truth
-                .withTruth(truth)
-                .withTargetPersonIds(resolvedTargets)
+                .truth(truth)
+                .targetPersonIds(resolvedTargets)
 
                 // ✅ hangman extras
-                .withHangmanRules(hangmanRules)
-                .withHangmanState(hangmanState)
+                .hangmanRules(hangmanRules)
+                .hangmanState(hangmanState)
 
                 // ✅ word puzzle extras
-                .withWordPuzzleRules(wordPuzzleRules)
-                .withWordPuzzleState(wordPuzzleState)
+                .wordPuzzleRules(wordPuzzleRules)
+                .wordPuzzleState(wordPuzzleState)
 
                 .build();
     }
 
     private QuizQuestionTruth buildTruth(QuizQuestion q, List<TruthAttributeValue> frozenTargetValues) {
 
-        QuizTruthRules rules = new QuizTruthRules.Builder()
-                .withOperator(q.getOperator())
+        QuizTruthRules rules = QuizTruthRules.builder()
+                .operator(q.getOperator())
                 .build();
 
         QuizFormat effectiveFormat = q.getFormat();
@@ -265,15 +265,15 @@ public class QuizQuestionSnapshotFactory {
 
         QuizTruthType type = toTruthType(effectiveFormat);
 
-        QuizQuestionTruth.Builder tb = new QuizQuestionTruth.Builder()
-                .withType(type)
-                .withRules(rules);
+        QuizQuestionTruth.Builder tb = QuizQuestionTruth.builder()
+                .type(type)
+                .rules(rules);
 
         if (type == QuizTruthType.TEXT) {
             if (frozenTargetValues == null || frozenTargetValues.isEmpty()) {
                 throw new IllegalStateException("TEXT truth requires frozenTargetValues");
             }
-            tb.withTargetAttributeValues(new ArrayList<>(frozenTargetValues));
+            tb.targetAttributeValues(new ArrayList<>(frozenTargetValues));
 
             String display = frozenTargetValues.stream()
                     .map(TruthAttributeValue::getValue)
@@ -283,7 +283,7 @@ public class QuizQuestionSnapshotFactory {
                     .reduce((a, b) -> a + " " + b)
                     .orElse(null);
 
-            tb.withCorrectAnswerDisplay(display);
+            tb.correctAnswerDisplay(display);
             return tb.build();
         }
 
@@ -292,27 +292,27 @@ public class QuizQuestionSnapshotFactory {
                     effectivePayload,
                     frozenTargetValues,
                     q.getPersonId());
-            tb.withCorrectChoiceKeys(correctKeys);
-            tb.withCorrectAnswerDisplay(firstChoiceLabel(effectivePayload, correctKeys));
+            tb.correctChoiceKeys(correctKeys);
+            tb.correctAnswerDisplay(firstChoiceLabel(effectivePayload, correctKeys));
             return tb.build();
         }
 
         if (type == QuizTruthType.BINARY_SWIPE) {
-            tb.withCorrectSwipeRight(Boolean.TRUE);
-            tb.withCorrectAnswerDisplay("true");
+            tb.correctSwipeRight(Boolean.TRUE);
+            tb.correctAnswerDisplay("true");
             return tb.build();
         }
 
         if (type == QuizTruthType.ORDERING) {
             List<String> keys = extractOrderingKeys(effectivePayload);
-            tb.withCorrectItemKeysInOrder(keys);
-            tb.withCorrectAnswerDisplay(String.join(",", keys));
+            tb.correctItemKeysInOrder(keys);
+            tb.correctAnswerDisplay(String.join(",", keys));
             return tb.build();
         }
 
         if (type == QuizTruthType.ASSOCIATION) {
             List<TruthPair> pairs = extractAssociationPairs(effectivePayload);
-            tb.withCorrectPairs(pairs);
+            tb.correctPairs(pairs);
             return tb.build();
         }
 
@@ -456,12 +456,12 @@ public class QuizQuestionSnapshotFactory {
         Objects.requireNonNull(original, "original snapshot");
         Objects.requireNonNull(newState, "newState");
 
-        QuizQuestionSnapshot.Builder builder = new QuizQuestionSnapshot.Builder().from(original);
+        QuizQuestionSnapshot.Builder builder = QuizQuestionSnapshot.builder().from(original);
 
         if (newState instanceof HangmanSnapshotState hangmanState) {
-            builder.withHangmanState(hangmanState);
+            builder.hangmanState(hangmanState);
         } else if (newState instanceof WordPuzzleSnapshotState wordPuzzleState) {
-            builder.withWordPuzzleState(wordPuzzleState);
+            builder.wordPuzzleState(wordPuzzleState);
         } else {
             throw new IllegalArgumentException("Unknown MultiStepState type: " + newState.getClass().getName());
         }

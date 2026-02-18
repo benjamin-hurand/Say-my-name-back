@@ -32,9 +32,9 @@ class FormatPlannerLadderTest {
     @BeforeEach
     void setUp() {
         formatPlanner = new FormatPlanner();
-        gameMode = new GameMode.Builder()
-                .withId(1L)
-                .withTitle("Test GameMode")
+        gameMode = GameMode.builder()
+                .id(1L)
+                .title("Test GameMode")
                 .build();
     }
 

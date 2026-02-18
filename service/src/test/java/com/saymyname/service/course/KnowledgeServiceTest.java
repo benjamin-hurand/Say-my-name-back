@@ -33,128 +33,128 @@ import com.saymyname.service.leaderboard.LeaderboardService;
 
 class KnowledgeServiceTest {
 
-    @Test
-    void recordBatchResults_knowledgeIdFastPath_doesNotRequireFallback() {
-        KnowledgeDao knowledgeDao = mock(KnowledgeDao.class);
-        LeaderboardService leaderboardService = mock(LeaderboardService.class);
-        KnowledgeService service = newService(knowledgeDao, leaderboardService);
+        @Test
+        void recordBatchResults_knowledgeIdFastPath_doesNotRequireFallback() {
+                KnowledgeDao knowledgeDao = mock(KnowledgeDao.class);
+                LeaderboardService leaderboardService = mock(LeaderboardService.class);
+                KnowledgeService service = newService(knowledgeDao, leaderboardService);
 
-        User user = new User.Builder().withId(1L).withSrsAlgorithm(SrsAlgorithm.SM2).build();
-        Knowledge knowledge = buildKnowledge(101L, user, 7L, 9L);
+                User user = User.builder().id(1L).srsAlgorithm(SrsAlgorithm.SM2).build();
+                Knowledge knowledge = buildKnowledge(101L, user, 7L, 9L);
 
-        when(knowledgeDao.findAllByIdsForUser(eq(1L), eq(List.of(101L))))
-                .thenReturn(List.of(knowledge));
+                when(knowledgeDao.findAllByIdsForUser(eq(1L), eq(List.of(101L))))
+                                .thenReturn(List.of(knowledge));
 
-        KnowledgeResultEvent event = new KnowledgeResultEvent.Builder()
-                .withKnowledgeId(101L)
-                .withCorrect(true)
-                .withHelpUsed(false)
-                .build();
+                KnowledgeResultEvent event = KnowledgeResultEvent.builder()
+                                .knowledgeId(101L)
+                                .correct(true)
+                                .helpUsed(false)
+                                .build();
 
-        service.recordBatchResults(user, List.of(event));
+                service.recordBatchResults(user, List.of(event));
 
-        verify(knowledgeDao, never()).findByUserGameModeAndPerson(anyLong(), anyLong(), anyLong());
-        verify(knowledgeDao).upsertKnowledge(any(Knowledge.class));
-    }
+                verify(knowledgeDao, never()).findByUserGameModeAndPerson(anyLong(), anyLong(), anyLong());
+                verify(knowledgeDao).upsertKnowledge(any(Knowledge.class));
+        }
 
-    @Test
-    void recordBatchResults_modePersonFallback_ok() {
-        KnowledgeDao knowledgeDao = mock(KnowledgeDao.class);
-        LeaderboardService leaderboardService = mock(LeaderboardService.class);
-        KnowledgeService service = newService(knowledgeDao, leaderboardService);
+        @Test
+        void recordBatchResults_modePersonFallback_ok() {
+                KnowledgeDao knowledgeDao = mock(KnowledgeDao.class);
+                LeaderboardService leaderboardService = mock(LeaderboardService.class);
+                KnowledgeService service = newService(knowledgeDao, leaderboardService);
 
-        User user = new User.Builder().withId(2L).withSrsAlgorithm(SrsAlgorithm.SM2).build();
-        Long gameModeId = 3L;
-        Long personId = 5L;
+                User user = User.builder().id(2L).srsAlgorithm(SrsAlgorithm.SM2).build();
+                Long gameModeId = 3L;
+                Long personId = 5L;
 
-        when(knowledgeDao.findByUserGameModeAndPerson(eq(2L), eq(gameModeId), eq(personId)))
-                .thenReturn(Optional.empty());
+                when(knowledgeDao.findByUserGameModeAndPerson(eq(2L), eq(gameModeId), eq(personId)))
+                                .thenReturn(Optional.empty());
 
-        KnowledgeResultEvent event = new KnowledgeResultEvent.Builder()
-                .withGameModeId(gameModeId)
-                .withPersonId(personId)
-                .withCorrect(true)
-                .withHelpUsed(false)
-                .build();
+                KnowledgeResultEvent event = KnowledgeResultEvent.builder()
+                                .gameModeId(gameModeId)
+                                .personId(personId)
+                                .correct(true)
+                                .helpUsed(false)
+                                .build();
 
-        service.recordBatchResults(user, List.of(event));
+                service.recordBatchResults(user, List.of(event));
 
-        ArgumentCaptor<Knowledge> captor = ArgumentCaptor.forClass(Knowledge.class);
-        verify(knowledgeDao).upsertKnowledge(captor.capture());
-        Knowledge saved = captor.getValue();
-        assertEquals(gameModeId, saved.getGameMode().getId());
-        assertEquals(personId, saved.getPerson().getId());
-        assertEquals(user.getId(), saved.getUser().getId());
-    }
+                ArgumentCaptor<Knowledge> captor = ArgumentCaptor.forClass(Knowledge.class);
+                verify(knowledgeDao).upsertKnowledge(captor.capture());
+                Knowledge saved = captor.getValue();
+                assertEquals(gameModeId, saved.getGameMode().getId());
+                assertEquals(personId, saved.getPerson().getId());
+                assertEquals(user.getId(), saved.getUser().getId());
+        }
 
-    @Test
-    void recordBatchResults_knowledgeIdNotOwned_throws() {
-        KnowledgeDao knowledgeDao = mock(KnowledgeDao.class);
-        LeaderboardService leaderboardService = mock(LeaderboardService.class);
-        KnowledgeService service = newService(knowledgeDao, leaderboardService);
+        @Test
+        void recordBatchResults_knowledgeIdNotOwned_throws() {
+                KnowledgeDao knowledgeDao = mock(KnowledgeDao.class);
+                LeaderboardService leaderboardService = mock(LeaderboardService.class);
+                KnowledgeService service = newService(knowledgeDao, leaderboardService);
 
-        User user = new User.Builder().withId(3L).withSrsAlgorithm(SrsAlgorithm.SM2).build();
-        Long knowledgeId = 999L;
+                User user = User.builder().id(3L).srsAlgorithm(SrsAlgorithm.SM2).build();
+                Long knowledgeId = 999L;
 
-        when(knowledgeDao.findAllByIdsForUser(eq(3L), eq(List.of(knowledgeId))))
-                .thenReturn(List.of());
-        when(knowledgeDao.findByIdForUser(eq(3L), eq(knowledgeId)))
-                .thenReturn(Optional.empty());
+                when(knowledgeDao.findAllByIdsForUser(eq(3L), eq(List.of(knowledgeId))))
+                                .thenReturn(List.of());
+                when(knowledgeDao.findByIdForUser(eq(3L), eq(knowledgeId)))
+                                .thenReturn(Optional.empty());
 
-        KnowledgeResultEvent event = new KnowledgeResultEvent.Builder()
-                .withKnowledgeId(knowledgeId)
-                .withCorrect(true)
-                .withHelpUsed(false)
-                .build();
+                KnowledgeResultEvent event = KnowledgeResultEvent.builder()
+                                .knowledgeId(knowledgeId)
+                                .correct(true)
+                                .helpUsed(false)
+                                .build();
 
-        IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
-                () -> service.recordBatchResults(user, List.of(event)));
+                IllegalArgumentException ex = assertThrows(
+                                IllegalArgumentException.class,
+                                () -> service.recordBatchResults(user, List.of(event)));
 
-        assertTrue(ex.getMessage().contains("knowledgeId=" + knowledgeId));
-        verify(knowledgeDao, never()).upsertKnowledge(any(Knowledge.class));
-    }
+                assertTrue(ex.getMessage().contains("knowledgeId=" + knowledgeId));
+                verify(knowledgeDao, never()).upsertKnowledge(any(Knowledge.class));
+        }
 
-    private static KnowledgeService newService(
-            KnowledgeDao knowledgeDao,
-            LeaderboardService leaderboardService) {
-        SchedulerStrategy scheduler = new SchedulerStrategy() {
-            @Override
-            public int mapGrade(boolean correct) {
-                return correct ? 5 : 0;
-            }
+        private static KnowledgeService newService(
+                        KnowledgeDao knowledgeDao,
+                        LeaderboardService leaderboardService) {
+                SchedulerStrategy scheduler = new SchedulerStrategy() {
+                        @Override
+                        public int mapGrade(boolean correct) {
+                                return correct ? 5 : 0;
+                        }
 
-            @Override
-            public void schedule(Knowledge k, int grade) {
-                // no-op for unit tests
-            }
-        };
+                        @Override
+                        public void schedule(Knowledge k, int grade) {
+                                // no-op for unit tests
+                        }
+                };
 
-        return new KnowledgeService(
-                knowledgeDao,
-                Map.of(SrsAlgorithm.SM2, scheduler),
-                SrsAlgorithm.SM2,
-                mock(PersonAttributeDao.class),
-                leaderboardService);
-    }
+                return new KnowledgeService(
+                                knowledgeDao,
+                                Map.of(SrsAlgorithm.SM2, scheduler),
+                                SrsAlgorithm.SM2,
+                                mock(PersonAttributeDao.class),
+                                leaderboardService);
+        }
 
-    private static Knowledge buildKnowledge(Long id, User user, Long gameModeId, Long personId) {
-        return new Knowledge.Builder()
-                .withId(id)
-                .withUser(user)
-                .withGameMode(new GameMode.Builder().withId(gameModeId).build())
-                .withPerson(new Person.Builder().withId(personId).build())
-                .withStatus(KnowledgeStatus.DISCOVERED)
-                .withNextReviewDate(LocalDateTime.now())
-                .withLastReviewDate(LocalDateTime.now())
-                .withTotalRepetitionCount(0)
-                .withFailureCount(0)
-                .withSuccessCount(0)
-                .withSrsStreak(0)
-                .withGlobalStreak(0)
-                .withEaseFactor(java.math.BigDecimal.valueOf(2.5))
-                .withDifficulty(1.0)
-                .withStability(1.0)
-                .build();
-    }
+        private static Knowledge buildKnowledge(Long id, User user, Long gameModeId, Long personId) {
+                return Knowledge.builder()
+                                .id(id)
+                                .user(user)
+                                .gameMode(GameMode.builder().id(gameModeId).build())
+                                .person(Person.builder().id(personId).build())
+                                .status(KnowledgeStatus.DISCOVERED)
+                                .nextReviewDate(LocalDateTime.now())
+                                .lastReviewDate(LocalDateTime.now())
+                                .totalRepetitionCount(0)
+                                .failureCount(0)
+                                .successCount(0)
+                                .srsStreak(0)
+                                .globalStreak(0)
+                                .easeFactor(java.math.BigDecimal.valueOf(2.5))
+                                .difficulty(1.0)
+                                .stability(1.0)
+                                .build();
+        }
 }

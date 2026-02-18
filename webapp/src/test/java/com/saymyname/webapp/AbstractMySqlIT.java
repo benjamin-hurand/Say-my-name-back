@@ -9,9 +9,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 public abstract class AbstractMySqlIT {
 
     static final MySQLContainer<?> MYSQL = new MySQLContainer<>("mysql:8.0")
-            .withDatabaseName("saymyname_test")
-            .withUsername("test")
-            .withPassword("test");
+            .databaseName("saymyname_test")
+            .username("test")
+            .password("test");
 
     static {
         MYSQL.start();

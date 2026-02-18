@@ -122,22 +122,22 @@ public class AttributeDtoMapper {
                 ? CasingStrategy.valueOf(dto.casingStrategy())
                 : (at == AttributeType.TEXT ? CasingStrategy.TITLE_CASE : CasingStrategy.NONE);
 
-        return new Attribute.Builder()
-                .withId(dto.id())
-                .withName(dto.name())
-                .withDisplayOrder(dto.displayOrder() != null ? dto.displayOrder() : 100)
-                .withPrimaryField(Boolean.TRUE.equals(dto.primaryField()))
-                .withCategory(Boolean.TRUE.equals(dto.category()))
-                .withMaxValues(dto.maxValues() != null ? dto.maxValues() : 1)
-                .withFilter(Boolean.TRUE.equals(dto.filter()))
-                .withSort(Boolean.TRUE.equals(dto.sort()))
-                .withInitializable(Boolean.TRUE.equals(dto.initializable()))
-                .withRequired(Boolean.TRUE.equals(dto.required()))
-                .withType(at)
-                .withEditPolicy(policy)
-                .withCasingStrategy(cs) // NEW
-                .withConstraintKind(ck)
-                .withConstraintPayload(dto.constraintPayload())
+        return Attribute.builder()
+                .id(dto.id())
+                .name(dto.name())
+                .displayOrder(dto.displayOrder() != null ? dto.displayOrder() : 100)
+                .primaryField(Boolean.TRUE.equals(dto.primaryField()))
+                .category(Boolean.TRUE.equals(dto.category()))
+                .maxValues(dto.maxValues() != null ? dto.maxValues() : 1)
+                .filter(Boolean.TRUE.equals(dto.filter()))
+                .sort(Boolean.TRUE.equals(dto.sort()))
+                .initializable(Boolean.TRUE.equals(dto.initializable()))
+                .required(Boolean.TRUE.equals(dto.required()))
+                .type(at)
+                .editPolicy(policy)
+                .casingStrategy(cs) // NEW
+                .constraintKind(ck)
+                .constraintPayload(dto.constraintPayload())
                 .build();
     }
 

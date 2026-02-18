@@ -131,28 +131,28 @@ public class McqPlugin implements QuizQuestionPlugin, QuizQuestionPluginEnhanced
         // 1. personId matching (for photo MCQs: "Who is this person?")
         // 2. value matching (for text MCQs: "What is X's last name?")
         // The 'correct' flag is NOT used (it's deprecated and always returns null)
-        choices.add(new QuizChoice.Builder()
-                .withId(nextChoiceId())
-                .withLabel(correctValue)
-                .withValue(correctValue)
-                .withPersonId(spec.getPersonId()) // Used by snapshot factory for truth matching
+        choices.add(QuizChoice.builder()
+                .id(nextChoiceId())
+                .label(correctValue)
+                .value(correctValue)
+                .personId(spec.getPersonId()) // Used by snapshot factory for truth matching
                 .build());
 
         for (String d : distractors) {
-            choices.add(new QuizChoice.Builder()
-                    .withId(nextChoiceId())
-                    .withLabel(d)
-                    .withValue(d)
+            choices.add(QuizChoice.builder()
+                    .id(nextChoiceId())
+                    .label(d)
+                    .value(d)
                     // No personId for distractors (won't match target person)
                     .build());
         }
 
         // Fill remaining slots with empty placeholders (keeps payload size stable)
         while (choices.size() < DEFAULT_CHOICES) {
-            choices.add(new QuizChoice.Builder()
-                    .withId(nextChoiceId())
-                    .withLabel("")
-                    .withValue("")
+            choices.add(QuizChoice.builder()
+                    .id(nextChoiceId())
+                    .label("")
+                    .value("")
                     .build());
         }
 
@@ -161,23 +161,23 @@ public class McqPlugin implements QuizQuestionPlugin, QuizQuestionPluginEnhanced
             Collections.shuffle(choices, ThreadLocalRandom.current());
         }
 
-        QuizQuestionDisplay display = new QuizQuestionDisplay.Builder()
-                .withPrompt("Choisis la bonne reponse")
-                .withSubtitle(null)
-                .withInputPlaceholder(null)
+        QuizQuestionDisplay display = QuizQuestionDisplay.builder()
+                .prompt("Choisis la bonne reponse")
+                .subtitle(null)
+                .inputPlaceholder(null)
                 .build();
 
         // Layout hints for text-only MCQ (vertical list)
-        QuizLayoutHints layoutHints = new QuizLayoutHints.Builder()
-                .withLayout("list_vertical")
-                .withItemStyle("text_only")
+        QuizLayoutHints layoutHints = QuizLayoutHints.builder()
+                .layout("list_vertical")
+                .itemStyle("text_only")
                 .build();
 
-        QuizQuestionPayload payload = new QuizQuestionPayload.Builder()
-                .withType(QuizPayloadType.MCQ)
-                .withChoices(choices)
-                .withAllowMultiple(false)
-                .withLayoutHints(layoutHints)
+        QuizQuestionPayload payload = QuizQuestionPayload.builder()
+                .type(QuizPayloadType.MCQ)
+                .choices(choices)
+                .allowMultiple(false)
+                .layoutHints(layoutHints)
                 .build();
 
         return PluginSupport.baseQuestion(
@@ -257,11 +257,11 @@ public class McqPlugin implements QuizQuestionPlugin, QuizQuestionPluginEnhanced
                 correct,
                 true));
 
-        return new QuizValidationResult.Builder()
-                .withCorrect(correct)
-                .withCorrectAnswerDisplay(
+        return QuizValidationResult.builder()
+                .correct(correct)
+                .correctAnswerDisplay(
                         snapshot.getTruth() == null ? null : snapshot.getTruth().getCorrectAnswerDisplay())
-                .withResultAttributes(attrs)
+                .resultAttributes(attrs)
                 .build();
     }
 

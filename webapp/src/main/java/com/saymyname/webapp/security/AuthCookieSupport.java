@@ -173,6 +173,6 @@ public class AuthCookieSupport {
     private static String randomUrlSafeToken(int bytes) {
         byte[] buf = new byte[bytes];
         RNG.nextBytes(buf);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(buf);
+        return Base64.getUrlEncoder().outPadding().encodeToString(buf);
     }
 }

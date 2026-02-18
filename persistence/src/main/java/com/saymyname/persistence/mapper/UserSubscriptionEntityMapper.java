@@ -12,10 +12,10 @@ public class UserSubscriptionEntityMapper {
     public UserSubscription toModel(UserSubscriptionEntity e) {
         if (e == null)
             return null;
-        return new UserSubscription.Builder()
-                .withUserId(e.getId() != null ? e.getId().getUserId() : null)
-                .withPersonId(e.getId() != null ? e.getId().getPersonId() : null)
-                .withCreatedAt(e.getCreatedAt())
+        return UserSubscription.builder()
+                .userId(e.getId() != null ? e.getId().getUserId() : null)
+                .personId(e.getId() != null ? e.getId().getPersonId() : null)
+                .createdAt(e.getCreatedAt())
                 .build();
     }
 

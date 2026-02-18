@@ -31,73 +31,73 @@ public class PersonDirectoryDtoMapper {
 
     /** DTO -> Model (avec Builders) */
     public PersonSearchCriteria toModel(PersonSearchRequestDto dto) {
-        PersonSearchCriteria.Builder b = new PersonSearchCriteria.Builder();
+        PersonSearchCriteria.Builder b = PersonSearchCriteria.builder();
 
         // Filters
         List<PersonSearchCriteria.AttributeFilter> filters = new ArrayList<>();
         if (dto != null && dto.filters() != null) {
             for (var f : dto.filters()) {
                 filters.add(new PersonSearchCriteria.AttributeFilter.Builder()
-                        .withAttributeId(f.attributeId())
-                        .withOperator(f.operator())
-                        .withValues(f.values() != null ? f.values() : List.of())
+                        .attributeId(f.attributeId())
+                        .operator(f.operator())
+                        .values(f.values() != null ? f.values() : List.of())
                         .build());
             }
         }
-        b.withFilters(filters);
+        b.filters(filters);
 
         // Sort directives
         List<PersonSearchCriteria.SortDirective> sorts = new ArrayList<>();
         if (dto != null && dto.sort() != null) {
             for (var s : dto.sort()) {
                 sorts.add(new PersonSearchCriteria.SortDirective.Builder()
-                        .withKind(s.kind())
-                        .withAttributeId(s.attributeId())
-                        .withField(s.field())
-                        .withDirection(s.direction())
+                        .kind(s.kind())
+                        .attributeId(s.attributeId())
+                        .field(s.field())
+                        .direction(s.direction())
                         .build());
             }
         }
-        b.withSort(sorts);
+        b.sort(sorts);
 
-        b.withFollowFilter(dto != null && dto.followFilter() != null ? dto.followFilter() : FollowFilter.ALL);
-        b.withIncludeContextAttributes(dto != null && Boolean.TRUE.equals(dto.includeContextAttributes()));
+        b.followFilter(dto != null && dto.followFilter() != null ? dto.followFilter() : FollowFilter.ALL);
+        b.includeContextAttributes(dto != null && Boolean.TRUE.equals(dto.includeContextAttributes()));
 
         return b.build();
     }
 
     /** DTO -> Model (avec Builders) */
     public AdminPersonSearchCriteria toAdminModel(AdminPersonSearchRequestDto dto) {
-        AdminPersonSearchCriteria.Builder b = new AdminPersonSearchCriteria.Builder();
+        AdminPersonSearchCriteria.Builder b = AdminPersonSearchCriteria.builder();
 
         // Filters
         List<AdminPersonSearchCriteria.AttributeFilter> filters = new ArrayList<>();
         if (dto != null && dto.filters() != null) {
             for (var f : dto.filters()) {
                 filters.add(new AdminPersonSearchCriteria.AttributeFilter.Builder()
-                        .withAttributeId(f.attributeId())
-                        .withOperator(f.operator())
-                        .withValues(f.values() != null ? f.values() : List.of())
+                        .attributeId(f.attributeId())
+                        .operator(f.operator())
+                        .values(f.values() != null ? f.values() : List.of())
                         .build());
             }
         }
-        b.withFilters(filters);
+        b.filters(filters);
 
         // Sort directives
         List<AdminPersonSearchCriteria.SortDirective> sorts = new ArrayList<>();
         if (dto != null && dto.sort() != null) {
             for (var s : dto.sort()) {
                 sorts.add(new AdminPersonSearchCriteria.SortDirective.Builder()
-                        .withKind(s.kind())
-                        .withAttributeId(s.attributeId())
-                        .withField(s.field())
-                        .withDirection(s.direction())
+                        .kind(s.kind())
+                        .attributeId(s.attributeId())
+                        .field(s.field())
+                        .direction(s.direction())
                         .build());
             }
         }
-        b.withSort(sorts);
+        b.sort(sorts);
 
-        b.withIncludeContextAttributes(dto != null && Boolean.TRUE.equals(dto.includeContextAttributes()));
+        b.includeContextAttributes(dto != null && Boolean.TRUE.equals(dto.includeContextAttributes()));
 
         return b.build();
     }

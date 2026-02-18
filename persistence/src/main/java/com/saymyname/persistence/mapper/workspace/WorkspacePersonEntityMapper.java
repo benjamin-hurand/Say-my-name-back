@@ -41,12 +41,12 @@ public class WorkspacePersonEntityMapper {
         Long workspaceId = entity.getId() != null ? entity.getId().getWorkspaceId() : null;
         Long personId = entity.getId() != null ? entity.getId().getPersonId() : null;
 
-        return new WorkspacePerson.Builder()
-                .withWorkspaceId(workspaceId)
-                .withPersonId(personId)
-                .withOrganizationId(entity.getOrganizationId())
-                .withCreatedAt(entity.getCreatedAt())
-                .withAddedBy(entity.getAddedBy() != null ? entity.getAddedBy().getId() : null)
+        return WorkspacePerson.builder()
+                .workspaceId(workspaceId)
+                .personId(personId)
+                .organizationId(entity.getOrganizationId())
+                .createdAt(entity.getCreatedAt())
+                .addedBy(entity.getAddedBy() != null ? entity.getAddedBy().getId() : null)
                 .build();
     }
 }

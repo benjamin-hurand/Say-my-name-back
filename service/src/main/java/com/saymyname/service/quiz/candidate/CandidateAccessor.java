@@ -75,7 +75,8 @@ public class CandidateAccessor {
 
     /**
      * Sample candidates with a specific target person.
-     * Useful when target is pre-determined (e.g., Course with Knowledge-based selection).
+     * Useful when target is pre-determined (e.g., Course with Knowledge-based
+     * selection).
      *
      * @param query          the candidate query
      * @param targetPersonId the designated target person
@@ -141,18 +142,18 @@ public class CandidateAccessor {
             return query;
         }
         // Rebuild query with adjusted limit
-        return new CandidateQuery.Builder()
-                .withUserId(query.getUserId())
-                .withExcludePersonId(query.getExcludePersonId())
-                .withPopulationScope(query.getPopulationScope())
-                .withCategory(query.getCategoryAttributeId(), query.getCategoryValue())
+        return CandidateQuery.builder()
+                .userId(query.getUserId())
+                .excludePersonId(query.getExcludePersonId())
+                .populationScope(query.getPopulationScope())
+                .category(query.getCategoryAttributeId(), query.getCategoryValue())
                 .requireApprovedPhoto(query.isRequireApprovedPhoto())
                 .requireCategoryMatch(query.isRequireCategoryMatch())
-                .withLimit(targetCount)
-                .withSeed(query.getSeed())
-                .withGameModeId(query.getGameModeId())
-                .withGameModeAttributeIds(query.getGameModeAttributeIds())
-                .withAttributeOperator(query.getAttributeOperator())
+                .limit(targetCount)
+                .seed(query.getSeed())
+                .gameModeId(query.getGameModeId())
+                .gameModeAttributeIds(query.getGameModeAttributeIds())
+                .attributeOperator(query.getAttributeOperator())
                 .countOnly(query.isCountOnly())
                 .build();
     }

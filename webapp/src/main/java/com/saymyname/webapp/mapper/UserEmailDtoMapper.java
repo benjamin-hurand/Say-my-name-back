@@ -40,16 +40,16 @@ public class UserEmailDtoMapper {
     public UserEmail toModel(UserEmailDto dto) {
         if (dto == null)
             return null;
-        return new UserEmail.Builder()
-                .withId(dto.id())
-                .withEmail(dto.email())
-                .withPrimary(dto.primary())
-                .withLoginAllowed(dto.loginAllowed())
-                .withRecoveryAllowed(dto.recoveryAllowed())
-                .withVerifiedAt(parse(dto.verifiedAt()))
-                .withAddedAt(parse(dto.addedAt()))
-                .withRecoveryEligibleAt(parse(dto.recoveryEligibleAt()))
-                .withUpdatedAt(parse(dto.updatedAt()))
+        return UserEmail.builder()
+                .id(dto.id())
+                .email(dto.email())
+                .primary(dto.primary())
+                .loginAllowed(dto.loginAllowed())
+                .recoveryAllowed(dto.recoveryAllowed())
+                .verifiedAt(parse(dto.verifiedAt()))
+                .addedAt(parse(dto.addedAt()))
+                .recoveryEligibleAt(parse(dto.recoveryEligibleAt()))
+                .updatedAt(parse(dto.updatedAt()))
                 .build();
     }
 

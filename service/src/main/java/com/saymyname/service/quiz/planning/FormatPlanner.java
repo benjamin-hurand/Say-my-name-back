@@ -48,7 +48,7 @@ public class FormatPlanner {
             int minRequired = PlanningDecision.minCandidatesFor(format);
             boolean needsPhoto = PlanningDecision.formatRequiresPhoto(format);
 
-            long available = needsPhoto ? stats.withApprovedPhoto() : stats.totalEligible();
+            long available = needsPhoto ? stats.approvedPhoto() : stats.totalEligible();
 
             throw new QuizUnprocessableException(
                     QuizUnprocessableException.ErrorCode.FORMAT_NOT_FEASIBLE,

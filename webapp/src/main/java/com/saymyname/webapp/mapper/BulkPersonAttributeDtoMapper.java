@@ -16,8 +16,8 @@ public class BulkPersonAttributeDtoMapper {
         if (src == null)
             return Collections.emptyList();
         return src.stream()
-                .map(c -> new PersonAttribute.Builder()
-                        .withValue(c.value())
+                .map(c -> PersonAttribute.builder()
+                        .value(c.value())
                         .build())
                 .toList();
     }
@@ -26,9 +26,9 @@ public class BulkPersonAttributeDtoMapper {
         if (src == null)
             return Collections.emptyList();
         return src.stream()
-                .map(u -> new PersonAttribute.Builder()
-                        .withId(u.id())
-                        .withValue(u.value())
+                .map(u -> PersonAttribute.builder()
+                        .id(u.id())
+                        .value(u.value())
                         .build())
                 .toList();
     }
@@ -37,8 +37,8 @@ public class BulkPersonAttributeDtoMapper {
         if (src == null)
             return Collections.emptyList();
         return src.stream()
-                .map(d -> new PersonAttribute.Builder()
-                        .withId(d.id())
+                .map(d -> PersonAttribute.builder()
+                        .id(d.id())
                         .build())
                 .toList();
     }
