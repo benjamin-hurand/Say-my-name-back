@@ -12,6 +12,8 @@ public class DefaultTenantResolver {
         this.jdbc = jdbc;
     }
 
+    // TODO: METTRE AUTRE FALLBACK QUE LE PREMIER TENANT DE L'USER, PEUT-ETRE UN
+    // TENANT "PUBLIC" OU UN TENANT "PERSONNEL"
     public Long forUser(Long userId) {
         return jdbc.query(
                 "SELECT tenant_id FROM user_organizations WHERE user_id=? ORDER BY created_at LIMIT 1",
