@@ -16,9 +16,9 @@ public class MembershipService {
         this.tpl = tpl;
     }
 
-    public boolean hasAtLeast(Long userId, Long orgId, OrgRole required) {
-        String sql = "SELECT role FROM user_organizations WHERE user_id=:u AND organization_id=:o";
-        List<String> roles = tpl.query(sql, Map.of("u", userId, "o", orgId), (rs, i) -> rs.getString(1));
+    public boolean hasAtLeast(Long userId, Long tenantId, OrgRole required) {
+        String sql = "SELECT role FROM user_organizations WHERE user_id=:u AND tenant_id=:t";
+        List<String> roles = tpl.query(sql, Map.of("u", userId, "t", tenantId), (rs, i) -> rs.getString(1));
         if (roles.isEmpty())
             return false;
         OrgRole actual = OrgRole.valueOf(roles.get(0));

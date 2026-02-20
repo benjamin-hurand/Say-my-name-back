@@ -118,7 +118,7 @@ public class SecurityConfig {
 
         /**
          * Allowed headers:
-         * - Custom app headers: X-XSRF-TOKEN, X-Org-Id, X-Device-*
+         * - Custom app headers: X-XSRF-TOKEN, X-Tenant-Id, X-Org-Id (legacy), X-Device-*
          * - Auth: Authorization
          * - Standards: Content-Type, Accept, Accept-Language
          * - Cache-related headers sometimes added by clients: Cache-Control, Pragma,
@@ -127,6 +127,7 @@ public class SecurityConfig {
         cfg.setAllowedHeaders(Arrays.asList(
                 "Content-Type",
                 "Authorization",
+                "X-Tenant-Id",
                 "X-Org-Id",
                 "X-Requested-With",
                 "X-XSRF-TOKEN",

@@ -1,7 +1,7 @@
 package com.saymyname.webapp.security;
 
 import com.saymyname.core.model.enums.OrgRole;
-import com.saymyname.core.multitenancy.OrgContext;
+import com.saymyname.core.multitenancy.TenantContext;
 import com.saymyname.security.AuthFacade; // vient du module security (ok)
 import com.saymyname.service.security.MembershipService; // service (ok)
 import org.springframework.stereotype.Component;
@@ -32,7 +32,7 @@ public class OrgAccess {
         if (auth.hasGlobalRole("SUPER_ADMIN"))
             return true;
         Long userId = auth.currentUserId();
-        Long orgId = OrgContext.get();
-        return userId != null && orgId != null && membership.hasAtLeast(userId, orgId, required);
+        Long tenantId = TenantContext.get();
+        return userId != null && tenantId != null && membership.hasAtLeast(userId, tenantId, required);
     }
 }

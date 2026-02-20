@@ -1,6 +1,6 @@
 package com.saymyname.webapp.multitenancy;
 
-import com.saymyname.core.multitenancy.OrgContext;
+import com.saymyname.core.multitenancy.TenantContext;
 import com.saymyname.security.AuthFacade;
 import com.saymyname.core.model.enums.OrgRole;
 import com.saymyname.service.security.MembershipService;
@@ -23,7 +23,7 @@ public class OrgSecurity {
             return false;
 
         return membership.hasAtLeast(userId,
-                orgId != null ? orgId : OrgContext.get(), // fallback sur OrgContext courant
+                orgId != null ? orgId : TenantContext.get(),
                 OrgRole.valueOf(requiredRole));
     }
 }

@@ -1,26 +1,26 @@
 package com.saymyname.webapp.config;
 
-import com.saymyname.webapp.multitenancy.OrgInterceptor;
+import com.saymyname.webapp.multitenancy.TenantInterceptor;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.*;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {
-    private final OrgInterceptor orgInterceptor;
+    private final TenantInterceptor tenantInterceptor;
 
-    public WebMvcConfig(OrgInterceptor oi) {
-        this.orgInterceptor = oi;
+    public WebMvcConfig(TenantInterceptor tenantInterceptor) {
+        this.tenantInterceptor = tenantInterceptor;
     }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(orgInterceptor)
+        registry.addInterceptor(tenantInterceptor)
                 .addPathPatterns("/api/**")
                 .excludePathPatterns(
-                        "/api/auth/**", // login, google login, refresh, reset...
+                        "/api/auth/**",
                         "/actuator/**",
-                        "/error", // handler d'erreurs
-                        "/swagger-ui/**", "/v3/api-docs/**" // si tu les exposes
-                );
+                        "/error",
+                        "/swagger-ui/**", "/v3/api-docs/**");
     }
 }
