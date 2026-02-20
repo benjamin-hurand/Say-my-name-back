@@ -15,9 +15,4 @@ public class ChangeRequestItem {
     String proposedValue;
     ChangeRequestItemStatus resolutionStatus;
     String resolutionComment;
-
-    // Backward-compatible accessor used by legacy service code.
-    public Fact getFact() {
-        return factId == null ? null : Fact.builder().id(factId).build();
-    }
 }

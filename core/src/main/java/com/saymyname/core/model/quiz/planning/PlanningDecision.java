@@ -68,20 +68,4 @@ public class PlanningDecision {
         return minCandidates + sampleBuffer();
     }
 
-    // Backward-compatible record-style accessors.
-    public QuizFormat chosenFormat() {
-        return chosenFormat;
-    }
-
-    public QuizDecisionReasonCode reasonCode() {
-        return reasonCode;
-    }
-
-    public boolean requiresPhoto() {
-        return requiresPhoto;
-    }
-
-    public String reasonDetailsJson() {
-        return reasonDetailsJson;
-    }
 }

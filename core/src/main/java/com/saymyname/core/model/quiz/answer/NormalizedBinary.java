@@ -15,9 +15,4 @@ public class NormalizedBinary implements NormalizedAudit {
         }
         return swipeRight ? "true" : "false";
     }
-
-    // Backward-compatible record-style accessor.
-    public Boolean swipeRight() {
-        return swipeRight;
-    }
 }

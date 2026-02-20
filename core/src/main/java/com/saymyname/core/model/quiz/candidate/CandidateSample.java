@@ -12,13 +12,6 @@ public class CandidateSample {
     Long targetPersonId;
     String targetStorageKey;
 
-    // Backward-compatible constructor used by legacy service code.
-    public CandidateSample(List<PayloadItem> items, Long targetPersonId, String targetStorageKey) {
-        this.items = (items == null) ? List.of() : items;
-        this.targetPersonId = targetPersonId;
-        this.targetStorageKey = targetStorageKey;
-    }
-
     public static CandidateSample ofSingle(PayloadItem target) {
         return CandidateSample.builder()
                 .items(List.of(target))

@@ -8,7 +8,6 @@ import lombok.Value;
 @Builder(toBuilder = true)
 public class KnowledgeResultEvent {
     Long knowledgeId;
-    Long gameModeId;
     Long personId;
     Long factId;
     boolean correct;

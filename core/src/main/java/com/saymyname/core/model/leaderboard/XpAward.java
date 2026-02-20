@@ -17,13 +17,4 @@ public class XpAward {
     public static XpAward none() {
         return XpAward.builder().deltaXp(0).eventKeys(List.of()).build();
     }
-
-    // Backward-compatible record-style accessors.
-    public int deltaXp() {
-        return deltaXp;
-    }
-
-    public List<String> eventKeys() {
-        return eventKeys;
-    }
 }

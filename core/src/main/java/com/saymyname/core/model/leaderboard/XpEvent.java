@@ -16,9 +16,4 @@ public class XpEvent {
     Long sourceId;
     int deltaXp;
     Instant createdAt;
-
-    // Backward-compatible accessor for legacy code paths.
-    public User getUser() {
-        return userId == null ? null : User.builder().id(userId).build();
-    }
 }

@@ -21,9 +21,4 @@ public class PersonEmail {
     Instant bouncedAt;
     Instant createdAt;
     Instant updatedAt;
-
-    // Backward-compatible accessor for legacy code paths.
-    public Person getPerson() {
-        return personId == null ? null : Person.builder().id(personId).build();
-    }
 }

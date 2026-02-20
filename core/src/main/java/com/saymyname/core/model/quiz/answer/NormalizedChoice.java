@@ -16,13 +16,4 @@ public class NormalizedChoice implements NormalizedAudit {
         }
         return selectedChoiceId + ":" + (selectedValue == null ? "" : selectedValue);
     }
-
-    // Backward-compatible record-style accessors.
-    public Long selectedChoiceId() {
-        return selectedChoiceId;
-    }
-
-    public String selectedValue() {
-        return selectedValue;
-    }
 }

@@ -13,13 +13,4 @@ public class NormalizedText implements NormalizedAudit {
     public String auditString() {
         return canonical;
     }
-
-    // Backward-compatible record-style accessors.
-    public String raw() {
-        return raw;
-    }
-
-    public String canonical() {
-        return canonical;
-    }
 }
