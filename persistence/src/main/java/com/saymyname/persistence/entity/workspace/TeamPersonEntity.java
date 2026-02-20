@@ -8,9 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
-import lombok.experimental.SuperBuilder;
-import com.saymyname.persistence.entity.UserEntity;
-import com.saymyname.persistence.multitenancy.BaseTenantScoped;
+import lombok.Builder;
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
@@ -27,31 +25,32 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@SuperBuilder
+@Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 @ToString(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "workspace_persons", indexes = {
-        @Index(name = "idx_wp_person", columnList = "person_id"),
-        @Index(name = "idx_wp_workspace", columnList = "workspace_id"),
-        @Index(name = "idx_wp_tenant_person", columnList = "tenant_id,person_id")
+@Table(name = "team_persons", indexes = {
+        @Index(name = "idx_tp_ws_person", columnList = "workspace_id,person_id")
 })
-public class WorkspacePersonEntity extends BaseTenantScoped {
+public class TeamPersonEntity {
 
     @EqualsAndHashCode.Include
     @ToString.Include
     @EmbeddedId
-    private WorkspacePersonId id;
+    private TeamPersonId id;
+
+    @Column(name = "workspace_id", nullable = false)
+    private Long workspaceId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @MapsId("workspaceId")
-    @JoinColumn(name = "workspace_id", nullable = false, foreignKey = @ForeignKey(name = "fk_wp_workspace"))
-    private WorkspaceEntity workspace;
+    @MapsId("teamId")
+    @JoinColumn(name = "team_id", nullable = false,
+            foreignKey = @ForeignKey(name = "fk_tp_team"))
+    private TeamEntity team;
+
+    @Column(name = "role_label", length = 80)
+    private String roleLabel;
 
     @Column(name = "created_at", nullable = false, columnDefinition = "datetime default current_timestamp")
     private LocalDateTime createdAt;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "added_by", foreignKey = @ForeignKey(name = "fk_wp_added_by"))
-    private UserEntity addedBy;
 }

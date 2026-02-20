@@ -1,157 +1,90 @@
-// src/main/java/com/saymyname/persistence/entity/course/CourseEntity.java
 package com.saymyname.persistence.entity.organization.course;
 
-import jakarta.persistence.*;
-import java.time.LocalDateTime;
-import java.util.Objects;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 import com.saymyname.core.model.enums.CourseStatus;
+import com.saymyname.core.model.enums.CourseTargetScope;
 import com.saymyname.core.model.enums.PopulationScope;
 import com.saymyname.persistence.entity.UserEntity;
-import com.saymyname.persistence.entity.organization.GameModeEntity;
-import com.saymyname.persistence.multitenancy.BaseOrgScoped;
+import com.saymyname.persistence.multitenancy.BaseTenantScoped;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import java.time.LocalDateTime;
 
+@Getter
+@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@SuperBuilder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
+@ToString(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "courses")
-public class CourseEntity extends BaseOrgScoped {
+@Table(name = "courses", uniqueConstraints = {
+        @UniqueConstraint(name = "uq_courses_tenant_id", columnNames = {"tenant_id", "id"})
+}, indexes = {
+        @Index(name = "idx_courses_tenant_user", columnList = "tenant_id,user_id"),
+        @Index(name = "idx_courses_tenant_status", columnList = "tenant_id,status"),
+        @Index(name = "idx_courses_tenant_target_attr", columnList = "tenant_id,target_attribute_id"),
+        @Index(name = "idx_courses_tenant_user_attr", columnList = "tenant_id,user_id,target_attribute_id"),
+        @Index(name = "idx_courses_tenant_user_status", columnList = "tenant_id,user_id,status")
+})
+public class CourseEntity extends BaseTenantScoped {
 
+    @EqualsAndHashCode.Include
+    @ToString.Include
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false)
     private Long id;
 
-    // user_id -> users.id
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_courses_user"))
     private UserEntity user;
 
-    // game_mode_id -> game_modes.id
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "game_mode_id", nullable = false)
-    private GameModeEntity gameMode;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "target_scope", nullable = false, length = 32, columnDefinition = "varchar(32) default 'ATTRIBUTE'")
+    private CourseTargetScope targetScope;
+
+    @Column(name = "target_attribute_id")
+    private Long targetAttributeId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 12)
     private CourseStatus status;
 
     @Column(name = "current_round", nullable = false)
-    private int currentRound = 0;
+    private int currentRound;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "population_scope", nullable = false, length = 32)
-    private PopulationScope populationScope = PopulationScope.FOLLOWED;
+    private PopulationScope populationScope;
 
-    @Column(name = "created_at", nullable = false, insertable = false, updatable = false, columnDefinition = "DATETIME DEFAULT CURRENT_TIMESTAMP")
+    @Column(name = "created_at", nullable = false, columnDefinition = "datetime default current_timestamp")
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at", nullable = false, insertable = false, updatable = false, columnDefinition = "DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
+    @Column(name = "updated_at", nullable = false,
+            columnDefinition = "datetime default current_timestamp on update current_timestamp")
     private LocalDateTime updatedAt;
 
-    // Nouveau : accès utilisateur
     @Column(name = "last_accessed_at")
     private LocalDateTime lastAccessedAt;
-
-    public CourseEntity() {
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public UserEntity getUser() {
-        return user;
-    }
-
-    public void setUser(UserEntity user) {
-        this.user = user;
-    }
-
-    public GameModeEntity getGameMode() {
-        return gameMode;
-    }
-
-    public void setGameMode(GameModeEntity gameMode) {
-        this.gameMode = gameMode;
-    }
-
-    public CourseStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(CourseStatus status) {
-        this.status = status;
-    }
-
-    public int getCurrentRound() {
-        return currentRound;
-    }
-
-    public void setCurrentRound(int currentRound) {
-        this.currentRound = currentRound;
-    }
-
-    public PopulationScope getPopulationScope() {
-        return populationScope;
-    }
-
-    public void setPopulationScope(PopulationScope populationScope) {
-        this.populationScope = populationScope;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    public LocalDateTime getLastAccessedAt() {
-        return lastAccessedAt;
-    }
-
-    public void setLastAccessedAt(LocalDateTime lastAccessedAt) {
-        this.lastAccessedAt = lastAccessedAt;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (!(o instanceof CourseEntity))
-            return false;
-        CourseEntity that = (CourseEntity) o;
-        return Objects.equals(id, that.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
-    }
-
-    @Override
-    public String toString() {
-        return "CourseEntity{" +
-                "id=" + id +
-                ", userId=" + (user != null ? user.getId() : null) +
-                ", gameModeId=" + (gameMode != null ? gameMode.getId() : null) +
-                ", status=" + status +
-                ", currentRound=" + currentRound +
-                ", populationScope=" + populationScope +
-                ", createdAt=" + createdAt +
-                ", updatedAt=" + updatedAt +
-                ", lastAccessedAt=" + lastAccessedAt +
-                '}';
-    }
 }

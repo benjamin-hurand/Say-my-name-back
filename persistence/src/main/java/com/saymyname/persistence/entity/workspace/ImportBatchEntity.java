@@ -1,4 +1,4 @@
-package com.saymyname.persistence.entity.organization;
+package com.saymyname.persistence.entity.workspace;
 
 
 import lombok.AccessLevel;
@@ -8,10 +8,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
-import lombok.experimental.SuperBuilder;
-import com.saymyname.core.model.enums.PhotoReportReason;
+import lombok.Builder;
 import com.saymyname.persistence.entity.UserEntity;
-import com.saymyname.persistence.multitenancy.BaseTenantScoped;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -31,18 +29,14 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@SuperBuilder
+@Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 @ToString(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "photo_reports", indexes = {
-        @Index(name = "idx_pr_person_created", columnList = "person_id,created_at"),
-        @Index(name = "idx_pr_reported_by_created", columnList = "reported_by,created_at"),
-        @Index(name = "idx_pr_reason_created", columnList = "reason_type,created_at"),
-        @Index(name = "idx_pr_tenant", columnList = "tenant_id"),
-        @Index(name = "idx_pr_tenant_person", columnList = "tenant_id,person_id")
+@Table(name = "import_batches", indexes = {
+        @Index(name = "idx_imp_ws_status", columnList = "workspace_id,status,created_at")
 })
-public class PhotoReportEntity extends BaseTenantScoped {
+public class ImportBatchEntity {
 
     @EqualsAndHashCode.Include
     @ToString.Include
@@ -51,20 +45,45 @@ public class PhotoReportEntity extends BaseTenantScoped {
     @Column(name = "id", nullable = false)
     private Long id;
 
-    @Column(name = "person_id", nullable = false)
-    private Long personId;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source_kind", nullable = false, length = 16, columnDefinition = "enum('CSV','XLSX','HTML','API','MANUAL')")
+    private SourceKind sourceKind;
+
+    @Column(name = "source_label", length = 255)
+    private String sourceLabel;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "reported_by", nullable = false, foreignKey = @ForeignKey(name = "fk_pr_reported_by"))
-    private UserEntity reportedBy;
+    @JoinColumn(name = "created_by", nullable = false, foreignKey = @ForeignKey(name = "fk_import_batch_created_by"))
+    private UserEntity createdBy;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "reason_type", nullable = false, length = 50)
-    private PhotoReportReason reasonType;
-
-    @Column(name = "reason_text", length = 255)
-    private String reasonText;
+    @Column(name = "status", nullable = false, length = 16,
+            columnDefinition = "enum('PENDING','MAPPING','REVIEW','APPLIED','FAILED') default 'PENDING'")
+    private ImportBatchStatus status;
 
     @Column(name = "created_at", nullable = false, columnDefinition = "datetime default current_timestamp")
     private LocalDateTime createdAt;
+
+    @Column(name = "applied_at")
+    private LocalDateTime appliedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "workspace_id", nullable = false, foreignKey = @ForeignKey(name = "fk_import_batch_workspace"))
+    private WorkspaceEntity workspace;
+
+    public enum SourceKind {
+        CSV,
+        XLSX,
+        HTML,
+        API,
+        MANUAL
+    }
+
+    public enum ImportBatchStatus {
+        PENDING,
+        MAPPING,
+        REVIEW,
+        APPLIED,
+        FAILED
+    }
 }

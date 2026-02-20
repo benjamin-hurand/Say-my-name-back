@@ -1,4 +1,4 @@
-package com.saymyname.persistence.entity;
+package com.saymyname.persistence.entity.workspace;
 
 
 import lombok.AccessLevel;
@@ -11,17 +11,17 @@ import lombok.ToString;
 import lombok.Builder;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-
-import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -31,11 +31,8 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 @ToString(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "password_tokens", indexes = {
-        @Index(name = "idx_password_tokens_user", columnList = "user_id"),
-        @Index(name = "idx_password_tokens_expires", columnList = "expires_at,used_at")
-})
-public class PasswordResetTokenEntity {
+@Table(name = "import_rows")
+public class ImportRowEntity {
 
     @EqualsAndHashCode.Include
     @ToString.Include
@@ -45,21 +42,29 @@ public class PasswordResetTokenEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_password_tokens_user"))
-    private UserEntity user;
+    @JoinColumn(name = "batch_id", nullable = false, foreignKey = @ForeignKey(name = "fk_import_row_batch"))
+    private ImportBatchEntity batch;
 
-    @Column(name = "token_hash", nullable = false, length = 44)
-    private String tokenHash;
+    @Column(name = "raw_payload", nullable = false, columnDefinition = "json")
+    private String rawPayload;
 
-    @Column(name = "expires_at", nullable = false)
-    private LocalDateTime expiresAt;
+    @Column(name = "normalized", columnDefinition = "json")
+    private String normalized;
 
-    @Column(name = "used_at")
-    private LocalDateTime usedAt;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 16, columnDefinition = "enum('NEW','MAPPED','CONFLICT','READY','SKIPPED','ERROR') default 'NEW'")
+    private ImportRowStatus status;
 
-    @Column(name = "created_ip", length = 45)
-    private String createdIp;
+    @Lob
+    @Column(name = "error_message")
+    private String errorMessage;
 
-    @Column(name = "user_agent", length = 255)
-    private String userAgent;
+    public enum ImportRowStatus {
+        NEW,
+        MAPPED,
+        CONFLICT,
+        READY,
+        SKIPPED,
+        ERROR
+    }
 }

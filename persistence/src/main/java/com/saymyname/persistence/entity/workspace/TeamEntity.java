@@ -8,9 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
-import lombok.experimental.SuperBuilder;
-import com.saymyname.persistence.entity.TenantEntity;
-import com.saymyname.persistence.multitenancy.BaseTenantScoped;
+import lombok.Builder;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -29,16 +27,18 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@SuperBuilder
+@Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 @ToString(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "workspaces", uniqueConstraints = {
-        @UniqueConstraint(name = "uq_ws_tenant_id", columnNames = {"tenant_id", "id"})
+@Table(name = "teams", uniqueConstraints = {
+        @UniqueConstraint(name = "uq_team_ws_name", columnNames = {"workspace_id", "name"}),
+        @UniqueConstraint(name = "uq_teams_ws_id", columnNames = {"workspace_id", "id"})
 }, indexes = {
-        @Index(name = "idx_ws_tenant", columnList = "tenant_id")
+        @Index(name = "idx_team_ws_parent", columnList = "workspace_id,parent_team_id"),
+        @Index(name = "fk_team_parent", columnList = "parent_team_id")
 })
-public class WorkspaceEntity extends BaseTenantScoped {
+public class TeamEntity {
 
     @EqualsAndHashCode.Include
     @ToString.Include
@@ -47,20 +47,29 @@ public class WorkspaceEntity extends BaseTenantScoped {
     @Column(name = "id", nullable = false)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tenant_id", insertable = false, updatable = false,
-            foreignKey = @ForeignKey(name = "fk_workspaces_tenant"))
-    private TenantEntity tenant;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "workspace_id", nullable = false, foreignKey = @ForeignKey(name = "fk_team_workspace"))
+    private WorkspaceEntity workspace;
 
-    @Column(name = "name", length = 255)
+    @Column(name = "parent_team_id")
+    private Long parentTeamId;
+
+    @Column(name = "name", nullable = false, length = 120)
     private String name;
+
+    @Column(name = "description", length = 512)
+    private String description;
+
+    @Column(name = "display_order", nullable = false, columnDefinition = "int default 0")
+    private int displayOrder;
 
     @Column(name = "is_active", nullable = false, columnDefinition = "tinyint(1) default 1")
     private boolean active;
 
-    @Column(name = "created_at", nullable = false, columnDefinition = "timestamp default current_timestamp")
+    @Column(name = "created_at", nullable = false, columnDefinition = "datetime default current_timestamp")
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at", columnDefinition = "timestamp null default null on update current_timestamp")
+    @Column(name = "updated_at", nullable = false,
+            columnDefinition = "datetime default current_timestamp on update current_timestamp")
     private LocalDateTime updatedAt;
 }

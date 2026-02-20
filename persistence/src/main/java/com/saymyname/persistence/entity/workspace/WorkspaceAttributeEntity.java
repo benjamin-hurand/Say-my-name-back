@@ -9,7 +9,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
-import com.saymyname.persistence.entity.UserEntity;
 import com.saymyname.persistence.multitenancy.BaseTenantScoped;
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
@@ -31,27 +30,40 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 @ToString(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "workspace_persons", indexes = {
-        @Index(name = "idx_wp_person", columnList = "person_id"),
-        @Index(name = "idx_wp_workspace", columnList = "workspace_id"),
-        @Index(name = "idx_wp_tenant_person", columnList = "tenant_id,person_id")
+@Table(name = "workspace_attributes", indexes = {
+        @Index(name = "idx_wa_ws", columnList = "workspace_id"),
+        @Index(name = "idx_wa_tenant_attr", columnList = "tenant_id,attribute_id")
 })
-public class WorkspacePersonEntity extends BaseTenantScoped {
+public class WorkspaceAttributeEntity extends BaseTenantScoped {
 
     @EqualsAndHashCode.Include
     @ToString.Include
     @EmbeddedId
-    private WorkspacePersonId id;
+    private WorkspaceAttributeId id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @MapsId("workspaceId")
-    @JoinColumn(name = "workspace_id", nullable = false, foreignKey = @ForeignKey(name = "fk_wp_workspace"))
+    @JoinColumn(name = "workspace_id", nullable = false, foreignKey = @ForeignKey(name = "fk_wa_workspace"))
     private WorkspaceEntity workspace;
+
+    @Column(name = "is_enabled", nullable = false, columnDefinition = "tinyint(1) default 1")
+    private boolean enabled;
+
+    @Column(name = "display_order_override")
+    private Integer displayOrderOverride;
+
+    @Column(name = "filter_override")
+    private Boolean filterOverride;
+
+    @Column(name = "sort_override")
+    private Boolean sortOverride;
+
+    @Column(name = "required_override")
+    private Boolean requiredOverride;
+
+    @Column(name = "initializable_override")
+    private Boolean initializableOverride;
 
     @Column(name = "created_at", nullable = false, columnDefinition = "datetime default current_timestamp")
     private LocalDateTime createdAt;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "added_by", foreignKey = @ForeignKey(name = "fk_wp_added_by"))
-    private UserEntity addedBy;
 }

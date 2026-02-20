@@ -19,11 +19,11 @@ import java.io.Serializable;
 @EqualsAndHashCode
 @ToString
 @Embeddable
-public class WorkspaceMemberId implements Serializable {
+public class WorkspaceAttributeId implements Serializable {
 
     @Column(name = "workspace_id", nullable = false)
     private Long workspaceId;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @Column(name = "attribute_id", nullable = false)
+    private Long attributeId;
 }

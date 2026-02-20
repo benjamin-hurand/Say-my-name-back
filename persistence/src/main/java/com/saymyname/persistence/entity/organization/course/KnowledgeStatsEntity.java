@@ -1,44 +1,61 @@
 package com.saymyname.persistence.entity.organization.course;
 
-import java.time.LocalDateTime;
-import java.util.Objects;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 import com.saymyname.persistence.entity.UserEntity;
-import com.saymyname.persistence.entity.organization.GameModeEntity;
-import com.saymyname.persistence.entity.organization.PersonEntity;
-import com.saymyname.persistence.multitenancy.BaseOrgScoped;
+import com.saymyname.persistence.entity.organization.FactEntity;
+import com.saymyname.persistence.multitenancy.BaseTenantScoped;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 
-import jakarta.persistence.*;
-
+@Getter
+@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@SuperBuilder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
+@ToString(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "knowledge_stats", uniqueConstraints = {
-        @UniqueConstraint(name = "uq_ks", columnNames = { "organization_id", "user_id", "game_mode_id",
-                "knowledge_id" })
-}, indexes = {
-        @Index(name = "idx_ks_select", columnList = "organization_id, user_id, game_mode_id, error_streak, avg_rt_recent, last_answer_at"),
-        @Index(name = "idx_ks_person", columnList = "organization_id, user_id, game_mode_id, person_id")
+@Table(name = "knowledge_stats", indexes = {
+        @Index(name = "idx_ks_select", columnList = "tenant_id,user_id,fact_id,error_streak,avg_rt_recent,last_answer_at")
 })
-public class KnowledgeStatsEntity extends BaseOrgScoped {
+public class KnowledgeStatsEntity extends BaseTenantScoped {
 
+    @EqualsAndHashCode.Include
+    @ToString.Include
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_ks_user"))
     private UserEntity user;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "game_mode_id", nullable = false)
-    private GameModeEntity gameMode;
+    @JoinColumn(name = "fact_id", nullable = false, foreignKey = @ForeignKey(name = "fk_ks_fact"))
+    private FactEntity fact;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "knowledge_id", nullable = false)
+    @JoinColumn(name = "knowledge_id", nullable = false, foreignKey = @ForeignKey(name = "fk_ks_knowledge"))
     private KnowledgeEntity knowledge;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "person_id", nullable = false)
-    private PersonEntity person;
 
     @Column(name = "attempts_recent", nullable = false)
     private double attemptsRecent;
@@ -67,175 +84,10 @@ public class KnowledgeStatsEntity extends BaseOrgScoped {
     @Column(name = "error_streak", nullable = false)
     private int errorStreak;
 
-    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, columnDefinition = "datetime default current_timestamp")
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at", nullable = false, insertable = false, updatable = false)
+    @Column(name = "updated_at", nullable = false,
+            columnDefinition = "datetime default current_timestamp on update current_timestamp")
     private LocalDateTime updatedAt;
-
-    public KnowledgeStatsEntity() {
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public UserEntity getUser() {
-        return user;
-    }
-
-    public void setUser(UserEntity user) {
-        this.user = user;
-    }
-
-    public GameModeEntity getGameMode() {
-        return gameMode;
-    }
-
-    public void setGameMode(GameModeEntity gameMode) {
-        this.gameMode = gameMode;
-    }
-
-    public KnowledgeEntity getKnowledge() {
-        return knowledge;
-    }
-
-    public void setKnowledge(KnowledgeEntity knowledge) {
-        this.knowledge = knowledge;
-    }
-
-    public PersonEntity getPerson() {
-        return person;
-    }
-
-    public void setPerson(PersonEntity person) {
-        this.person = person;
-    }
-
-    public double getAttemptsRecent() {
-        return attemptsRecent;
-    }
-
-    public void setAttemptsRecent(double attemptsRecent) {
-        this.attemptsRecent = attemptsRecent;
-    }
-
-    public double getCorrectRecent() {
-        return correctRecent;
-    }
-
-    public void setCorrectRecent(double correctRecent) {
-        this.correctRecent = correctRecent;
-    }
-
-    public double getHelpRecent() {
-        return helpRecent;
-    }
-
-    public void setHelpRecent(double helpRecent) {
-        this.helpRecent = helpRecent;
-    }
-
-    public double getAvgRtRecent() {
-        return avgRtRecent;
-    }
-
-    public void setAvgRtRecent(double avgRtRecent) {
-        this.avgRtRecent = avgRtRecent;
-    }
-
-    public LocalDateTime getLastAnswerAt() {
-        return lastAnswerAt;
-    }
-
-    public void setLastAnswerAt(LocalDateTime lastAnswerAt) {
-        this.lastAnswerAt = lastAnswerAt;
-    }
-
-    public Boolean getLastCorrect() {
-        return lastCorrect;
-    }
-
-    public void setLastCorrect(Boolean lastCorrect) {
-        this.lastCorrect = lastCorrect;
-    }
-
-    public Boolean getLastHelpUsed() {
-        return lastHelpUsed;
-    }
-
-    public void setLastHelpUsed(Boolean lastHelpUsed) {
-        this.lastHelpUsed = lastHelpUsed;
-    }
-
-    public int getLastResponseTimeMs() {
-        return lastResponseTimeMs;
-    }
-
-    public void setLastResponseTimeMs(int lastResponseTimeMs) {
-        this.lastResponseTimeMs = lastResponseTimeMs;
-    }
-
-    public int getErrorStreak() {
-        return errorStreak;
-    }
-
-    public void setErrorStreak(int errorStreak) {
-        this.errorStreak = errorStreak;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (!(o instanceof KnowledgeStatsEntity))
-            return false;
-        KnowledgeStatsEntity that = (KnowledgeStatsEntity) o;
-        return Objects.equals(id, that.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
-    }
-
-    @Override
-    public String toString() {
-        return "KnowledgeStatsEntity{" +
-                "id=" + id +
-                ", userId=" + (user != null ? user.getId() : null) +
-                ", gameModeId=" + (gameMode != null ? gameMode.getId() : null) +
-                ", knowledgeId=" + (knowledge != null ? knowledge.getId() : null) +
-                ", personId=" + (person != null ? person.getId() : null) +
-                ", attemptsRecent=" + attemptsRecent +
-                ", correctRecent=" + correctRecent +
-                ", helpRecent=" + helpRecent +
-                ", avgRtRecent=" + avgRtRecent +
-                ", lastAnswerAt=" + lastAnswerAt +
-                ", lastCorrect=" + lastCorrect +
-                ", lastHelpUsed=" + lastHelpUsed +
-                ", lastResponseTimeMs=" + lastResponseTimeMs +
-                ", errorStreak=" + errorStreak +
-                '}';
-    }
 }

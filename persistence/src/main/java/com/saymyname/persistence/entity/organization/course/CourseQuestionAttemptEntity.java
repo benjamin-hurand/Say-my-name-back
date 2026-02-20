@@ -1,34 +1,53 @@
-// src/main/java/com/saymyname/persistence/entity/organization/course/CourseQuestionAttemptEntity.java
 package com.saymyname.persistence.entity.organization.course;
 
 import com.saymyname.core.model.enums.PoolType;
 import com.saymyname.core.model.enums.quiz.QuizFormat;
-import com.saymyname.persistence.multitenancy.BaseOrgScoped;
+import com.saymyname.persistence.multitenancy.BaseTenantScoped;
 import jakarta.persistence.*;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.BatchSize;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
+@Getter
+@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@SuperBuilder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
+@ToString(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "course_question_attempts", indexes = {
-        @Index(name = "idx_cqh_course_round", columnList = "course_id,question_round"),
-        @Index(name = "idx_cqh_course_answered", columnList = "course_id,answered_at"),
-        @Index(name = "idx_cqh_answered_at", columnList = "answered_at"),
-        @Index(name = "idx_cqh_course_correct", columnList = "course_id,global_correct"),
-        @Index(name = "idx_cqh_org", columnList = "organization_id"),
-        @Index(name = "idx_cqh_course_org", columnList = "course_id,organization_id")
-})
-public class CourseQuestionAttemptEntity extends BaseOrgScoped {
+@Table(name = "course_question_attempts", uniqueConstraints = @UniqueConstraint(name = "uq_cqa_tenant_id", columnNames = {
+        "tenant_id", "id" }), indexes = {
+                @Index(name = "idx_cqh_course_round", columnList = "course_id,question_round"),
+                @Index(name = "idx_cqh_course_answered", columnList = "course_id,answered_at"),
+                @Index(name = "idx_cqh_answered_at", columnList = "answered_at"),
+                @Index(name = "idx_cqh_course_correct", columnList = "course_id,global_correct"),
+                @Index(name = "idx_cqa_tenant_course_round", columnList = "tenant_id,course_id,question_round"),
+                @Index(name = "idx_cqa_tenant_answered", columnList = "tenant_id,answered_at")
+        })
+public class CourseQuestionAttemptEntity extends BaseTenantScoped {
 
+    @EqualsAndHashCode.Include
+    @ToString.Include
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false)
     private Long id;
 
+    /**
+     * FK DB: (tenant_id, course_id) -> courses(tenant_id, id)
+     * tenant_id est porté par BaseTenantScoped -> join sur tenant_id
+     * non-insertable/updatable.
+     */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "course_id", referencedColumnName = "id", nullable = false)
+    @JoinColumns({
+            @JoinColumn(name = "tenant_id", referencedColumnName = "tenant_id", nullable = false, insertable = false, updatable = false),
+            @JoinColumn(name = "course_id", referencedColumnName = "id", nullable = false)
+    })
     private CourseEntity course;
 
     @Column(name = "question_round", nullable = false)
@@ -44,27 +63,24 @@ public class CourseQuestionAttemptEntity extends BaseOrgScoped {
     private int responseTimeMs;
 
     @Lob
-    @Column(name = "raw_submission")
+    @Column(name = "raw_submission", columnDefinition = "longtext")
     private String rawSubmission;
 
     @Lob
-    @Column(name = "normalized_audit")
+    @Column(name = "normalized_audit", columnDefinition = "longtext")
     private String normalizedAudit;
 
     @Column(name = "global_correct", nullable = false)
     private boolean globalCorrect;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "pool_type", nullable = false)
+    @Column(name = "pool_type", nullable = false, length = 255)
     private PoolType poolType;
 
     @Column(name = "help_used", nullable = false)
     private boolean helpUsed;
 
-    // -----------------------------
-    // Snapshot fields (Option B)
-    // -----------------------------
-
+    // ----- Snapshot metadata -----
     @Enumerated(EnumType.STRING)
     @Column(name = "question_format", nullable = false, length = 32)
     private QuizFormat questionFormat;
@@ -79,22 +95,14 @@ public class CourseQuestionAttemptEntity extends BaseOrgScoped {
     private String normalizerVersion;
 
     @Lob
-    @Column(name = "question_snapshot_json", nullable = false, columnDefinition = "LONGTEXT")
+    @Column(name = "question_snapshot_json", nullable = false, columnDefinition = "longtext")
     private String questionSnapshotJson;
 
-    /**
-     * Multi-step state (for HANGMAN/WORD_PUZZLE formats).
-     * Stores intermediate state between submissions (mask, attempts, feedback).
-     * Deserialized and merged into snapshot on read.
-     */
     @Lob
-    @Column(name = "step_state_json", columnDefinition = "LONGTEXT")
+    @Column(name = "step_state_json", columnDefinition = "longtext")
     private String stepStateJson;
 
-    // -----------------------------
-    // Plan fields
-    // -----------------------------
-
+    // ----- Plan fields -----
     @Enumerated(EnumType.STRING)
     @Column(name = "planned_format", nullable = false, length = 32)
     private QuizFormat plannedFormat;
@@ -109,259 +117,40 @@ public class CourseQuestionAttemptEntity extends BaseOrgScoped {
     private int plannedTargetCount;
 
     @Lob
-    @Column(name = "planned_target_knowledge_ids_json", columnDefinition = "LONGTEXT")
+    @Column(name = "planned_target_knowledge_ids_json", columnDefinition = "longtext")
     private String plannedTargetKnowledgeIdsJson;
 
     @Lob
-    @Column(name = "planned_params_json", columnDefinition = "LONGTEXT")
+    @Column(name = "planned_params_json", columnDefinition = "longtext")
     private String plannedParamsJson;
 
     @Column(name = "planned_reason_code", length = 64)
     private String plannedReasonCode;
 
     @Lob
-    @Column(name = "planned_reason_details_json", columnDefinition = "LONGTEXT")
+    @Column(name = "planned_reason_details_json", columnDefinition = "longtext")
     private String plannedReasonDetailsJson;
 
-    @OneToMany(mappedBy = "attempt", cascade = CascadeType.ALL, orphanRemoval = true)
+    // ✅ Attempt -> Items (aggregate)
+    @OneToMany(mappedBy = "attempt", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("position ASC")
     @BatchSize(size = 100)
+    @Builder.Default
     private List<CourseQuestionItemEntity> items = new ArrayList<>();
 
-    public CourseQuestionAttemptEntity() {
-    }
-
     public void addItem(CourseQuestionItemEntity item) {
-        items.add(item);
+        if (item == null)
+            return;
+        if (this.items == null)
+            this.items = new ArrayList<>();
+        this.items.add(item);
         item.setAttempt(this);
     }
 
     public void removeItem(CourseQuestionItemEntity item) {
-        items.remove(item);
+        if (item == null)
+            return;
+        this.items.remove(item);
         item.setAttempt(null);
-    }
-
-    // getters/setters (ajoute ceux des nouveaux champs)
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public CourseEntity getCourse() {
-        return course;
-    }
-
-    public void setCourse(CourseEntity course) {
-        this.course = course;
-    }
-
-    public int getQuestionRound() {
-        return questionRound;
-    }
-
-    public void setQuestionRound(int questionRound) {
-        this.questionRound = questionRound;
-    }
-
-    public LocalDateTime getAskedAt() {
-        return askedAt;
-    }
-
-    public void setAskedAt(LocalDateTime askedAt) {
-        this.askedAt = askedAt;
-    }
-
-    public LocalDateTime getAnsweredAt() {
-        return answeredAt;
-    }
-
-    public void setAnsweredAt(LocalDateTime answeredAt) {
-        this.answeredAt = answeredAt;
-    }
-
-    public int getResponseTimeMs() {
-        return responseTimeMs;
-    }
-
-    public void setResponseTimeMs(int responseTimeMs) {
-        this.responseTimeMs = responseTimeMs;
-    }
-
-    public String getRawSubmission() {
-        return rawSubmission;
-    }
-
-    public void setRawSubmission(String rawSubmission) {
-        this.rawSubmission = rawSubmission;
-    }
-
-    public String getNormalizedAudit() {
-        return normalizedAudit;
-    }
-
-    public void setNormalizedAudit(String normalizedAudit) {
-        this.normalizedAudit = normalizedAudit;
-    }
-
-    public boolean isGlobalCorrect() {
-        return globalCorrect;
-    }
-
-    public void setGlobalCorrect(boolean globalCorrect) {
-        this.globalCorrect = globalCorrect;
-    }
-
-    public PoolType getPoolType() {
-        return poolType;
-    }
-
-    public void setPoolType(PoolType poolType) {
-        this.poolType = poolType;
-    }
-
-    public boolean isHelpUsed() {
-        return helpUsed;
-    }
-
-    public void setHelpUsed(boolean helpUsed) {
-        this.helpUsed = helpUsed;
-    }
-
-    public QuizFormat getQuestionFormat() {
-        return questionFormat;
-    }
-
-    public void setQuestionFormat(QuizFormat questionFormat) {
-        this.questionFormat = questionFormat;
-    }
-
-    public int getSnapshotSchemaVersion() {
-        return snapshotSchemaVersion;
-    }
-
-    public void setSnapshotSchemaVersion(int snapshotSchemaVersion) {
-        this.snapshotSchemaVersion = snapshotSchemaVersion;
-    }
-
-    public String getGeneratorVersion() {
-        return generatorVersion;
-    }
-
-    public void setGeneratorVersion(String generatorVersion) {
-        this.generatorVersion = generatorVersion;
-    }
-
-    public String getNormalizerVersion() {
-        return normalizerVersion;
-    }
-
-    public void setNormalizerVersion(String normalizerVersion) {
-        this.normalizerVersion = normalizerVersion;
-    }
-
-    public String getQuestionSnapshotJson() {
-        return questionSnapshotJson;
-    }
-
-    public void setQuestionSnapshotJson(String questionSnapshotJson) {
-        this.questionSnapshotJson = questionSnapshotJson;
-    }
-
-    public String getStepStateJson() {
-        return stepStateJson;
-    }
-
-    public void setStepStateJson(String stepStateJson) {
-        this.stepStateJson = stepStateJson;
-    }
-
-    public QuizFormat getPlannedFormat() {
-        return plannedFormat;
-    }
-
-    public void setPlannedFormat(QuizFormat plannedFormat) {
-        this.plannedFormat = plannedFormat;
-    }
-
-    public boolean isPlannedTimed() {
-        return plannedTimed;
-    }
-
-    public void setPlannedTimed(boolean plannedTimed) {
-        this.plannedTimed = plannedTimed;
-    }
-
-    public Integer getPlannedTimeLimitMs() {
-        return plannedTimeLimitMs;
-    }
-
-    public void setPlannedTimeLimitMs(Integer plannedTimeLimitMs) {
-        this.plannedTimeLimitMs = plannedTimeLimitMs;
-    }
-
-    public int getPlannedTargetCount() {
-        return plannedTargetCount;
-    }
-
-    public void setPlannedTargetCount(int plannedTargetCount) {
-        this.plannedTargetCount = plannedTargetCount;
-    }
-
-    public String getPlannedTargetKnowledgeIdsJson() {
-        return plannedTargetKnowledgeIdsJson;
-    }
-
-    public void setPlannedTargetKnowledgeIdsJson(String plannedTargetKnowledgeIdsJson) {
-        this.plannedTargetKnowledgeIdsJson = plannedTargetKnowledgeIdsJson;
-    }
-
-    public String getPlannedParamsJson() {
-        return plannedParamsJson;
-    }
-
-    public void setPlannedParamsJson(String plannedParamsJson) {
-        this.plannedParamsJson = plannedParamsJson;
-    }
-
-    public String getPlannedReasonCode() {
-        return plannedReasonCode;
-    }
-
-    public void setPlannedReasonCode(String plannedReasonCode) {
-        this.plannedReasonCode = plannedReasonCode;
-    }
-
-    public String getPlannedReasonDetailsJson() {
-        return plannedReasonDetailsJson;
-    }
-
-    public void setPlannedReasonDetailsJson(String plannedReasonDetailsJson) {
-        this.plannedReasonDetailsJson = plannedReasonDetailsJson;
-    }
-
-    public List<CourseQuestionItemEntity> getItems() {
-        return items;
-    }
-
-    public void setItems(List<CourseQuestionItemEntity> items) {
-        this.items = items;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (!(o instanceof CourseQuestionAttemptEntity))
-            return false;
-        CourseQuestionAttemptEntity that = (CourseQuestionAttemptEntity) o;
-        return Objects.equals(id, that.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
     }
 }

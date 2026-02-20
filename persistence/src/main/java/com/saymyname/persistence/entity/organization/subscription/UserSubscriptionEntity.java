@@ -1,94 +1,56 @@
 package com.saymyname.persistence.entity.organization.subscription;
 
-import java.time.Instant;
-import java.util.Objects;
 
-import com.saymyname.persistence.multitenancy.BaseOrgScoped;
-
-import jakarta.persistence.Column;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.Builder;
+import com.saymyname.persistence.entity.UserEntity;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.MapsId;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
+import org.hibernate.annotations.Filter;
+import org.hibernate.annotations.FilterDef;
+import org.hibernate.annotations.ParamDef;
 
-/**
- * Entité "user_subscriptions" minimale et performante.
- * - PK composite via @EmbeddedId (user_id, person_id)
- * - created_at géré par la DB (DEFAULT CURRENT_TIMESTAMP)
- * - Pas d'associations @ManyToOne pour éviter des charges/lazy involontaires
- */
+@FilterDef(name = "tenantFilter", parameters = @ParamDef(name = "tenantId", type = long.class))
+@Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
+@Getter
+@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
+@ToString(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "user_subscriptions", indexes = {
-        @Index(name = "idx_us_person", columnList = "person_id")
+        @Index(name = "idx_us_tenant_person", columnList = "tenant_id,person_id"),
+        @Index(name = "idx_us_tenant_user", columnList = "tenant_id,user_id"),
+        @Index(name = "fk_usn_user", columnList = "user_id")
 })
-public class UserSubscriptionEntity extends BaseOrgScoped {
+public class UserSubscriptionEntity {
 
+    @EqualsAndHashCode.Include
+    @ToString.Include
     @EmbeddedId
     private UserSubscriptionId id;
 
-    /** Valeur posée par la DB : DEFAULT CURRENT_TIMESTAMP */
-    @Column(name = "created_at", nullable = false, updatable = false, insertable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    private Instant createdAt;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @MapsId("userId")
+    @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_us_user"))
+    private UserEntity user;
 
-    public UserSubscriptionEntity() {
-    }
-
-    public UserSubscriptionEntity(UserSubscriptionId id, Instant createdAt) {
-        this.id = id;
-        this.createdAt = createdAt;
-    }
-
-    public UserSubscriptionEntity(UserSubscriptionId id) {
-        this(id, null);
-    }
-
-    // Getters
-    public UserSubscriptionId getId() {
-        return id;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    // Setters
-    public void setId(UserSubscriptionId id) {
-        this.id = id;
-    }
-
-    public void setCreatedAt(Instant createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    /** Helpers pratiques d'accès à la clé */
-    public Long getUserId() {
-        return id != null ? id.getUserId() : null;
-    }
-
-    public Long getPersonId() {
-        return id != null ? id.getPersonId() : null;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (!(o instanceof UserSubscriptionEntity that))
-            return false;
-        return Objects.equals(id, that.id)
-                && Objects.equals(createdAt, that.createdAt);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, createdAt);
-    }
-
-    @Override
-    public String toString() {
-        return "UserSubscriptionEntity{" +
-                "id=" + id +
-                ", createdAt=" + createdAt +
-                '}';
-    }
+    @jakarta.persistence.Column(name = "created_at", nullable = false, columnDefinition = "timestamp default current_timestamp")
+    private LocalDateTime createdAt;
 }

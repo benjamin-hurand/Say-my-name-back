@@ -1,87 +1,58 @@
 package com.saymyname.persistence.entity.organization;
 
-import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
-import com.saymyname.persistence.multitenancy.BaseOrgScoped;
+import com.saymyname.persistence.multitenancy.BaseTenantScoped;
 
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.experimental.SuperBuilder;
+
+@Getter
+@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@SuperBuilder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
+@ToString(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "persons")
-public class PersonEntity extends BaseOrgScoped {
+@Table(name = "persons", uniqueConstraints = {
+                @UniqueConstraint(name = "uq_persons_tenant_id", columnNames = { "tenant_id", "id" })
+}, indexes = {
+                @Index(name = "idx_persons_tenant", columnList = "tenant_id")
+})
+public class PersonEntity extends BaseTenantScoped {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+        @EqualsAndHashCode.Include
+        @ToString.Include
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        @Column(name = "id", nullable = false)
+        private Long id;
 
-    @OneToMany(mappedBy = "person", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<PersonAttributeEntity> attributes = new ArrayList<>();
+        @OneToMany(mappedBy = "person", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+        @Builder.Default
+        private List<FactEntity> facts = new ArrayList<>();
 
-    @OneToMany(mappedBy = "person", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<PhotoEntity> photos = new ArrayList<>();
-
-    // --- Constructors
-
-    public PersonEntity() {
-    }
-
-    public PersonEntity(List<PersonAttributeEntity> attributes, List<PhotoEntity> photos) {
-        this.attributes = attributes != null ? attributes : new ArrayList<>();
-        this.photos = photos != null ? photos : new ArrayList<>();
-    }
-
-    // --- Getters & Setters
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public List<PersonAttributeEntity> getAttributes() {
-        return attributes;
-    }
-
-    public void setAttributes(List<PersonAttributeEntity> attributes) {
-        this.attributes = attributes != null ? attributes : new ArrayList<>();
-    }
-
-    public List<PhotoEntity> getPhotos() {
-        return photos;
-    }
-
-    public void setPhotos(List<PhotoEntity> photos) {
-        this.photos = photos != null ? photos : new ArrayList<>();
-    }
-
-    // --- equals & hashCode (basés uniquement sur id)
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (!(o instanceof PersonEntity))
-            return false;
-        PersonEntity that = (PersonEntity) o;
-        return Objects.equals(this.id, that.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(this.id);
-    }
-
-    // --- toString (évite de charger les listes en LAZY)
-
-    @Override
-    public String toString() {
-        return "PersonEntity{" +
-                "id=" + id +
-                ", attributesCount=" + (attributes != null ? attributes.size() : 0) +
-                ", photosCount=" + (photos != null ? photos.size() : 0) +
-                '}';
-    }
+        @OneToMany(mappedBy = "person", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+        @Builder.Default
+        private List<PhotoEntity> photos = new ArrayList<>();
 }
