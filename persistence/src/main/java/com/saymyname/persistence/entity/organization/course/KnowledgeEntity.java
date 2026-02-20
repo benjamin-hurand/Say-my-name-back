@@ -1,31 +1,13 @@
 package com.saymyname.persistence.entity.organization.course;
 
-
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
-import lombok.experimental.SuperBuilder;
 import com.saymyname.core.model.enums.KnowledgeStatus;
 import com.saymyname.persistence.entity.UserEntity;
 import com.saymyname.persistence.entity.organization.FactEntity;
 import com.saymyname.persistence.multitenancy.BaseTenantScoped;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.ForeignKey;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Index;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -39,7 +21,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "knowledges", indexes = {
         @Index(name = "idx_k_select", columnList = "tenant_id,user_id,status,next_review_date"),
-        @Index(name = "idx_k_fact", columnList = "fact_id")
+        @Index(name = "idx_k_fact", columnList = "fact_id"),
+        @Index(name = "uq_knowledges_tenant_id", columnList = "tenant_id,id", unique = true) // recommandé
 })
 public class KnowledgeEntity extends BaseTenantScoped {
 
@@ -50,12 +33,21 @@ public class KnowledgeEntity extends BaseTenantScoped {
     @Column(name = "id", nullable = false)
     private Long id;
 
+    // users global -> OK sans tenant
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_knowledge_user"))
+    @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_k_user"))
     private UserEntity user;
 
+    /**
+     * ✅ CIBLE: relation tenant-safe via (tenant_id, fact_id) -> facts(tenant_id,
+     * id)
+     * Tant que la FK DB n’est pas composite, tu ne peux pas la mapper correctement.
+     */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "fact_id", nullable = false, foreignKey = @ForeignKey(name = "fk_knowledge_fact"))
+    @JoinColumns({
+            @JoinColumn(name = "tenant_id", referencedColumnName = "tenant_id", nullable = false, insertable = false, updatable = false),
+            @JoinColumn(name = "fact_id", referencedColumnName = "id", nullable = false)
+    })
     private FactEntity fact;
 
     @Enumerated(EnumType.STRING)

@@ -11,6 +11,7 @@ import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 import com.saymyname.core.model.enums.EmailKind;
 import com.saymyname.core.model.enums.EmailSourceKind;
+import com.saymyname.persistence.entity.organization.PersonEntity;
 import com.saymyname.persistence.multitenancy.BaseTenantScoped;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -21,6 +22,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
 
@@ -81,4 +83,27 @@ public class PersonEmailEntity extends BaseTenantScoped {
     @Column(name = "updated_at", nullable = false,
             columnDefinition = "datetime default current_timestamp on update current_timestamp")
     private LocalDateTime updatedAt;
+
+    // Backward-compatible relation-style accessors for legacy DAO/repository code.
+    @Transient
+    public PersonEntity getPerson() {
+        if (personId == null) {
+            return null;
+        }
+        PersonEntity p = PersonEntity.builder().build();
+        p.setId(personId);
+        p.setOrganizationId(getOrganizationId());
+        return p;
+    }
+
+    public void setPerson(PersonEntity person) {
+        if (person == null) {
+            this.personId = null;
+            return;
+        }
+        this.personId = person.getId();
+        if (person.getOrganizationId() != null) {
+            setOrganizationId(person.getOrganizationId());
+        }
+    }
 }

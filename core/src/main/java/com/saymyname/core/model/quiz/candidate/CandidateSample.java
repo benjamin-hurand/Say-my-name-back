@@ -12,6 +12,13 @@ public class CandidateSample {
     Long targetPersonId;
     String targetStorageKey;
 
+    // Backward-compatible constructor used by legacy service code.
+    public CandidateSample(List<PayloadItem> items, Long targetPersonId, String targetStorageKey) {
+        this.items = (items == null) ? List.of() : items;
+        this.targetPersonId = targetPersonId;
+        this.targetStorageKey = targetStorageKey;
+    }
+
     public static CandidateSample ofSingle(PayloadItem target) {
         return CandidateSample.builder()
                 .items(List.of(target))
@@ -58,5 +65,18 @@ public class CandidateSample {
 
     public boolean isEmpty() {
         return items.isEmpty();
+    }
+
+    // Backward-compatible record-style accessors.
+    public List<PayloadItem> items() {
+        return items;
+    }
+
+    public Long targetPersonId() {
+        return targetPersonId;
+    }
+
+    public String targetStorageKey() {
+        return targetStorageKey;
     }
 }

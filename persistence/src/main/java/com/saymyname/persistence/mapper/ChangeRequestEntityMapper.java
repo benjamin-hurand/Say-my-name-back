@@ -41,13 +41,13 @@ public class ChangeRequestEntityMapper {
         e.setResolutionComment(m.getResolutionComment());
 
         if (m.getRequesterId() != null) {
-            e.setRequester(UserEntity.builder().id(m.getRequesterId()).build());
+            e.setRequester(new UserEntity(m.getRequesterId()));
         } else {
             e.setRequester(null);
         }
 
         if (m.getResolvedById() != null) {
-            e.setResolvedBy(UserEntity.builder().id(m.getResolvedById()).build());
+            e.setResolvedBy(new UserEntity(m.getResolvedById()));
         } else {
             e.setResolvedBy(null);
         }

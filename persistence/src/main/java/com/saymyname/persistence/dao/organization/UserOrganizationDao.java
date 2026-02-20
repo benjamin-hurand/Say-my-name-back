@@ -3,7 +3,6 @@ package com.saymyname.persistence.dao.organization;
 
 import com.saymyname.core.model.enums.OrgRole;
 import com.saymyname.core.model.enums.PersonLinkStatus;
-import com.saymyname.core.model.enums.MemberStatus;
 import com.saymyname.core.model.enums.MembershipStatus;
 import com.saymyname.core.model.organization.OrgMemberRow;
 import com.saymyname.core.model.organization.UserOrganization;
@@ -26,6 +25,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 @Repository
 @Transactional(readOnly = true)
@@ -112,9 +114,9 @@ public class UserOrganizationDao {
         UserEntity u = (UserEntity) tuple[1];
         PersonEntity p = (PersonEntity) tuple[2];
 
-        MemberStatus status = Boolean.TRUE.equals(u.getActive())
-                ? MemberStatus.ACTIVE
-                : MemberStatus.INVITED;
+        MembershipStatus status = Boolean.TRUE.equals(u.getActive())
+                ? MembershipStatus.ACTIVE
+                : MembershipStatus.PENDING;
 
         Long personId = (p != null) ? p.getId() : null;
         String personLabel = (p != null) ? u.getDisplayName() : null;
@@ -129,7 +131,7 @@ public class UserOrganizationDao {
                         .personId(personId)
                         .personLabel(personLabel)
                         .status(status)
-                        .joinedAt(uo.getCreatedAt())
+                        .joinedAt(toInstant(uo.getCreatedAt()))
                         .build());
     }
 
@@ -139,7 +141,9 @@ public class UserOrganizationDao {
         if (orgId == null || targetUserId == null) {
             throw new IllegalStateException("TenantContext or targetUserId missing");
         }
-        UserOrganizationId id = new UserOrganizationId(targetUserId, orgId);
+        UserOrganizationId id = new UserOrganizationId();
+        id.setTenantId(orgId);
+        id.setUserId(targetUserId);
 
         UserOrganizationEntity entity = repository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Membership not found"));
@@ -154,7 +158,9 @@ public class UserOrganizationDao {
         if (orgId == null || targetUserId == null) {
             throw new IllegalStateException("TenantContext or targetUserId missing");
         }
-        UserOrganizationId id = new UserOrganizationId(targetUserId, orgId);
+        UserOrganizationId id = new UserOrganizationId();
+        id.setTenantId(orgId);
+        id.setUserId(targetUserId);
 
         if (!repository.existsById(id)) {
             throw new EntityNotFoundException("Membership not found");
@@ -174,10 +180,16 @@ public class UserOrganizationDao {
             throw new IllegalStateException("TenantContext or userIds missing");
         }
 
-        UserOrganizationEntity oldOwner = repository.findById(new UserOrganizationId(oldOwnerUserId, orgId))
+        UserOrganizationId oldOwnerId = new UserOrganizationId();
+        oldOwnerId.setTenantId(orgId);
+        oldOwnerId.setUserId(oldOwnerUserId);
+        UserOrganizationEntity oldOwner = repository.findById(oldOwnerId)
                 .orElseThrow(() -> new EntityNotFoundException("Old owner membership not found"));
 
-        UserOrganizationEntity newOwner = repository.findById(new UserOrganizationId(newOwnerUserId, orgId))
+        UserOrganizationId newOwnerId = new UserOrganizationId();
+        newOwnerId.setTenantId(orgId);
+        newOwnerId.setUserId(newOwnerUserId);
+        UserOrganizationEntity newOwner = repository.findById(newOwnerId)
                 .orElseThrow(() -> new EntityNotFoundException("New owner membership not found"));
 
         // Safety: oldOwner must currently be OWNER
@@ -213,7 +225,7 @@ public class UserOrganizationDao {
                 repository.save(existing);
             }
         }, () -> {
-            UserOrganizationEntity e = new UserOrganizationEntity();
+            UserOrganizationEntity e = UserOrganizationEntity.builder().build();
 
             UserEntity userRef = em.getReference(UserEntity.class, userId);
             OrganizationEntity orgRef = em.getReference(OrganizationEntity.class, orgId);
@@ -252,7 +264,9 @@ public class UserOrganizationDao {
                 pickRequiresApproval,
                 createRequiresApproval);
 
-        UserOrganizationId id = new UserOrganizationId(userId, orgId);
+        UserOrganizationId id = new UserOrganizationId();
+        id.setTenantId(orgId);
+        id.setUserId(userId);
 
         repository.findById(id).ifPresentOrElse(existing -> {
 
@@ -330,7 +344,7 @@ public class UserOrganizationDao {
             // -------------------------------------------------
             // CREATE
             // -------------------------------------------------
-            UserOrganizationEntity e = new UserOrganizationEntity();
+            UserOrganizationEntity e = UserOrganizationEntity.builder().build();
 
             UserEntity userRef = em.getReference(UserEntity.class, userId);
             OrganizationEntity orgRef = em.getReference(OrganizationEntity.class, orgId);
@@ -401,9 +415,9 @@ public class UserOrganizationDao {
                     UserEntity u = (UserEntity) tuple[1];
                     PersonEntity p = (PersonEntity) tuple[2];
 
-                    MemberStatus status = Boolean.TRUE.equals(u.getActive())
-                            ? MemberStatus.ACTIVE
-                            : MemberStatus.INVITED;
+                    MembershipStatus status = Boolean.TRUE.equals(u.getActive())
+                            ? MembershipStatus.ACTIVE
+                            : MembershipStatus.PENDING;
 
                     Long personId = (p != null) ? p.getId() : null;
                     String personLabel = (p != null) ? u.getDisplayName() : null;
@@ -417,9 +431,13 @@ public class UserOrganizationDao {
                             .personId(personId)
                             .personLabel(personLabel)
                             .status(status)
-                            .joinedAt(uo.getCreatedAt())
+                            .joinedAt(toInstant(uo.getCreatedAt()))
                             .build();
                 })
                 .collect(Collectors.toList());
+    }
+
+    private static Instant toInstant(LocalDateTime value) {
+        return value == null ? null : value.toInstant(ZoneOffset.UTC);
     }
 }

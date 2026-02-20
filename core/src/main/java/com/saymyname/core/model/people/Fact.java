@@ -1,6 +1,6 @@
 package com.saymyname.core.model.people;
 
-import com.saymyname.core.model.enums.ScopeKind;
+import com.saymyname.core.model.enums.tenant.ScopeKind;
 import java.time.Instant;
 import lombok.Builder;
 import lombok.Value;
@@ -18,4 +18,9 @@ public class Fact {
     Instant validFrom;
     Instant validTo;
     boolean deleted;
+
+    // Backward-compatible accessor used by legacy code paths.
+    public Attribute getAttribute() {
+        return attributeId == null ? null : Attribute.builder().id(attributeId).build();
+    }
 }

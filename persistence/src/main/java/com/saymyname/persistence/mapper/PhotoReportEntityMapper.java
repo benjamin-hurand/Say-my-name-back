@@ -25,7 +25,7 @@ public class PhotoReportEntityMapper {
         e.setPersonId(model.getPersonId());
 
         if (model.getReportedById() != null) {
-            e.setReportedBy(UserEntity.builder().id(model.getReportedById()).build());
+            e.setReportedBy(new UserEntity(model.getReportedById()));
         } else {
             e.setReportedBy(null);
         }
@@ -65,7 +65,7 @@ public class PhotoReportEntityMapper {
             target.setPersonId(src.getPersonId());
         }
         if (src.getReportedById() != null) {
-            target.setReportedBy(UserEntity.builder().id(src.getReportedById()).build());
+            target.setReportedBy(new UserEntity(src.getReportedById()));
         }
         // created_at is historical and not overwritten.
     }

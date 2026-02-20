@@ -27,4 +27,14 @@ public abstract class BaseTenantScoped implements HasTenant {
     @ToString.Include
     @Column(name = "tenant_id", nullable = false)
     private Long tenantId;
+
+    // Backward-compatible alias used by older DAO/repository code paths.
+    public Long getOrganizationId() {
+        return tenantId;
+    }
+
+    // Backward-compatible alias used by older DAO/repository code paths.
+    public void setOrganizationId(Long organizationId) {
+        this.tenantId = organizationId;
+    }
 }

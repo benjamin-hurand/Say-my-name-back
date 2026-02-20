@@ -1,3 +1,4 @@
+// src/main/java/com/saymyname/persistence/mapper/UserEmailEntityMapper.java
 package com.saymyname.persistence.mapper;
 
 import java.time.Instant;
@@ -17,10 +18,11 @@ public class UserEmailEntityMapper {
 
     /**
      * Mappe le modele metier -> entite JPA.
-     * Remarque :
+     * Remarques:
      * - Si userEmail.userId est present, on renseigne une reference UserEntity(id).
-     * - added_at / updated_at : on ne set que si fourni ; sinon on laisse la BDD
-     * appliquer ses DEFAULT.
+     * - added_at / updated_at : on ne set que si fourni ; sinon on laisse les
+     * callbacks JPA
+     * (ou la DB) initialiser.
      */
     public UserEmailEntity toEntity(UserEmail userEmail) {
         if (userEmail == null) {
@@ -38,12 +40,11 @@ public class UserEmailEntityMapper {
         // verified_at (nullable)
         e.setVerifiedAt(toLocalDateTime(userEmail.getVerifiedAt()));
 
-        // added_at (DEFAULT CURRENT_TIMESTAMP cote DB) -> set seulement si fourni
+        // added_at / updated_at : set seulement si fourni (sinon
+        // @PrePersist/@PreUpdate)
         if (userEmail.getAddedAt() != null) {
             e.setAddedAt(toLocalDateTime(userEmail.getAddedAt()));
         }
-
-        // updated_at (DEFAULT + ON UPDATE cote DB) -> set seulement si fourni
         if (userEmail.getUpdatedAt() != null) {
             e.setUpdatedAt(toLocalDateTime(userEmail.getUpdatedAt()));
         }
@@ -51,12 +52,9 @@ public class UserEmailEntityMapper {
         // recovery_eligible_at (nullable)
         e.setRecoveryEligibleAt(toLocalDateTime(userEmail.getRecoveryEligibleAt()));
 
-        // user (NOT NULL en BDD) : si on a l'id, on met une ref ; sinon laisse a null
+        // user (NOT NULL en DB) : si on a l'id, on met une ref
         if (userEmail.getUserId() != null) {
-            UserEntity u = UserEntity.builder()
-                    .id(userEmail.getUserId())
-                    .build();
-            e.setUser(u);
+            e.setUser(new UserEntity(userEmail.getUserId()));
         }
 
         return e;
@@ -83,7 +81,9 @@ public class UserEmailEntityMapper {
             return null;
         }
 
-        UserEmail.Builder b = UserEmail.builder()
+        // Lombok @Builder => builder() retourne un UserEmail.UserEmailBuilder (pas
+        // UserEmail.Builder)
+        UserEmail.UserEmailBuilder b = UserEmail.builder()
                 .id(e.getId())
                 .email(e.getEmail())
                 .primary(e.isPrimary())
@@ -104,8 +104,9 @@ public class UserEmailEntityMapper {
     // ---------- Helpers de liste (optionnels mais pratiques) ----------
 
     public List<UserEmailEntity> toEntityList(List<UserEmail> list, UserEntity owner) {
-        if (list == null)
+        if (list == null) {
             return List.of();
+        }
         List<UserEmailEntity> out = new ArrayList<>(list.size());
         for (UserEmail m : list) {
             out.add(toEntity(m, owner));
@@ -114,14 +115,17 @@ public class UserEmailEntityMapper {
     }
 
     public List<UserEmail> toModelList(List<UserEmailEntity> list) {
-        if (list == null)
+        if (list == null) {
             return List.of();
+        }
         List<UserEmail> out = new ArrayList<>(list.size());
         for (UserEmailEntity e : list) {
             out.add(toModel(e));
         }
         return out;
     }
+
+    // ---------- Time helpers (UTC) ----------
 
     private LocalDateTime toLocalDateTime(Instant value) {
         return value == null ? null : LocalDateTime.ofInstant(value, ZoneOffset.UTC);

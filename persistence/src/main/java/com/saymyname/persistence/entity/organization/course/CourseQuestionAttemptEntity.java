@@ -1,28 +1,16 @@
 package com.saymyname.persistence.entity.organization.course;
 
-
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
-import lombok.experimental.SuperBuilder;
 import com.saymyname.core.model.enums.PoolType;
+import com.saymyname.core.model.enums.quiz.QuizFormat;
 import com.saymyname.persistence.multitenancy.BaseTenantScoped;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Index;
-import jakarta.persistence.Lob;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.*;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.BatchSize;
+
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -32,16 +20,15 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 @ToString(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "course_question_attempts", uniqueConstraints = {
-        @UniqueConstraint(name = "uq_cqa_tenant_id", columnNames = {"tenant_id", "id"})
-}, indexes = {
-        @Index(name = "idx_cqh_course_round", columnList = "course_id,question_round"),
-        @Index(name = "idx_cqh_course_answered", columnList = "course_id,answered_at"),
-        @Index(name = "idx_cqh_answered_at", columnList = "answered_at"),
-        @Index(name = "idx_cqh_course_correct", columnList = "course_id,global_correct"),
-        @Index(name = "idx_cqa_tenant_course_round", columnList = "tenant_id,course_id,question_round"),
-        @Index(name = "idx_cqa_tenant_answered", columnList = "tenant_id,answered_at")
-})
+@Table(name = "course_question_attempts", uniqueConstraints = @UniqueConstraint(name = "uq_cqa_tenant_id", columnNames = {
+        "tenant_id", "id" }), indexes = {
+                @Index(name = "idx_cqh_course_round", columnList = "course_id,question_round"),
+                @Index(name = "idx_cqh_course_answered", columnList = "course_id,answered_at"),
+                @Index(name = "idx_cqh_answered_at", columnList = "answered_at"),
+                @Index(name = "idx_cqh_course_correct", columnList = "course_id,global_correct"),
+                @Index(name = "idx_cqa_tenant_course_round", columnList = "tenant_id,course_id,question_round"),
+                @Index(name = "idx_cqa_tenant_answered", columnList = "tenant_id,answered_at")
+        })
 public class CourseQuestionAttemptEntity extends BaseTenantScoped {
 
     @EqualsAndHashCode.Include
@@ -51,8 +38,17 @@ public class CourseQuestionAttemptEntity extends BaseTenantScoped {
     @Column(name = "id", nullable = false)
     private Long id;
 
-    @Column(name = "course_id", nullable = false)
-    private Long courseId;
+    /**
+     * FK DB: (tenant_id, course_id) -> courses(tenant_id, id)
+     * tenant_id est porté par BaseTenantScoped -> join sur tenant_id
+     * non-insertable/updatable.
+     */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumns({
+            @JoinColumn(name = "tenant_id", referencedColumnName = "tenant_id", nullable = false, insertable = false, updatable = false),
+            @JoinColumn(name = "course_id", referencedColumnName = "id", nullable = false)
+    })
+    private CourseEntity course;
 
     @Column(name = "question_round", nullable = false)
     private int questionRound;
@@ -84,9 +80,10 @@ public class CourseQuestionAttemptEntity extends BaseTenantScoped {
     @Column(name = "help_used", nullable = false)
     private boolean helpUsed;
 
+    // ----- Snapshot metadata -----
     @Enumerated(EnumType.STRING)
     @Column(name = "question_format", nullable = false, length = 32)
-    private QuestionFormat questionFormat;
+    private QuizFormat questionFormat;
 
     @Column(name = "snapshot_schema_version", nullable = false)
     private int snapshotSchemaVersion;
@@ -105,9 +102,10 @@ public class CourseQuestionAttemptEntity extends BaseTenantScoped {
     @Column(name = "step_state_json", columnDefinition = "longtext")
     private String stepStateJson;
 
+    // ----- Plan fields -----
     @Enumerated(EnumType.STRING)
     @Column(name = "planned_format", nullable = false, length = 32)
-    private PlannedFormat plannedFormat;
+    private QuizFormat plannedFormat;
 
     @Column(name = "planned_timed", nullable = false)
     private boolean plannedTimed;
@@ -133,26 +131,26 @@ public class CourseQuestionAttemptEntity extends BaseTenantScoped {
     @Column(name = "planned_reason_details_json", columnDefinition = "longtext")
     private String plannedReasonDetailsJson;
 
-    public enum QuestionFormat {
-        TEXT_INPUT,
-        CLOZE,
-        HANGMAN,
-        MCQ,
-        BINARY_SWIPE,
-        ASSOCIATION,
-        ORDERING
+    // ✅ Attempt -> Items (aggregate)
+    @OneToMany(mappedBy = "attempt", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OrderBy("position ASC")
+    @BatchSize(size = 100)
+    @Builder.Default
+    private List<CourseQuestionItemEntity> items = new ArrayList<>();
+
+    public void addItem(CourseQuestionItemEntity item) {
+        if (item == null)
+            return;
+        if (this.items == null)
+            this.items = new ArrayList<>();
+        this.items.add(item);
+        item.setAttempt(this);
     }
 
-    public enum PlannedFormat {
-        AUTO,
-        TEXT_INPUT,
-        CLOZE,
-        HANGMAN,
-        WORD_PUZZLE,
-        MCQ,
-        BINARY_SWIPE,
-        ASSOCIATION,
-        ORDERING,
-        SPEED
+    public void removeItem(CourseQuestionItemEntity item) {
+        if (item == null)
+            return;
+        this.items.remove(item);
+        item.setAttempt(null);
     }
 }

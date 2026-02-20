@@ -322,7 +322,7 @@ public class QuizOrchestrationService {
                         boolean requireApprovedPhoto,
                         Integer limit) {
 
-                CandidateQuery.Builder builder = CandidateQuery.builder()
+                var builder = CandidateQuery.builder()
                                 .userId(userId)
                                 .excludePersonId(userId)
                                 .populationScope(scope)

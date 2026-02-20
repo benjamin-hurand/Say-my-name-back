@@ -14,7 +14,7 @@ public class ResultAttributeDtoMapper {
             return null;
 
         return new ResultAttributeDto(
-                ra.getAttribute() != null ? ra.getAttribute().getId() : null,
+                ra.getAttribute() != null ? ra.getAttributeId() : null,
                 ra.getAttribute() != null ? ra.getAttribute().getName() : null,
                 ra.getValue(),
                 ra.isCorrect(),

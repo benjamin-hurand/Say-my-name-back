@@ -75,7 +75,7 @@ public class QuizEngine {
                                 emit.ttlSeconds());
 
                 String encoded = quizHandleCodec.encode(new AttemptRef(source, handle));
-                q.setQuestionHandle(encoded);
+                q = q.toBuilder().questionHandle(encoded).build();
 
                 return q;
         }

@@ -1,6 +1,7 @@
 // src/main/java/com/saymyname/persistence/dao/UserEmailDao.java
 package com.saymyname.persistence.dao;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -81,14 +82,13 @@ public class UserEmailDao {
                 .primary(true)
                 .loginAllowed(true)
                 .recoveryAllowed(true)
-                .verifiedAt(verified ? LocalDateTime.now() : null)
+                .verifiedAt(verified ? Instant.now() : null)
                 .build();
 
         UserEmailEntity e = mapper.toEntity(model);
 
         // Owner
-        UserEntity u = new UserEntity();
-        u.setId(userId);
+        UserEntity u = new UserEntity(userId);
         e.setUser(u);
 
         return mapper.toModel(repo.save(e));
@@ -131,10 +131,9 @@ public class UserEmailDao {
 
         UserEmailEntity entity = repo.findByUserIdAndEmailIgnoreCase(userId, normalized)
                 .orElseGet(() -> {
-                    UserEmailEntity created = new UserEmailEntity();
+                    UserEmailEntity created = UserEmailEntity.builder().build();
 
-                    UserEntity u = new UserEntity();
-                    u.setId(userId);
+                    UserEntity u = new UserEntity(userId);
                     created.setUser(u);
 
                     created.setEmail(normalized);

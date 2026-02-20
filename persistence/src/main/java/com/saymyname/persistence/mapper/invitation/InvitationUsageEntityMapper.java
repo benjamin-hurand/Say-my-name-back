@@ -36,7 +36,7 @@ public class InvitationUsageEntityMapper {
         }
 
         if (model.getUserId() != null) {
-            e.setUser(UserEntity.builder().id(model.getUserId()).build());
+            e.setUser(new UserEntity(model.getUserId()));
         } else {
             e.setUser(null);
         }

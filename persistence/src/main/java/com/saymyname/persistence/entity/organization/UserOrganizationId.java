@@ -26,4 +26,13 @@ public class UserOrganizationId implements Serializable {
 
     @Column(name = "user_id", nullable = false)
     private Long userId;
+
+    // Backward-compatible aliases.
+    public Long getOrganizationId() {
+        return tenantId;
+    }
+
+    public void setOrganizationId(Long organizationId) {
+        this.tenantId = organizationId;
+    }
 }

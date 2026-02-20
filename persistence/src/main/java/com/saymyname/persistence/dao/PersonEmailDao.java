@@ -1,6 +1,9 @@
 // src/main/java/com/saymyname/persistence/dao/PersonEmailDao.java
 package com.saymyname.persistence.dao;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
@@ -57,13 +60,13 @@ public class PersonEmailDao {
         if (e.getOrganizationId() == null)
             e.setOrganizationId(orgId);
 
-        if (e.getPerson() == null && model.getPerson() != null && model.getPerson().getId() != null) {
-            PersonEntity p = new PersonEntity();
-            p.setId(model.getPerson().getId());
+        if (e.getPersonId() == null && model.getPersonId() != null) {
+            PersonEntity p = PersonEntity.builder().build();
+            p.setId(model.getPersonId());
             p.setOrganizationId(orgId);
             e.setPerson(p);
-        } else if (e.getPerson() != null) {
-            e.getPerson().setOrganizationId(orgId);
+        } else if (e.getPersonId() != null) {
+            e.setOrganizationId(orgId);
         }
 
         PersonEmailEntity saved = repo.save(e);
@@ -81,8 +84,8 @@ public class PersonEmailDao {
         current.setSourceLabel(model.getSourceLabel());
         current.setPrimary(model.isPrimary());
         current.setActive(model.isActive());
-        current.setVerifiedAt(model.getVerifiedAt());
-        current.setBouncedAt(model.getBouncedAt());
+        current.setVerifiedAt(toLocalDateTime(model.getVerifiedAt()));
+        current.setBouncedAt(toLocalDateTime(model.getBouncedAt()));
 
         PersonEmailEntity saved = repo.save(current);
         return mapper.toModel(saved);
@@ -101,5 +104,9 @@ public class PersonEmailDao {
     @Transactional
     public void delete(Long id) {
         repo.deleteByIdInCurrentOrg(id);
+    }
+
+    private LocalDateTime toLocalDateTime(Instant value) {
+        return value == null ? null : LocalDateTime.ofInstant(value, ZoneOffset.UTC);
     }
 }

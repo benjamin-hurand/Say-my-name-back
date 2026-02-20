@@ -1,6 +1,9 @@
 package com.saymyname.core.model.course;
 
+import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.enums.KnowledgeStatus;
+import com.saymyname.core.model.people.Person;
+import com.saymyname.core.model.quiz.options.GameMode;
 import java.math.BigDecimal;
 import java.time.Instant;
 import lombok.Builder;
@@ -11,6 +14,8 @@ import lombok.Value;
 public class Knowledge {
     Long id;
     Long userId;
+    Long gameModeId;
+    Long personId;
     Long factId;
     KnowledgeStatus status;
     Instant nextReviewDate;
@@ -23,4 +28,17 @@ public class Knowledge {
     BigDecimal easeFactor;
     double difficulty;
     double stability;
+
+    // Backward-compatible accessors for legacy code paths.
+    public User getUser() {
+        return userId == null ? null : User.builder().id(userId).build();
+    }
+
+    public GameMode getGameMode() {
+        return gameModeId == null ? null : GameMode.builder().id(gameModeId).build();
+    }
+
+    public Person getPerson() {
+        return personId == null ? null : Person.builder().id(personId).build();
+    }
 }

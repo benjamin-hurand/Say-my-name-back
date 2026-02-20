@@ -121,13 +121,13 @@ public class FactDao {
 
         List<FactEntity> entities = new ArrayList<>(values.size());
         for (String v : values) {
-            var e = new FactEntity();
+            var e = FactEntity.builder().build();
             e.setPerson(personRef);
             e.setAttribute(attributeRef);
             e.setValue(v);
             e.setValidFrom(validFrom);
             e.setValidTo(null);
-            e.setPendingDelete(false);
+            e.setDeleted(false);
             entities.add(e);
         }
         personAttributeRepository.saveAll(entities);

@@ -24,7 +24,7 @@ import com.saymyname.core.model.enums.PersonLinkStatus;
 import com.saymyname.core.model.invitation.Invitation;
 import com.saymyname.core.model.invitation.InvitationUsage;
 import com.saymyname.core.model.people.Person;
-import com.saymyname.core.multitenancy.OrgContext;
+import com.saymyname.core.multitenancy.TenantContext;
 import com.saymyname.persistence.dao.invitation.InvitationDao;
 import com.saymyname.persistence.dao.invitation.InvitationUsageDao;
 import com.saymyname.persistence.entity.organization.invitation.InvitationEntity;
@@ -206,9 +206,9 @@ public class InvitationService {
         }
 
         // 4) Poser un OrgContext temporaire basé sur l’orga de l’invitation
-        Long previousOrgId = OrgContext.get();
+        Long previousOrgId = TenantContext.get();
         try {
-            OrgContext.set(orgId);
+            TenantContext.set(orgId);
 
             LocalDateTime now = LocalDateTime.now();
 
@@ -311,9 +311,9 @@ public class InvitationService {
 
         } finally {
             if (previousOrgId != null)
-                OrgContext.set(previousOrgId);
+                TenantContext.set(previousOrgId);
             else
-                OrgContext.clear();
+                TenantContext.clear();
         }
     }
 

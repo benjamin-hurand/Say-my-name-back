@@ -1,6 +1,7 @@
 package com.saymyname.persistence.dao.course;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -120,17 +121,21 @@ public class KnowledgeDao {
                                 k.getUser().getId(),
                                 k.getGameMode().getId(),
                                 k.getPerson().getId(),
-                                k.getNextReviewDate(),
+                                toLocalDateTime(k.getNextReviewDate()),
                                 k.getTotalRepetitionCount(),
                                 k.getSrsStreak(),
                                 k.getGlobalStreak(),
                                 k.getEaseFactor(),
                                 k.getStatus().name(),
-                                k.getLastReviewDate(),
+                                toLocalDateTime(k.getLastReviewDate()),
                                 k.getSuccessCount(),
                                 k.getFailureCount(),
                                 k.getStability(),
                                 k.getDifficulty());
+        }
+
+        private static LocalDateTime toLocalDateTime(java.time.Instant value) {
+                return value == null ? null : LocalDateTime.ofInstant(value, ZoneOffset.UTC);
         }
 
         // --------- POOLS : signatures DAO inchangées -------------------

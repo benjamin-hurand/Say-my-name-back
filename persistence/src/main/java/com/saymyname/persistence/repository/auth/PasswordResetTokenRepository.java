@@ -1,6 +1,6 @@
 package com.saymyname.persistence.repository.auth;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.*;
@@ -17,9 +17,9 @@ public interface PasswordResetTokenRepository extends JpaRepository<PasswordRese
     @Query("""
             UPDATE PasswordResetTokenEntity t
                SET t.usedAt = :usedAt
-             WHERE t.userId = :userId
+             WHERE t.user.id = :userId
                AND t.usedAt IS NULL
             """)
     int invalidateAllActiveForUser(@Param("userId") Long userId,
-            @Param("usedAt") OffsetDateTime usedAt);
+            @Param("usedAt") LocalDateTime usedAt);
 }

@@ -64,4 +64,13 @@ public class OrganizationEntity {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    // Backward-compatible aliases.
+    public Long getId() {
+        return tenantId;
+    }
+
+    public void setId(Long id) {
+        this.tenantId = id;
+    }
 }

@@ -7,7 +7,6 @@ import java.time.ZoneOffset;
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.course.Knowledge;
-import com.saymyname.core.model.enums.KnowledgeStatus;
 import com.saymyname.persistence.entity.UserEntity;
 import com.saymyname.persistence.entity.organization.FactEntity;
 import com.saymyname.persistence.entity.organization.course.KnowledgeEntity;
@@ -25,7 +24,7 @@ public class KnowledgeEntityMapper {
         e.setId(model.getId());
 
         if (model.getUserId() != null) {
-            e.setUser(UserEntity.builder().id(model.getUserId()).build());
+            e.setUser(new UserEntity(model.getUserId()));
         } else {
             e.setUser(null);
         }

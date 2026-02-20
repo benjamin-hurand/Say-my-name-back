@@ -23,7 +23,7 @@ public class KnowledgeStatsEntityMapper {
         entity.setId(model.getId());
 
         if (model.getUserId() != null) {
-            entity.setUser(UserEntity.builder().id(model.getUserId()).build());
+            entity.setUser(new UserEntity(model.getUserId()));
         }
 
         if (model.getFactId() != null) {

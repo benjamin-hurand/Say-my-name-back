@@ -11,7 +11,8 @@ import lombok.Value;
 public class ChangeRequestListQuery {
     Integer page;
     Integer size;
-    List<ChangeRequestStatus> statuses;
+    @Builder.Default
+    List<ChangeRequestStatus> statuses = List.of();
     Long personId;
     Long submittedByUserId;
     Long attributeId;

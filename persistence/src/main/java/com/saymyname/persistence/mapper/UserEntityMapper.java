@@ -56,7 +56,7 @@ public class UserEntityMapper {
                 .displayName(e.getDisplayName())
                 .srsAlgorithm(e.getSrsAlgorithm())
                 .roles(e.getRoles())
-                .active(e.getActive())
+                .active(e.isActive())
                 .authVersion(e.getAuthVersion())
                 .authUpdatedAt(toInstant(e.getAuthUpdatedAt()))
                 .emails(emails)
@@ -90,7 +90,7 @@ public class UserEntityMapper {
                 .emails(emails)
                 .identities(identities)
                 .srsAlgorithm(e.getSrsAlgorithm())
-                .active(e.getActive())
+                .active(e.isActive())
                 .authVersion(e.getAuthVersion())
                 .authUpdatedAt(toInstant(e.getAuthUpdatedAt()))
                 .build();
@@ -141,13 +141,12 @@ public class UserEntityMapper {
         if (m == null)
             return null;
 
-        UserEntity e = UserEntity.builder()
-                .id(m.getId())
-                .displayName(m.getDisplayName())
-                .srsAlgorithm(m.getSrsAlgorithm())
-                .roles(m.getRoles())
-                .active(m.isActive())
-                .build();
+        UserEntity e = new UserEntity(m.getId());
+        e.setId(m.getId());
+        e.setDisplayName(m.getDisplayName());
+        e.setSrsAlgorithm(m.getSrsAlgorithm());
+        e.setRoles(m.getRoles());
+        e.setActive(m.isActive());
 
         if (m.getPublicId() != null) {
             e.setPublicId(m.getPublicId());

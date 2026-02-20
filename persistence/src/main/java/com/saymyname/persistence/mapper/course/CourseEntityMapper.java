@@ -29,7 +29,7 @@ public class CourseEntityMapper {
         CourseEntity e = CourseEntity.builder().build();
         e.setId(model.getId());
         if (model.getUserId() != null) {
-            e.setUser(UserEntity.builder().id(model.getUserId()).build());
+            e.setUser(new UserEntity(model.getUserId()));
         }
         e.setTargetScope(model.getTargetScope() != null
                 ? model.getTargetScope()

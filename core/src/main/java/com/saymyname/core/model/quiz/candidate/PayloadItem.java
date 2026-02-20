@@ -19,4 +19,13 @@ public class PayloadItem {
     public boolean hasPhoto() {
         return photoStorageKey != null && !photoStorageKey.isBlank();
     }
+
+    // Backward-compatible record-style accessors.
+    public Long personId() {
+        return personId;
+    }
+
+    public String photoStorageKey() {
+        return photoStorageKey;
+    }
 }

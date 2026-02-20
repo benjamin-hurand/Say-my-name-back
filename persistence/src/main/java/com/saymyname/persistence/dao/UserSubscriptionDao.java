@@ -38,7 +38,7 @@ public class UserSubscriptionDao {
     public boolean subscribe(UserSubscription subscription) {
         var id = new UserSubscriptionId(subscription.getUserId(), subscription.getPersonId());
         try {
-            repository.save(new UserSubscriptionEntity(id, null)); // createdAt par DB
+            repository.save(UserSubscriptionEntity.builder().id(id).build()); // createdAt par DB
             return true;
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
             // PK (userId, personId) déjà présente -> idempotent
@@ -85,7 +85,9 @@ public class UserSubscriptionDao {
 
         List<UserSubscriptionEntity> toInsert = cleaned.stream()
                 .filter(pid -> !existingPersonIds.contains(pid))
-                .map(pid -> new UserSubscriptionEntity(new UserSubscriptionId(userId, pid), null))
+                .map(pid -> UserSubscriptionEntity.builder()
+                        .id(new UserSubscriptionId(userId, pid))
+                        .build())
                 .toList();
 
         if (toInsert.isEmpty())

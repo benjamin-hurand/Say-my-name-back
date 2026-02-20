@@ -26,6 +26,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinColumns;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
@@ -72,7 +73,10 @@ public class ChangeRequestEntity extends BaseTenantScoped {
      * attributeId field).
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "attribute_id", insertable = false, updatable = false)
+    @JoinColumns({
+            @JoinColumn(name = "tenant_id", referencedColumnName = "tenant_id", insertable = false, updatable = false),
+            @JoinColumn(name = "attribute_id", referencedColumnName = "id", insertable = false, updatable = false)
+    })
     private AttributeEntity attribute;
 
     @Column(name = "request_reason", nullable = false, length = 1024)

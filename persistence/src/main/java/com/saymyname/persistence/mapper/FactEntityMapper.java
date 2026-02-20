@@ -6,9 +6,11 @@ import java.time.ZoneOffset;
 
 import org.springframework.stereotype.Component;
 
-import com.saymyname.core.model.enums.ScopeKind;
+import com.saymyname.core.model.enums.tenant.ScopeKind;
 import com.saymyname.core.model.people.Fact;
 import com.saymyname.persistence.entity.organization.FactEntity;
+import com.saymyname.persistence.entity.organization.PersonEntity;
+import com.saymyname.persistence.entity.organization.attribute.AttributeEntity;
 
 @Component
 public class FactEntityMapper {
@@ -20,11 +22,11 @@ public class FactEntityMapper {
 
         FactEntity entity = FactEntity.builder().build();
         entity.setId(fact.getId());
-        entity.setScopeKind(toEntityScopeKind(fact.getScopeKind()));
+        entity.setScopeKind(fact.getScopeKind());
         entity.setWorkspaceId(fact.getWorkspaceId());
         entity.setTeamId(fact.getTeamId());
-        entity.setPersonId(fact.getPersonId());
-        entity.setAttributeId(fact.getAttributeId());
+        entity.setPerson(PersonEntity.builder().id(fact.getPersonId()).build());
+        entity.setAttribute(AttributeEntity.builder().id(fact.getAttributeId()).build());
         entity.setValue(fact.getValue());
         entity.setValidFrom(toLocalDateTime(fact.getValidFrom()));
         entity.setValidTo(toLocalDateTime(fact.getValidTo()));
@@ -39,11 +41,11 @@ public class FactEntityMapper {
 
         return Fact.builder()
                 .id(entity.getId())
-                .scopeKind(toModelScopeKind(entity.getScopeKind()))
+                .scopeKind(entity.getScopeKind())
                 .workspaceId(entity.getWorkspaceId())
                 .teamId(entity.getTeamId())
-                .personId(entity.getPersonId())
-                .attributeId(entity.getAttributeId())
+                .personId(entity.getPerson().getId())
+                .attributeId(entity.getAttribute().getId())
                 .value(entity.getValue())
                 .validFrom(toInstant(entity.getValidFrom()))
                 .validTo(toInstant(entity.getValidTo()))
@@ -62,14 +64,6 @@ public class FactEntityMapper {
 
     public Fact toFullModel(FactEntity entity) {
         return toModel(entity);
-    }
-
-    private FactEntity.ScopeKind toEntityScopeKind(ScopeKind value) {
-        return value == null ? null : FactEntity.ScopeKind.valueOf(value.name());
-    }
-
-    private ScopeKind toModelScopeKind(FactEntity.ScopeKind value) {
-        return value == null ? null : ScopeKind.valueOf(value.name());
     }
 
     private LocalDateTime toLocalDateTime(Instant value) {

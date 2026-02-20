@@ -3,7 +3,6 @@ package com.saymyname.persistence.repository.leaderboard;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
@@ -48,7 +47,7 @@ public interface XpEventRepository extends JpaRepository<XpEventEntity, Long> {
     interface XpEventRow {
         Long getId();
 
-        UUID getEventId();
+        byte[] getEventId();
 
         String getEventKey();
 

@@ -1,7 +1,9 @@
 // src/main/java/com/saymyname/service/person/PersonDisplayNameBuilder.java
 package com.saymyname.service.person;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.stream.Collectors;
 
@@ -24,20 +26,20 @@ public class PersonDisplayNameBuilder {
         if (person == null || person.getFacts() == null) {
             return "";
         }
-        LocalDateTime now = LocalDateTime.now();
+        Instant now = Instant.now();
         return person.getFacts().stream()
-                .filter(a -> a.getAttribute() != null && a.getAttribute().getId() != null)
+                .filter(a -> a.getAttributeId() != null)
                 .filter(a -> isActiveAt(a, now))
-                .filter(a -> attributeMetaCache.isPrimary(a.getAttribute().getId()))
+                .filter(a -> attributeMetaCache.isPrimary(a.getAttributeId()))
                 .sorted(Comparator.comparingInt(
-                        a -> attributeMetaCache.displayOrder(a.getAttribute().getId())))
+                        a -> attributeMetaCache.displayOrder(a.getAttributeId())))
                 .map(Fact::getValue)
                 .filter(v -> v != null && !v.isBlank())
                 .collect(Collectors.joining(" "))
                 .trim();
     }
 
-    private static boolean isActiveAt(Fact a, LocalDateTime at) {
+    private static boolean isActiveAt(Fact a, Instant at) {
         if (a == null || a.isDeleted())
             return false;
         var from = a.getValidFrom();

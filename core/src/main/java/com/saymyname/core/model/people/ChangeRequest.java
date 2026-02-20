@@ -21,5 +21,6 @@ public class ChangeRequest {
     Long resolvedById;
     Instant resolvedAt;
     String resolutionComment;
-    List<ChangeRequestItem> items;
+    @Builder.Default
+    List<ChangeRequestItem> items = List.of();
 }

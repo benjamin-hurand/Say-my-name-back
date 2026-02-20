@@ -1,7 +1,7 @@
-// src/main/java/com/saymyname/persistence/dao/leaderboard/LeaderboardDao.java
 package com.saymyname.persistence.dao.leaderboard;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -40,36 +40,34 @@ public class LeaderboardDao {
     }
 
     public void insertEventAndAddXp(XpEvent ev, LocalDateTime eventAt, boolean correct, boolean helpUsed) {
-        if (ev == null || ev.getUser() == null || ev.getUser().getId() == null)
+        if (ev == null || ev.getUserId() == null) {
             return;
+        }
 
         LocalDateTime at = (eventAt != null) ? eventAt : LocalDateTime.now();
-
-        // ✅ sécurité : deltaXp > 0 (ou autorise négatif si tu veux)
-        if (ev.getDeltaXp() == 0)
+        if (ev.getDeltaXp() == 0) {
             return;
+        }
 
-        // 1) Insert event (audit)
         XpEventEntity e = xpEventMapper.toEntity(ev);
-
-        // on impose createdAt/eventId si pas fournis
-        if (e.getCreatedAt() == null)
+        if (e.getCreatedAt() == null) {
             e.setCreatedAt(at);
-        if (e.getEventId() == null)
-            e.setEventId(UUID.randomUUID());
+        }
+        if (e.getEventId() == null) {
+            e.setEventId(uuidToBytes(UUID.randomUUID()));
+        }
 
-        UserEntity userRef = userRepository.getReferenceById(ev.getUser().getId());
+        UserEntity userRef = userRepository.getReferenceById(ev.getUserId());
         e.setUser(userRef);
 
         xpEventRepository.save(e);
 
-        // 2) Upsert stat + incrément XP + compteurs
         long totalAnswersDelta = (correct && helpUsed) ? 0L : 1L;
         long correctAnswersDelta = (correct && !helpUsed) ? 1L : 0L;
 
         leaderboardStatRepository.upsertAddXpAndCounters(
-                ev.getUser().getId(),
-                ev.getDeltaXp(), // ✅ deltaXp
+                ev.getUserId(),
+                ev.getDeltaXp(),
                 totalAnswersDelta,
                 correctAnswersDelta,
                 at);
@@ -83,19 +81,22 @@ public class LeaderboardDao {
                         .displayName(row.getDisplayName())
                         .xp(row.getXp())
                         .rank(row.getRowNum())
-                        .lastEventAt(row.getLastAnswerAt())
+                        .lastEventAt(row.getLastAnswerAt() == null ? null
+                                : row.getLastAnswerAt().toInstant(ZoneOffset.UTC))
                         .build())
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public LeaderboardEntry getEntryForUser(Long userId, String fallbackDisplayName) {
-        if (userId == null)
+        if (userId == null) {
             return null;
+        }
 
         Optional<LeaderboardStatEntity> opt = leaderboardStatRepository.findByUserId(userId);
-        if (opt.isEmpty())
+        if (opt.isEmpty()) {
             return null;
+        }
 
         LeaderboardStatEntity stat = opt.get();
         long rank = leaderboardStatRepository.computeRank(userId);
@@ -109,7 +110,18 @@ public class LeaderboardDao {
                 .displayName(name)
                 .xp(stat.getXp())
                 .rank(rank)
-                .lastEventAt(stat.getLastAnswerAt())
+                .lastEventAt(stat.getLastAnswerAt() == null ? null
+                        : stat.getLastAnswerAt().toInstant(ZoneOffset.UTC))
                 .build();
+    }
+
+    private byte[] uuidToBytes(UUID value) {
+        if (value == null) {
+            return null;
+        }
+        java.nio.ByteBuffer bb = java.nio.ByteBuffer.allocate(16);
+        bb.putLong(value.getMostSignificantBits());
+        bb.putLong(value.getLeastSignificantBits());
+        return bb.array();
     }
 }

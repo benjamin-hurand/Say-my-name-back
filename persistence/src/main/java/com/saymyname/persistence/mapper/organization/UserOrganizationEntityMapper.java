@@ -79,7 +79,9 @@ public class UserOrganizationEntityMapper {
 
         // EmbeddedId (PK composite)
         if (model.getUserId() != null && model.getOrganizationId() != null) {
-            UserOrganizationId id = new UserOrganizationId(model.getOrganizationId(), model.getUserId());
+            UserOrganizationId id = new UserOrganizationId();
+            id.setTenantId(model.getOrganizationId());
+            id.setUserId(model.getUserId());
             e.setId(id);
         }
 
@@ -95,7 +97,7 @@ public class UserOrganizationEntityMapper {
         e.setPersonId(model.getPersonId());
         e.setPersonLinkStatus(model.getPersonLinkStatus() != null
                 ? toEntityPersonLinkStatus(model.getPersonLinkStatus())
-                : UserOrganizationEntity.PersonLinkStatus.NONE);
+                : PersonLinkStatus.NONE);
         e.setCanPickPerson(model.isCanPickPerson());
         e.setCanCreatePerson(model.isCanCreatePerson());
         e.setPickRequiresApproval(model.isPickRequiresApproval());
@@ -130,7 +132,7 @@ public class UserOrganizationEntityMapper {
         target.setPersonId(model.getPersonId());
         target.setPersonLinkStatus(model.getPersonLinkStatus() != null
                 ? toEntityPersonLinkStatus(model.getPersonLinkStatus())
-                : UserOrganizationEntity.PersonLinkStatus.NONE);
+                : PersonLinkStatus.NONE);
         target.setCanPickPerson(model.isCanPickPerson());
         target.setCanCreatePerson(model.isCanCreatePerson());
         target.setPickRequiresApproval(model.isPickRequiresApproval());
@@ -152,28 +154,28 @@ public class UserOrganizationEntityMapper {
             entity.setOrganization(orgRef);
     }
 
-    private OrgRole toModelRole(UserOrganizationEntity.MemberRole value) {
-        return value == null ? null : OrgRole.valueOf(value.name());
+    private OrgRole toModelRole(OrgRole value) {
+        return value;
     }
 
-    private UserOrganizationEntity.MemberRole toEntityRole(OrgRole value) {
-        return value == null ? null : UserOrganizationEntity.MemberRole.valueOf(value.name());
+    private OrgRole toEntityRole(OrgRole value) {
+        return value;
     }
 
-    private MembershipStatus toModelStatus(UserOrganizationEntity.MemberStatus value) {
-        return value == null ? null : MembershipStatus.valueOf(value.name());
+    private MembershipStatus toModelStatus(MembershipStatus value) {
+        return value;
     }
 
-    private UserOrganizationEntity.MemberStatus toEntityStatus(MembershipStatus value) {
-        return value == null ? null : UserOrganizationEntity.MemberStatus.valueOf(value.name());
+    private MembershipStatus toEntityStatus(MembershipStatus value) {
+        return value;
     }
 
-    private PersonLinkStatus toModelPersonLinkStatus(UserOrganizationEntity.PersonLinkStatus value) {
-        return value == null ? null : PersonLinkStatus.valueOf(value.name());
+    private PersonLinkStatus toModelPersonLinkStatus(PersonLinkStatus value) {
+        return value;
     }
 
-    private UserOrganizationEntity.PersonLinkStatus toEntityPersonLinkStatus(PersonLinkStatus value) {
-        return value == null ? null : UserOrganizationEntity.PersonLinkStatus.valueOf(value.name());
+    private PersonLinkStatus toEntityPersonLinkStatus(PersonLinkStatus value) {
+        return value;
     }
 
     private LocalDateTime toLocalDateTime(Instant value) {

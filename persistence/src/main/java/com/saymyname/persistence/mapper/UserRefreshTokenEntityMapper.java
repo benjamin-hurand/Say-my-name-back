@@ -53,9 +53,7 @@ public class UserRefreshTokenEntityMapper {
 
         // relation: proxy UserEntity via id (evite SELECT)
         if (m.getUserId() != null) {
-            UserEntity userRef = UserEntity.builder()
-                    .id(m.getUserId())
-                    .build();
+            UserEntity userRef = new UserEntity(m.getUserId());
             e.setUser(userRef);
         } else {
             e.setUser(null);

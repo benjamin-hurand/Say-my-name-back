@@ -117,7 +117,7 @@ Date: 2026-02-18
 
 ## Non remplaces (manuel)
 
-1. `com.saymyname.persistence.entity.organization.FactEntity.ScopeKind`
+1. `com.saymyname.persistence.entity.organization.ScopeKind`
 - Raison: ambiguite (match exact avec `com.saymyname.core.model.enums.ScopeKind` et `com.saymyname.core.model.enums.tenant.ScopeKind`).
 
 2. `com.saymyname.persistence.entity.organization.PhotoAssignmentEntity.ScopeKind`

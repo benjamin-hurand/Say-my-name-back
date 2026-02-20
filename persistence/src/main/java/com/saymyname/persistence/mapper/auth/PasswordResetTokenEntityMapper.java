@@ -47,7 +47,7 @@ public class PasswordResetTokenEntityMapper {
         e.setId(m.getId());
 
         if (m.getUserId() != null) {
-            e.setUser(UserEntity.builder().id(m.getUserId()).build());
+            e.setUser(new UserEntity(m.getUserId()));
         } else {
             e.setUser(null);
         }

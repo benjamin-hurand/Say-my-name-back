@@ -10,7 +10,8 @@ import lombok.Value;
 @Builder(toBuilder = true)
 public class BulkChangeRequestResolution {
     User resolver;
-    List<Long> changeRequestIds;
+    @Builder.Default
+    List<Long> changeRequestIds = List.of();
     ChangeResolutionDecision decision;
     String resolutionComment;
 }

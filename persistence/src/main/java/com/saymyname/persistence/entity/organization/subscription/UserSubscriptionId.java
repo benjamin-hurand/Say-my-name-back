@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import java.io.Serializable;
+import com.saymyname.core.multitenancy.TenantContext;
 
 @Getter
 @Setter
@@ -29,4 +30,11 @@ public class UserSubscriptionId implements Serializable {
 
     @Column(name = "person_id", nullable = false)
     private Long personId;
+
+    // Backward-compatible ctor for legacy call sites.
+    public UserSubscriptionId(Long userId, Long personId) {
+        this.tenantId = TenantContext.get();
+        this.userId = userId;
+        this.personId = personId;
+    }
 }

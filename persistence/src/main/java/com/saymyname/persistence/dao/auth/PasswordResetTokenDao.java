@@ -1,6 +1,6 @@
 package com.saymyname.persistence.dao.auth;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import org.springframework.stereotype.Repository;
@@ -39,13 +39,13 @@ public class PasswordResetTokenDao {
     public PasswordResetToken markUsed(Long id) {
         PasswordResetTokenEntity e = repository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("PasswordResetToken not found id " + id));
-        e.setUsedAt(OffsetDateTime.now());
+        e.setUsedAt(LocalDateTime.now());
         return mapper.toModel(repository.save(e));
     }
 
     /** Invalide tous les tokens actifs pour un utilisateur donné. */
     public int invalidateAllForUser(Long userId) {
-        return repository.invalidateAllActiveForUser(userId, OffsetDateTime.now());
+        return repository.invalidateAllActiveForUser(userId, LocalDateTime.now());
     }
 
     /** Récupération simple par id (utile pour debug/tests). */

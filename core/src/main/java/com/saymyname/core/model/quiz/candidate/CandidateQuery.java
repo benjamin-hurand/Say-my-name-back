@@ -24,4 +24,12 @@ public class CandidateQuery {
     List<Long> gameModeAttributeIds = List.of();
     String attributeOperator;
     boolean countOnly;
+
+    public static class CandidateQueryBuilder {
+        public CandidateQueryBuilder category(Long categoryAttributeId, String categoryValue) {
+            this.categoryAttributeId = categoryAttributeId;
+            this.categoryValue = categoryValue;
+            return this;
+        }
+    }
 }

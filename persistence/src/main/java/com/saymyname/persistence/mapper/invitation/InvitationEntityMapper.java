@@ -8,7 +8,6 @@ import java.time.ZoneOffset;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.saymyname.core.model.enums.InvitationType;
 import com.saymyname.core.model.enums.OrgRole;
 import com.saymyname.core.model.invitation.Invitation;
 import com.saymyname.persistence.entity.UserEntity;
@@ -49,13 +48,13 @@ public class InvitationEntityMapper {
         e.setLastUsedAt(toLocalDateTime(model.getLastUsedAt()));
 
         if (model.getCreatedById() != null) {
-            e.setCreatedBy(UserEntity.builder().id(model.getCreatedById()).build());
+            e.setCreatedBy(new UserEntity(model.getCreatedById()));
         } else {
             e.setCreatedBy(null);
         }
 
         if (model.getAcceptedById() != null) {
-            e.setAcceptedBy(UserEntity.builder().id(model.getAcceptedById()).build());
+            e.setAcceptedBy(new UserEntity(model.getAcceptedById()));
         } else {
             e.setAcceptedBy(null);
         }

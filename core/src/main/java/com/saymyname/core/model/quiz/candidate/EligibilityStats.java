@@ -37,4 +37,17 @@ public class EligibilityStats {
     public boolean canSingleCandidate() {
         return totalEligible >= 1;
     }
+
+    // Backward-compatible record-style accessors.
+    public long totalEligible() {
+        return totalEligible;
+    }
+
+    public long approvedPhoto() {
+        return approvedPhoto;
+    }
+
+    public long targetAttrs() {
+        return targetAttrs;
+    }
 }

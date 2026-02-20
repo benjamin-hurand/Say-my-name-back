@@ -217,9 +217,10 @@ public class PersonDao {
         q.setMaxResults(pageable.getPageSize());
 
         List<PagePersonRow> rows = q.getResultList().stream()
-                .map(t -> new PagePersonRow(
-                        t.get("personId", Long.class),
-                        t.get("photoStorageKey", String.class)))
+                .map(t -> PagePersonRow.builder()
+                        .personId(t.get("personId", Long.class))
+                        .photoStorageKey(t.get("photoStorageKey", String.class))
+                        .build())
                 .toList();
 
         return new PageImpl<>(rows, pageable, total);
@@ -277,9 +278,10 @@ public class PersonDao {
         q.setMaxResults(pageable.getPageSize());
 
         List<PagePersonRow> rows = q.getResultList().stream()
-                .map(t -> new PagePersonRow(
-                        t.get("personId", Long.class),
-                        t.get("photoStorageKey", String.class)))
+                .map(t -> PagePersonRow.builder()
+                        .personId(t.get("personId", Long.class))
+                        .photoStorageKey(t.get("photoStorageKey", String.class))
+                        .build())
                 .toList();
 
         return new PageImpl<>(rows, pageable, total);
@@ -348,7 +350,7 @@ public class PersonDao {
 
         List<Predicate> where = new ArrayList<>();
         where.add(pa.get("person").get("id").in(personIds));
-        where.add(cb.isFalse(pa.get("pendingDelete")));
+        where.add(cb.isFalse(pa.get("deleted")));
         where.add(cb.lessThanOrEqualTo(pa.get("validFrom"), now));
         where.add(cb.or(cb.isNull(pa.get("validTo")), cb.greaterThan(pa.get("validTo"), now)));
         where.add(cb.isTrue(a.get("primaryField")));
@@ -366,12 +368,13 @@ public class PersonDao {
                         cb.asc(pa.get("id")));
 
         return em.createQuery(cq).getResultList().stream()
-                .map(t -> new AttributeValueRow(
-                        t.get("personId", Long.class),
-                        t.get("attributeId", Long.class),
-                        t.get("value", String.class),
-                        t.get("displayOrder", Integer.class),
-                        t.get("primaryField", Boolean.class)))
+                .map(t -> AttributeValueRow.builder()
+                        .personId(t.get("personId", Long.class))
+                        .attributeId(t.get("attributeId", Long.class))
+                        .value(t.get("value", String.class))
+                        .displayOrder(t.get("displayOrder", Integer.class))
+                        .primaryField(t.get("primaryField", Boolean.class))
+                        .build())
                 .toList();
     }
 
@@ -395,7 +398,7 @@ public class PersonDao {
 
         List<Predicate> where = new ArrayList<>();
         where.add(pa.get("person").get("id").in(personIds));
-        where.add(cb.isFalse(pa.get("pendingDelete")));
+        where.add(cb.isFalse(pa.get("deleted")));
         where.add(cb.lessThanOrEqualTo(pa.get("validFrom"), now));
         where.add(cb.or(cb.isNull(pa.get("validTo")), cb.greaterThan(pa.get("validTo"), now)));
         where.add(cb.isFalse(a.get("primaryField")));
@@ -432,12 +435,13 @@ public class PersonDao {
                         cb.asc(pa.get("id")));
 
         return em.createQuery(cq).getResultList().stream()
-                .map(t -> new AttributeValueRow(
-                        t.get("personId", Long.class),
-                        t.get("attributeId", Long.class),
-                        t.get("value", String.class),
-                        t.get("displayOrder", Integer.class),
-                        t.get("primaryField", Boolean.class)))
+                .map(t -> AttributeValueRow.builder()
+                        .personId(t.get("personId", Long.class))
+                        .attributeId(t.get("attributeId", Long.class))
+                        .value(t.get("value", String.class))
+                        .displayOrder(t.get("displayOrder", Integer.class))
+                        .primaryField(t.get("primaryField", Boolean.class))
+                        .build())
                 .toList();
     }
 

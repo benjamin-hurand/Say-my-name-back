@@ -12,8 +12,10 @@ import lombok.Value;
 @Builder(toBuilder = true)
 public class Person {
     Long id;
-    List<Fact> facts;
-    List<Photo> photos;
+    @Builder.Default
+    List<Fact> facts = List.of();
+    @Builder.Default
+    List<Photo> photos = List.of();
 
     /**
      * Retourne la photo APPROVED de la personne s'il y en a une.

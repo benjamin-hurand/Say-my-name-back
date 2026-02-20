@@ -9,6 +9,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.Builder;
+import com.saymyname.core.model.enums.MembershipStatus;
+import com.saymyname.core.model.enums.OrgRole;
+import com.saymyname.core.model.enums.PersonLinkStatus;
 import com.saymyname.persistence.entity.UserEmailEntity;
 import com.saymyname.persistence.entity.UserEntity;
 import jakarta.persistence.Column;
@@ -23,6 +26,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapsId;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import java.time.LocalDateTime;
 import org.hibernate.annotations.Filter;
 import org.hibernate.annotations.FilterDef;
@@ -63,7 +67,7 @@ public class UserOrganizationEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false, length = 32)
-    private MemberRole role;
+    private OrgRole role;
 
     @Column(name = "display_name", length = 80)
     private String displayName;
@@ -92,30 +96,25 @@ public class UserOrganizationEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 16)
-    private MemberStatus status;
+    private MembershipStatus status;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "preferred_email_id", foreignKey = @ForeignKey(name = "fk_uo_pref_email"))
     private UserEmailEntity preferredEmail;
 
-    public enum MemberRole {
-        VIEWER,
-        EDITOR,
-        ADMIN,
-        OWNER
+    // Backward-compatible relation-style accessor for legacy DAO code.
+    @Transient
+    public PersonEntity getPerson() {
+        if (personId == null) {
+            return null;
+        }
+        PersonEntity p = PersonEntity.builder().build();
+        p.setId(personId);
+        p.setOrganizationId(id != null ? id.getTenantId() : null);
+        return p;
     }
 
-    public enum PersonLinkStatus {
-        NONE,
-        PENDING,
-        APPROVED,
-        REJECTED
-    }
-
-    public enum MemberStatus {
-        PENDING,
-        ACTIVE,
-        SUSPENDED,
-        LEFT
+    public void setPerson(PersonEntity person) {
+        this.personId = person == null ? null : person.getId();
     }
 }

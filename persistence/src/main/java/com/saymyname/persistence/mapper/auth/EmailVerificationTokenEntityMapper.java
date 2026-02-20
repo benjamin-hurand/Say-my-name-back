@@ -47,7 +47,7 @@ public class EmailVerificationTokenEntityMapper {
         e.setPublicId(m.getPublicId());
 
         if (m.getUserId() != null) {
-            e.setUser(UserEntity.builder().id(m.getUserId()).build());
+            e.setUser(new UserEntity(m.getUserId()));
         } else {
             e.setUser(null);
         }

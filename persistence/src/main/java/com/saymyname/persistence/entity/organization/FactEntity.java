@@ -1,6 +1,5 @@
 package com.saymyname.persistence.entity.organization;
 
-
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -9,15 +8,22 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
+
+import com.saymyname.core.model.enums.tenant.ScopeKind;
+import com.saymyname.persistence.entity.organization.attribute.AttributeEntity;
 import com.saymyname.persistence.multitenancy.BaseTenantScoped;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinColumns;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 
@@ -57,11 +63,19 @@ public class FactEntity extends BaseTenantScoped {
     @Column(name = "team_id")
     private Long teamId;
 
-    @Column(name = "person_id", nullable = false)
-    private Long personId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumns({
+            @JoinColumn(name = "tenant_id", referencedColumnName = "tenant_id", insertable = false, updatable = false),
+            @JoinColumn(name = "person_id", referencedColumnName = "id", insertable = false, updatable = false)
+    })
+    private PersonEntity person;
 
-    @Column(name = "attribute_id", nullable = false)
-    private Long attributeId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumns({
+            @JoinColumn(name = "tenant_id", referencedColumnName = "tenant_id", insertable = false, updatable = false),
+            @JoinColumn(name = "attribute_id", referencedColumnName = "id", insertable = false, updatable = false)
+    })
+    private AttributeEntity attribute;
 
     @Column(name = "value", length = 255)
     private String value;
@@ -74,10 +88,4 @@ public class FactEntity extends BaseTenantScoped {
 
     @Column(name = "is_deleted", nullable = false)
     private boolean deleted;
-
-    public enum ScopeKind {
-        TENANT,
-        WORKSPACE,
-        TEAM
-    }
 }

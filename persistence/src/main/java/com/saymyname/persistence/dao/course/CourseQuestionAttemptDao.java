@@ -1,7 +1,9 @@
 // src/main/java/com/saymyname/persistence/dao/course/CourseQuestionAttemptDao.java
 package com.saymyname.persistence.dao.course;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 
 import org.springframework.stereotype.Repository;
@@ -52,8 +54,7 @@ public class CourseQuestionAttemptDao {
         CourseQuestionAttemptEntity entity = mapper.toEntity(attempt);
         entity = repo.save(entity);
 
-        attempt.setId(entity.getId());
-        return attempt;
+        return attempt.toBuilder().id(entity.getId()).build();
     }
 
     /**
@@ -100,7 +101,7 @@ public class CourseQuestionAttemptDao {
         }
         int n = repo.updateAnswerMeta(
                 courseQuestion.getId(),
-                courseQuestion.getAnsweredAt(),
+                toLocalDateTime(courseQuestion.getAnsweredAt()),
                 courseQuestion.getResponseTimeMs(),
                 courseQuestion.getRawSubmission(),
                 courseQuestion.getNormalizedAudit(),
@@ -164,7 +165,10 @@ public class CourseQuestionAttemptDao {
             return List.of();
         }
         return repo.findRecentAnsweredRows(course.getId(), PageRequest.of(0, limit)).stream()
-                .map(row -> new RecentAnswerStat(row.isGlobalCorrect(), row.getAnsweredAt()))
+                .map(row -> RecentAnswerStat.builder()
+                        .correct(row.isGlobalCorrect())
+                        .answeredAt(toInstant(row.getAnsweredAt()))
+                        .build())
                 .toList();
     }
 
@@ -173,5 +177,13 @@ public class CourseQuestionAttemptDao {
         int n = repo.markHelpUsed(id);
         if (n == 0)
             throw new IllegalArgumentException("Question not found: " + id);
+    }
+
+    private LocalDateTime toLocalDateTime(Instant value) {
+        return value == null ? null : LocalDateTime.ofInstant(value, ZoneOffset.UTC);
+    }
+
+    private Instant toInstant(LocalDateTime value) {
+        return value == null ? null : value.toInstant(ZoneOffset.UTC);
     }
 }

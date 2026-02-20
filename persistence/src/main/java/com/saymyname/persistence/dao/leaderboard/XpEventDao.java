@@ -1,5 +1,6 @@
 package com.saymyname.persistence.dao.leaderboard;
 
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.PageRequest;
@@ -43,7 +44,8 @@ public class XpEventDao {
                                                 .sourceType(r.getSourceType())
                                                 .sourceId(r.getSourceId())
                                                 .deltaXp(r.getDeltaXp())
-                                                .createdAt(r.getCreatedAt())
+                                                .createdAt(r.getCreatedAt() == null ? null
+                                                                : r.getCreatedAt().toInstant(ZoneOffset.UTC))
                                                 .build())
                                 // si ton projet n’est pas en Java 16+, utilise plutôt collect:
                                 .collect(Collectors.toList());

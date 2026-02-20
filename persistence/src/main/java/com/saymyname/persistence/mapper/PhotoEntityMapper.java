@@ -6,9 +6,9 @@ import java.time.ZoneOffset;
 
 import org.springframework.stereotype.Component;
 
-import com.saymyname.core.model.enums.PhotoStatus;
 import com.saymyname.core.model.people.Photo;
 import com.saymyname.persistence.entity.UserEntity;
+import com.saymyname.persistence.entity.organization.PersonEntity;
 import com.saymyname.persistence.entity.organization.PhotoEntity;
 
 @Component
@@ -22,7 +22,7 @@ public class PhotoEntityMapper {
         PhotoEntity entity = PhotoEntity.builder().build();
         entity.setId(photo.getId());
         entity.setStorageKey(photo.getStorageKey());
-        entity.setPersonId(photo.getPersonId());
+        entity.setPerson(PersonEntity.builder().id(photo.getPersonId()).build());
         entity.setStatus(photo.getStatus());
         entity.setApprovedAt(toLocalDateTime(photo.getApprovedAt()));
 
@@ -31,13 +31,13 @@ public class PhotoEntityMapper {
         }
 
         if (photo.getSubmittedById() != null) {
-            entity.setSubmittedBy(UserEntity.builder().id(photo.getSubmittedById()).build());
+            entity.setSubmittedBy(new UserEntity(photo.getSubmittedById()));
         } else {
             entity.setSubmittedBy(null);
         }
 
         if (photo.getApprovedById() != null) {
-            entity.setApprovedBy(UserEntity.builder().id(photo.getApprovedById()).build());
+            entity.setApprovedBy(new UserEntity(photo.getApprovedById()));
         } else {
             entity.setApprovedBy(null);
         }
@@ -53,7 +53,7 @@ public class PhotoEntityMapper {
         return Photo.builder()
                 .id(e.getId())
                 .storageKey(e.getStorageKey())
-                .personId(e.getPersonId())
+                .personId(e.getPerson().getId())
                 .status(e.getStatus())
                 .submittedAt(toInstant(e.getSubmittedAt()))
                 .submittedById(e.getSubmittedBy() != null ? e.getSubmittedBy().getId() : null)

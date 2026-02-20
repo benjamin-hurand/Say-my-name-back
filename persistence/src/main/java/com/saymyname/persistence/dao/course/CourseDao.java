@@ -13,7 +13,6 @@ import com.saymyname.core.model.enums.CourseStatus;
 import com.saymyname.core.model.enums.PopulationScope;
 import com.saymyname.persistence.entity.organization.course.CourseEntity;
 import com.saymyname.persistence.mapper.course.CourseEntityMapper;
-import com.saymyname.persistence.repository.GameModeRepository;
 import com.saymyname.persistence.repository.UserRepository;
 import com.saymyname.persistence.repository.course.CourseRepository;
 
@@ -24,14 +23,11 @@ public class CourseDao {
     private final CourseRepository courseRepo;
     private final CourseEntityMapper courseEntityMapper;
     private final UserRepository userRepo;
-    private final GameModeRepository gameModeRepo;
 
-    public CourseDao(CourseRepository courseRepo, CourseEntityMapper courseEntityMapper, UserRepository userRepo,
-            GameModeRepository gameModeRepo) {
+    public CourseDao(CourseRepository courseRepo, CourseEntityMapper courseEntityMapper, UserRepository userRepo) {
         this.courseRepo = courseRepo;
         this.courseEntityMapper = courseEntityMapper;
         this.userRepo = userRepo;
-        this.gameModeRepo = gameModeRepo;
     }
 
     public Optional<Course> getCurrentCourse(Long userId) {
@@ -43,14 +39,9 @@ public class CourseDao {
     public Course saveCourse(Course course) {
         CourseEntity e = courseEntityMapper.toEntity(course);
 
-        // ✅ user ref managée (évite un autre “detached” potentiel)
-        if (course.getUser() != null && course.getUser().getId() != null) {
-            e.setUser(userRepo.getReferenceById(course.getUser().getId()));
-        }
-
-        // ✅ gamemode ref managée (corrige TON erreur)
-        if (course.getGameMode() != null && course.getGameMode().getId() != null) {
-            e.setGameMode(gameModeRepo.getReferenceById(course.getGameMode().getId()));
+        // Keep managed reference for the FK user.
+        if (course.getUserId() != null) {
+            e.setUser(userRepo.getReferenceById(course.getUserId()));
         }
 
         CourseEntity saved = courseRepo.save(e);
@@ -62,7 +53,7 @@ public class CourseDao {
     }
 
     /**
-     * Liste par statuts (ex: actifs = IN_PROGRESS) triée par lastAccessedAt desc.
+     * Liste par statuts (ex: actifs = IN_PROGRESS) triee par lastAccessedAt desc.
      */
     public List<Course> findAllByUserAndStatusesOrderedByLastAccess(Long userId, Collection<CourseStatus> statuses) {
         return courseRepo.findByUserIdAndStatusInOrderByLastAccessedAtDesc(userId, statuses)
@@ -70,7 +61,7 @@ public class CourseDao {
     }
 
     /**
-     * Variante triée par updatedAt desc (fallback si tous lastAccessedAt sont
+     * Variante triee par updatedAt desc (fallback si tous lastAccessedAt sont
      * null).
      */
     public List<Course> findAllByUserAndStatusesOrderedByUpdatedAt(Long userId, Collection<CourseStatus> statuses) {
@@ -87,9 +78,12 @@ public class CourseDao {
                 .map(courseEntityMapper::toShortModel);
     }
 
-    public Optional<Course> findFirstByUserModeScopeAndStatus(Long userId, Long gameModeId,
+    public Optional<Course> findFirstByUserModeScopeAndStatus(Long userId, Long targetAttributeId,
             PopulationScope scope, CourseStatus status) {
-        return courseRepo.findFirstByUserIdAndGameModeIdAndPopulationScopeAndStatus(userId, gameModeId, scope, status)
-                .map(courseEntityMapper::toShortModel);
+        return courseRepo.findFirstByUserIdAndTargetAttributeIdAndPopulationScopeAndStatus(
+                userId,
+                targetAttributeId,
+                scope,
+                status).map(courseEntityMapper::toShortModel);
     }
 }

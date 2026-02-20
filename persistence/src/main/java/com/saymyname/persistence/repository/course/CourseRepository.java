@@ -18,8 +18,8 @@ public interface CourseRepository extends JpaRepository<CourseEntity, Long> {
 
   Optional<CourseEntity> findFirstByUserIdAndStatus(Long userId, CourseStatus status);
 
-  Optional<CourseEntity> findFirstByUserIdAndGameModeIdAndPopulationScopeAndStatus(
-      Long userId, Long gameModeId, PopulationScope scope, CourseStatus status);
+  Optional<CourseEntity> findFirstByUserIdAndTargetAttributeIdAndPopulationScopeAndStatus(
+      Long userId, Long targetAttributeId, PopulationScope scope, CourseStatus status);
 
   List<CourseEntity> findByUserId(Long userId);
 

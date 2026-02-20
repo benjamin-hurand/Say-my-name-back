@@ -1,69 +1,181 @@
+// src/main/java/com/saymyname/persistence/entity/UserEntity.java
 package com.saymyname.persistence.entity;
 
-
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
-import lombok.Builder;
-import com.saymyname.core.model.enums.SrsAlgorithm;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Index;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
+import com.saymyname.core.model.enums.AuthProvider;
+import com.saymyname.core.model.enums.SrsAlgorithm;
+import com.saymyname.persistence.jpa.UuidBytesConverter;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+@Entity
+@Table(name = "users", uniqueConstraints = {
+                @UniqueConstraint(name = "uk_users_public_id", columnNames = { "public_id" })
+}, indexes = {
+                @Index(name = "ix_users_display_name", columnList = "display_name")
+})
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 @ToString(onlyExplicitlyIncluded = true)
-@Entity
-@Table(name = "users", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_users_public_id", columnNames = {"public_id"})
-}, indexes = {
-        @Index(name = "ix_users_display_name", columnList = "display_name")
-})
 public class UserEntity {
 
-    @EqualsAndHashCode.Include
-    @ToString.Include
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
-    private Long id;
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        @Column(nullable = false)
+        @EqualsAndHashCode.Include
+        @ToString.Include
+        private Long id;
 
-    @Column(name = "public_id", nullable = false, columnDefinition = "binary(16)")
-    private byte[] publicId;
+        @Convert(converter = UuidBytesConverter.class)
+        @Column(name = "public_id", columnDefinition = "BINARY(16)", nullable = false, unique = true, updatable = false)
+        private UUID publicId;
 
-    @Column(name = "display_name", nullable = true, length = 50)
-    private String displayName;
+        @Column(name = "display_name", length = 50)
+        @ToString.Include
+        private String displayName;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "srs_algorithm", nullable = false, length = 8, columnDefinition = "varchar(8) default 'SM2'")
-    private SrsAlgorithm srsAlgorithm;
+        @Enumerated(EnumType.STRING)
+        @Column(name = "srs_algorithm", nullable = false, length = 8)
+        private SrsAlgorithm srsAlgorithm = SrsAlgorithm.SM2;
 
-    @Column(name = "roles", nullable = true, length = 255)
-    private String roles;
+        @Column(name = "roles", length = 255)
+        private String roles;
 
-    @Column(name = "active", nullable = false, columnDefinition = "tinyint(1) default 0")
-    private boolean active;
+        @Column(name = "active", nullable = false)
+        private boolean active = false;
 
-    @Column(name = "auth_version", nullable = false, columnDefinition = "int default 0")
-    private int authVersion;
+        @Column(name = "auth_version", nullable = false)
+        private int authVersion = 0;
 
-    @Column(name = "auth_updated_at", nullable = false,
-            columnDefinition = "datetime default current_timestamp on update current_timestamp")
-    private LocalDateTime authUpdatedAt;
+        /**
+         * DB handles DEFAULT CURRENT_TIMESTAMP + ON UPDATE CURRENT_TIMESTAMP.
+         * Keep this field read-only from JPA.
+         */
+        @Setter(AccessLevel.NONE)
+        @Column(name = "auth_updated_at", nullable = false, insertable = false, updatable = false)
+        private LocalDateTime authUpdatedAt;
+
+        @Setter(AccessLevel.NONE)
+        @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+        @OrderBy("primary DESC, verifiedAt DESC, id ASC")
+        private List<UserEmailEntity> emails = new ArrayList<>();
+
+        /**
+         * Set avoids MultipleBagFetchException when fetching emails + identities.
+         * For transient entities, equals/hashCode are id-based, so id=null collisions
+         * are possible if multiple new identities are added before persistence.
+         */
+        @Setter(AccessLevel.NONE)
+        @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+        private Set<UserIdentityEntity> identities = new LinkedHashSet<>();
+
+        public UserEntity(Long id) {
+                this.id = id;
+        }
+
+        @PrePersist
+        protected void onPrePersist() {
+                if (this.publicId == null) {
+                        this.publicId = UUID.randomUUID();
+                }
+                if (this.srsAlgorithm == null) {
+                        this.srsAlgorithm = SrsAlgorithm.SM2;
+                }
+        }
+
+        // -------- Helpers emails --------
+        public void addEmail(UserEmailEntity email) {
+                if (email == null)
+                        return;
+                this.emails.add(email);
+                email.setUser(this);
+        }
+
+        public void removeEmail(UserEmailEntity email) {
+                if (email == null)
+                        return;
+                this.emails.remove(email);
+                email.setUser(null);
+        }
+
+        // -------- Helpers identities --------
+        public void addIdentity(UserIdentityEntity identity) {
+                if (identity == null)
+                        return;
+                this.identities.add(identity);
+                identity.setUser(this);
+        }
+
+        public void removeIdentity(UserIdentityEntity identity) {
+                if (identity == null)
+                        return;
+                this.identities.remove(identity);
+                identity.setUser(null);
+        }
+
+        // -------- Transients --------
+        @Transient
+        public String getPrimaryEmailValue() {
+                if (emails == null)
+                        return null;
+                for (UserEmailEntity e : emails) {
+                        if (e != null && e.isPrimary())
+                                return e.getEmail();
+                }
+                return null;
+        }
+
+        @Transient
+        public boolean hasLocalPassword() {
+                if (identities == null)
+                        return false;
+                return identities.stream().anyMatch(i -> i != null
+                                && i.isEnabled()
+                                && i.getProvider() == AuthProvider.LOCAL
+                                && i.getPasswordHash() != null
+                                && !i.getPasswordHash().isBlank());
+        }
+
+        public void setEmails(List<UserEmailEntity> emails) {
+                this.emails.clear();
+                if (emails != null) {
+                        for (UserEmailEntity e : emails)
+                                addEmail(e);
+                }
+        }
+
+        public void setIdentities(Set<UserIdentityEntity> identities) {
+                this.identities.clear();
+                if (identities != null) {
+                        for (UserIdentityEntity i : identities)
+                                addIdentity(i);
+                }
+        }
+
+        public void setIdentitiesFromList(List<UserIdentityEntity> identities) {
+                this.identities.clear();
+                if (identities != null) {
+                        for (UserIdentityEntity i : identities)
+                                addIdentity(i);
+                }
+        }
+
+        // Backward-compatible boolean getter used by legacy code.
+        public boolean getActive() {
+                return active;
+        }
+
+        // Backward-compatible boolean accessor used by legacy code.
+        public boolean isActive() {
+                return active;
+        }
 }

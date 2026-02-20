@@ -11,4 +11,17 @@ public class PreparedEmit {
     QuizFormat format;
     QuizQuestionSpec spec;
     Long ttlSeconds;
+
+    // Backward-compatible record-style accessors.
+    public QuizFormat format() {
+        return format;
+    }
+
+    public QuizQuestionSpec spec() {
+        return spec;
+    }
+
+    public Long ttlSeconds() {
+        return ttlSeconds;
+    }
 }

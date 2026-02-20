@@ -1,7 +1,7 @@
 // src/main/java/com/saymyname/persistence/repository/ChangeRequestRepositoryImpl.java
 package com.saymyname.persistence.repository;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -214,7 +214,9 @@ public class ChangeRequestRepositoryImpl implements ChangeRequestRepositoryCusto
     // Pré-charge les collections de Person pour éviter les N+1.
     private void initializePersonCollections(List<ChangeRequestEntity> deepList, Long orgId) {
         List<Long> personIds = deepList.stream()
-                .map(ChangeRequestEntity::getPersonId)
+                .map(ChangeRequestEntity::getPerson)
+                .filter(Objects::nonNull)
+                .map(PersonEntity::getId)
                 .filter(Objects::nonNull)
                 .distinct()
                 .toList();
@@ -237,8 +239,8 @@ public class ChangeRequestRepositoryImpl implements ChangeRequestRepositoryCusto
         return s.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
     }
 
-    private static java.time.LocalDateTime toLdt(OffsetDateTime odt) {
-        return odt == null ? null : odt.toLocalDateTime();
+    private static java.time.LocalDateTime toLdt(Instant instant) {
+        return instant == null ? null : java.time.LocalDateTime.ofInstant(instant, java.time.ZoneOffset.UTC);
     }
 
     private static void applySort(CriteriaBuilder cb, CriteriaQuery<Long> cq, Root<ChangeRequestEntity> root,
