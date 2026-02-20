@@ -70,8 +70,8 @@ public class ChangeRequestService {
         validateForCreate(envelope);
 
         Long personId = envelope.getPerson().getId();
-        Long requesterId = envelope.getRequesterId();
-        Long attributeId = envelope.getAttributeId();
+        Long requesterId = envelope.getRequester().getId();
+        Long attributeId = envelope.getAttribute().getId();
 
         ChangeRequest open = crDao.findOpenByTriplet(personId, requesterId, attributeId, OPEN_STATUSES);
         if (open != null) {
@@ -82,8 +82,8 @@ public class ChangeRequestService {
                     "Une demande ouverte existe déjà pour cette personne, cet attribut et cet auteur.");
         }
 
-        envelope = normalizeEnvelope(envelope);
-        envelope = normalizeItemsForAttribute(envelope, attributeId);
+        normalizeEnvelope(envelope);
+        normalizeItemsForAttribute(envelope, attributeId);
 
         ChangeRequest created = crDao.createEnvelope(envelope);
         log.info("[CR][CREATE] OK — envelopeId={}", created.getId());
@@ -98,10 +98,10 @@ public class ChangeRequestService {
 
         ChangeRequest existing = crDao.getEnvelopeOrThrow(id);
 
-        Long requesterId = sourcePartial.getRequesterId();
-        if (requesterId == null || !existing.getRequesterId().equals(requesterId)) {
+        Long requesterId = (sourcePartial.getRequester() != null ? sourcePartial.getRequester().getId() : null);
+        if (requesterId == null || !existing.getRequester().getId().equals(requesterId)) {
             log.warn("[CR][REPLACE] Forbidden: requester mismatch. expected={}, got={}",
-                    existing.getRequesterId(), requesterId);
+                    existing.getRequester().getId(), requesterId);
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Vous n'êtes pas l'auteur de cette demande.");
         }
         if (existing.getStatus() != ChangeRequestStatus.PENDING) {
@@ -113,15 +113,15 @@ public class ChangeRequestService {
 
         validateForReplace(existing, sourcePartial);
 
-        sourcePartial = normalizeEnvelope(sourcePartial);
-        Long attributeId = existing.getAttributeId();
+        normalizeEnvelope(sourcePartial);
+        Long attributeId = (existing.getAttribute() != null ? existing.getAttribute().getId() : null);
         if (attributeId == null) {
             log.error("[CR][REPLACE] Attribute absent on existing envelope id={}", existing.getId());
             throw new ResponseStatusException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     "Attribut absent sur l'enveloppe existante");
         }
-        sourcePartial = normalizeItemsForAttribute(sourcePartial, attributeId);
+        normalizeItemsForAttribute(sourcePartial, attributeId);
 
         ChangeRequest replaced = crDao.replaceEnvelopeItems(existing.getId(), requesterId, sourcePartial);
         log.info("[CR][REPLACE] OK — envelopeId={} items={}", replaced.getId(),
@@ -159,7 +159,7 @@ public class ChangeRequestService {
             log.debug("[CR][RESOLVE][SIMU] crModel: id={}, status={}, personId={}, attributeId={}",
                     crModel.getId(), crModel.getStatus(),
                     (crModel.getPerson() != null ? crModel.getPerson().getId() : null),
-                    crModel.getAttributeId());
+                    (crModel.getAttribute() != null ? crModel.getAttribute().getId() : null));
 
             if (crModel.getStatus() != ChangeRequestStatus.PENDING) {
                 log.warn("[CR][RESOLVE][SIMU] Conflict: status must be PENDING, got={}", crModel.getStatus());
@@ -274,16 +274,16 @@ public class ChangeRequestService {
                 log.info("[CR][RESOLVE][SIMU] ICI ON APPLIQUERAIT LES CHANGEMENTS — "
                         + "appelerait FactService.applyChangesForPerson(personId={}, attributeId={}, creates={}, updates={}, deletes={}, bypassRestricted=true)",
                         (crModel.getPerson() != null ? crModel.getPerson().getId() : null),
-                        crModel.getAttributeId(),
+                        (crModel.getAttribute() != null ? crModel.getAttribute().getId() : null),
                         toCreate.size(), toUpdate.size(), toDelete.size());
 
                 log.info(
                         "[CR][RESOLVE] CALL FactService.applyChangesForPerson(personId={}, attributeId={}, creates={}, updates={}, deletes={}, bypassRestricted=true)",
-                        crModel.getPerson().getId(), crModel.getAttributeId(),
+                        crModel.getPerson().getId(), crModel.getAttribute().getId(),
                         toCreate.size(), toUpdate.size(), toDelete.size());
                 personAttributeService.applyChangesForPerson(
                         crModel.getPerson().getId(),
-                        crModel.getAttributeId(),
+                        crModel.getAttribute().getId(),
                         toCreate, toUpdate, toDelete,
                         true);
                 log.info("[CR][RESOLVE] DONE applyChangesForPerson");
@@ -360,12 +360,13 @@ public class ChangeRequestService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "personId est requis");
         }
 
-        if (env.getRequesterId() == null) {
+        if (env.getRequester() == null || env.getRequester().getId() == null) {
             log.error("[CR][CREATE] requester manquant");
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "requester non renseigné");
         }
 
-        if (env.getAttributeId() == null) {
+        Attribute attribute = env.getAttribute();
+        if (attribute == null || attribute.getId() == null) {
             log.error("[CR][CREATE] attributeId requis");
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "attributeId (enveloppe) est requis");
         }
@@ -441,22 +442,18 @@ public class ChangeRequestService {
 
     /* -------------------- normalisation à la soumission -------------------- */
 
-    private ChangeRequest normalizeEnvelope(ChangeRequest env) {
-        ChangeRequest normalized = env.toBuilder()
-                .requestReason(sanitizeReason1024(env.getRequestReason()))
-                .build();
-        log.debug("[CR][NORM] envelope.requestReason='{}'", normalized.getRequestReason());
-        return normalized;
+    private void normalizeEnvelope(ChangeRequest env) {
+        env.setRequestReason(sanitizeReason1024(env.getRequestReason()));
+        log.debug("[CR][NORM] envelope.requestReason='{}'", env.getRequestReason());
     }
 
-    private ChangeRequest normalizeItemsForAttribute(ChangeRequest env, Long attributeId) {
+    private void normalizeItemsForAttribute(ChangeRequest env, Long attributeId) {
         Attribute attr = attributeDao.findById(attributeId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Attribut inconnu"));
 
         if (env.getItems() == null)
-            return env;
+            return;
 
-        List<ChangeRequestItem> normalizedItems = new ArrayList<>(env.getItems().size());
         for (ChangeRequestItem it : env.getItems()) {
             switch (it.getAction()) {
                 case CREATE, UPDATE -> {
@@ -477,7 +474,7 @@ public class ChangeRequestService {
                     if (normalized.length() > 512) {
                         normalized = normalized.substring(0, 512);
                     }
-                    it = it.toBuilder().proposedValue(normalized).build();
+                    it.setProposedValue(normalized);
                     log.debug("[CR][NORM] item normalized value='{}'", normalized);
                 }
                 case DELETE -> {
@@ -487,9 +484,7 @@ public class ChangeRequestService {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Action non supportée");
                 }
             }
-            normalizedItems.add(it);
         }
-        return env.toBuilder().items(normalizedItems).build();
     }
 
     /* -------------------- utils -------------------- */
@@ -563,7 +558,7 @@ public class ChangeRequestService {
         Objects.requireNonNull(bulk.getChangeRequestIds(), "ids are required");
         Objects.requireNonNull(bulk.getDecision(), "decision is required");
 
-        ChangeResolutionDecision dec = bulk.getDecision();
+        ChangeResolutionDecision dec = ChangeResolutionDecision.valueOf(bulk.getDecision());
 
         for (Long crId : bulk.getChangeRequestIds()) {
             List<Long> pendingIds = itemDao.listPendingIdsByCr(crId);
@@ -590,4 +585,3 @@ public class ChangeRequestService {
         }
     }
 }
-

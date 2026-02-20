@@ -55,7 +55,7 @@ public class AdminGameModeDtoMapper {
                                 : model.getGameModeAttributes().stream()
                                                 .map(a -> new GameModeAttributeResponseDto(
                                                                 a.getId(),
-                                                                a.getAttribute() != null ? a.getAttributeId()
+                                                                a.getAttribute() != null ? a.getAttribute().getId()
                                                                                 : null))
                                                 .toList();
 

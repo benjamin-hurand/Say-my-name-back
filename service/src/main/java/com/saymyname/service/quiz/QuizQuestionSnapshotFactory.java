@@ -63,7 +63,7 @@ public class QuizQuestionSnapshotFactory {
                 continue;
 
             List<Fact> matches = personAttrs.stream()
-                    .filter(pa -> pa != null && pa.getAttribute() != null && attrId.equals(pa.getAttributeId()))
+                    .filter(pa -> pa != null && pa.getAttribute() != null && attrId.equals(pa.getAttribute().getId()))
                     .toList();
 
             for (Fact pa : matches) {
@@ -265,7 +265,7 @@ public class QuizQuestionSnapshotFactory {
 
         QuizTruthType type = toTruthType(effectiveFormat);
 
-        QuizQuestionTruth.QuizQuestionTruthBuilder tb = QuizQuestionTruth.builder()
+        QuizQuestionTruth.Builder tb = QuizQuestionTruth.builder()
                 .type(type)
                 .rules(rules);
 
@@ -456,7 +456,7 @@ public class QuizQuestionSnapshotFactory {
         Objects.requireNonNull(original, "original snapshot");
         Objects.requireNonNull(newState, "newState");
 
-        QuizQuestionSnapshot.QuizQuestionSnapshotBuilder builder = original.toBuilder();
+        QuizQuestionSnapshot.Builder builder = QuizQuestionSnapshot.builder().from(original);
 
         if (newState instanceof HangmanSnapshotState hangmanState) {
             builder.hangmanState(hangmanState);

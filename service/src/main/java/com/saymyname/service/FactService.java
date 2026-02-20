@@ -1,7 +1,6 @@
 // src/main/java/com/saymyname/service/FactService.java
 package com.saymyname.service;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -132,7 +131,6 @@ public class FactService {
         }
 
         final LocalDateTime now = LocalDateTime.now();
-        final Instant nowInstant = now.atZone(java.time.ZoneId.systemDefault()).toInstant();
 
         // 1) Attribut (policy/type/required/maxValues)
         Attribute attr = attributeDao.findById(attributeId)
@@ -244,7 +242,7 @@ public class FactService {
         // 4) Simulation du snapshot à NOW (état APRÈS opérations)
         // Snapshot = valeurs normalisées des actifs à now
         List<SnapshotItem> snapshotBeforeOps = activeNow.stream()
-                .filter(pa -> isActiveAt(pa, nowInstant))
+                .filter(pa -> isActiveAt(pa, now))
                 .map(pa -> new SnapshotItem(
                         pa.getId(),
                         TextNormalization.normalizeWithStrategy(pa.getValue(), attr.getType(),
@@ -326,7 +324,7 @@ public class FactService {
                 personId, attributeId, toCreate, toUpdate, toDelete, bypassRestricted, /* avoidHardDelete= */ false);
     }
 
-    private static boolean isActiveAt(Fact pa, Instant instant) {
+    private static boolean isActiveAt(Fact pa, LocalDateTime instant) {
         if (pa == null)
             return false;
         if (pa.isDeleted())

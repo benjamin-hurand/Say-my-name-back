@@ -24,7 +24,7 @@ public class FactDtoMapper {
         }
         return new FactDto(
                 personAttribute.getId(),
-                personAttribute.getAttributeId(),
+                personAttribute.getAttribute().getId(),
                 personAttribute.getValue(),
                 personAttribute.getValidFrom(),
                 personAttribute.getValidTo(),

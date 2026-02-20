@@ -23,7 +23,7 @@ public class DefaultAnswerKeyService implements AnswerKeyService {
         List<Fact> attrs = personAttributeDao.findFactsByPersonId(personId);
 
         List<String> correctValues = attrs.stream()
-                .filter(pa -> targetAttributeIds.contains(pa.getAttributeId()))
+                .filter(pa -> targetAttributeIds.contains(pa.getAttribute().getId()))
                 .map(pa -> pa.getValue() == null ? "" : pa.getValue())
                 .toList();
 
