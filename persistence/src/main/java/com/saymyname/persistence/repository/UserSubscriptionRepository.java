@@ -7,99 +7,104 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-import org.springframework.lang.NonNull;
-import static org.hibernate.jpa.HibernateHints.HINT_READ_ONLY;
 import static org.hibernate.jpa.HibernateHints.HINT_FETCH_SIZE;
+import static org.hibernate.jpa.HibernateHints.HINT_READ_ONLY;
 
 @Repository
 public interface UserSubscriptionRepository extends JpaRepository<UserSubscriptionEntity, UserSubscriptionId> {
 
-  boolean existsById(@NonNull UserSubscriptionId id);
+    boolean existsById(@NonNull UserSubscriptionId id);
 
-  long deleteByIdUserIdAndIdPersonId(Long userId, Long personId);
+    // -------------------------
+    // Tenant-scoped derived queries
+    // -------------------------
 
-  long countByIdUserId(Long userId);
+    long deleteByIdTenantIdAndIdUserIdAndIdPersonId(Long tenantId, Long userId, Long personId);
 
-  /** Listing entités (read-only + fetch size indicatif). */
-  @QueryHints({
-      @QueryHint(name = HINT_READ_ONLY, value = "true"),
-      @QueryHint(name = HINT_FETCH_SIZE, value = "500")
-  })
-  Page<UserSubscriptionEntity> findByIdUserId(Long userId, Pageable pageable);
+    long countByIdTenantIdAndIdUserId(Long tenantId, Long userId);
 
-  /** Projection IDs (read-only). */
-  @Query("select e.id.personId from UserSubscriptionEntity e where e.id.userId = :userId")
-  @QueryHints({
-      @QueryHint(name = HINT_READ_ONLY, value = "true")
-  })
-  Page<Long> findPersonIdsPageByUserId(@Param("userId") Long userId, Pageable pageable);
+    /** Listing entités (read-only + fetch size indicatif). */
+    @QueryHints({
+            @QueryHint(name = HINT_READ_ONLY, value = "true"),
+            @QueryHint(name = HINT_FETCH_SIZE, value = "500")
+    })
+    Page<UserSubscriptionEntity> findByIdTenantIdAndIdUserId(Long tenantId, Long userId, Pageable pageable);
 
-  /** Utilisé par bulkSubscribe pour détecter les existants en 1 requête. */
-  @QueryHints({
-      @QueryHint(name = HINT_READ_ONLY, value = "true")
-  })
-  List<UserSubscriptionEntity> findByIdUserIdAndIdPersonIdIn(Long userId, List<Long> personIds);
+    /** Projection IDs (read-only). */
+    @Query("""
+                select e.id.personId
+                  from UserSubscriptionEntity e
+                 where e.id.tenantId = :tenantId
+                   and e.id.userId = :userId
+            """)
+    @QueryHints({
+            @QueryHint(name = HINT_READ_ONLY, value = "true")
+    })
+    Page<Long> findPersonIdsPageByTenantIdAndUserId(@Param("tenantId") Long tenantId,
+            @Param("userId") Long userId,
+            Pageable pageable);
 
-  @Modifying
-  @Query("delete from UserSubscriptionEntity e where e.id.userId = :userId and e.id.personId in :personIds")
-  int deleteByUserIdAndPersonIdIn(@Param("userId") Long userId, @Param("personIds") List<Long> personIds);
+    /** Utilisé par bulkSubscribe pour détecter les existants en 1 requête. */
+    @QueryHints({
+            @QueryHint(name = HINT_READ_ONLY, value = "true")
+    })
+    List<UserSubscriptionEntity> findByIdTenantIdAndIdUserIdAndIdPersonIdIn(Long tenantId, Long userId,
+            List<Long> personIds);
 
-  /**
-   * FOLLOWED + AND :
-   * Compter les personnes suivies pour lesquelles TOUTES les attributes cibles du
-   * game mode
-   * existent (valeur non nulle / non vide).
-   * Garde-fou : COUNT(DISTINCT gma.attribute_id) > 0
-   *
-   * NOTE: SQL natif conservé (agrégations multi-tables) + filtre org SpEL
-   * partout.
-   */
-  @Query(value = """
-      SELECT COUNT(*) FROM (
-        SELECT s.person_id
-          FROM user_subscriptions s
-          JOIN game_modes_attributes gma
-            ON gma.game_mode_id    = :gameModeId
-           AND gma.organization_id  = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
-          LEFT JOIN person_attributes pa
-            ON pa.person_id         = s.person_id
-           AND pa.attribute_id      = gma.attribute_id
-           AND pa.organization_id   = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
-           AND pa.attribute_value IS NOT NULL AND pa.attribute_value <> ''
-         WHERE s.user_id            = :userId
-           AND s.organization_id    = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
-         GROUP BY s.person_id
-        HAVING COUNT(DISTINCT gma.attribute_id) > 0
-           AND COUNT(DISTINCT gma.attribute_id) = COUNT(DISTINCT pa.attribute_id)
-      ) t
-      """, nativeQuery = true)
-  long countFollowedEligibleAND(@Param("userId") Long userId, @Param("gameModeId") Long gameModeId);
+    @Modifying
+    @Query("""
+                delete from UserSubscriptionEntity e
+                 where e.id.tenantId = :tenantId
+                   and e.id.userId   = :userId
+                   and e.id.personId in :personIds
+            """)
+    int deleteByTenantIdAndUserIdAndPersonIdIn(@Param("tenantId") Long tenantId,
+            @Param("userId") Long userId,
+            @Param("personIds") List<Long> personIds);
 
-  /**
-   * FOLLOWED + OR :
-   * Compter les personnes suivies pour lesquelles AU MOINS UN attribut cible du
-   * game mode existe.
-   * DISTINCT sur s.person_id (plusieurs attributes peuvent “matcher”).
-   *
-   * NOTE: SQL natif conservé + filtre org SpEL partout.
-   */
-  @Query(value = """
-      SELECT COUNT(DISTINCT s.person_id)
-        FROM user_subscriptions s
-        JOIN game_modes_attributes gma
-          ON gma.game_mode_id    = :gameModeId
-         AND gma.organization_id  = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
-        JOIN person_attributes pa
-          ON pa.person_id         = s.person_id
-         AND pa.attribute_id      = gma.attribute_id
-         AND pa.organization_id   = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
-         AND pa.attribute_value IS NOT NULL AND pa.attribute_value <> ''
-       WHERE s.user_id            = :userId
-         AND s.organization_id    = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
-      """, nativeQuery = true)
-  long countFollowedEligibleOR(@Param("userId") Long userId, @Param("gameModeId") Long gameModeId);
+    // -------------------------
+    // Legacy methods removed / replaced
+    // -------------------------
+    // NOTE:
+    // Les méthodes ORG-legacy suivantes ne sont plus valides depuis que tenant_id
+    // est dans la PK.
+    // - deleteByIdUserIdAndIdPersonId
+    // - countByIdUserId
+    // - findByIdUserId
+    // - findPersonIdsPageByUserId
+    // - findByIdUserIdAndIdPersonIdIn
+    // - deleteByUserIdAndPersonIdIn
+    //
+    // => elles doivent être supprimées (ou laissées commentées) pour éviter les
+    // usages ambigus.
+
+    // -------------------------
+    // GameMode / Facts eligibility: keep API but neutralize safely
+    // -------------------------
+    // Ces deux méthodes reposaient sur tables supprimées (game_modes_attributes,
+    // person_attributes)
+    // et OrgContext. Tant que la refacto "gamemode -> attributes/facts" n'est pas
+    // finie,
+    // le plus safe est de :
+    // - soit les supprimer + corriger les call-sites,
+    // - soit retourner 0 en stub temporaire pour ne pas bloquer la migration
+    // tenant.
+    //
+    // Ci-dessous: stub TEMPORAIRE (à remplacer quand la nouvelle logique Facts est
+    // en place).
+
+    @Query(value = "select 0", nativeQuery = true)
+    long countFollowedEligibleAND(@Param("tenantId") Long tenantId,
+            @Param("userId") Long userId,
+            @Param("gameModeId") Long gameModeId);
+
+    @Query(value = "select 0", nativeQuery = true)
+    long countFollowedEligibleOR(@Param("tenantId") Long tenantId,
+            @Param("userId") Long userId,
+            @Param("gameModeId") Long gameModeId);
 }

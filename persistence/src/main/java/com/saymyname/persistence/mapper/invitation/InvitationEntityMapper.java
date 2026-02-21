@@ -48,12 +48,10 @@ public class InvitationEntityMapper {
         e.setRole(model.getRole());
         e.setEmail(model.getEmail());
 
-        // Person nominative (nullable). FK composite gérée par JPA via @JoinColumns
         if (model.getPerson() != null) {
-            PersonEntity person = personMapper.toEntity(model.getPerson());
-            e.setPerson(person);
+            e.setPersonId(model.getPerson().getId());
         } else {
-            e.setPerson(null);
+            e.setPersonId(null);
         }
 
         // Hashs

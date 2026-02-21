@@ -4,7 +4,6 @@ import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.people.UserSubscription;
 import com.saymyname.persistence.entity.organization.subscription.UserSubscriptionEntity;
-import com.saymyname.persistence.entity.organization.subscription.UserSubscriptionId;
 
 @Component
 public class UserSubscriptionEntityMapper {
@@ -12,18 +11,22 @@ public class UserSubscriptionEntityMapper {
     public UserSubscription toModel(UserSubscriptionEntity e) {
         if (e == null)
             return null;
-        return new UserSubscription.Builder()
-                .withUserId(e.getId() != null ? e.getId().getUserId() : null)
-                .withPersonId(e.getId() != null ? e.getId().getPersonId() : null)
-                .withCreatedAt(e.getCreatedAt())
+
+        return UserSubscription.builder()
+                .userId(e.getUserId())
+                .personId(e.getPersonId())
+                .createdAt(e.getCreatedAt())
                 .build();
     }
 
     public UserSubscriptionEntity toEntity(UserSubscription m) {
         if (m == null)
             return null;
-        var id = new UserSubscriptionId(m.getUserId(), m.getPersonId());
-        // createdAt géré par la DB (DEFAULT CURRENT_TIMESTAMP)
-        return new UserSubscriptionEntity(id, null);
+
+        // tenantId rempli par TenantFillListener (BaseTenantScoped)
+        return UserSubscriptionEntity.builder()
+                .userId(m.getUserId())
+                .personId(m.getPersonId())
+                .build();
     }
 }

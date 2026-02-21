@@ -24,7 +24,7 @@ import com.saymyname.core.model.people.Attribute;
 import com.saymyname.core.model.people.ChangeRequest;
 import com.saymyname.core.model.people.ChangeRequestItem;
 import com.saymyname.core.model.people.Person;
-import com.saymyname.core.model.people.PersonAttribute;
+import com.saymyname.core.model.people.Fact;
 import com.saymyname.webapp.dto.ReducedUserDto;
 import com.saymyname.webapp.dto.changerequest.AttributePreviewDto;
 import com.saymyname.webapp.dto.changerequest.ChangeRequestCountersDto;
@@ -36,7 +36,7 @@ import com.saymyname.webapp.dto.changerequest.ResolutionSummaryDto;
 import com.saymyname.webapp.dto.changerequest.SubmitChangeRequestDto;
 import com.saymyname.webapp.dto.changerequest.SubmitChangeRequestItemDto;
 import com.saymyname.webapp.dto.changerequest.UpdateChangeRequestDto;
-import com.saymyname.webapp.dto.person.PersonAttributeMinimalDto;
+import com.saymyname.webapp.dto.person.FactMinimalDto;
 
 @Component
 public class ChangeRequestDtoMapper {
@@ -44,14 +44,14 @@ public class ChangeRequestDtoMapper {
     private final ChangeRequestItemDtoMapper itemMapper;
     private final UserDtoMapper userDtoMapper;
     private final PersonDtoMapper personDtoMapper;
-    private final PersonAttributeDtoMapper personAttributeDtoMapper;
+    private final FactDtoMapper factDtoMapper;
 
     public ChangeRequestDtoMapper(ChangeRequestItemDtoMapper itemMapper, UserDtoMapper userDtoMapper,
-            PersonDtoMapper personDtoMapper, PersonAttributeDtoMapper personAttributeDtoMapper) {
+            PersonDtoMapper personDtoMapper, FactDtoMapper factDtoMapper) {
         this.itemMapper = itemMapper;
         this.userDtoMapper = userDtoMapper;
         this.personDtoMapper = personDtoMapper;
-        this.personAttributeDtoMapper = personAttributeDtoMapper;
+        this.factDtoMapper = factDtoMapper;
     }
 
     /** API -> Model (SUBMIT : enveloppe + items) */
@@ -222,8 +222,8 @@ public class ChangeRequestDtoMapper {
 
     private static LocalDateTime seasonAnchor(Person person) {
         LocalDateTime now = LocalDateTime.now();
-        return person.getAttributes().stream()
-                .map(PersonAttribute::getValidFrom)
+        return person.getFacts().stream()
+                .map(Fact::getValidFrom)
                 .filter(Objects::nonNull)
                 .filter(d -> d.isAfter(now))
                 .sorted()
@@ -231,8 +231,8 @@ public class ChangeRequestDtoMapper {
                 .orElse(now);
     }
 
-    private static boolean isActiveAt(PersonAttribute a, LocalDateTime at) {
-        if (a == null || a.isPendingDelete())
+    private static boolean isActiveAt(Fact a, LocalDateTime at) {
+        if (a == null || a.isDeleted())
             return false;
         LocalDateTime from = a.getValidFrom();
         LocalDateTime to = a.getValidTo();
@@ -254,15 +254,15 @@ public class ChangeRequestDtoMapper {
 
         // 1) Baseline future : PAs de CET attribut actifs à l’ancre (avant CR)
         // On garde l’ordre par id croissant, nulls en dernier.
-        final List<PersonAttribute> baselineList = person.getAttributes().stream()
+        final List<Fact> baselineList = person.getFacts().stream()
                 .filter(pa -> pa.getAttribute() != null && Objects.equals(pa.getAttribute().getId(), targetAttrId))
                 .filter(pa -> isActiveAt(pa, anchor))
-                .sorted(Comparator.comparing(PersonAttribute::getId, Comparator.nullsLast(Long::compareTo)))
+                .sorted(Comparator.comparing(Fact::getId, Comparator.nullsLast(Long::compareTo)))
                 .toList();
 
         // Sérialisation en MinimalDto (id + value) ; on filtre les values nulles.
-        final List<PersonAttributeMinimalDto> baselineFutureValues = baselineList.stream()
-                .map(personAttributeDtoMapper::toMinimalDto)
+        final List<FactMinimalDto> baselineFutureValues = baselineList.stream()
+                .map(factDtoMapper::toMinimalDto)
                 .filter(Objects::nonNull)
                 .filter(dto -> dto.value() != null) // garde seulement les valeurs non-nulles
                 .toList();
@@ -273,7 +273,7 @@ public class ChangeRequestDtoMapper {
         if (m.getStatus() == ChangeRequestStatus.PENDING) {
             // On manipule une map paId -> value (ordre conservé) pour appliquer les items.
             final Map<Long, String> acc = new LinkedHashMap<>();
-            for (PersonAttribute pa : baselineList) {
+            for (Fact pa : baselineList) {
                 final Long paId = pa.getId();
                 final String value = pa.getValue();
                 if (paId != null && value != null) {
@@ -289,13 +289,13 @@ public class ChangeRequestDtoMapper {
 
                 switch (it.getAction()) {
                     case DELETE -> {
-                        final PersonAttribute pa = it.getPersonAttribute();
+                        final Fact pa = it.getFact();
                         if (pa != null && pa.getId() != null) {
                             acc.remove(pa.getId());
                         }
                     }
                     case UPDATE -> {
-                        final PersonAttribute pa = it.getPersonAttribute();
+                        final Fact pa = it.getFact();
                         final String val = it.getProposedValue();
                         if (pa != null && pa.getId() != null && val != null) {
                             acc.put(pa.getId(), val);

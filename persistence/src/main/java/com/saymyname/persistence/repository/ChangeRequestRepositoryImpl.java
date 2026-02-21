@@ -93,12 +93,12 @@ public class ChangeRequestRepositoryImpl implements ChangeRequestRepositoryCusto
                 Join<Object, Object> r = root.join("requester");
                 Predicate onRequester = cb.like(cb.lower(r.get("display_name")), like, '\\');
 
-                // EXISTS item.proposedValue LIKE OR item.personAttribute.value LIKE
+                // EXISTS item.proposedValue LIKE OR item.fact.value LIKE
                 Subquery<Long> sq = idCq.subquery(Long.class);
                 Root<ChangeRequestItemEntity> i = sq.from(ChangeRequestItemEntity.class);
                 Predicate onProp = cb.like(cb.lower(i.get("proposedValue")), like, '\\');
                 Predicate onPaVal = cb.like(
-                        cb.lower(i.join("personAttribute", JoinType.LEFT).get("value")),
+                        cb.lower(i.join("fact", JoinType.LEFT).get("value")),
                         like, '\\');
                 sq.select(i.get("id"));
                 sq.where(
@@ -178,7 +178,7 @@ public class ChangeRequestRepositoryImpl implements ChangeRequestRepositoryCusto
                 Root<ChangeRequestItemEntity> i = sq.from(ChangeRequestItemEntity.class);
                 Predicate onProp = cb.like(cb.lower(i.get("proposedValue")), like, '\\');
                 Predicate onPaVal = cb.like(
-                        cb.lower(i.join("personAttribute", JoinType.LEFT).get("value")),
+                        cb.lower(i.join("fact", JoinType.LEFT).get("value")),
                         like, '\\');
                 sq.select(i.get("id"));
                 sq.where(
@@ -200,7 +200,7 @@ public class ChangeRequestRepositoryImpl implements ChangeRequestRepositoryCusto
         deepRoot.fetch("attribute", JoinType.INNER);
         deepRoot.fetch("resolvedBy", JoinType.LEFT);
         Fetch<ChangeRequestEntity, ChangeRequestItemEntity> itemsFetch = deepRoot.fetch("items", JoinType.LEFT);
-        itemsFetch.fetch("personAttribute", JoinType.LEFT);
+        itemsFetch.fetch("fact", JoinType.LEFT);
 
         deepCq.select(deepRoot).distinct(true)
                 .where(

@@ -7,7 +7,7 @@ import org.springframework.util.StringUtils;
 import com.saymyname.core.model.enums.ChangeAction;
 import com.saymyname.core.model.people.ChangeRequest;
 import com.saymyname.core.model.people.ChangeRequestItem;
-import com.saymyname.core.model.people.PersonAttribute;
+import com.saymyname.core.model.people.Fact;
 import com.saymyname.webapp.dto.changerequest.ChangeRequestItemDto;
 import com.saymyname.webapp.dto.changerequest.ChangeRequestItemSummaryDto;
 import com.saymyname.webapp.dto.changerequest.SubmitChangeRequestItemDto;
@@ -23,10 +23,10 @@ import com.saymyname.webapp.dto.changerequest.SubmitChangeRequestItemDto;
 @Component
 public class ChangeRequestItemDtoMapper {
 
-    private final PersonAttributeDtoMapper personAttributeDtoMapper;
+    private final FactDtoMapper factDtoMapper;
 
-    public ChangeRequestItemDtoMapper(PersonAttributeDtoMapper personAttributeDtoMapper) {
-        this.personAttributeDtoMapper = personAttributeDtoMapper;
+    public ChangeRequestItemDtoMapper(FactDtoMapper factDtoMapper) {
+        this.factDtoMapper = factDtoMapper;
     }
 
     /** DTO in -> Model (pour submit/update d’un item, sans parent ni person) */
@@ -36,17 +36,17 @@ public class ChangeRequestItemDtoMapper {
 
         ChangeAction action = in.action();
 
-        PersonAttribute paRef = null;
-        if ((action == ChangeAction.UPDATE || action == ChangeAction.DELETE) && in.personAttributeId() != null) {
-            paRef = new PersonAttribute.Builder().withId(in.personAttributeId()).build();
+        Fact paRef = null;
+        if ((action == ChangeAction.UPDATE || action == ChangeAction.DELETE) && in.factId() != null) {
+            paRef = new Fact.Builder().withId(in.factId()).build();
         }
-        // CREATE : pas de personAttribute ; l’Attribute est sur l’enveloppe
+        // CREATE : pas de fact ; l’Attribute est sur l’enveloppe
 
         String proposed = StringUtils.hasText(in.proposedValue()) ? in.proposedValue().trim() : null;
 
         return new ChangeRequestItem.Builder()
                 .withAction(action)
-                .withPersonAttribute(paRef)
+                .withFact(paRef)
                 .withProposedValue(proposed)
                 .build();
     }
@@ -66,19 +66,19 @@ public class ChangeRequestItemDtoMapper {
         String attributeName = null;
         if (parent != null && parent.getAttribute() != null) {
             attributeName = parent.getAttribute().getName();
-        } else if (m.getPersonAttribute() != null
-                && m.getPersonAttribute().getAttribute() != null) {
-            attributeName = m.getPersonAttribute().getAttribute().getName();
+        } else if (m.getFact() != null
+                && m.getFact().getAttribute() != null) {
+            attributeName = m.getFact().getAttribute().getName();
         }
 
-        Long personAttributeId = (m.getPersonAttribute() != null) ? m.getPersonAttribute().getId() : null;
+        Long factId = (m.getFact() != null) ? m.getFact().getId() : null;
 
         return new ChangeRequestItemDto(
                 m.getId(),
                 changeRequestId,
                 personId,
                 attributeName, // <- seulement le nom, pas d’ID d’attribut
-                personAttributeId,
+                factId,
                 m.getAction(),
                 m.getProposedValue());
     }
@@ -90,7 +90,7 @@ public class ChangeRequestItemDtoMapper {
 
         return new ChangeRequestItemSummaryDto(
                 it.getId(),
-                personAttributeDtoMapper.toMinimalDto(it.getPersonAttribute()),
+                factDtoMapper.toMinimalDto(it.getFact()),
                 it.getAction(),
                 it.getProposedValue(),
                 it.getResolutionStatus());

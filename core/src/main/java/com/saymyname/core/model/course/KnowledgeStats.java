@@ -6,10 +6,11 @@ import java.util.Objects;
 public class KnowledgeStats {
 
     private Long id;
+
+    // hot path friendly
     private Long userId;
-    private Long gameModeId;
+    private Long factId;
     private Long knowledgeId;
-    private Long personId;
 
     private double attemptsRecent;
     private double correctRecent;
@@ -32,9 +33,8 @@ public class KnowledgeStats {
     private KnowledgeStats(Builder b) {
         this.id = b.id;
         this.userId = b.userId;
-        this.gameModeId = b.gameModeId;
+        this.factId = b.factId;
         this.knowledgeId = b.knowledgeId;
-        this.personId = b.personId;
         this.attemptsRecent = b.attemptsRecent;
         this.correctRecent = b.correctRecent;
         this.helpRecent = b.helpRecent;
@@ -64,12 +64,12 @@ public class KnowledgeStats {
         this.userId = userId;
     }
 
-    public Long getGameModeId() {
-        return gameModeId;
+    public Long getFactId() {
+        return factId;
     }
 
-    public void setGameModeId(Long gameModeId) {
-        this.gameModeId = gameModeId;
+    public void setFactId(Long factId) {
+        this.factId = factId;
     }
 
     public Long getKnowledgeId() {
@@ -78,14 +78,6 @@ public class KnowledgeStats {
 
     public void setKnowledgeId(Long knowledgeId) {
         this.knowledgeId = knowledgeId;
-    }
-
-    public Long getPersonId() {
-        return personId;
-    }
-
-    public void setPersonId(Long personId) {
-        this.personId = personId;
     }
 
     public double getAttemptsRecent() {
@@ -179,18 +171,21 @@ public class KnowledgeStats {
     public static class Builder {
         private Long id;
         private Long userId;
-        private Long gameModeId;
+        private Long factId;
         private Long knowledgeId;
-        private Long personId;
+
         private double attemptsRecent;
         private double correctRecent;
         private double helpRecent;
         private double avgRtRecent;
+
         private LocalDateTime lastAnswerAt;
         private Boolean lastCorrect;
         private Boolean lastHelpUsed;
         private int lastResponseTimeMs;
+
         private int errorStreak;
+
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
 
@@ -204,18 +199,13 @@ public class KnowledgeStats {
             return this;
         }
 
-        public Builder withGameModeId(Long gameModeId) {
-            this.gameModeId = gameModeId;
+        public Builder withFactId(Long factId) {
+            this.factId = factId;
             return this;
         }
 
         public Builder withKnowledgeId(Long knowledgeId) {
             this.knowledgeId = knowledgeId;
-            return this;
-        }
-
-        public Builder withPersonId(Long personId) {
-            this.personId = personId;
             return this;
         }
 
@@ -286,30 +276,12 @@ public class KnowledgeStats {
         if (!(o instanceof KnowledgeStats))
             return false;
         KnowledgeStats that = (KnowledgeStats) o;
-        return Double.compare(that.attemptsRecent, attemptsRecent) == 0
-                && Double.compare(that.correctRecent, correctRecent) == 0
-                && Double.compare(that.helpRecent, helpRecent) == 0
-                && Double.compare(that.avgRtRecent, avgRtRecent) == 0
-                && lastResponseTimeMs == that.lastResponseTimeMs
-                && errorStreak == that.errorStreak
-                && Objects.equals(id, that.id)
-                && Objects.equals(userId, that.userId)
-                && Objects.equals(gameModeId, that.gameModeId)
-                && Objects.equals(knowledgeId, that.knowledgeId)
-                && Objects.equals(personId, that.personId)
-                && Objects.equals(lastAnswerAt, that.lastAnswerAt)
-                && Objects.equals(lastCorrect, that.lastCorrect)
-                && Objects.equals(lastHelpUsed, that.lastHelpUsed)
-                && Objects.equals(createdAt, that.createdAt)
-                && Objects.equals(updatedAt, that.updatedAt);
+        return id != null && Objects.equals(id, that.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, userId, gameModeId, knowledgeId, personId,
-                attemptsRecent, correctRecent, helpRecent, avgRtRecent,
-                lastAnswerAt, lastCorrect, lastHelpUsed, lastResponseTimeMs,
-                errorStreak, createdAt, updatedAt);
+        return id != null ? Objects.hash(id) : 0;
     }
 
     @Override
@@ -317,9 +289,8 @@ public class KnowledgeStats {
         return "KnowledgeStats{" +
                 "id=" + id +
                 ", userId=" + userId +
-                ", gameModeId=" + gameModeId +
+                ", factId=" + factId +
                 ", knowledgeId=" + knowledgeId +
-                ", personId=" + personId +
                 ", attemptsRecent=" + attemptsRecent +
                 ", correctRecent=" + correctRecent +
                 ", helpRecent=" + helpRecent +

@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 import com.saymyname.core.model.enums.PersonLinkStatus;
 import com.saymyname.core.model.organization.UserOrganization;
 import com.saymyname.persistence.entity.UserEntity;
-import com.saymyname.persistence.entity.organization.OrganizationEntity;
+import com.saymyname.persistence.entity.organization.TenantOrgEntity;
 import com.saymyname.persistence.entity.organization.PersonEntity;
 import com.saymyname.persistence.entity.organization.UserOrganizationEntity;
 import com.saymyname.persistence.entity.organization.UserOrganizationId;
@@ -14,9 +14,9 @@ import com.saymyname.persistence.entity.organization.UserOrganizationId;
 @Component
 public class UserOrganizationEntityMapper {
 
-    private final OrganizationEntityMapper organizationMapper;
+    private final TenantOrgEntityMapper organizationMapper;
 
-    public UserOrganizationEntityMapper(OrganizationEntityMapper organizationMapper) {
+    public UserOrganizationEntityMapper(TenantOrgEntityMapper organizationMapper) {
         this.organizationMapper = organizationMapper;
     }
 
@@ -162,7 +162,7 @@ public class UserOrganizationEntityMapper {
         }
     }
 
-    public void bindRefs(UserOrganizationEntity entity, UserEntity userRef, OrganizationEntity orgRef) {
+    public void bindRefs(UserOrganizationEntity entity, UserEntity userRef, TenantOrgEntity orgRef) {
         if (entity == null)
             return;
         if (userRef != null)

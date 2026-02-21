@@ -3,7 +3,7 @@ package com.saymyname.webapp.dto.profile;
 import java.util.List;
 
 /** Requête bulk en 3 listes: create / update / delete */
-public record BulkPersonAttributeRequest(
+public record BulkFactRequest(
         List<CreateItem> create,
         List<UpdateItem> update,
         List<DeleteItem> delete) {

@@ -1,13 +1,9 @@
 package com.saymyname.persistence.mapper.course;
 
-import org.springframework.stereotype.Component;
-
 import com.saymyname.core.model.course.KnowledgeStats;
 import com.saymyname.persistence.entity.UserEntity;
-import com.saymyname.persistence.entity.organization.GameModeEntity;
-import com.saymyname.persistence.entity.organization.PersonEntity;
-import com.saymyname.persistence.entity.organization.course.KnowledgeEntity;
 import com.saymyname.persistence.entity.organization.course.KnowledgeStatsEntity;
+import org.springframework.stereotype.Component;
 
 @Component
 public class KnowledgeStatsEntityMapper {
@@ -16,69 +12,59 @@ public class KnowledgeStatsEntityMapper {
         if (model == null)
             return null;
 
-        KnowledgeStatsEntity entity = new KnowledgeStatsEntity();
-        entity.setId(model.getId());
+        KnowledgeStatsEntity e = new KnowledgeStatsEntity();
+        e.setId(model.getId());
 
         if (model.getUserId() != null) {
             UserEntity userRef = new UserEntity();
             userRef.setId(model.getUserId());
-            entity.setUser(userRef);
+            e.setUser(userRef);
         }
 
-        if (model.getGameModeId() != null) {
-            GameModeEntity modeRef = new GameModeEntity();
-            modeRef.setId(model.getGameModeId());
-            entity.setGameMode(modeRef);
-        }
+        // Source of truth: ids
+        e.setFactId(model.getFactId());
+        e.setKnowledgeId(model.getKnowledgeId());
 
-        if (model.getKnowledgeId() != null) {
-            KnowledgeEntity knowledgeRef = new KnowledgeEntity();
-            knowledgeRef.setId(model.getKnowledgeId());
-            entity.setKnowledge(knowledgeRef);
-        }
+        e.setAttemptsRecent(model.getAttemptsRecent());
+        e.setCorrectRecent(model.getCorrectRecent());
+        e.setHelpRecent(model.getHelpRecent());
+        e.setAvgRtRecent(model.getAvgRtRecent());
 
-        if (model.getPersonId() != null) {
-            PersonEntity personRef = new PersonEntity();
-            personRef.setId(model.getPersonId());
-            entity.setPerson(personRef);
-        }
+        e.setLastAnswerAt(model.getLastAnswerAt());
+        e.setLastCorrect(model.getLastCorrect());
+        e.setLastHelpUsed(model.getLastHelpUsed());
+        e.setLastResponseTimeMs(model.getLastResponseTimeMs());
 
-        entity.setAttemptsRecent(model.getAttemptsRecent());
-        entity.setCorrectRecent(model.getCorrectRecent());
-        entity.setHelpRecent(model.getHelpRecent());
-        entity.setAvgRtRecent(model.getAvgRtRecent());
-        entity.setLastAnswerAt(model.getLastAnswerAt());
-        entity.setLastCorrect(model.getLastCorrect());
-        entity.setLastHelpUsed(model.getLastHelpUsed());
-        entity.setLastResponseTimeMs(model.getLastResponseTimeMs());
-        entity.setErrorStreak(model.getErrorStreak());
-        entity.setCreatedAt(model.getCreatedAt());
-        entity.setUpdatedAt(model.getUpdatedAt());
+        e.setErrorStreak(model.getErrorStreak());
 
-        return entity;
+        // createdAt/updatedAt gérés par MySQL (DEFAULT / ON UPDATE)
+        return e;
     }
 
-    public KnowledgeStats toModel(KnowledgeStatsEntity entity) {
-        if (entity == null)
+    public KnowledgeStats toModel(KnowledgeStatsEntity e) {
+        if (e == null)
             return null;
 
         return new KnowledgeStats.Builder()
-                .withId(entity.getId())
-                .withUserId(entity.getUser() != null ? entity.getUser().getId() : null)
-                .withGameModeId(entity.getGameMode() != null ? entity.getGameMode().getId() : null)
-                .withKnowledgeId(entity.getKnowledge() != null ? entity.getKnowledge().getId() : null)
-                .withPersonId(entity.getPerson() != null ? entity.getPerson().getId() : null)
-                .withAttemptsRecent(entity.getAttemptsRecent())
-                .withCorrectRecent(entity.getCorrectRecent())
-                .withHelpRecent(entity.getHelpRecent())
-                .withAvgRtRecent(entity.getAvgRtRecent())
-                .withLastAnswerAt(entity.getLastAnswerAt())
-                .withLastCorrect(entity.getLastCorrect())
-                .withLastHelpUsed(entity.getLastHelpUsed())
-                .withLastResponseTimeMs(entity.getLastResponseTimeMs())
-                .withErrorStreak(entity.getErrorStreak())
-                .withCreatedAt(entity.getCreatedAt())
-                .withUpdatedAt(entity.getUpdatedAt())
+                .withId(e.getId())
+                .withUserId(e.getUser() != null ? e.getUser().getId() : null)
+                .withFactId(e.getFactId())
+                .withKnowledgeId(e.getKnowledgeId())
+
+                .withAttemptsRecent(e.getAttemptsRecent())
+                .withCorrectRecent(e.getCorrectRecent())
+                .withHelpRecent(e.getHelpRecent())
+                .withAvgRtRecent(e.getAvgRtRecent())
+
+                .withLastAnswerAt(e.getLastAnswerAt())
+                .withLastCorrect(e.getLastCorrect())
+                .withLastHelpUsed(e.getLastHelpUsed())
+                .withLastResponseTimeMs(e.getLastResponseTimeMs())
+
+                .withErrorStreak(e.getErrorStreak())
+
+                .withCreatedAt(e.getCreatedAt())
+                .withUpdatedAt(e.getUpdatedAt())
                 .build();
     }
 }

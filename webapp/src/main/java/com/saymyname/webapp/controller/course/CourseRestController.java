@@ -23,7 +23,7 @@ import com.saymyname.service.UserService;
 import com.saymyname.service.course.CourseQuestionAttemptService;
 import com.saymyname.service.course.CourseService;
 import com.saymyname.service.course.KnowledgeService;
-import com.saymyname.webapp.dto.PersonAttributeLiteDto;
+import com.saymyname.webapp.dto.FactLiteDto;
 import com.saymyname.webapp.dto.QuizEntryDto;
 import com.saymyname.webapp.dto.course.CourseDto;
 import com.saymyname.webapp.dto.course.CourseStatsDto;
@@ -31,7 +31,7 @@ import com.saymyname.webapp.dto.course.CreateCourseDto;
 import com.saymyname.webapp.dto.quiz.QuizAnswerRequestDto;
 import com.saymyname.webapp.dto.quiz.QuizAnswerResultDto;
 import com.saymyname.webapp.dto.quiz.QuizQuestionDto;
-import com.saymyname.webapp.mapper.PersonAttributeDtoMapper;
+import com.saymyname.webapp.mapper.FactDtoMapper;
 import com.saymyname.webapp.mapper.QuizEntryDtoMapper;
 import com.saymyname.webapp.mapper.course.CourseDtoMapper;
 import com.saymyname.webapp.mapper.course.CourseStatsDtoMapper;
@@ -52,7 +52,7 @@ public class CourseRestController {
         private final KnowledgeService knowledgeService;
         private final CourseQuestionAttemptService courseQuestionAttemptService;
 
-        private final PersonAttributeDtoMapper personAttributeDtoMapper;
+        private final FactDtoMapper factDtoMapper;
         private final QuizEntryDtoMapper quizEntryDtoMapper;
         private final InitialCrafter initialCrafter;
 
@@ -67,7 +67,7 @@ public class CourseRestController {
                         CourseStatsDtoMapper courseStatsDtoMapper,
                         KnowledgeService knowledgeService,
                         CourseQuestionAttemptService courseQuestionAttemptService,
-                        PersonAttributeDtoMapper personAttributeDtoMapper,
+                        FactDtoMapper factDtoMapper,
                         QuizEntryDtoMapper quizEntryDtoMapper,
                         InitialCrafter initialCrafter,
                         QuizQuestionDtoMapper quizQuestionDtoMapper,
@@ -80,7 +80,7 @@ public class CourseRestController {
                 this.courseStatsDtoMapper = courseStatsDtoMapper;
                 this.knowledgeService = knowledgeService;
                 this.courseQuestionAttemptService = courseQuestionAttemptService;
-                this.personAttributeDtoMapper = personAttributeDtoMapper;
+                this.factDtoMapper = factDtoMapper;
                 this.quizEntryDtoMapper = quizEntryDtoMapper;
                 this.initialCrafter = initialCrafter;
                 this.quizQuestionDtoMapper = quizQuestionDtoMapper;
@@ -165,7 +165,7 @@ public class CourseRestController {
         }
 
         @PostMapping("/{courseId}/questions/{questionId}/help")
-        public ResponseEntity<List<PersonAttributeLiteDto>> helpAndGetAttributes(
+        public ResponseEntity<List<FactLiteDto>> helpAndGetAttributes(
                         @PathVariable("courseId") Long courseId,
                         @PathVariable("questionId") Long questionId,
                         Principal principal) {
@@ -174,7 +174,7 @@ public class CourseRestController {
 
                 var list = courseQuestionAttemptService
                                 .markHelpAndGetAttributes(courseId, questionId).stream()
-                                .map(personAttributeDtoMapper::toLiteDto)
+                                .map(factDtoMapper::toLiteDto)
                                 .toList();
                 return ResponseEntity.ok(list);
         }

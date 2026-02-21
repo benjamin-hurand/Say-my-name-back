@@ -1,6 +1,5 @@
 package com.saymyname.persistence.entity.organization.people;
 
-
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -28,14 +27,14 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @SuperBuilder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 @ToString(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "person_emails", uniqueConstraints = {
-        @UniqueConstraint(name = "uq_pe_person_email", columnNames = {"person_id", "email"})
+        @UniqueConstraint(name = "uq_pe_person_email", columnNames = { "person_id", "email" })
 }, indexes = {
         @Index(name = "idx_pe_tenant_person", columnList = "tenant_id,person_id")
 })
@@ -80,8 +79,7 @@ public class PersonEmailEntity extends BaseTenantScoped {
     @Column(name = "created_at", nullable = false, columnDefinition = "datetime default current_timestamp")
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at", nullable = false,
-            columnDefinition = "datetime default current_timestamp on update current_timestamp")
+    @Column(name = "updated_at", nullable = false, columnDefinition = "datetime default current_timestamp on update current_timestamp")
     private LocalDateTime updatedAt;
 
     // Backward-compatible relation-style accessors for legacy DAO/repository code.
@@ -92,7 +90,7 @@ public class PersonEmailEntity extends BaseTenantScoped {
         }
         PersonEntity p = PersonEntity.builder().build();
         p.setId(personId);
-        p.setOrganizationId(getOrganizationId());
+        p.setTenantId(getTenantId());
         return p;
     }
 
@@ -102,8 +100,8 @@ public class PersonEmailEntity extends BaseTenantScoped {
             return;
         }
         this.personId = person.getId();
-        if (person.getOrganizationId() != null) {
-            setOrganizationId(person.getOrganizationId());
+        if (person.getTenantId() != null) {
+            setTenantId(person.getTenantId());
         }
     }
 }

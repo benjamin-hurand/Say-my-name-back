@@ -3,32 +3,26 @@ package com.saymyname.core.model.workspace;
 import java.time.Instant;
 import java.util.Objects;
 
-import com.saymyname.core.model.enums.workspace.WorkspaceType;
-
 /**
- * Modèle "plat" côté core.
- * - equals/hashCode basés uniquement sur id.
+ * Modèle plat côté core.
+ * - Identité = id.
+ * - Appartenance multi-tenant = tenantId.
  */
 public class Workspace {
 
     private Long id;
-    private WorkspaceType type;
-    private Long organizationId; // nullable si PERSONAL
-    private Long ownerUserId; // nullable si ORG
-    private String name; // nullable
+    private Long tenantId;
+    private String name;
     private boolean active;
-    private Instant createdAt; // mapped from timestamp/datetime
-    private Instant updatedAt; // nullable
+    private Instant createdAt;
+    private Instant updatedAt;
 
-    // Default constructor
     public Workspace() {
     }
 
     private Workspace(Builder builder) {
         this.id = builder.id;
-        this.type = builder.type;
-        this.organizationId = builder.organizationId;
-        this.ownerUserId = builder.ownerUserId;
+        this.tenantId = builder.tenantId;
         this.name = builder.name;
         this.active = builder.active;
         this.createdAt = builder.createdAt;
@@ -40,16 +34,8 @@ public class Workspace {
         return id;
     }
 
-    public WorkspaceType getType() {
-        return type;
-    }
-
-    public Long getOrganizationId() {
-        return organizationId;
-    }
-
-    public Long getOwnerUserId() {
-        return ownerUserId;
+    public Long getTenantId() {
+        return tenantId;
     }
 
     public String getName() {
@@ -73,16 +59,8 @@ public class Workspace {
         this.id = id;
     }
 
-    public void setType(WorkspaceType type) {
-        this.type = type;
-    }
-
-    public void setOrganizationId(Long organizationId) {
-        this.organizationId = organizationId;
-    }
-
-    public void setOwnerUserId(Long ownerUserId) {
-        this.ownerUserId = ownerUserId;
+    public void setTenantId(Long tenantId) {
+        this.tenantId = tenantId;
     }
 
     public void setName(String name) {
@@ -104,9 +82,7 @@ public class Workspace {
     // --- Builder
     public static class Builder {
         private Long id;
-        private WorkspaceType type;
-        private Long organizationId;
-        private Long ownerUserId;
+        private Long tenantId;
         private String name;
         private boolean active = true;
         private Instant createdAt;
@@ -117,18 +93,8 @@ public class Workspace {
             return this;
         }
 
-        public Builder withType(WorkspaceType type) {
-            this.type = type;
-            return this;
-        }
-
-        public Builder withOrganizationId(Long organizationId) {
-            this.organizationId = organizationId;
-            return this;
-        }
-
-        public Builder withOwnerUserId(Long ownerUserId) {
-            this.ownerUserId = ownerUserId;
+        public Builder withTenantId(Long tenantId) {
+            this.tenantId = tenantId;
             return this;
         }
 
@@ -157,7 +123,7 @@ public class Workspace {
         }
     }
 
-    // --- equals/hashCode sur id uniquement
+    // --- equals/hashCode sur id
     @Override
     public boolean equals(Object o) {
         if (this == o)
@@ -177,9 +143,7 @@ public class Workspace {
     public String toString() {
         return "Workspace{" +
                 "id=" + id +
-                ", type=" + type +
-                ", organizationId=" + organizationId +
-                ", ownerUserId=" + ownerUserId +
+                ", tenantId=" + tenantId +
                 ", name='" + name + '\'' +
                 ", active=" + active +
                 '}';

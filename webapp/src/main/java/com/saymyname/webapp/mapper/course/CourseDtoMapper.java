@@ -5,8 +5,8 @@ import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.course.Course;
-import com.saymyname.core.model.enums.CourseStatus;
 import com.saymyname.core.model.enums.PopulationScope;
+import com.saymyname.core.model.enums.course.CourseStatus;
 import com.saymyname.core.model.quiz.options.GameMode;
 import com.saymyname.webapp.dto.course.CourseDto;
 import com.saymyname.webapp.dto.course.CreateCourseDto;

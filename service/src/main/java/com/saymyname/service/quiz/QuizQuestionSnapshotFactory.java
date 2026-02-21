@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.enums.quiz.QuizFormat;
 import com.saymyname.core.model.enums.quiz.snapshot.QuizTruthType;
-import com.saymyname.core.model.people.PersonAttribute;
+import com.saymyname.core.model.people.Fact;
 import com.saymyname.core.model.quiz.QuizChoice;
 import com.saymyname.core.model.quiz.QuizQuestion;
 import com.saymyname.core.model.quiz.QuizQuestionPayload;
@@ -23,7 +23,7 @@ import com.saymyname.core.model.quiz.snapshot.QuizQuestionTruth;
 import com.saymyname.core.model.quiz.snapshot.QuizTruthRules;
 import com.saymyname.core.model.quiz.snapshot.TruthAttributeValue;
 import com.saymyname.core.model.quiz.snapshot.TruthPair;
-import com.saymyname.persistence.dao.PersonAttributeDao;
+import com.saymyname.persistence.dao.FactDao;
 
 /**
  * Construit un snapshot auto-suffisant (truth + payload) sans dépendance au
@@ -37,10 +37,10 @@ public class QuizQuestionSnapshotFactory {
     private static final String GENERATOR_VERSION = "quiz-pipeline-v1";
     private static final String NORMALIZER_VERSION = "normalizer-v1";
 
-    private final PersonAttributeDao personAttributeDao;
+    private final FactDao factDao;
 
-    public QuizQuestionSnapshotFactory(PersonAttributeDao personAttributeDao) {
-        this.personAttributeDao = Objects.requireNonNull(personAttributeDao, "personAttributeDao");
+    public QuizQuestionSnapshotFactory(FactDao factDao) {
+        this.factDao = Objects.requireNonNull(factDao, "factDao");
     }
 
     /**
@@ -55,18 +55,18 @@ public class QuizQuestionSnapshotFactory {
             throw new IllegalStateException("Cannot freeze truth: question.targetAttributeIds is empty");
         }
 
-        List<PersonAttribute> personAttrs = personAttributeDao.findAttributesByPersonId(q.getPersonId());
+        List<Fact> personAttrs = factDao.findAttributesByPersonId(q.getPersonId());
 
         List<TruthAttributeValue> out = new ArrayList<>();
         for (Long attrId : q.getTargetAttributeIds()) {
             if (attrId == null)
                 continue;
 
-            List<PersonAttribute> matches = personAttrs.stream()
+            List<Fact> matches = personAttrs.stream()
                     .filter(pa -> pa != null && pa.getAttribute() != null && attrId.equals(pa.getAttribute().getId()))
                     .toList();
 
-            for (PersonAttribute pa : matches) {
+            for (Fact pa : matches) {
                 if (pa.getValue() == null || pa.getValue().isBlank())
                     continue;
 

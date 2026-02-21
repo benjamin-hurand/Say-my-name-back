@@ -21,14 +21,11 @@ public class WorkspacePersonEntityMapper {
             entity.setId(new WorkspacePersonId(model.getWorkspaceId(), model.getPersonId()));
         }
 
-        entity.setOrganizationId(model.getOrganizationId());
+        // tenantId géré par TenantFillListener (BaseTenantScoped)
         entity.setCreatedAt(model.getCreatedAt());
+        entity.setAddedById(model.getAddedByUserId());
 
-        // Relations workspace/person/addedBy non hydratées ici (Phase 0).
-        // - workspace est porté par id.workspaceId
-        // - person est join composite via (person_id, organization_id)
-        // - addedBy est un user nullable
-        // => à gérer par service/repo si besoin
+        // Relations workspace/person/addedBy = READ-ONLY (non hydratées ici)
         return entity;
     }
 
@@ -44,9 +41,9 @@ public class WorkspacePersonEntityMapper {
         return new WorkspacePerson.Builder()
                 .withWorkspaceId(workspaceId)
                 .withPersonId(personId)
-                .withOrganizationId(entity.getOrganizationId())
+                .withTenantId(entity.getTenantId())
                 .withCreatedAt(entity.getCreatedAt())
-                .withAddedBy(entity.getAddedBy() != null ? entity.getAddedBy().getId() : null)
+                .withAddedByUserId(entity.getAddedById())
                 .build();
     }
 }

@@ -3,18 +3,18 @@ package com.saymyname.persistence.mapper.organization;
 
 import org.springframework.stereotype.Component;
 
-import com.saymyname.core.model.organization.Organization;
-import com.saymyname.persistence.entity.organization.OrganizationEntity;
+import com.saymyname.core.model.organization.TenantOrg;
+import com.saymyname.persistence.entity.organization.TenantOrgEntity;
 
 @Component
-public class OrganizationEntityMapper {
+public class TenantOrgEntityMapper {
 
-    public Organization toModel(OrganizationEntity e) {
+    public TenantOrg toModel(TenantOrgEntity e) {
         if (e == null)
             return null;
-        return Organization.builder()
+        return TenantOrg.builder()
                 .id(e.getId())
-                .key(e.getKey())
+                .key(e.getOrgKey())
                 .name(e.getName())
                 .active(e.isActive())
                 .createdAt(e.getCreatedAt())
@@ -22,12 +22,12 @@ public class OrganizationEntityMapper {
                 .build();
     }
 
-    public OrganizationEntity toEntity(Organization m) {
+    public TenantOrgEntity toEntity(TenantOrg m) {
         if (m == null)
             return null;
-        OrganizationEntity e = new OrganizationEntity();
+        TenantOrgEntity e = new TenantOrgEntity();
         e.setId(m.getId());
-        e.setKey(m.getKey());
+        e.setOrgKey(m.getKey());
         e.setName(m.getName());
         e.setActive(m.isActive());
         e.setCreatedAt(m.getCreatedAt());
@@ -35,11 +35,11 @@ public class OrganizationEntityMapper {
         return e;
     }
 
-    public void mergeIntoEntity(Organization m, OrganizationEntity e) {
+    public void mergeIntoEntity(TenantOrg m, TenantOrgEntity e) {
         if (m == null || e == null)
             return;
         if (m.getKey() != null)
-            e.setKey(m.getKey());
+            e.setOrgKey(m.getKey());
         if (m.getName() != null)
             e.setName(m.getName());
         e.setActive(m.isActive());

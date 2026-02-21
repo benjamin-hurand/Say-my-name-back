@@ -33,7 +33,7 @@ public class InvitationDao {
     @Transactional
     public Invitation save(Invitation model) {
         InvitationEntity e = mapper.toEntity(model);
-        e.setOrganizationId(OrgContext.get());
+        e.setTenantId(OrgContext.get());
         normalizeBeforePersist(e);
         InvitationEntity saved = repo.save(e);
         return mapper.toModel(saved);
@@ -69,7 +69,7 @@ public class InvitationDao {
     @Transactional
     public Invitation update(Invitation model) {
         InvitationEntity e = mapper.toEntity(model);
-        e.setOrganizationId(OrgContext.get());
+        e.setTenantId(OrgContext.get());
         normalizeBeforePersist(e);
         InvitationEntity saved = repo.save(e);
         return mapper.toModel(saved);

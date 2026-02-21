@@ -26,7 +26,7 @@ public interface ChangeRequestRepository
             join fetch cr.requester r
             join fetch cr.attribute a
        left join fetch cr.items i
-       left join fetch i.personAttribute pa
+       left join fetch i.fact pa
            where cr.id = :id
              and cr.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
       """)
@@ -71,7 +71,7 @@ public interface ChangeRequestRepository
             join fetch cr.attribute a
        left join fetch cr.resolvedBy rb
        left join fetch cr.items i
-       left join fetch i.personAttribute pa
+       left join fetch i.fact pa
            where r.id = :userId
              and cr.status in :statuses
              and cr.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
@@ -89,7 +89,7 @@ public interface ChangeRequestRepository
             join fetch cr.attribute a
        left join fetch cr.resolvedBy rb
        left join fetch cr.items i
-       left join fetch i.personAttribute pa
+       left join fetch i.fact pa
            where p.id = :personId
              and cr.status in :statuses
              and cr.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}

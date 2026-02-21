@@ -7,18 +7,18 @@ import com.saymyname.core.model.enums.ChangeAction;
 import com.saymyname.core.model.enums.ChangeRequestItemStatus;
 import com.saymyname.core.model.people.ChangeRequest;
 import com.saymyname.core.model.people.ChangeRequestItem;
-import com.saymyname.core.model.people.PersonAttribute;
+import com.saymyname.core.model.people.Fact;
 import com.saymyname.persistence.entity.organization.ChangeRequestEntity;
 import com.saymyname.persistence.entity.organization.ChangeRequestItemEntity;
-import com.saymyname.persistence.entity.organization.PersonAttributeEntity;
+import com.saymyname.persistence.entity.organization.FactEntity;
 
 @Component
 public class ChangeRequestItemEntityMapper {
 
-    private final PersonAttributeEntityMapper personAttributeEntityMapper;
+    private final FactEntityMapper factEntityMapper;
 
-    public ChangeRequestItemEntityMapper(PersonAttributeEntityMapper personAttributeEntityMapper) {
-        this.personAttributeEntityMapper = personAttributeEntityMapper;
+    public ChangeRequestItemEntityMapper(FactEntityMapper factEntityMapper) {
+        this.factEntityMapper = factEntityMapper;
     }
 
     // ===========================
@@ -44,17 +44,17 @@ public class ChangeRequestItemEntityMapper {
 
         // Cible selon l'action
         if (action == ChangeAction.CREATE) {
-            e.setPersonAttribute(null);
+            e.setFact(null);
         } else if (action == ChangeAction.UPDATE || action == ChangeAction.DELETE) {
-            if (m.getPersonAttribute() != null && m.getPersonAttribute().getId() != null) {
-                PersonAttributeEntity paRef = new PersonAttributeEntity();
-                paRef.setId(m.getPersonAttribute().getId());
-                e.setPersonAttribute(paRef);
+            if (m.getFact() != null && m.getFact().getId() != null) {
+                FactEntity paRef = new FactEntity();
+                paRef.setId(m.getFact().getId());
+                e.setFact(paRef);
             } else {
-                e.setPersonAttribute(null);
+                e.setFact(null);
             }
         } else {
-            e.setPersonAttribute(null);
+            e.setFact(null);
         }
 
         // Valeur proposée (déjà normalisée si besoin côté service)
@@ -84,15 +84,15 @@ public class ChangeRequestItemEntityMapper {
         }
 
         // Cible
-        PersonAttribute pa = (e.getPersonAttribute() != null)
-                ? personAttributeEntityMapper.toModel(e.getPersonAttribute())
+        Fact pa = (e.getFact() != null)
+                ? factEntityMapper.toModel(e.getFact())
                 : null;
 
         return new ChangeRequestItem.Builder()
                 .withId(e.getId())
                 .withChangeRequest(crRef)
                 .withAction(e.getAction())
-                .withPersonAttribute(pa)
+                .withFact(pa)
                 .withProposedValue(e.getProposedValue())
                 .withResolutionStatus(
                         e.getResolutionStatus() != null ? e.getResolutionStatus() : ChangeRequestItemStatus.PENDING)

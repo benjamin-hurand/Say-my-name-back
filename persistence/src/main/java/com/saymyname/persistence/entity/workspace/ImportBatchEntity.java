@@ -1,6 +1,5 @@
 package com.saymyname.persistence.entity.workspace;
 
-
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -27,7 +26,7 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
@@ -57,8 +56,7 @@ public class ImportBatchEntity {
     private UserEntity createdBy;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 16,
-            columnDefinition = "enum('PENDING','MAPPING','REVIEW','APPLIED','FAILED') default 'PENDING'")
+    @Column(name = "status", nullable = false, length = 16, columnDefinition = "enum('PENDING','MAPPING','REVIEW','APPLIED','FAILED') default 'PENDING'")
     private ImportBatchStatus status;
 
     @Column(name = "created_at", nullable = false, columnDefinition = "datetime default current_timestamp")

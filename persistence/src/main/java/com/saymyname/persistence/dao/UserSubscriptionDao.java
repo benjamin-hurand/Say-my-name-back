@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.saymyname.core.model.people.UserSubscription;
+import com.saymyname.core.multitenancy.TenantContext;
 import com.saymyname.persistence.entity.organization.subscription.UserSubscriptionEntity;
 import com.saymyname.persistence.entity.organization.subscription.UserSubscriptionId;
 import com.saymyname.persistence.mapper.UserSubscriptionEntityMapper;
@@ -28,64 +29,70 @@ public class UserSubscriptionDao {
         this.mapper = mapper;
     }
 
-    public boolean exists(Long userId, Long personId) {
-        return repository.existsById(new UserSubscriptionId(userId, personId));
+    private static Long tenantIdOrThrow() {
+        Long t = TenantContext.get();
+        if (t == null)
+            throw new IllegalStateException("TenantContext is null");
+        return t;
     }
 
-    /**
-     * Renvoie true si une ligne a été insérée, false si déjà existant (idempotent).
-     */
+    public boolean exists(Long userId, Long personId) {
+        Long tenantId = tenantIdOrThrow();
+        return repository.existsById(new UserSubscriptionId(tenantId, userId, personId));
+    }
+
     public boolean subscribe(UserSubscription subscription) {
-        var id = new UserSubscriptionId(subscription.getUserId(), subscription.getPersonId());
+        Long tenantId = tenantIdOrThrow();
+        var id = new UserSubscriptionId(tenantId, subscription.getUserId(), subscription.getPersonId());
         try {
-            repository.save(new UserSubscriptionEntity(id, null)); // createdAt par DB
+            repository.save(new UserSubscriptionEntity(id, null)); // created_at géré DB
             return true;
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
-            // PK (userId, personId) déjà présente -> idempotent
             return false;
         }
     }
 
     public int unsubscribe(Long userId, Long personId) {
-        return (int) repository.deleteByIdUserIdAndIdPersonId(userId, personId);
+        Long tenantId = tenantIdOrThrow();
+        return (int) repository.deleteByIdTenantIdAndIdUserIdAndIdPersonId(tenantId, userId, personId);
     }
 
     public long countByUser(Long userId) {
-        return repository.countByIdUserId(userId);
+        Long tenantId = tenantIdOrThrow();
+        return repository.countByIdTenantIdAndIdUserId(tenantId, userId);
     }
 
     public Page<UserSubscription> findByUser(Long userId, Pageable pageable) {
-        return repository.findByIdUserId(userId, pageable).map(mapper::toModel);
+        Long tenantId = tenantIdOrThrow();
+        return repository.findByIdTenantIdAndIdUserId(tenantId, userId, pageable).map(mapper::toModel);
     }
 
     public Page<Long> findPersonIdsByUser(Long userId, Pageable pageable) {
-        return repository.findPersonIdsPageByUserId(userId, pageable);
+        Long tenantId = tenantIdOrThrow();
+        return repository.findPersonIdsPageByTenantIdAndUserId(tenantId, userId, pageable);
     }
 
-    /**
-     * Bulk idempotent : renvoie le nombre réellement inséré.
-     * - dédoublonne les entrées
-     * - filtre les existants en 1 requête
-     * - saveAll des manquants en chunks
-     */
     @Transactional
     public int bulkSubscribe(Long userId, List<Long> personIds) {
         if (personIds == null || personIds.isEmpty())
             return 0;
 
+        Long tenantId = tenantIdOrThrow();
+
         List<Long> cleaned = personIds.stream().filter(Objects::nonNull).distinct().toList();
         if (cleaned.isEmpty())
             return 0;
 
-        // existants pour cet user
-        List<UserSubscriptionEntity> existing = repository.findByIdUserIdAndIdPersonIdIn(userId, cleaned);
+        List<UserSubscriptionEntity> existing = repository.findByIdTenantIdAndIdUserIdAndIdPersonIdIn(tenantId, userId,
+                cleaned);
+
         Set<Long> existingPersonIds = existing.stream()
                 .map(e -> e.getId().getPersonId())
                 .collect(Collectors.toSet());
 
         List<UserSubscriptionEntity> toInsert = cleaned.stream()
                 .filter(pid -> !existingPersonIds.contains(pid))
-                .map(pid -> new UserSubscriptionEntity(new UserSubscriptionId(userId, pid), null))
+                .map(pid -> new UserSubscriptionEntity(new UserSubscriptionId(tenantId, userId, pid), null))
                 .toList();
 
         if (toInsert.isEmpty())
@@ -100,7 +107,6 @@ public class UserSubscriptionDao {
                 repository.saveAll(chunk);
                 inserted += chunk.size();
             } catch (org.springframework.dao.DataIntegrityViolationException e) {
-                // course condition sur une minorité d’IDs
                 for (var e1 : chunk) {
                     try {
                         repository.save(e1);
@@ -113,14 +119,12 @@ public class UserSubscriptionDao {
         return inserted;
     }
 
-    /**
-     * --- NOUVEAU : bulkUnsubscribe idempotent, renvoie le nombre réellement
-     * supprimé.
-     */
     @Transactional
     public int bulkUnsubscribe(Long userId, List<Long> personIds) {
         if (personIds == null || personIds.isEmpty())
             return 0;
+
+        Long tenantId = tenantIdOrThrow();
 
         List<Long> cleaned = personIds.stream().filter(Objects::nonNull).distinct().toList();
         if (cleaned.isEmpty())
@@ -131,16 +135,19 @@ public class UserSubscriptionDao {
         for (int i = 0; i < cleaned.size(); i += chunkSize) {
             int end = Math.min(i + chunkSize, cleaned.size());
             var sub = cleaned.subList(i, end);
-            deleted += repository.deleteByUserIdAndPersonIdIn(userId, sub);
+            deleted += repository.deleteByTenantIdAndUserIdAndPersonIdIn(tenantId, userId, sub);
         }
         return deleted;
     }
 
+    // Ces deux méthodes doivent probablement devenir tenant-scoped aussi
     public long countFollowedEligibleAND(Long userId, Long gameModeId) {
-        return repository.countFollowedEligibleAND(userId, gameModeId);
+        Long tenantId = tenantIdOrThrow();
+        return repository.countFollowedEligibleAND(tenantId, userId, gameModeId);
     }
 
     public long countFollowedEligibleOR(Long userId, Long gameModeId) {
-        return repository.countFollowedEligibleOR(userId, gameModeId);
+        Long tenantId = tenantIdOrThrow();
+        return repository.countFollowedEligibleOR(tenantId, userId, gameModeId);
     }
 }

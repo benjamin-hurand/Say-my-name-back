@@ -1,31 +1,19 @@
 package com.saymyname.persistence.entity.organization.subscription;
 
+import java.time.Instant;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
-import lombok.Builder;
+import org.hibernate.annotations.CreationTimestamp;
+
 import com.saymyname.persistence.entity.UserEntity;
-import jakarta.persistence.EmbeddedId;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.ForeignKey;
-import jakarta.persistence.Index;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.MapsId;
-import jakarta.persistence.Table;
-import java.time.LocalDateTime;
-import org.hibernate.annotations.Filter;
+import com.saymyname.persistence.entity.organization.PersonEntity;
+import com.saymyname.persistence.multitenancy.BaseTenantScoped;
 
-@Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
+import jakarta.persistence.*;
+import lombok.*;
+
 @Getter
 @Setter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
@@ -36,18 +24,45 @@ import org.hibernate.annotations.Filter;
         @Index(name = "idx_us_tenant_user", columnList = "tenant_id,user_id"),
         @Index(name = "fk_usn_user", columnList = "user_id")
 })
-public class UserSubscriptionEntity {
+@IdClass(UserSubscriptionKey.class)
+public class UserSubscriptionEntity extends BaseTenantScoped {
 
     @EqualsAndHashCode.Include
     @ToString.Include
-    @EmbeddedId
-    private UserSubscriptionId id;
+    @Id
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @MapsId("userId")
-    @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_us_user"))
+    @EqualsAndHashCode.Include
+    @ToString.Include
+    @Id
+    @Column(name = "person_id", nullable = false)
+    private Long personId;
+
+    /**
+     * Pour que @IdClass marche avec BaseTenantScoped :
+     * on “remonte” tenantId comme propriété @Id via l’override du getter.
+     */
+    @EqualsAndHashCode.Include
+    @ToString.Include
+    @Id
+    @Override
+    public Long getTenantId() {
+        return super.getTenantId();
+    }
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", referencedColumnName = "id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "fk_usn_user"))
     private UserEntity user;
 
-    @jakarta.persistence.Column(name = "created_at", nullable = false, columnDefinition = "timestamp default current_timestamp")
-    private LocalDateTime createdAt;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumns({
+            @JoinColumn(name = "tenant_id", referencedColumnName = "tenant_id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "fk_usn_person")),
+            @JoinColumn(name = "person_id", referencedColumnName = "id", insertable = false, updatable = false)
+    })
+    private PersonEntity person;
+
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt;
 }

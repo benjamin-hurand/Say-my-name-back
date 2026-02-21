@@ -1,6 +1,5 @@
 package com.saymyname.persistence.entity.organization;
 
-
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -9,7 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.Builder;
-import com.saymyname.persistence.entity.organization.OrganizationEntity;
+import com.saymyname.persistence.entity.organization.TenantOrgEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -21,7 +20,7 @@ import jakarta.persistence.Table;
 
 @Getter
 @Setter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
@@ -37,9 +36,8 @@ public class OrgPolicyEntity {
     private Long tenantId;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tenant_id", insertable = false, updatable = false,
-            foreignKey = @ForeignKey(name = "fk_org_policies_tenant_org"))
-    private OrganizationEntity organization;
+    @JoinColumn(name = "tenant_id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "fk_org_policies_tenant_org"))
+    private TenantOrgEntity organization;
 
     @Column(name = "require_sso", nullable = false, columnDefinition = "tinyint(1) default 0")
     private boolean requireSso;

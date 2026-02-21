@@ -9,7 +9,7 @@ import com.saymyname.core.model.organization.OrgMemberRow;
 import com.saymyname.core.model.organization.UserOrganization;
 import com.saymyname.core.multitenancy.OrgContext;
 import com.saymyname.persistence.entity.UserEntity;
-import com.saymyname.persistence.entity.organization.OrganizationEntity;
+import com.saymyname.persistence.entity.organization.TenantOrgEntity;
 import com.saymyname.persistence.entity.organization.PersonEntity;
 import com.saymyname.persistence.entity.organization.UserOrganizationEntity;
 import com.saymyname.persistence.entity.organization.UserOrganizationId;
@@ -216,7 +216,7 @@ public class UserOrganizationDao {
             UserOrganizationEntity e = new UserOrganizationEntity();
 
             UserEntity userRef = em.getReference(UserEntity.class, userId);
-            OrganizationEntity orgRef = em.getReference(OrganizationEntity.class, orgId);
+            TenantOrgEntity orgRef = em.getReference(TenantOrgEntity.class, orgId);
 
             e.setUser(userRef);
             e.setOrganization(orgRef);
@@ -333,7 +333,7 @@ public class UserOrganizationDao {
             UserOrganizationEntity e = new UserOrganizationEntity();
 
             UserEntity userRef = em.getReference(UserEntity.class, userId);
-            OrganizationEntity orgRef = em.getReference(OrganizationEntity.class, orgId);
+            TenantOrgEntity orgRef = em.getReference(TenantOrgEntity.class, orgId);
 
             e.setUser(userRef);
             e.setOrganization(orgRef);

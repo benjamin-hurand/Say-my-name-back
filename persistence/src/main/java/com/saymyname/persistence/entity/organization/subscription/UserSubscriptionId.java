@@ -2,23 +2,9 @@ package com.saymyname.persistence.entity.organization.subscription;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
 import java.io.Serializable;
-import com.saymyname.core.multitenancy.TenantContext;
+import java.util.Objects;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-@EqualsAndHashCode
-@ToString
 @Embeddable
 public class UserSubscriptionId implements Serializable {
 
@@ -31,10 +17,61 @@ public class UserSubscriptionId implements Serializable {
     @Column(name = "person_id", nullable = false)
     private Long personId;
 
-    // Backward-compatible ctor for legacy call sites.
-    public UserSubscriptionId(Long userId, Long personId) {
-        this.tenantId = TenantContext.get();
+    public UserSubscriptionId() {
+    }
+
+    public UserSubscriptionId(Long tenantId, Long userId, Long personId) {
+        this.tenantId = tenantId;
         this.userId = userId;
         this.personId = personId;
+    }
+
+    public Long getTenantId() {
+        return tenantId;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public Long getPersonId() {
+        return personId;
+    }
+
+    public void setTenantId(Long tenantId) {
+        this.tenantId = tenantId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    public void setPersonId(Long personId) {
+        this.personId = personId;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (!(o instanceof UserSubscriptionId that))
+            return false;
+        return Objects.equals(tenantId, that.tenantId)
+                && Objects.equals(userId, that.userId)
+                && Objects.equals(personId, that.personId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(tenantId, userId, personId);
+    }
+
+    @Override
+    public String toString() {
+        return "UserSubscriptionId{" +
+                "tenantId=" + tenantId +
+                ", userId=" + userId +
+                ", personId=" + personId +
+                '}';
     }
 }

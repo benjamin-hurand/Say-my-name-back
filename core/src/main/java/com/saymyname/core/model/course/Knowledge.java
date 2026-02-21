@@ -2,29 +2,39 @@ package com.saymyname.core.model.course;
 
 import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.enums.KnowledgeStatus;
-import com.saymyname.core.model.people.Person;
-import com.saymyname.core.model.quiz.options.GameMode;
+import com.saymyname.core.model.people.Fact;
 
-import java.time.LocalDateTime;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 public class Knowledge {
+
     private Long id;
     private User user;
-    private GameMode gameMode;
-    private Person person;
+
+    /** FK fonctionnelle (hot path) */
+    private Long factId;
+
+    /** Optionnel : si tu veux l’embarquer parfois (sinon lazy via service/dao) */
+    private Fact fact;
+
     private KnowledgeStatus status;
     private LocalDateTime nextReviewDate;
     private LocalDateTime lastReviewDate;
+
     private int totalRepetitionCount;
     private int failureCount;
     private int successCount;
     private int srsStreak;
     private int globalStreak;
+
     private BigDecimal easeFactor;
     private double difficulty;
     private double stability;
+
+    private boolean pendingRevalidation;
+    private String revalidationReason;
 
     public Knowledge() {
     }
@@ -32,8 +42,8 @@ public class Knowledge {
     private Knowledge(Builder b) {
         this.id = b.id;
         this.user = b.user;
-        this.gameMode = b.gameMode;
-        this.person = b.person;
+        this.factId = b.factId;
+        this.fact = b.fact;
         this.status = b.status;
         this.nextReviewDate = b.nextReviewDate;
         this.lastReviewDate = b.lastReviewDate;
@@ -45,7 +55,11 @@ public class Knowledge {
         this.easeFactor = b.easeFactor;
         this.difficulty = b.difficulty;
         this.stability = b.stability;
+        this.pendingRevalidation = b.pendingRevalidation;
+        this.revalidationReason = b.revalidationReason;
     }
+
+    // ---- getters/setters
 
     public Long getId() {
         return id;
@@ -63,20 +77,20 @@ public class Knowledge {
         this.user = user;
     }
 
-    public GameMode getGameMode() {
-        return gameMode;
+    public Long getFactId() {
+        return factId;
     }
 
-    public void setGameMode(GameMode gameMode) {
-        this.gameMode = gameMode;
+    public void setFactId(Long factId) {
+        this.factId = factId;
     }
 
-    public Person getPerson() {
-        return person;
+    public Fact getFact() {
+        return fact;
     }
 
-    public void setPerson(Person person) {
-        this.person = person;
+    public void setFact(Fact fact) {
+        this.fact = fact;
     }
 
     public KnowledgeStatus getStatus() {
@@ -167,22 +181,46 @@ public class Knowledge {
         this.stability = stability;
     }
 
+    public boolean isPendingRevalidation() {
+        return pendingRevalidation;
+    }
+
+    public void setPendingRevalidation(boolean pendingRevalidation) {
+        this.pendingRevalidation = pendingRevalidation;
+    }
+
+    public String getRevalidationReason() {
+        return revalidationReason;
+    }
+
+    public void setRevalidationReason(String revalidationReason) {
+        this.revalidationReason = revalidationReason;
+    }
+
+    // ---- Builder
+
     public static class Builder {
         private Long id;
         private User user;
-        private GameMode gameMode;
-        private Person person;
+        private Long factId;
+        private Fact fact;
+
         private KnowledgeStatus status;
         private LocalDateTime nextReviewDate;
         private LocalDateTime lastReviewDate;
+
         private int totalRepetitionCount;
         private int failureCount;
         private int successCount;
         private int srsStreak;
         private int globalStreak;
+
         private BigDecimal easeFactor;
         private double difficulty;
         private double stability;
+
+        private boolean pendingRevalidation;
+        private String revalidationReason;
 
         public Builder withId(Long id) {
             this.id = id;
@@ -194,13 +232,13 @@ public class Knowledge {
             return this;
         }
 
-        public Builder withGameMode(GameMode gameMode) {
-            this.gameMode = gameMode;
+        public Builder withFactId(Long factId) {
+            this.factId = factId;
             return this;
         }
 
-        public Builder withPerson(Person person) {
-            this.person = person;
+        public Builder withFact(Fact fact) {
+            this.fact = fact;
             return this;
         }
 
@@ -259,6 +297,16 @@ public class Knowledge {
             return this;
         }
 
+        public Builder withPendingRevalidation(boolean pendingRevalidation) {
+            this.pendingRevalidation = pendingRevalidation;
+            return this;
+        }
+
+        public Builder withRevalidationReason(String revalidationReason) {
+            this.revalidationReason = revalidationReason;
+            return this;
+        }
+
         public Knowledge build() {
             return new Knowledge(this);
         }
@@ -271,38 +319,20 @@ public class Knowledge {
         if (!(o instanceof Knowledge))
             return false;
         Knowledge that = (Knowledge) o;
-        return id == that.id &&
-                totalRepetitionCount == that.totalRepetitionCount &&
-                failureCount == that.failureCount &&
-                successCount == that.successCount &&
-                srsStreak == that.srsStreak &&
-                globalStreak == that.globalStreak &&
-                Double.compare(that.stability, stability) == 0 &&
-                Objects.equals(user, that.user) &&
-                Objects.equals(gameMode, that.gameMode) &&
-                Objects.equals(person, that.person) &&
-                status == that.status &&
-                Objects.equals(nextReviewDate, that.nextReviewDate) &&
-                Objects.equals(lastReviewDate, that.lastReviewDate) &&
-                Objects.equals(difficulty, that.difficulty) &&
-                Objects.equals(easeFactor, that.easeFactor);
+        return id != null && Objects.equals(id, that.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, user, gameMode, person, status,
-                nextReviewDate, lastReviewDate,
-                totalRepetitionCount, failureCount, successCount,
-                srsStreak, globalStreak, easeFactor, difficulty, stability);
+        return (id != null) ? Objects.hash(id) : 0;
     }
 
     @Override
     public String toString() {
         return "Knowledge{" +
                 "id=" + id +
-                ", user=" + user +
-                ", gameMode=" + gameMode +
-                ", person=" + person +
+                ", user=" + (user != null ? user.getId() : null) +
+                ", factId=" + factId +
                 ", status=" + status +
                 ", nextReviewDate=" + nextReviewDate +
                 ", lastReviewDate=" + lastReviewDate +
@@ -310,10 +340,12 @@ public class Knowledge {
                 ", failureCount=" + failureCount +
                 ", successCount=" + successCount +
                 ", srsStreak=" + srsStreak +
-                ", globalStreak=" + srsStreak +
+                ", globalStreak=" + globalStreak +
                 ", easeFactor=" + easeFactor +
                 ", difficulty=" + difficulty +
                 ", stability=" + stability +
+                ", pendingRevalidation=" + pendingRevalidation +
+                ", revalidationReason=" + revalidationReason +
                 '}';
     }
 }

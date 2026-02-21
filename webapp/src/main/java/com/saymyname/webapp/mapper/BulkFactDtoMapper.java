@@ -1,4 +1,4 @@
-// src/main/java/com/saymyname/webapp/mapper/BulkPersonAttributeDtoMapper.java
+// src/main/java/com/saymyname/webapp/mapper/BulkFactDtoMapper.java
 package com.saymyname.webapp.mapper;
 
 import java.util.Collections;
@@ -6,38 +6,38 @@ import java.util.List;
 
 import org.springframework.stereotype.Component;
 
-import com.saymyname.core.model.people.PersonAttribute;
-import com.saymyname.webapp.dto.profile.BulkPersonAttributeRequest;
+import com.saymyname.core.model.people.Fact;
+import com.saymyname.webapp.dto.profile.BulkFactRequest;
 
 @Component
-public class BulkPersonAttributeDtoMapper {
+public class BulkFactDtoMapper {
 
-    public List<PersonAttribute> toCreateModels(List<BulkPersonAttributeRequest.CreateItem> src) {
+    public List<Fact> toCreateModels(List<BulkFactRequest.CreateItem> src) {
         if (src == null)
             return Collections.emptyList();
         return src.stream()
-                .map(c -> new PersonAttribute.Builder()
+                .map(c -> new Fact.Builder()
                         .withValue(c.value())
                         .build())
                 .toList();
     }
 
-    public List<PersonAttribute> toUpdateModels(List<BulkPersonAttributeRequest.UpdateItem> src) {
+    public List<Fact> toUpdateModels(List<BulkFactRequest.UpdateItem> src) {
         if (src == null)
             return Collections.emptyList();
         return src.stream()
-                .map(u -> new PersonAttribute.Builder()
+                .map(u -> new Fact.Builder()
                         .withId(u.id())
                         .withValue(u.value())
                         .build())
                 .toList();
     }
 
-    public List<PersonAttribute> toDeleteModels(List<BulkPersonAttributeRequest.DeleteItem> src) {
+    public List<Fact> toDeleteModels(List<BulkFactRequest.DeleteItem> src) {
         if (src == null)
             return Collections.emptyList();
         return src.stream()
-                .map(d -> new PersonAttribute.Builder()
+                .map(d -> new Fact.Builder()
                         .withId(d.id())
                         .build())
                 .toList();

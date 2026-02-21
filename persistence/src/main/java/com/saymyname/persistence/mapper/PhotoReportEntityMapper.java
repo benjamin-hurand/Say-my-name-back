@@ -24,11 +24,8 @@ public class PhotoReportEntityMapper {
         e.setReasonType(model.getReasonType());
         e.setReasonText(model.getReasonText());
 
-        // Person (NOT NULL en BDD)
         if (model.getPersonId() != null) {
-            PersonEntity personRef = new PersonEntity();
-            personRef.setId(model.getPersonId());
-            e.setPerson(personRef);
+            e.setPersonId(model.getPersonId());
         }
 
         // Reporter (NOT NULL en BDD)
@@ -59,8 +56,8 @@ public class PhotoReportEntityMapper {
                 .withReasonText(e.getReasonText())
                 .withCreatedAt(e.getCreatedAt());
 
-        if (e.getPerson() != null && e.getPerson().getId() != null) {
-            b.withPersonId(e.getPerson().getId());
+        if (e.getPersonId() != null) {
+            b.withPersonId(e.getPersonId());
         }
 
         if (e.getReportedBy() != null && e.getReportedBy().getId() != null) {
@@ -85,9 +82,7 @@ public class PhotoReportEntityMapper {
             target.setReasonText(src.getReasonText());
         }
         if (src.getPersonId() != null) {
-            PersonEntity p = new PersonEntity();
-            p.setId(src.getPersonId());
-            target.setPerson(p);
+            target.setPersonId(src.getPersonId());
         }
         if (src.getReportedById() != null) {
             UserEntity u = new UserEntity();

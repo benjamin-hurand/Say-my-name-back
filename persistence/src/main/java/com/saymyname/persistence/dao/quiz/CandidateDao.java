@@ -15,7 +15,7 @@ import com.saymyname.core.model.enums.PhotoStatus;
 import com.saymyname.core.model.quiz.candidate.CandidateQuery;
 import com.saymyname.core.model.quiz.candidate.EligibilityStats;
 import com.saymyname.core.model.quiz.candidate.PayloadItem;
-import com.saymyname.persistence.entity.organization.PersonAttributeEntity;
+import com.saymyname.persistence.entity.organization.FactEntity;
 import com.saymyname.persistence.entity.organization.PersonEntity;
 import com.saymyname.persistence.entity.organization.PhotoEntity;
 import com.saymyname.persistence.entity.organization.subscription.UserSubscriptionEntity;
@@ -100,7 +100,7 @@ public class CandidateDao {
             Long attributeId, String value) {
 
         Subquery<Long> sq = cq.subquery(Long.class);
-        Root<PersonAttributeEntity> pa = sq.from(PersonAttributeEntity.class);
+        Root<FactEntity> pa = sq.from(FactEntity.class);
 
         var now = cb.currentTimestamp();
 
@@ -224,7 +224,8 @@ public class CandidateDao {
             where.add(existsCategoryMatch(cb, cq, root, query.getCategoryAttributeId(), query.getCategoryValue()));
         }
 
-        boolean hasGameModeAttrs = query.getGameModeAttributeIds() != null && !query.getGameModeAttributeIds().isEmpty();
+        boolean hasGameModeAttrs = query.getGameModeAttributeIds() != null
+                && !query.getGameModeAttributeIds().isEmpty();
 
         // Optional: require approved photo
         if (requirePhoto) {
@@ -271,13 +272,14 @@ public class CandidateDao {
     }
 
     /**
-     * Check if person has a valid (non-deleted, within validity window) attribute value.
+     * Check if person has a valid (non-deleted, within validity window) attribute
+     * value.
      */
     private <T> Predicate existsValidAttribute(CriteriaBuilder cb, CriteriaQuery<T> cq,
             Root<PersonEntity> person, Long attributeId) {
 
         Subquery<Long> sq = cq.subquery(Long.class);
-        Root<PersonAttributeEntity> pa = sq.from(PersonAttributeEntity.class);
+        Root<FactEntity> pa = sq.from(FactEntity.class);
 
         var now = cb.currentTimestamp();
 
@@ -294,7 +296,8 @@ public class CandidateDao {
     }
 
     /**
-     * Sample candidates with minimal payload (personId, photoStorageKey, attributeValues).
+     * Sample candidates with minimal payload (personId, photoStorageKey,
+     * attributeValues).
      * Returns a list of PayloadItem for the sampled candidates.
      */
     @Transactional(readOnly = true)
@@ -405,7 +408,7 @@ public class CandidateDao {
 
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<Tuple> cq = cb.createTupleQuery();
-        Root<PersonAttributeEntity> pa = cq.from(PersonAttributeEntity.class);
+        Root<FactEntity> pa = cq.from(FactEntity.class);
 
         var now = cb.currentTimestamp();
 

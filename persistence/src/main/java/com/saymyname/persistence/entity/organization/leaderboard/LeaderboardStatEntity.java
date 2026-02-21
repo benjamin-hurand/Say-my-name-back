@@ -1,6 +1,5 @@
 package com.saymyname.persistence.entity.organization.leaderboard;
 
-
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -27,42 +26,42 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @SuperBuilder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 @ToString(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "leaderboard_stats", uniqueConstraints = {
-        @UniqueConstraint(name = "uq_lb_tenant_user", columnNames = {"tenant_id", "user_id"})
+                @UniqueConstraint(name = "uq_lb_tenant_user", columnNames = { "tenant_id", "user_id" })
 }, indexes = {
-        @Index(name = "idx_lb_tenant_xp", columnList = "tenant_id,xp")
+                @Index(name = "idx_lb_tenant_xp", columnList = "tenant_id,xp")
 })
 public class LeaderboardStatEntity extends BaseTenantScoped {
 
-    @EqualsAndHashCode.Include
-    @ToString.Include
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
-    private Long id;
+        @EqualsAndHashCode.Include
+        @ToString.Include
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        @Column(name = "id", nullable = false)
+        private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_lb_user"))
-    private UserEntity user;
+        @ManyToOne(fetch = FetchType.LAZY, optional = false)
+        @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_lb_user"))
+        private UserEntity user;
 
-    @Column(name = "xp", nullable = false)
-    private long xp;
+        @Column(name = "xp", nullable = false)
+        private long xp;
 
-    @Column(name = "total_answers", nullable = false)
-    private long totalAnswers;
+        @Column(name = "total_answers", nullable = false)
+        private long totalAnswers;
 
-    @Column(name = "correct_answers", nullable = false)
-    private long correctAnswers;
+        @Column(name = "correct_answers", nullable = false)
+        private long correctAnswers;
 
-    @Column(name = "last_answer_at")
-    private LocalDateTime lastAnswerAt;
+        @Column(name = "last_answer_at")
+        private LocalDateTime lastAnswerAt;
 
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
+        @Column(name = "updated_at", nullable = false)
+        private LocalDateTime updatedAt;
 }

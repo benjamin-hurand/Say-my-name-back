@@ -6,21 +6,21 @@ import java.util.Locale;
 
 import org.springframework.stereotype.Service;
 
-import com.saymyname.core.model.people.PersonAttribute;
-import com.saymyname.persistence.dao.PersonAttributeDao;
+import com.saymyname.core.model.people.Fact;
+import com.saymyname.persistence.dao.FactDao;
 
 @Service
 public class DefaultAnswerKeyService implements AnswerKeyService {
 
-    private final PersonAttributeDao personAttributeDao;
+    private final FactDao factDao;
 
-    public DefaultAnswerKeyService(PersonAttributeDao personAttributeDao) {
-        this.personAttributeDao = personAttributeDao;
+    public DefaultAnswerKeyService(FactDao factDao) {
+        this.factDao = factDao;
     }
 
     @Override
     public AnswerKey compute(Long personId, List<Long> targetAttributeIds, String operator) {
-        List<PersonAttribute> attrs = personAttributeDao.findAttributesByPersonId(personId);
+        List<Fact> attrs = factDao.findAttributesByPersonId(personId);
 
         List<String> correctValues = attrs.stream()
                 .filter(pa -> targetAttributeIds.contains(pa.getAttribute().getId()))

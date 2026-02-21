@@ -1,6 +1,5 @@
 package com.saymyname.persistence.entity.organization;
 
-
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -33,7 +32,7 @@ import org.hibernate.annotations.Filter;
 @Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 @Getter
 @Setter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
@@ -53,9 +52,8 @@ public class UserOrganizationEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @MapsId("tenantId")
-    @JoinColumn(name = "tenant_id", nullable = false,
-            foreignKey = @ForeignKey(name = "fk_uo_tenant_org"))
-    private OrganizationEntity organization;
+    @JoinColumn(name = "tenant_id", nullable = false, foreignKey = @ForeignKey(name = "fk_uo_tenant_org"))
+    private TenantOrgEntity organization;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @MapsId("userId")
@@ -107,7 +105,7 @@ public class UserOrganizationEntity {
         }
         PersonEntity p = PersonEntity.builder().build();
         p.setId(personId);
-        p.setOrganizationId(id != null ? id.getTenantId() : null);
+        p.setTenantId(id != null ? id.getTenantId() : null);
         return p;
     }
 

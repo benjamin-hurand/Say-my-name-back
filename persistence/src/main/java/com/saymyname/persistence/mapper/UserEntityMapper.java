@@ -61,6 +61,15 @@ public class UserEntityMapper {
                 .build();
     }
 
+    // -------- Entity -> Model (ref) --------
+    public User toRefModel(UserEntity e) {
+        if (e == null)
+            return null;
+        return new User.Builder()
+                .withId(e.getId())
+                .build();
+    }
+
     // -------- Entity -> Model (medium) --------
     public User toMediumModel(UserEntity e) {
         if (e == null)
@@ -138,12 +147,12 @@ public class UserEntityMapper {
         if (m == null)
             return null;
 
-        UserEntity e = new UserEntity(
-                m.getId(),
-                m.getDisplayName(),
-                m.getSrsAlgorithm(),
-                m.getRoles(),
-                m.isActive());
+        UserEntity e = new UserEntity();
+        e.setId(m.getId());
+        e.setDisplayName(m.getDisplayName());
+        e.setSrsAlgorithm(m.getSrsAlgorithm());
+        e.setRoles(m.getRoles());
+        e.setActive(m.isActive());
 
         if (m.getPublicId() != null) {
             e.setPublicId(m.getPublicId());
@@ -175,6 +184,17 @@ public class UserEntityMapper {
             // utilise plutôt m.setIdentitiesFromList(...) côté model, ou
             // e.setIdentitiesFromList(...) côté entity.
         }
+
+        return e;
+    }
+
+    // -------- Model -> Entity (ref) --------
+    public UserEntity toRefEntity(User m) {
+        if (m == null)
+            return null;
+
+        UserEntity e = new UserEntity();
+        e.setId(m.getId());
 
         return e;
     }

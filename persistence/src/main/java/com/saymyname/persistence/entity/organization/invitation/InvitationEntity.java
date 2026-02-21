@@ -1,8 +1,8 @@
 package com.saymyname.persistence.entity.organization.invitation;
 
-
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,7 +10,9 @@ import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 import com.saymyname.core.model.enums.InvitationType;
+import com.saymyname.core.model.enums.OrgRole;
 import com.saymyname.persistence.entity.UserEntity;
+import com.saymyname.persistence.entity.organization.PersonEntity;
 import com.saymyname.persistence.multitenancy.BaseTenantScoped;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -23,21 +25,26 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinColumns;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @SuperBuilder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 @ToString(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "invitations", uniqueConstraints = {
-        @UniqueConstraint(name = "uq_invit_token", columnNames = {"token_hash"})
+        @UniqueConstraint(name = "uq_invit_token", columnNames = { "token_hash" })
 }, indexes = {
         @Index(name = "idx_invit_tenant", columnList = "tenant_id"),
         @Index(name = "fk_invit_created_by", columnList = "created_by"),
@@ -67,13 +74,21 @@ public class InvitationEntity extends BaseTenantScoped {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false, length = 64)
-    private InvitationRole role;
+    private OrgRole role;
 
     @Column(name = "email", length = 320)
     private String email;
 
     @Column(name = "person_id")
     private Long personId;
+
+    // Association READ-ONLY
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumns({
+            @JoinColumn(name = "tenant_id", referencedColumnName = "tenant_id", insertable = false, updatable = false),
+            @JoinColumn(name = "person_id", referencedColumnName = "id", insertable = false, updatable = false)
+    })
+    private PersonEntity person;
 
     @Column(name = "token_hash", nullable = false, columnDefinition = "varbinary(32)")
     private byte[] tokenHash;
@@ -110,10 +125,9 @@ public class InvitationEntity extends BaseTenantScoped {
     @Column(name = "last_used_at")
     private LocalDateTime lastUsedAt;
 
-    public enum InvitationRole {
-        VIEWER,
-        EDITOR,
-        ADMIN,
-        OWNER
-    }
+    // Journal des usages (append-only) — ON DELETE CASCADE en DB
+    @OneToMany(mappedBy = "invitation", fetch = FetchType.LAZY)
+    @OrderBy("usedAt DESC")
+    @Builder.Default
+    private List<InvitationUsageEntity> usages = new ArrayList<>();
 }

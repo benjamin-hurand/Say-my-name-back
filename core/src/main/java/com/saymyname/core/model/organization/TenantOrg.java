@@ -4,7 +4,7 @@ package com.saymyname.core.model.organization;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-public final class Organization {
+public final class TenantOrg {
 
     private final Long id;
     private final String key; // ex: "acme"
@@ -13,7 +13,7 @@ public final class Organization {
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
 
-    private Organization(Builder b) {
+    private TenantOrg(Builder b) {
         this.id = b.id;
         this.key = b.key;
         this.name = b.name;
@@ -64,8 +64,8 @@ public final class Organization {
             return this;
         }
 
-        public Organization build() {
-            return new Organization(this);
+        public TenantOrg build() {
+            return new TenantOrg(this);
         }
     }
 
@@ -97,7 +97,7 @@ public final class Organization {
     public boolean equals(Object o) {
         if (this == o)
             return true;
-        if (!(o instanceof Organization that))
+        if (!(o instanceof TenantOrg that))
             return false;
         if (id != null && that.id != null)
             return Objects.equals(id, that.id);

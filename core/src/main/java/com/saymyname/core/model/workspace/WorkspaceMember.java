@@ -3,7 +3,7 @@ package com.saymyname.core.model.workspace;
 import java.time.Instant;
 import java.util.Objects;
 
-import com.saymyname.core.model.enums.workspace.PersonLinkStatus;
+import com.saymyname.core.model.enums.PersonLinkStatus;
 import com.saymyname.core.model.enums.workspace.WorkspaceMemberStatus;
 import com.saymyname.core.model.enums.workspace.WorkspaceRole;
 

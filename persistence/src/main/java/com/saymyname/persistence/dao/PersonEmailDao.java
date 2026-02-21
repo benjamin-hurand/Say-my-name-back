@@ -54,16 +54,16 @@ public class PersonEmailDao {
     public PersonEmail save(PersonEmail model) {
         Long orgId = OrgContext.get();
         PersonEmailEntity e = mapper.toEntity(model);
-        if (e.getOrganizationId() == null)
-            e.setOrganizationId(orgId);
+        if (e.getTenantId() == null)
+            e.setTenantId(orgId);
 
         if (e.getPerson() == null && model.getPerson() != null && model.getPerson().getId() != null) {
             PersonEntity p = new PersonEntity();
             p.setId(model.getPerson().getId());
-            p.setOrganizationId(orgId);
+            p.setTenantId(orgId);
             e.setPerson(p);
         } else if (e.getPerson() != null) {
-            e.getPerson().setOrganizationId(orgId);
+            e.getPerson().setTenantId(orgId);
         }
 
         PersonEmailEntity saved = repo.save(e);

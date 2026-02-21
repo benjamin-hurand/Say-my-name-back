@@ -1,6 +1,6 @@
 package com.saymyname.webapp.mapper.organization;
 
-import com.saymyname.core.model.organization.Organization;
+import com.saymyname.core.model.organization.TenantOrg;
 import com.saymyname.webapp.dto.organization.OrganizationDto;
 
 import org.springframework.stereotype.Component;
@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class OrganizationDtoMapper {
 
-    public OrganizationDto toDto(Organization org) {
+    public OrganizationDto toDto(TenantOrg org) {
         if (org == null)
             return null;
         return new OrganizationDto(
@@ -17,10 +17,10 @@ public class OrganizationDtoMapper {
                 org.getName());
     }
 
-    public Organization toModel(OrganizationDto dto) {
+    public TenantOrg toModel(OrganizationDto dto) {
         if (dto == null)
             return null;
-        return Organization.builder()
+        return TenantOrg.builder()
                 .id(dto.id())
                 .key(dto.key())
                 .name(dto.name())

@@ -21,7 +21,7 @@ public class Person {
 
     private Long id;
 
-    private List<PersonAttribute> attributes = Collections.emptyList();
+    private List<Fact> facts = Collections.emptyList();
     private List<Photo> photos = Collections.emptyList();
 
     // Default constructor
@@ -30,7 +30,7 @@ public class Person {
 
     private Person(Builder builder) {
         this.id = builder.id;
-        setAttributes(builder.attributes);
+        setFacts(builder.facts);
         setPhotos(builder.photos);
     }
 
@@ -39,8 +39,8 @@ public class Person {
         return id;
     }
 
-    public List<PersonAttribute> getAttributes() {
-        return attributes;
+    public List<Fact> getFacts() {
+        return facts;
     }
 
     public List<Photo> getPhotos() {
@@ -64,8 +64,8 @@ public class Person {
         this.id = id;
     }
 
-    public void setAttributes(List<PersonAttribute> attributes) {
-        this.attributes = attributes != null ? new ArrayList<>(attributes) : Collections.emptyList();
+    public void setFacts(List<Fact> facts) {
+        this.facts = facts != null ? new ArrayList<>(facts) : Collections.emptyList();
     }
 
     public void setPhotos(List<Photo> photos) {
@@ -75,7 +75,7 @@ public class Person {
     // --- Builder
     public static class Builder {
         private Long id;
-        private List<PersonAttribute> attributes;
+        private List<Fact> facts;
         private List<Photo> photos;
 
         public Builder withId(Long id) {
@@ -83,8 +83,8 @@ public class Person {
             return this;
         }
 
-        public Builder withAttributes(List<PersonAttribute> attributes) {
-            this.attributes = attributes;
+        public Builder withFacts(List<Fact> facts) {
+            this.facts = facts;
             return this;
         }
 
@@ -118,7 +118,7 @@ public class Person {
     public String toString() {
         return "Person{" +
                 "id=" + id +
-                ", attributes=" + (attributes != null ? attributes.size() : 0) + " items" +
+                ", facts=" + (facts != null ? facts.size() : 0) + " items" +
                 ", photos=" + (photos != null ? photos.size() : 0) + " items" +
                 '}';
     }

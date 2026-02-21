@@ -10,14 +10,14 @@ import jakarta.validation.constraints.NotNull;
  *
  * Rappels (validés côté service) :
  * - CREATE : attributeId, action=CREATE, proposedValue, reason
- * - UPDATE : personAttributeId, action=UPDATE, proposedValue, reason
- * - DELETE : personAttributeId, action=DELETE, reason
+ * - UPDATE : factId, action=UPDATE, proposedValue, reason
+ * - DELETE : factId, action=DELETE, reason
  *
  * NB: personId est porté par l’enveloppe (SubmitChangeRequestRequest).
  */
 public record SubmitChangeRequestItemDto(
-                Long personAttributeId, // requis pour UPDATE/DELETE
-                @NotNull ChangeAction action, // CREATE | UPDATE | DELETE
-                String proposedValue // requis pour CREATE/UPDATE
+        Long factId, // requis pour UPDATE/DELETE
+        @NotNull ChangeAction action, // CREATE | UPDATE | DELETE
+        String proposedValue // requis pour CREATE/UPDATE
 ) {
 }

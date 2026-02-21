@@ -1,4 +1,4 @@
-// src/main/java/com/saymyname/persistence/repository/PersonAttributeRepository.java
+// src/main/java/com/saymyname/persistence/repository/FactRepository.java
 package com.saymyname.persistence.repository;
 
 import static org.hibernate.jpa.HibernateHints.HINT_FETCH_SIZE;
@@ -14,13 +14,13 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.saymyname.persistence.entity.organization.PersonAttributeEntity;
+import com.saymyname.persistence.entity.organization.FactEntity;
 import com.saymyname.persistence.projection.PersonAttrValueProjection;
 
 import jakarta.persistence.QueryHint;
 
 @Repository
-public interface PersonAttributeRepository extends JpaRepository<PersonAttributeEntity, Long> {
+public interface FactRepository extends JpaRepository<FactEntity, Long> {
 
   // MIN/MAX pour attributs numériques (valeurs stockées en texte)
   @Query(value = """
@@ -61,21 +61,21 @@ public interface PersonAttributeRepository extends JpaRepository<PersonAttribute
 
   // Actifs “runtime” : exclude pending_delete — ordre déterministe
   @Query("""
-      SELECT pa FROM PersonAttributeEntity pa JOIN pa.attribute a
+      SELECT pa FROM FactEntity pa JOIN pa.attribute a
       WHERE pa.person.id = :personId
         AND pa.pendingDelete = false
         AND pa.validFrom <= CURRENT_TIMESTAMP
         AND (pa.validTo IS NULL OR pa.validTo > CURRENT_TIMESTAMP)
       ORDER BY pa.validFrom ASC, pa.id ASC
       """)
-  List<PersonAttributeEntity> findAttributesByPersonIdActive(@Param("personId") Long personId);
+  List<FactEntity> findAttributesByPersonIdActive(@Param("personId") Long personId);
 
   /**
    * Actifs à un instant (now ∈ [validFrom, validTo)), hors pending_delete.
    * (Version paramétrée, utile au service pour rester cohérent sur "now".)
    */
   @Query("""
-      SELECT pa FROM PersonAttributeEntity pa
+      SELECT pa FROM FactEntity pa
       WHERE pa.person.id = :personId
         AND pa.attribute.id = :attributeId
         AND pa.pendingDelete = false
@@ -83,7 +83,7 @@ public interface PersonAttributeRepository extends JpaRepository<PersonAttribute
         AND (pa.validTo IS NULL OR pa.validTo > :now)
       ORDER BY pa.validFrom ASC, pa.id ASC
       """)
-  List<PersonAttributeEntity> findActiveAtByPersonAndAttributeExcludingPending(
+  List<FactEntity> findActiveAtByPersonAndAttributeExcludingPending(
       @Param("personId") Long personId,
       @Param("attributeId") Long attributeId,
       @Param("now") LocalDateTime now);
@@ -94,7 +94,7 @@ public interface PersonAttributeRepository extends JpaRepository<PersonAttribute
    */
   @Modifying
   @Query("""
-      UPDATE PersonAttributeEntity pa
+      UPDATE FactEntity pa
          SET pa.pendingDelete = true,
              pa.validTo = :now
        WHERE pa.person.id = :personId
@@ -137,7 +137,7 @@ public interface PersonAttributeRepository extends JpaRepository<PersonAttribute
         a.id          as attributeId,
         pa.value      as value,
         a.displayOrder as displayOrder
-      from PersonAttributeEntity pa
+      from FactEntity pa
         join pa.attribute a
       where pa.person.id in :personIds
         and a.primaryField = true

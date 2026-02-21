@@ -31,7 +31,7 @@ public class ChangeRequestItemDao {
      */
     @Transactional
     public int detachExpiredTombstoneLinksForResolved(LocalDateTime cutoffExclusive) {
-        return repo.nullifyPersonAttributeFkForResolvedAndExpiredTombstones(cutoffExclusive);
+        return repo.nullifyFactFkForResolvedAndExpiredTombstones(cutoffExclusive);
     }
 
     /* ======= CANCEL ======= */

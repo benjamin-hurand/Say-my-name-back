@@ -8,23 +8,23 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.people.Person;
-import com.saymyname.core.model.people.PersonAttribute;
+import com.saymyname.core.model.people.Fact;
 import com.saymyname.core.model.quiz.options.GameMode;
 
 @Component
 public class InitialCrafter {
     public String computeInitials(Person person, GameMode gameMode) {
         // Récupérer la liste des attributs associés à la personne
-        List<PersonAttribute> attributes = person.getAttributes();
+        List<Fact> attributes = person.getFacts();
 
         // Extraire les IDs des attributs à utiliser pour ce mode de jeu
         List<Long> attributeIds = gameMode.getGameModeAttributes().stream()
                 .map(gma -> gma.getAttribute().getId())
                 .toList();
 
-        // Filtrer la liste des PersonAttribute pour ne garder que celles dont
+        // Filtrer la liste des Fact pour ne garder que celles dont
         // l'attribut est concerné
-        List<PersonAttribute> filteredAttributes = attributes.stream()
+        List<Fact> filteredAttributes = attributes.stream()
                 .filter(attr -> attributeIds.contains(attr.getAttribute().getId()))
                 .collect(Collectors.toList());
 
@@ -70,7 +70,7 @@ public class InitialCrafter {
             return localInitials;
         };
 
-        // Extraire les initiales pour chaque PersonAttribute filtré
+        // Extraire les initiales pour chaque Fact filtré
         List<String> initialsList = filteredAttributes.stream()
                 .map(attr -> extractLocalInitials.apply(attr.getValue()))
                 .filter(initial -> !initial.isEmpty())

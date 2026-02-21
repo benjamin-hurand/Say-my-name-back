@@ -19,20 +19,20 @@ import com.saymyname.service.UserService;
 import com.saymyname.service.leaderboard.LeaderboardService; // ✅
 import com.saymyname.core.model.leaderboard.LeaderboardEntry; // ✅
 import com.saymyname.service.person.PersonService;
-import com.saymyname.webapp.dto.PersonAttributeDto;
+import com.saymyname.webapp.dto.FactDto;
 import com.saymyname.webapp.dto.PersonDto;
 import com.saymyname.webapp.dto.UserDto;
 import com.saymyname.webapp.dto.changerequest.ChangeRequestSummaryDto;
 import com.saymyname.webapp.dto.profile.AttributeValuesResponseDto;
-import com.saymyname.webapp.dto.profile.BulkPersonAttributeRequest;
+import com.saymyname.webapp.dto.profile.BulkFactRequest;
 import com.saymyname.webapp.dto.profile.ProfileOnboardingDto;
 import com.saymyname.webapp.dto.profile.ProfileResponseDto;
 import com.saymyname.webapp.dto.profile.ProfileXpSummaryDto; // ✅
 import com.saymyname.webapp.dto.profile.UpdateDisplayNameRequestDto;
 import com.saymyname.webapp.dto.profile.UpdateDisplayNameResponseDto;
-import com.saymyname.webapp.mapper.BulkPersonAttributeDtoMapper;
+import com.saymyname.webapp.mapper.BulkFactDtoMapper;
 import com.saymyname.webapp.mapper.ChangeRequestDtoMapper;
-import com.saymyname.webapp.mapper.PersonAttributeDtoMapper;
+import com.saymyname.webapp.mapper.FactDtoMapper;
 import com.saymyname.webapp.mapper.PersonDtoMapper;
 import com.saymyname.webapp.mapper.ProfileOnboardingDtoMapper;
 import com.saymyname.webapp.mapper.UserDtoMapper;
@@ -45,8 +45,8 @@ public class ProfileRestController {
         private final ChangeRequestService changeRequestService;
         private final ChangeRequestDtoMapper changeRequestDtoMapper;
         private final PersonDtoMapper personDtoMapper;
-        private final BulkPersonAttributeDtoMapper bulkPersonAttributeDtoMapper;
-        private final PersonAttributeDtoMapper personAttributeDtoMapper;
+        private final BulkFactDtoMapper bulkFactDtoMapper;
+        private final FactDtoMapper factDtoMapper;
 
         private final UserService userService;
         private final UserOrganizationService userOrganizationService;
@@ -62,8 +62,8 @@ public class ProfileRestController {
                         ChangeRequestService changeRequestService,
                         ChangeRequestDtoMapper changeRequestDtoMapper,
                         PersonDtoMapper personDtoMapper,
-                        BulkPersonAttributeDtoMapper bulkPersonAttributeDtoMapper,
-                        PersonAttributeDtoMapper personAttributeDtoMapper,
+                        BulkFactDtoMapper bulkFactDtoMapper,
+                        FactDtoMapper factDtoMapper,
                         UserService userService,
                         UserOrganizationService userOrganizationService,
                         UserDtoMapper userDtoMapper,
@@ -74,8 +74,8 @@ public class ProfileRestController {
                 this.changeRequestService = changeRequestService;
                 this.changeRequestDtoMapper = changeRequestDtoMapper;
                 this.personDtoMapper = personDtoMapper;
-                this.bulkPersonAttributeDtoMapper = bulkPersonAttributeDtoMapper;
-                this.personAttributeDtoMapper = personAttributeDtoMapper;
+                this.bulkFactDtoMapper = bulkFactDtoMapper;
+                this.factDtoMapper = factDtoMapper;
                 this.userService = userService;
                 this.userOrganizationService = userOrganizationService;
                 this.userDtoMapper = userDtoMapper;
@@ -155,7 +155,7 @@ public class ProfileRestController {
         @PostMapping("/attributes/{attributeId}/bulk")
         public ResponseEntity<AttributeValuesResponseDto> applyAttributeChanges(
                         @PathVariable("attributeId") Long attributeId,
-                        @RequestBody BulkPersonAttributeRequest body,
+                        @RequestBody BulkFactRequest body,
                         Principal principal) {
 
                 logger.info("Applying bulk attribute changes for attributeId: {}", attributeId);
@@ -163,9 +163,9 @@ public class ProfileRestController {
                 User me = userService.getCurrentUserOrThrow(principal);
                 User user = userService.findByIdWithEmails(me.getId()).orElse(me);
 
-                var toCreate = bulkPersonAttributeDtoMapper.toCreateModels(body.create());
-                var toUpdate = bulkPersonAttributeDtoMapper.toUpdateModels(body.update());
-                var toDelete = bulkPersonAttributeDtoMapper.toDeleteModels(body.delete());
+                var toCreate = bulkFactDtoMapper.toCreateModels(body.create());
+                var toUpdate = bulkFactDtoMapper.toUpdateModels(body.update());
+                var toDelete = bulkFactDtoMapper.toDeleteModels(body.delete());
 
                 var updatedAttributes = personService.applyAttributeChangesForUser(
                                 user,
@@ -174,8 +174,8 @@ public class ProfileRestController {
                                 toUpdate,
                                 toDelete);
 
-                List<PersonAttributeDto> updatedDtos = updatedAttributes.stream()
-                                .map(personAttributeDtoMapper::toDto)
+                List<FactDto> updatedDtos = updatedAttributes.stream()
+                                .map(factDtoMapper::toDto)
                                 .toList();
 
                 var response = new AttributeValuesResponseDto(attributeId, updatedDtos);

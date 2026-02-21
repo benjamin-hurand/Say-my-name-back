@@ -13,74 +13,80 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @SuperBuilder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 @ToString(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "knowledges", indexes = {
-        @Index(name = "idx_k_select", columnList = "tenant_id,user_id,status,next_review_date"),
-        @Index(name = "idx_k_fact", columnList = "fact_id"),
-        @Index(name = "uq_knowledges_tenant_id", columnList = "tenant_id,id", unique = true) // recommandé
+@Table(name = "knowledges", uniqueConstraints = {
+                @UniqueConstraint(name = "uq_k_user_fact", columnNames = { "tenant_id", "user_id", "fact_id" })
+}, indexes = {
+                @Index(name = "idx_k_select", columnList = "tenant_id,user_id,status,next_review_date"),
+                @Index(name = "idx_k_fact", columnList = "fact_id"),
+                @Index(name = "idx_k_reval", columnList = "tenant_id,user_id,pending_revalidation,next_review_date"),
+                @Index(name = "fk_k_fact_tenant", columnList = "tenant_id,fact_id")
 })
 public class KnowledgeEntity extends BaseTenantScoped {
 
-    @EqualsAndHashCode.Include
-    @ToString.Include
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
-    private Long id;
+        @EqualsAndHashCode.Include
+        @ToString.Include
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        @Column(name = "id", nullable = false)
+        private Long id;
 
-    // users global -> OK sans tenant
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_k_user"))
-    private UserEntity user;
+        @ManyToOne(fetch = FetchType.LAZY, optional = false)
+        @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_k_user"))
+        private UserEntity user;
 
-    /**
-     * ✅ CIBLE: relation tenant-safe via (tenant_id, fact_id) -> facts(tenant_id,
-     * id)
-     * Tant que la FK DB n’est pas composite, tu ne peux pas la mapper correctement.
-     */
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumns({
-            @JoinColumn(name = "tenant_id", referencedColumnName = "tenant_id", nullable = false, insertable = false, updatable = false),
-            @JoinColumn(name = "fact_id", referencedColumnName = "id", nullable = false)
-    })
-    private FactEntity fact;
+        @ManyToOne(fetch = FetchType.LAZY, optional = false)
+        @JoinColumns({
+                        @JoinColumn(name = "tenant_id", referencedColumnName = "tenant_id", insertable = false, updatable = false),
+                        @JoinColumn(name = "fact_id", referencedColumnName = "id", insertable = false, updatable = false)
+        })
+        private FactEntity fact;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 10)
-    private KnowledgeStatus status;
+        @Column(name = "fact_id", nullable = false)
+        private Long factId;
 
-    @Column(name = "next_review_date", nullable = false)
-    private LocalDateTime nextReviewDate;
+        @Enumerated(EnumType.STRING)
+        @Column(name = "status", nullable = false, length = 10)
+        private KnowledgeStatus status;
 
-    @Column(name = "last_review_date")
-    private LocalDateTime lastReviewDate;
+        @Column(name = "next_review_date", nullable = false)
+        private LocalDateTime nextReviewDate;
 
-    @Column(name = "total_repetition_count", nullable = false)
-    private int totalRepetitionCount;
+        @Column(name = "last_review_date")
+        private LocalDateTime lastReviewDate;
 
-    @Column(name = "failure_count", nullable = false)
-    private int failureCount;
+        @Column(name = "total_repetition_count", nullable = false)
+        private int totalRepetitionCount;
 
-    @Column(name = "success_count", nullable = false)
-    private int successCount;
+        @Column(name = "failure_count", nullable = false)
+        private int failureCount;
 
-    @Column(name = "srs_streak", nullable = false)
-    private int srsStreak;
+        @Column(name = "success_count", nullable = false)
+        private int successCount;
 
-    @Column(name = "global_streak", nullable = false)
-    private int globalStreak;
+        @Column(name = "srs_streak", nullable = false)
+        private int srsStreak;
 
-    @Column(name = "ease_factor", nullable = false, precision = 10, scale = 2)
-    private BigDecimal easeFactor;
+        @Column(name = "global_streak", nullable = false)
+        private int globalStreak;
 
-    @Column(name = "difficulty", nullable = false)
-    private double difficulty;
+        @Column(name = "ease_factor", nullable = false, precision = 10, scale = 2)
+        private BigDecimal easeFactor;
 
-    @Column(name = "stability", nullable = false)
-    private double stability;
+        @Column(name = "difficulty", nullable = false)
+        private double difficulty;
+
+        @Column(name = "stability", nullable = false)
+        private double stability;
+
+        @Column(name = "pending_revalidation", nullable = false)
+        private boolean pendingRevalidation;
+
+        @Column(name = "revalidation_reason", length = 64)
+        private String revalidationReason;
 }

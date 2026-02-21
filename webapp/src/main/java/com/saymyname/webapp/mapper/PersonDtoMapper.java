@@ -13,18 +13,18 @@ import com.saymyname.webapp.dto.changerequest.PersonSummaryDto;
 @Component
 public class PersonDtoMapper {
 
-        private final PersonAttributeDtoMapper personAttributeDtoMapper;
+        private final FactDtoMapper factDtoMapper;
         private final PhotoDtoMapper photoDtoMapper;
         private final PhotoUrlResolver photoUrlResolver;
         // TODO: Soit remettre soit supprimer completement METACACHE
         private final AttributeMetaCache attributeMetaCache;
         private final PersonDisplayNameBuilder displayNameBuilder;
 
-        public PersonDtoMapper(PersonAttributeDtoMapper personAttributeDtoMapper,
+        public PersonDtoMapper(FactDtoMapper factDtoMapper,
                         PhotoDtoMapper photoDtoMapper, PhotoUrlResolver photoUrlResolver,
                         AttributeMetaCache attributeMetaCache, PersonDisplayNameBuilder displayNameBuilder) {
                 this.displayNameBuilder = displayNameBuilder;
-                this.personAttributeDtoMapper = personAttributeDtoMapper;
+                this.factDtoMapper = factDtoMapper;
                 this.photoUrlResolver = photoUrlResolver;
                 this.photoDtoMapper = photoDtoMapper;
                 this.attributeMetaCache = attributeMetaCache;
@@ -39,8 +39,8 @@ public class PersonDtoMapper {
         public PersonDto toDto(Person person, OrgRole organizationRole) {
                 return new PersonDto(
                                 person.getId(),
-                                person.getAttributes() != null
-                                                ? person.getAttributes().stream().map(personAttributeDtoMapper::toDto)
+                                person.getFacts() != null
+                                                ? person.getFacts().stream().map(factDtoMapper::toDto)
                                                                 .toList()
                                                 : null,
                                 person.getPhotos() != null
@@ -51,8 +51,8 @@ public class PersonDtoMapper {
         public PersonDto toDto(Person person) {
                 return new PersonDto(
                                 person.getId(),
-                                person.getAttributes() != null
-                                                ? person.getAttributes().stream().map(personAttributeDtoMapper::toDto)
+                                person.getFacts() != null
+                                                ? person.getFacts().stream().map(factDtoMapper::toDto)
                                                                 .toList()
                                                 : null,
                                 person.getPhotos() != null

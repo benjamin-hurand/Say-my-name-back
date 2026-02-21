@@ -26,7 +26,7 @@ public class InvitationUsageDao {
     @Transactional
     public InvitationUsage appendUsage(Long orgId, InvitationUsage model, InvitationEntity parent) {
         InvitationUsageEntity e = mapper.toEntity(model, parent);
-        e.setOrganizationId(orgId);
+        e.setTenantId(orgId);
         InvitationUsageEntity saved = repo.save(e);
         return mapper.toModel(saved);
     }

@@ -32,7 +32,7 @@ import com.saymyname.core.model.people.ChangeRequestListQuery;
 import com.saymyname.core.model.people.ChangeRequestResolution;
 import com.saymyname.core.model.people.ChangeRequestResolutionItem;
 import com.saymyname.core.model.people.Person;
-import com.saymyname.core.model.people.PersonAttribute;
+import com.saymyname.core.model.people.Fact;
 import com.saymyname.core.util.TextNormalization;
 import com.saymyname.core.validation.AttributeValueValidator;
 import com.saymyname.persistence.dao.AttributeDao;
@@ -48,18 +48,18 @@ public class ChangeRequestService {
     private final ChangeRequestDao crDao;
     private final ChangeRequestItemDao itemDao;
     private final AttributeDao attributeDao; // pour normaliser/valider à la soumission
-    private final PersonAttributeService personAttributeService; // applique les APPROVED (désactivé ici: simulation)
+    private final FactService factService; // applique les APPROVED (désactivé ici: simulation)
 
     private static final Set<ChangeRequestStatus> OPEN_STATUSES = EnumSet.of(ChangeRequestStatus.PENDING);
 
     public ChangeRequestService(ChangeRequestDao crDao,
             ChangeRequestItemDao itemDao,
             AttributeDao attributeDao,
-            PersonAttributeService personAttributeService) {
+            FactService factService) {
         this.crDao = crDao;
         this.itemDao = itemDao;
         this.attributeDao = attributeDao;
-        this.personAttributeService = personAttributeService;
+        this.factService = factService;
     }
 
     /* -------------------- CREATE -------------------- */
@@ -226,37 +226,37 @@ public class ChangeRequestService {
             List<ChangeRequestItemEntity> approvedEntitiesSimu = approvedEntities;
             log.debug("[CR][RESOLVE][SIMU] approvedEntities.loaded={}", approvedEntitiesSimu.size());
 
-            List<PersonAttribute> toCreate = new ArrayList<>();
-            List<PersonAttribute> toUpdate = new ArrayList<>();
-            List<PersonAttribute> toDelete = new ArrayList<>();
+            List<Fact> toCreate = new ArrayList<>();
+            List<Fact> toUpdate = new ArrayList<>();
+            List<Fact> toDelete = new ArrayList<>();
 
             for (ChangeRequestItemEntity it : approvedEntitiesSimu) {
                 ChangeAction action = it.getAction();
                 switch (action) {
                     case CREATE -> {
-                        PersonAttribute pa = new PersonAttribute.Builder()
+                        Fact pa = new Fact.Builder()
                                 .withValue(it.getProposedValue())
                                 .build();
                         toCreate.add(pa);
                     }
                     case UPDATE -> {
-                        if (it.getPersonAttribute() == null) {
-                            log.error("[CR][RESOLVE][SIMU] UPDATE sans personAttribute sur item #{}", it.getId());
-                            throw new IllegalStateException("UPDATE sans personAttribute sur item #" + it.getId());
+                        if (it.getFact() == null) {
+                            log.error("[CR][RESOLVE][SIMU] UPDATE sans fact sur item #{}", it.getId());
+                            throw new IllegalStateException("UPDATE sans fact sur item #" + it.getId());
                         }
-                        PersonAttribute updated = new PersonAttribute.Builder()
-                                .withId(it.getPersonAttribute().getId())
+                        Fact updated = new Fact.Builder()
+                                .withId(it.getFact().getId())
                                 .withValue(it.getProposedValue())
                                 .build();
                         toUpdate.add(updated);
                     }
                     case DELETE -> {
-                        if (it.getPersonAttribute() == null) {
-                            log.error("[CR][RESOLVE][SIMU] DELETE sans personAttribute sur item #{}", it.getId());
-                            throw new IllegalStateException("DELETE sans personAttribute sur item #" + it.getId());
+                        if (it.getFact() == null) {
+                            log.error("[CR][RESOLVE][SIMU] DELETE sans fact sur item #{}", it.getId());
+                            throw new IllegalStateException("DELETE sans fact sur item #" + it.getId());
                         }
-                        PersonAttribute paToDelete = new PersonAttribute.Builder()
-                                .withId(it.getPersonAttribute().getId())
+                        Fact paToDelete = new Fact.Builder()
+                                .withId(it.getFact().getId())
                                 .build();
                         toDelete.add(paToDelete);
                     }
@@ -272,16 +272,16 @@ public class ChangeRequestService {
 
             if (!toCreate.isEmpty() || !toUpdate.isEmpty() || !toDelete.isEmpty()) {
                 log.info("[CR][RESOLVE][SIMU] ICI ON APPLIQUERAIT LES CHANGEMENTS — "
-                        + "appelerait PersonAttributeService.applyChangesForPerson(personId={}, attributeId={}, creates={}, updates={}, deletes={}, bypassRestricted=true)",
+                        + "appelerait FactService.applyChangesForPerson(personId={}, attributeId={}, creates={}, updates={}, deletes={}, bypassRestricted=true)",
                         (crModel.getPerson() != null ? crModel.getPerson().getId() : null),
                         (crModel.getAttribute() != null ? crModel.getAttribute().getId() : null),
                         toCreate.size(), toUpdate.size(), toDelete.size());
 
                 log.info(
-                        "[CR][RESOLVE] CALL PersonAttributeService.applyChangesForPerson(personId={}, attributeId={}, creates={}, updates={}, deletes={}, bypassRestricted=true)",
+                        "[CR][RESOLVE] CALL FactService.applyChangesForPerson(personId={}, attributeId={}, creates={}, updates={}, deletes={}, bypassRestricted=true)",
                         crModel.getPerson().getId(), crModel.getAttribute().getId(),
                         toCreate.size(), toUpdate.size(), toDelete.size());
-                personAttributeService.applyChangesForPerson(
+                factService.applyChangesForPerson(
                         crModel.getPerson().getId(),
                         crModel.getAttribute().getId(),
                         toCreate, toUpdate, toDelete,
@@ -415,10 +415,10 @@ public class ChangeRequestService {
                     }
                 }
                 case UPDATE -> {
-                    PersonAttribute pa = it.getPersonAttribute();
+                    Fact pa = it.getFact();
                     if (pa == null || pa.getId() == null) {
-                        log.error("[CR][VALID] personAttributeId requis (UPDATE)");
-                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "personAttributeId requis (UPDATE)");
+                        log.error("[CR][VALID] factId requis (UPDATE)");
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "factId requis (UPDATE)");
                     }
                     if (trimOrNull(it.getProposedValue()) == null) {
                         log.error("[CR][VALID] proposedValue requis (UPDATE)");
@@ -426,10 +426,10 @@ public class ChangeRequestService {
                     }
                 }
                 case DELETE -> {
-                    PersonAttribute pa = it.getPersonAttribute();
+                    Fact pa = it.getFact();
                     if (pa == null || pa.getId() == null) {
-                        log.error("[CR][VALID] personAttributeId requis (DELETE)");
-                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "personAttributeId requis (DELETE)");
+                        log.error("[CR][VALID] factId requis (DELETE)");
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "factId requis (DELETE)");
                     }
                 }
                 default -> {

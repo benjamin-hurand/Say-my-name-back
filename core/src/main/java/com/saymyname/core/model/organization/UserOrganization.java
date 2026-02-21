@@ -46,7 +46,7 @@ public class UserOrganization {
      * Agrégats optionnels.
      */
     private Person person;
-    private Organization organization;
+    private TenantOrg organization;
 
     private UserOrganization(Builder builder) {
         this.userId = builder.userId;
@@ -116,7 +116,7 @@ public class UserOrganization {
         return person;
     }
 
-    public Organization getOrganization() {
+    public TenantOrg getOrganization() {
         return organization;
     }
 
@@ -149,7 +149,7 @@ public class UserOrganization {
         private boolean createRequiresApproval = false;
 
         private Person person;
-        private Organization organization;
+        private TenantOrg organization;
 
         public Builder userId(Long userId) {
             this.userId = userId;
@@ -211,7 +211,7 @@ public class UserOrganization {
             return this;
         }
 
-        public Builder organization(Organization organization) {
+        public Builder organization(TenantOrg organization) {
             this.organization = organization;
             return this;
         }

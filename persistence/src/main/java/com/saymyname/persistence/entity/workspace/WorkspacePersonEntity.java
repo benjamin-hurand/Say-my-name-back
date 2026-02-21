@@ -1,6 +1,23 @@
 package com.saymyname.persistence.entity.workspace;
 
+import java.time.Instant;
 
+import org.hibernate.annotations.CreationTimestamp;
+
+import com.saymyname.persistence.entity.UserEntity;
+import com.saymyname.persistence.entity.organization.PersonEntity;
+import com.saymyname.persistence.multitenancy.BaseTenantScoped;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinColumns;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -9,23 +26,10 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
-import com.saymyname.persistence.entity.UserEntity;
-import com.saymyname.persistence.multitenancy.BaseTenantScoped;
-import jakarta.persistence.Column;
-import jakarta.persistence.EmbeddedId;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.ForeignKey;
-import jakarta.persistence.Index;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.MapsId;
-import jakarta.persistence.Table;
-import java.time.LocalDateTime;
 
 @Getter
 @Setter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @SuperBuilder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
@@ -34,7 +38,8 @@ import java.time.LocalDateTime;
 @Table(name = "workspace_persons", indexes = {
         @Index(name = "idx_wp_person", columnList = "person_id"),
         @Index(name = "idx_wp_workspace", columnList = "workspace_id"),
-        @Index(name = "idx_wp_tenant_person", columnList = "tenant_id,person_id")
+        @Index(name = "idx_wp_tenant_person", columnList = "tenant_id,person_id"),
+        @Index(name = "idx_wp_tenant_ws", columnList = "tenant_id,workspace_id")
 })
 public class WorkspacePersonEntity extends BaseTenantScoped {
 
@@ -43,15 +48,42 @@ public class WorkspacePersonEntity extends BaseTenantScoped {
     @EmbeddedId
     private WorkspacePersonId id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @MapsId("workspaceId")
-    @JoinColumn(name = "workspace_id", nullable = false, foreignKey = @ForeignKey(name = "fk_wp_workspace"))
+    /**
+     * READ-ONLY relation workspace tenant-safe (si tu as fk_wp_workspace_tenant).
+     * Persist via: BaseTenantScoped.tenantId + id.workspaceId
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumns({
+            @JoinColumn(name = "tenant_id", referencedColumnName = "tenant_id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "fk_wp_workspace_tenant")),
+            @JoinColumn(name = "workspace_id", referencedColumnName = "id", insertable = false, updatable = false)
+    })
     private WorkspaceEntity workspace;
 
-    @Column(name = "created_at", nullable = false, columnDefinition = "datetime default current_timestamp")
-    private LocalDateTime createdAt;
-
+    /**
+     * READ-ONLY relation person tenant-safe via (tenant_id, person_id).
+     * Persist via: BaseTenantScoped.tenantId + id.personId
+     */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "added_by", foreignKey = @ForeignKey(name = "fk_wp_added_by"))
+    @JoinColumns({
+            @JoinColumn(name = "tenant_id", referencedColumnName = "tenant_id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "fk_wp_person_tenant")),
+            @JoinColumn(name = "person_id", referencedColumnName = "id", insertable = false, updatable = false)
+    })
+    private PersonEntity person;
+
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt;
+
+    /**
+     * Source de vérité persistée. Permet d'écrire sans hydrater UserEntity.
+     */
+    @Column(name = "added_by")
+    private Long addedById;
+
+    /**
+     * READ-ONLY relation.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "added_by", referencedColumnName = "id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "fk_wp_added_by"))
     private UserEntity addedBy;
 }

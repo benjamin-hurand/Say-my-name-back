@@ -3,19 +3,14 @@ package com.saymyname.core.model.workspace;
 import java.time.Instant;
 import java.util.Objects;
 
-/**
- * Modèle "plat" côté core.
- * PK composite (workspaceId, personId) côté DB.
- * - equals/hashCode basés sur (workspaceId, personId).
- */
 public class WorkspacePerson {
 
     private Long workspaceId;
     private Long personId;
 
-    private Long organizationId;
+    private Long tenantId;
     private Instant createdAt;
-    private Long addedBy; // user_id nullable
+    private Long addedByUserId; // nullable
 
     public WorkspacePerson() {
     }
@@ -23,12 +18,11 @@ public class WorkspacePerson {
     private WorkspacePerson(Builder builder) {
         this.workspaceId = builder.workspaceId;
         this.personId = builder.personId;
-        this.organizationId = builder.organizationId;
+        this.tenantId = builder.tenantId;
         this.createdAt = builder.createdAt;
-        this.addedBy = builder.addedBy;
+        this.addedByUserId = builder.addedByUserId;
     }
 
-    // --- Getters
     public Long getWorkspaceId() {
         return workspaceId;
     }
@@ -37,19 +31,18 @@ public class WorkspacePerson {
         return personId;
     }
 
-    public Long getOrganizationId() {
-        return organizationId;
+    public Long getTenantId() {
+        return tenantId;
     }
 
     public Instant getCreatedAt() {
         return createdAt;
     }
 
-    public Long getAddedBy() {
-        return addedBy;
+    public Long getAddedByUserId() {
+        return addedByUserId;
     }
 
-    // --- Setters
     public void setWorkspaceId(Long workspaceId) {
         this.workspaceId = workspaceId;
     }
@@ -58,25 +51,24 @@ public class WorkspacePerson {
         this.personId = personId;
     }
 
-    public void setOrganizationId(Long organizationId) {
-        this.organizationId = organizationId;
+    public void setTenantId(Long tenantId) {
+        this.tenantId = tenantId;
     }
 
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
     }
 
-    public void setAddedBy(Long addedBy) {
-        this.addedBy = addedBy;
+    public void setAddedByUserId(Long addedByUserId) {
+        this.addedByUserId = addedByUserId;
     }
 
-    // --- Builder
     public static class Builder {
         private Long workspaceId;
         private Long personId;
-        private Long organizationId;
+        private Long tenantId;
         private Instant createdAt;
-        private Long addedBy;
+        private Long addedByUserId;
 
         public Builder withWorkspaceId(Long workspaceId) {
             this.workspaceId = workspaceId;
@@ -88,8 +80,8 @@ public class WorkspacePerson {
             return this;
         }
 
-        public Builder withOrganizationId(Long organizationId) {
-            this.organizationId = organizationId;
+        public Builder withTenantId(Long tenantId) {
+            this.tenantId = tenantId;
             return this;
         }
 
@@ -98,8 +90,8 @@ public class WorkspacePerson {
             return this;
         }
 
-        public Builder withAddedBy(Long addedBy) {
-            this.addedBy = addedBy;
+        public Builder withAddedByUserId(Long addedByUserId) {
+            this.addedByUserId = addedByUserId;
             return this;
         }
 
@@ -108,7 +100,6 @@ public class WorkspacePerson {
         }
     }
 
-    // --- equals/hashCode sur PK composite
     @Override
     public boolean equals(Object o) {
         if (this == o)
@@ -122,15 +113,5 @@ public class WorkspacePerson {
     @Override
     public int hashCode() {
         return Objects.hash(workspaceId, personId);
-    }
-
-    @Override
-    public String toString() {
-        return "WorkspacePerson{" +
-                "workspaceId=" + workspaceId +
-                ", personId=" + personId +
-                ", organizationId=" + organizationId +
-                ", addedBy=" + addedBy +
-                '}';
     }
 }

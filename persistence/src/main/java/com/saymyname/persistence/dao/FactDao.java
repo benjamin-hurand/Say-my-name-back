@@ -1,4 +1,4 @@
-// src/main/java/com/saymyname/persistence/dao/PersonAttributeDao.java
+// src/main/java/com/saymyname/persistence/dao/FactDao.java
 package com.saymyname.persistence.dao;
 
 import java.time.LocalDateTime;
@@ -12,28 +12,28 @@ import java.util.Map;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.saymyname.core.model.people.PersonAttribute;
-import com.saymyname.persistence.entity.organization.PersonAttributeEntity;
-import com.saymyname.persistence.mapper.PersonAttributeEntityMapper;
+import com.saymyname.core.model.people.Fact;
+import com.saymyname.persistence.entity.organization.FactEntity;
+import com.saymyname.persistence.mapper.FactEntityMapper;
 import com.saymyname.persistence.repository.AttributeRepository;
-import com.saymyname.persistence.repository.PersonAttributeRepository;
+import com.saymyname.persistence.repository.FactRepository;
 import com.saymyname.persistence.repository.PersonRepository;
 
 @Repository
 @Transactional
-public class PersonAttributeDao {
+public class FactDao {
 
-    private final PersonAttributeRepository personAttributeRepository;
-    private final PersonAttributeEntityMapper personAttributeEntityMapper;
+    private final FactRepository factRepository;
+    private final FactEntityMapper factEntityMapper;
     private final AttributeRepository attributeRepository;
     private final PersonRepository personRepository;
 
-    public PersonAttributeDao(PersonAttributeRepository personAttributeRepository,
-            PersonAttributeEntityMapper personAttributeEntityMapper,
+    public FactDao(FactRepository factRepository,
+            FactEntityMapper factEntityMapper,
             AttributeRepository attributeRepository,
             PersonRepository personRepository) {
-        this.personAttributeRepository = personAttributeRepository;
-        this.personAttributeEntityMapper = personAttributeEntityMapper;
+        this.factRepository = factRepository;
+        this.factEntityMapper = factEntityMapper;
         this.attributeRepository = attributeRepository;
         this.personRepository = personRepository;
     }
@@ -43,7 +43,7 @@ public class PersonAttributeDao {
     public Map<Long, String[]> findNumberMinMaxByAttributeIds(Collection<Long> attributeIds) {
         if (attributeIds == null || attributeIds.isEmpty())
             return Collections.emptyMap();
-        List<Object[]> rows = personAttributeRepository.findNumberMinMaxByAttributeIds(attributeIds);
+        List<Object[]> rows = factRepository.findNumberMinMaxByAttributeIds(attributeIds);
         return toMinMaxMap(rows);
     }
 
@@ -52,7 +52,7 @@ public class PersonAttributeDao {
     public Map<Long, String[]> findDateMinMaxByAttributeIds(Collection<Long> attributeIds) {
         if (attributeIds == null || attributeIds.isEmpty())
             return Collections.emptyMap();
-        List<Object[]> rows = personAttributeRepository.findDateMinMaxByAttributeIds(attributeIds);
+        List<Object[]> rows = factRepository.findDateMinMaxByAttributeIds(attributeIds);
         return toMinMaxMap(rows);
     }
 
@@ -72,15 +72,15 @@ public class PersonAttributeDao {
 
     public Long countPersonsMatchingFilter(String minValue, String nextValue, LocalDateTime validFor,
             Long attributeId) {
-        return personAttributeRepository.countPersonsMatchingFilter(minValue, nextValue, validFor, attributeId);
+        return factRepository.countPersonsMatchingFilter(minValue, nextValue, validFor, attributeId);
     }
 
     // Exclut pending_delete (actifs “runtime” via CURRENT_TIMESTAMP côté repo)
-    public List<PersonAttribute> findAttributesByPersonId(Long personId) {
-        return personAttributeRepository
+    public List<Fact> findAttributesByPersonId(Long personId) {
+        return factRepository
                 .findAttributesByPersonIdActive(personId)
                 .stream()
-                .map(personAttributeEntityMapper::toFullModel)
+                .map(factEntityMapper::toFullModel)
                 .toList();
     }
 
@@ -89,11 +89,11 @@ public class PersonAttributeDao {
      * (Sans saison, c'est la méthode principale utilisée par le service.)
      */
     @Transactional(readOnly = true)
-    public List<PersonAttribute> findActiveAtByPersonAndAttribute(Long personId, Long attributeId, LocalDateTime now) {
-        return personAttributeRepository
+    public List<Fact> findActiveAtByPersonAndAttribute(Long personId, Long attributeId, LocalDateTime now) {
+        return factRepository
                 .findActiveAtByPersonAndAttributeExcludingPending(personId, attributeId, now)
                 .stream()
-                .map(personAttributeEntityMapper::toFullModel)
+                .map(factEntityMapper::toFullModel)
                 .toList();
     }
 
@@ -107,7 +107,7 @@ public class PersonAttributeDao {
     public void softCloseActiveByIdsAndPersonId(Long personId, List<Long> ids, LocalDateTime now) {
         if (ids == null || ids.isEmpty())
             return;
-        personAttributeRepository.softCloseActiveByIdsAndPersonId(personId, ids, now);
+        factRepository.softCloseActiveByIdsAndPersonId(personId, ids, now);
     }
 
     /** Insert en lot à une date donnée (valid_from = provided). */
@@ -119,18 +119,18 @@ public class PersonAttributeDao {
         var personRef = personRepository.getReferenceById(personId);
         var attributeRef = attributeRepository.getReferenceById(attributeId);
 
-        List<PersonAttributeEntity> entities = new ArrayList<>(values.size());
+        List<FactEntity> entities = new ArrayList<>(values.size());
         for (String v : values) {
-            var e = new PersonAttributeEntity();
+            var e = new FactEntity();
             e.setPerson(personRef);
             e.setAttribute(attributeRef);
             e.setValue(v);
             e.setValidFrom(validFrom);
             e.setValidTo(null);
-            e.setPendingDelete(false);
+            e.setDeleted(false);
             entities.add(e);
         }
-        personAttributeRepository.saveAll(entities);
+        factRepository.saveAll(entities);
     }
 
     /**
@@ -138,6 +138,6 @@ public class PersonAttributeDao {
      * nettoyage).
      */
     public int hardDeleteExpiredPendingAttributes(LocalDateTime cutoffExclusive) {
-        return personAttributeRepository.hardDeleteExpiredPendingAttributes(cutoffExclusive);
+        return factRepository.hardDeleteExpiredPendingAttributes(cutoffExclusive);
     }
 }

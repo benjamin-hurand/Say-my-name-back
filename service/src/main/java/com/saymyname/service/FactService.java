@@ -1,4 +1,4 @@
-// src/main/java/com/saymyname/service/PersonAttributeService.java
+// src/main/java/com/saymyname/service/FactService.java
 package com.saymyname.service;
 
 import java.time.LocalDateTime;
@@ -22,26 +22,26 @@ import com.saymyname.core.model.enums.EditPolicy;
 import com.saymyname.core.model.people.Attribute;
 import com.saymyname.core.model.people.AttributeType;
 import com.saymyname.core.model.people.ObservedMinMax;
-import com.saymyname.core.model.people.PersonAttribute;
+import com.saymyname.core.model.people.Fact;
 import com.saymyname.core.util.TextNormalization;
 import com.saymyname.core.validation.AttributeValueValidator;
 import com.saymyname.persistence.dao.AttributeDao;
-import com.saymyname.persistence.dao.PersonAttributeDao;
+import com.saymyname.persistence.dao.FactDao;
 
 @Service
-public class PersonAttributeService {
+public class FactService {
 
-    private final PersonAttributeDao personAttributeDao;
+    private final FactDao factDao;
     private final AttributeDao attributeDao;
 
-    public PersonAttributeService(PersonAttributeDao personAttributeDao,
+    public FactService(FactDao factDao,
             AttributeDao attributeDao) {
-        this.personAttributeDao = personAttributeDao;
+        this.factDao = factDao;
         this.attributeDao = attributeDao;
     }
 
-    public List<PersonAttribute> getAttributesByPersonId(Long personId) {
-        return personAttributeDao.findAttributesByPersonId(personId);
+    public List<Fact> getAttributesByPersonId(Long personId) {
+        return factDao.findAttributesByPersonId(personId);
     }
 
     /**
@@ -64,8 +64,8 @@ public class PersonAttributeService {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
-        var numberMinMax = personAttributeDao.findNumberMinMaxByAttributeIds(numberIds); // Map<Long, String[]>
-        var dateMinMax = personAttributeDao.findDateMinMaxByAttributeIds(dateIds); // Map<Long, String[]>
+        var numberMinMax = factDao.findNumberMinMaxByAttributeIds(numberIds); // Map<Long, String[]>
+        var dateMinMax = factDao.findDateMinMaxByAttributeIds(dateIds); // Map<Long, String[]>
 
         Map<Long, ObservedMinMax> out = new HashMap<>();
         numberMinMax.forEach((id, arr) -> out.put(id, new ObservedMinMax(arr[0], arr[1])));
@@ -79,7 +79,7 @@ public class PersonAttributeService {
      */
     public Long countPersonsMatchingFilter(String minValue, String maxValue, LocalDateTime validFor,
             Long attributeId) {
-        return personAttributeDao.countPersonsMatchingFilter(
+        return factDao.countPersonsMatchingFilter(
                 minValue,
                 nextValue(maxValue),
                 validFor,
@@ -116,12 +116,12 @@ public class PersonAttributeService {
      * simulé à now (après application des opérations).
      */
     @Transactional
-    public List<PersonAttribute> applyChangesForPerson(
+    public List<Fact> applyChangesForPerson(
             Long personId,
             Long attributeId,
-            List<PersonAttribute> toCreate,
-            List<PersonAttribute> toUpdate,
-            List<PersonAttribute> toDelete,
+            List<Fact> toCreate,
+            List<Fact> toUpdate,
+            List<Fact> toDelete,
             boolean bypassRestricted,
             boolean avoidHardDelete // conservé pour compat, ignoré ici
     ) {
@@ -141,16 +141,16 @@ public class PersonAttributeService {
         }
 
         // 2) Charger les PA ACTIVES à NOW uniquement (on ignore le futur)
-        List<PersonAttribute> activeNow = personAttributeDao.findActiveAtByPersonAndAttribute(personId, attributeId,
+        List<Fact> activeNow = factDao.findActiveAtByPersonAndAttribute(personId, attributeId,
                 now);
 
         // Index par id
-        Map<Long, PersonAttribute> byId = activeNow.stream()
+        Map<Long, Fact> byId = activeNow.stream()
                 .filter(pa -> pa.getId() != null)
-                .collect(Collectors.toMap(PersonAttribute::getId, Function.identity()));
+                .collect(Collectors.toMap(Fact::getId, Function.identity()));
 
         Set<Long> activeIds = activeNow.stream()
-                .map(PersonAttribute::getId)
+                .map(Fact::getId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
@@ -174,7 +174,7 @@ public class PersonAttributeService {
                 if (!activeIds.contains(curr.getId())) {
                     throw new ResponseStatusException(HttpStatus.CONFLICT, "Update non autorisé: ligne non active");
                 }
-                if (curr.isPendingDelete()) {
+                if (curr.isDeleted()) {
                     throw new ResponseStatusException(HttpStatus.CONFLICT, "Ligne en cours de suppression");
                 }
 
@@ -209,7 +209,7 @@ public class PersonAttributeService {
                 if (curr == null) {
                     throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Attribut à supprimer introuvable");
                 }
-                if (curr.isPendingDelete()) {
+                if (curr.isDeleted()) {
                     continue; // déjà en suppression : ignore
                 }
                 if (!activeIds.contains(curr.getId())) {
@@ -291,7 +291,7 @@ public class PersonAttributeService {
 
         // a) DELETE (soft-close)
         if (!delActiveIds.isEmpty()) {
-            personAttributeDao.softCloseActiveByIdsAndPersonId(personId, delActiveIds, now);
+            factDao.softCloseActiveByIdsAndPersonId(personId, delActiveIds, now);
         }
 
         // b) UPDATE (soft-close + create)
@@ -299,35 +299,35 @@ public class PersonAttributeService {
             var ids = updActive.stream().map(UpdActive::id).toList();
             var newValues = updActive.stream().map(UpdActive::newValue).toList();
 
-            personAttributeDao.softCloseActiveByIdsAndPersonId(personId, ids, now);
-            personAttributeDao.createAllForPersonAt(personId, attributeId, newValues, now);
+            factDao.softCloseActiveByIdsAndPersonId(personId, ids, now);
+            factDao.createAllForPersonAt(personId, attributeId, newValues, now);
         }
 
         // c) CREATE
         if (!createNowValues.isEmpty()) {
-            personAttributeDao.createAllForPersonAt(personId, attributeId, createNowValues, now);
+            factDao.createAllForPersonAt(personId, attributeId, createNowValues, now);
         }
 
         // 7) Retourner la vue "active" (runtime) après modifs
-        return personAttributeDao.findActiveAtByPersonAndAttribute(personId, attributeId, now);
+        return factDao.findActiveAtByPersonAndAttribute(personId, attributeId, now);
     }
 
     @Transactional
-    public List<PersonAttribute> applyChangesForPerson(
+    public List<Fact> applyChangesForPerson(
             Long personId,
             Long attributeId,
-            List<PersonAttribute> toCreate,
-            List<PersonAttribute> toUpdate,
-            List<PersonAttribute> toDelete,
+            List<Fact> toCreate,
+            List<Fact> toUpdate,
+            List<Fact> toDelete,
             boolean bypassRestricted) {
         return applyChangesForPerson(
                 personId, attributeId, toCreate, toUpdate, toDelete, bypassRestricted, /* avoidHardDelete= */ false);
     }
 
-    private static boolean isActiveAt(PersonAttribute pa, LocalDateTime instant) {
+    private static boolean isActiveAt(Fact pa, LocalDateTime instant) {
         if (pa == null)
             return false;
-        if (pa.isPendingDelete())
+        if (pa.isDeleted())
             return false;
         boolean startsOk = !pa.getValidFrom().isAfter(instant); // validFrom ≤ instant
         boolean endsOk = (pa.getValidTo() == null) || pa.getValidTo().isAfter(instant); // validTo > instant
@@ -358,6 +358,6 @@ public class PersonAttributeService {
         if (cutoffExclusive == null) {
             throw new IllegalArgumentException("cutoffExclusive ne peut pas être null");
         }
-        return personAttributeDao.hardDeleteExpiredPendingAttributes(cutoffExclusive);
+        return factDao.hardDeleteExpiredPendingAttributes(cutoffExclusive);
     }
 }

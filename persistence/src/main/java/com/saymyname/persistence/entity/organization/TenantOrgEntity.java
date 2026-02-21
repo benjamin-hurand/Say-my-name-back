@@ -1,6 +1,5 @@
 package com.saymyname.persistence.entity.organization;
 
-
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -9,7 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.Builder;
-import com.saymyname.core.model.enums.OrgType;
+import com.saymyname.core.model.enums.tenant.OrgType;
 import com.saymyname.persistence.entity.TenantEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -25,14 +24,14 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 @ToString(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "tenant_orgs")
-public class OrganizationEntity {
+public class TenantOrgEntity {
 
     @EqualsAndHashCode.Include
     @ToString.Include
@@ -41,8 +40,7 @@ public class OrganizationEntity {
     private Long tenantId;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tenant_id", insertable = false, updatable = false,
-            foreignKey = @ForeignKey(name = "fk_tenant_orgs_tenant"))
+    @JoinColumn(name = "tenant_id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "fk_tenant_orgs_tenant"))
     private TenantEntity tenant;
 
     @Column(name = "org_key", nullable = false, length = 255)
@@ -52,8 +50,7 @@ public class OrganizationEntity {
     private String name;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "org_type", nullable = false, length = 16,
-            columnDefinition = "enum('EPHEMERAL','LONG_TERM','PUBLIC') default 'LONG_TERM'")
+    @Column(name = "org_type", nullable = false, length = 16, columnDefinition = "enum('EPHEMERAL','LONG_TERM','PUBLIC') default 'LONG_TERM'")
     private OrgType orgType;
 
     @Column(name = "is_active", nullable = false, columnDefinition = "tinyint(1) default 1")

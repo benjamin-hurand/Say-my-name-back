@@ -8,9 +8,9 @@ import java.util.Objects;
 
 /**
  * Ligne métier d’une demande (CREATE/UPDATE/DELETE).
- * - CREATE : personAttribute = null, proposedValue requis
- * - UPDATE : personAttribute requis, proposedValue requis
- * - DELETE : personAttribute requis, proposedValue null
+ * - CREATE : fact = null, proposedValue requis
+ * - UPDATE : fact requis, proposedValue requis
+ * - DELETE : fact requis, proposedValue null
  *
  * Métadonnées de résolution (status/comment) sont portées par l'ITEM.
  * Les champs "qui/quand" (resolvedBy/At) restent sur l'ENVELOPPE
@@ -27,7 +27,7 @@ public class ChangeRequestItem {
     private ChangeAction action;
 
     /** Cible pour UPDATE/DELETE (null sinon) */
-    private PersonAttribute personAttribute;
+    private Fact fact;
 
     /** Valeur proposée (null pour DELETE) */
     private String proposedValue;
@@ -45,7 +45,7 @@ public class ChangeRequestItem {
         this.id = b.id;
         this.changeRequest = b.changeRequest;
         this.action = b.action;
-        this.personAttribute = b.personAttribute;
+        this.fact = b.fact;
         this.proposedValue = b.proposedValue;
         this.resolutionStatus = (b.resolutionStatus != null ? b.resolutionStatus : ChangeRequestItemStatus.PENDING);
         this.resolutionComment = b.resolutionComment;
@@ -64,8 +64,8 @@ public class ChangeRequestItem {
         return action;
     }
 
-    public PersonAttribute getPersonAttribute() {
-        return personAttribute;
+    public Fact getFact() {
+        return fact;
     }
 
     public String getProposedValue() {
@@ -93,8 +93,8 @@ public class ChangeRequestItem {
         this.action = action;
     }
 
-    public void setPersonAttribute(PersonAttribute personAttribute) {
-        this.personAttribute = personAttribute;
+    public void setFact(Fact fact) {
+        this.fact = fact;
     }
 
     public void setProposedValue(String proposedValue) {
@@ -114,7 +114,7 @@ public class ChangeRequestItem {
         private Long id;
         private ChangeRequest changeRequest;
         private ChangeAction action;
-        private PersonAttribute personAttribute;
+        private Fact fact;
         private String proposedValue;
         private ChangeRequestItemStatus resolutionStatus;
         private String resolutionComment;
@@ -134,8 +134,8 @@ public class ChangeRequestItem {
             return this;
         }
 
-        public Builder withPersonAttribute(PersonAttribute personAttribute) {
-            this.personAttribute = personAttribute;
+        public Builder withFact(Fact fact) {
+            this.fact = fact;
             return this;
         }
 
@@ -181,7 +181,7 @@ public class ChangeRequestItem {
                 "id=" + id +
                 ", crId=" + (changeRequest != null ? changeRequest.getId() : null) +
                 ", action=" + action +
-                ", personAttributeId=" + (personAttribute != null ? personAttribute.getId() : null) +
+                ", factId=" + (fact != null ? fact.getId() : null) +
                 ", proposedValue=" + proposedValue +
                 ", resolutionStatus=" + resolutionStatus +
                 ", resolutionComment=" + (resolutionComment != null ? "'" + resolutionComment + "'" : "null") +

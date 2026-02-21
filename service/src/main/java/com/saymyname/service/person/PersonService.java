@@ -19,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.course.Course;
 import com.saymyname.core.model.people.Person;
-import com.saymyname.core.model.people.PersonAttribute;
+import com.saymyname.core.model.people.Fact;
 import com.saymyname.core.model.persondirectory.AdminPersonCard;
 import com.saymyname.core.model.persondirectory.AdminPersonSearchCriteria;
 import com.saymyname.core.model.persondirectory.AttributeValueRow;
@@ -29,7 +29,7 @@ import com.saymyname.core.model.persondirectory.PersonCard;
 import com.saymyname.core.model.persondirectory.PersonSearchCriteria;
 import com.saymyname.core.model.quiz.options.GameMode;
 import com.saymyname.persistence.dao.PersonDao;
-import com.saymyname.service.PersonAttributeService;
+import com.saymyname.service.FactService;
 import com.saymyname.service.UserOrganizationService;
 
 @Service
@@ -37,13 +37,13 @@ import com.saymyname.service.UserOrganizationService;
 public class PersonService {
 
     private final PersonDao personDao;
-    private final PersonAttributeService personAttributeService;
+    private final FactService factService;
     private final UserOrganizationService userOrganizationService;
 
     public PersonService(PersonDao personDao,
-            PersonAttributeService personAttributeService, UserOrganizationService userOrganizationService) {
+            FactService factService, UserOrganizationService userOrganizationService) {
         this.personDao = personDao;
-        this.personAttributeService = personAttributeService;
+        this.factService = factService;
         this.userOrganizationService = userOrganizationService;
     }
 
@@ -263,12 +263,12 @@ public class PersonService {
         return personDao.findPersonIds(criteria, userId);
     }
 
-    public List<PersonAttribute> applyAttributeChangesForUser(
+    public List<Fact> applyAttributeChangesForUser(
             User user,
             Long attributeId,
-            List<PersonAttribute> toCreate,
-            List<PersonAttribute> toUpdate,
-            List<PersonAttribute> toDelete) {
+            List<Fact> toCreate,
+            List<Fact> toUpdate,
+            List<Fact> toDelete) {
 
         if (user == null || user.getId() == null) {
             throw new org.springframework.web.server.ResponseStatusException(
@@ -279,7 +279,7 @@ public class PersonService {
                 .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
                         org.springframework.http.HttpStatus.NOT_FOUND, "Profil introuvable"));
 
-        return personAttributeService.applyChangesForPerson(
+        return factService.applyChangesForPerson(
                 personId, attributeId, toCreate, toUpdate, toDelete, false);
     }
 

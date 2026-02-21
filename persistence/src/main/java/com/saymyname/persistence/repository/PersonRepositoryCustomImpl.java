@@ -10,7 +10,7 @@ import com.saymyname.core.model.enums.FollowFilter;
 import com.saymyname.core.model.enums.PhotoStatus;
 import com.saymyname.core.model.quiz.options.CategorySelection;
 import com.saymyname.core.model.quiz.options.TrainingOptions;
-import com.saymyname.persistence.entity.organization.PersonAttributeEntity;
+import com.saymyname.persistence.entity.organization.FactEntity;
 import com.saymyname.persistence.entity.organization.PersonEntity;
 import com.saymyname.persistence.entity.organization.PhotoEntity;
 import com.saymyname.persistence.entity.organization.subscription.UserSubscriptionEntity;
@@ -57,7 +57,7 @@ public class PersonRepositoryCustomImpl implements PersonRepositoryCustom {
         CategorySelection category = options.getCategory();
         if (category != null && category.getAttributeId() != null) {
             // Join INNER sur les attributs
-            Join<PersonEntity, PersonAttributeEntity> attrJoin = person.join("attributes", JoinType.INNER);
+            Join<PersonEntity, FactEntity> attrJoin = person.join("attributes", JoinType.INNER);
 
             // Attribut ciblé (par ID)
             Predicate attributeMatch = cb.equal(

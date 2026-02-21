@@ -3,7 +3,6 @@ package com.saymyname.persistence.mapper.course;
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.course.CourseQuestionItem;
-import com.saymyname.core.model.enums.course.QuizQuestionItemRole;
 import com.saymyname.persistence.entity.organization.PersonEntity;
 import com.saymyname.persistence.entity.organization.course.CourseQuestionItemEntity;
 import com.saymyname.persistence.entity.organization.course.KnowledgeEntity;
@@ -29,7 +28,7 @@ public class CourseQuestionItemEntityMapper {
         CourseQuestionItemEntity entity = new CourseQuestionItemEntity();
         entity.setId(model.getId());
         entity.setPosition(model.getPosition());
-        entity.setRole(mapRole(model.getRole()));
+        entity.setRole(model.getRole());
         entity.setAnswered(model.isAnswered());
         entity.setCorrect(model.getCorrect());
         entity.setNormalizedAnswer(model.getNormalizedAnswer());
@@ -57,25 +56,15 @@ public class CourseQuestionItemEntityMapper {
         if (entity == null)
             return null;
 
-        QuizQuestionItemRole role = mapRole(entity.getRole());
-
         return new CourseQuestionItem.Builder()
                 .withId(entity.getId())
                 .withPosition(entity.getPosition())
-                .withRole(role)
+                .withRole(entity.getRole())
                 .withKnowledge(entity.getKnowledge() != null ? knowledgeMapper.toModel(entity.getKnowledge()) : null)
                 .withPerson(entity.getPerson() != null ? personMapper.toShortModel(entity.getPerson()) : null)
                 .withAnswered(entity.isAnswered())
                 .withCorrect(entity.getCorrect())
                 .withNormalizedAnswer(entity.getNormalizedAnswer())
                 .build();
-    }
-
-    private CourseQuestionItemEntity.Role mapRole(QuizQuestionItemRole role) {
-        return role == null ? null : CourseQuestionItemEntity.Role.valueOf(role.name());
-    }
-
-    private QuizQuestionItemRole mapRole(CourseQuestionItemEntity.Role role) {
-        return role == null ? null : QuizQuestionItemRole.valueOf(role.name());
     }
 }

@@ -13,13 +13,13 @@ import com.saymyname.persistence.entity.organization.PersonEntity;
 public class PersonEntityMapper {
 
         private final PhotoEntityMapper photoEntityMapper;
-        private final PersonAttributeEntityMapper personAttributeEntityMapper;
+        private final FactEntityMapper factEntityMapper;
 
         @Autowired
         public PersonEntityMapper(PhotoEntityMapper photoEntityMapper,
-                        PersonAttributeEntityMapper personAttributeEntityMapper) {
+                        FactEntityMapper factEntityMapper) {
                 this.photoEntityMapper = photoEntityMapper;
-                this.personAttributeEntityMapper = personAttributeEntityMapper;
+                this.factEntityMapper = factEntityMapper;
         }
 
         // --- Entity ⇐ Model
@@ -31,11 +31,11 @@ public class PersonEntityMapper {
                 PersonEntity personEntity = new PersonEntity();
                 personEntity.setId(person.getId());
 
-                // Attributes
-                if (person.getAttributes() != null) {
-                        personEntity.setAttributes(
-                                        person.getAttributes().stream()
-                                                        .map(personAttributeEntityMapper::toEntity)
+                // Facts
+                if (person.getFacts() != null) {
+                        personEntity.setFacts(
+                                        person.getFacts().stream()
+                                                        .map(factEntityMapper::toEntity)
                                                         .collect(Collectors.toList()));
                 }
 
@@ -58,10 +58,10 @@ public class PersonEntityMapper {
 
                 return new Person.Builder()
                                 .withId(personEntity.getId())
-                                .withAttributes(
-                                                personEntity.getAttributes() != null
-                                                                ? personEntity.getAttributes().stream()
-                                                                                .map(personAttributeEntityMapper::toModel)
+                                .withFacts(
+                                                personEntity.getFacts() != null
+                                                                ? personEntity.getFacts().stream()
+                                                                                .map(factEntityMapper::toModel)
                                                                                 .collect(Collectors.toList())
                                                                 : List.of())
                                 .withPhotos(

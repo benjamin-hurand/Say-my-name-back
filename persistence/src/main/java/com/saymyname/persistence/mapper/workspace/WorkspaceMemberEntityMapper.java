@@ -21,7 +21,6 @@ public class WorkspaceMemberEntityMapper {
             entity.setId(new WorkspaceMemberId(model.getWorkspaceId(), model.getUserId()));
         }
 
-        // workspace/user relations non hydratées ici (Phase 0).
         entity.setRole(model.getRole());
         entity.setStatus(model.getStatus());
 
@@ -38,6 +37,7 @@ public class WorkspaceMemberEntityMapper {
 
         entity.setPreferredEmailId(model.getPreferredEmailId());
 
+        // workspace/user/preferredEmail relations = READ-ONLY, pas hydratées ici
         return entity;
     }
 

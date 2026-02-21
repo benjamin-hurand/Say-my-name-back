@@ -1,6 +1,5 @@
 package com.saymyname.persistence.entity.workspace;
 
-
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -24,7 +23,7 @@ import jakarta.persistence.Table;
 
 @Getter
 @Setter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
@@ -51,8 +50,7 @@ public class ImportMappingEntity {
     private Long targetAttributeId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "transform_kind", nullable = false, length = 16,
-            columnDefinition = "enum('NONE','SPLIT_NAME','REGEX','DATE_PARSE','LOWER','UPPER','TRIM','ENUM_MAP') default 'NONE'")
+    @Column(name = "transform_kind", nullable = false, length = 16, columnDefinition = "enum('NONE','SPLIT_NAME','REGEX','DATE_PARSE','LOWER','UPPER','TRIM','ENUM_MAP') default 'NONE'")
     private TransformKind transformKind;
 
     @Column(name = "transform_payload", columnDefinition = "json")

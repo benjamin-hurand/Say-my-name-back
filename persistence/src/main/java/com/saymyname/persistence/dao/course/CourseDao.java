@@ -9,8 +9,8 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.saymyname.core.model.course.Course;
-import com.saymyname.core.model.enums.CourseStatus;
 import com.saymyname.core.model.enums.PopulationScope;
+import com.saymyname.core.model.enums.course.CourseStatus;
 import com.saymyname.persistence.entity.organization.course.CourseEntity;
 import com.saymyname.persistence.mapper.course.CourseEntityMapper;
 import com.saymyname.persistence.repository.GameModeRepository;

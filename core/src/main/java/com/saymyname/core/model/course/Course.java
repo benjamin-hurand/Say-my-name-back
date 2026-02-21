@@ -5,8 +5,8 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 import com.saymyname.core.model.auth.User;
-import com.saymyname.core.model.enums.CourseStatus;
 import com.saymyname.core.model.enums.PopulationScope;
+import com.saymyname.core.model.enums.course.CourseStatus;
 import com.saymyname.core.model.quiz.options.GameMode;
 
 public class Course {

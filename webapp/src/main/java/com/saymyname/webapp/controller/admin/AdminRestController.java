@@ -23,19 +23,19 @@ import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.enums.OrgRole;
 import com.saymyname.core.model.people.Attribute;
 import com.saymyname.core.model.people.Person;
-import com.saymyname.core.model.people.PersonAttribute;
+import com.saymyname.core.model.people.Fact;
 import com.saymyname.core.model.persondirectory.AdminPersonCard;
 import com.saymyname.core.model.persondirectory.AdminPersonSearchCriteria;
 import com.saymyname.core.model.quiz.options.GameMode;
 import com.saymyname.service.AttributeService;
 import com.saymyname.service.ChangeRequestService;
 import com.saymyname.service.GameModeService;
-import com.saymyname.service.PersonAttributeService;
+import com.saymyname.service.FactService;
 import com.saymyname.service.UserOrganizationService;
 import com.saymyname.service.UserService;
 import com.saymyname.service.person.PersonEmailService;
 import com.saymyname.service.person.PersonService;
-import com.saymyname.webapp.dto.PersonAttributeDto;
+import com.saymyname.webapp.dto.FactDto;
 import com.saymyname.webapp.dto.PersonDto;
 import com.saymyname.webapp.dto.UserDto;
 import com.saymyname.webapp.dto.changerequest.ChangeRequestSummaryDto;
@@ -44,10 +44,10 @@ import com.saymyname.webapp.dto.person.AdminPersonDetailsDto;
 import com.saymyname.webapp.dto.person.AdminPersonSearchRequestDto;
 import com.saymyname.webapp.dto.person.PersonEmailDto;
 import com.saymyname.webapp.dto.profile.AttributeValuesResponseDto;
-import com.saymyname.webapp.dto.profile.BulkPersonAttributeRequest;
-import com.saymyname.webapp.mapper.BulkPersonAttributeDtoMapper;
+import com.saymyname.webapp.dto.profile.BulkFactRequest;
+import com.saymyname.webapp.mapper.BulkFactDtoMapper;
 import com.saymyname.webapp.mapper.ChangeRequestDtoMapper;
-import com.saymyname.webapp.mapper.PersonAttributeDtoMapper;
+import com.saymyname.webapp.mapper.FactDtoMapper;
 import com.saymyname.webapp.mapper.PersonDtoMapper;
 import com.saymyname.webapp.mapper.UserDtoMapper;
 import com.saymyname.webapp.mapper.person.PersonDirectoryDtoMapper;
@@ -63,10 +63,10 @@ public class AdminRestController {
     private final GameModeService gameModeService;
 
     private final PersonDirectoryDtoMapper personDirectoryDtoMapper;
-    private final BulkPersonAttributeDtoMapper bulkPersonAttributeDtoMapper;
+    private final BulkFactDtoMapper bulkFactDtoMapper;
 
-    private final PersonAttributeService personAttributeService;
-    private final PersonAttributeDtoMapper personAttributeDtoMapper;
+    private final FactService factService;
+    private final FactDtoMapper factDtoMapper;
 
     private final PersonEmailService personEmailService;
     private final PersonEmailDtoMapper personEmailDtoMapper;
@@ -88,9 +88,9 @@ public class AdminRestController {
             AttributeService attributeService,
             GameModeService gameModeService,
             PersonDirectoryDtoMapper personDirectoryDtoMapper,
-            BulkPersonAttributeDtoMapper bulkPersonAttributeDtoMapper,
-            PersonAttributeService personAttributeService,
-            PersonAttributeDtoMapper personAttributeDtoMapper,
+            BulkFactDtoMapper bulkFactDtoMapper,
+            FactService factService,
+            FactDtoMapper factDtoMapper,
             PersonEmailService personEmailService,
             PersonEmailDtoMapper personEmailDtoMapper,
             PersonDtoMapper personDtoMapper,
@@ -105,10 +105,10 @@ public class AdminRestController {
         this.gameModeService = gameModeService;
 
         this.personDirectoryDtoMapper = personDirectoryDtoMapper;
-        this.bulkPersonAttributeDtoMapper = bulkPersonAttributeDtoMapper;
+        this.bulkFactDtoMapper = bulkFactDtoMapper;
 
-        this.personAttributeService = personAttributeService;
-        this.personAttributeDtoMapper = personAttributeDtoMapper;
+        this.factService = factService;
+        this.factDtoMapper = factDtoMapper;
 
         this.personEmailService = personEmailService;
         this.personEmailDtoMapper = personEmailDtoMapper;
@@ -232,13 +232,13 @@ public class AdminRestController {
     public ResponseEntity<AttributeValuesResponseDto> applyAttributeChangesForPersonAsAdmin(
             @PathVariable("personId") Long personId,
             @PathVariable("attributeId") Long attributeId,
-            @RequestBody BulkPersonAttributeRequest body) {
+            @RequestBody BulkFactRequest body) {
 
-        var toCreate = bulkPersonAttributeDtoMapper.toCreateModels(body.create());
-        var toUpdate = bulkPersonAttributeDtoMapper.toUpdateModels(body.update());
-        var toDelete = bulkPersonAttributeDtoMapper.toDeleteModels(body.delete());
+        var toCreate = bulkFactDtoMapper.toCreateModels(body.create());
+        var toUpdate = bulkFactDtoMapper.toUpdateModels(body.update());
+        var toDelete = bulkFactDtoMapper.toDeleteModels(body.delete());
 
-        List<PersonAttribute> updated = personAttributeService.applyChangesForPerson(
+        List<Fact> updated = factService.applyChangesForPerson(
                 personId,
                 attributeId,
                 toCreate,
@@ -246,8 +246,8 @@ public class AdminRestController {
                 toDelete,
                 true);
 
-        List<PersonAttributeDto> updatedDtos = updated.stream()
-                .map(personAttributeDtoMapper::toDto)
+        List<FactDto> updatedDtos = updated.stream()
+                .map(factDtoMapper::toDto)
                 .toList();
 
         var response = new AttributeValuesResponseDto(attributeId, updatedDtos);

@@ -1,6 +1,5 @@
 package com.saymyname.persistence.entity.organization.leaderboard;
 
-
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -10,8 +9,10 @@ import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 import com.saymyname.persistence.entity.UserEntity;
+import com.saymyname.persistence.jpa.UuidBytesConverter;
 import com.saymyname.persistence.multitenancy.BaseTenantScoped;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ForeignKey;
@@ -23,10 +24,11 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Getter
 @Setter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @SuperBuilder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
@@ -51,8 +53,9 @@ public class XpEventEntity extends BaseTenantScoped {
     @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_xp_user"))
     private UserEntity user;
 
-    @Column(name = "event_id", nullable = false, columnDefinition = "binary(16)")
-    private byte[] eventId;
+    @Convert(converter = UuidBytesConverter.class)
+    @Column(name = "event_id", columnDefinition = "BINARY(16)", nullable = false, updatable = false)
+    private UUID eventId;
 
     @Column(name = "event_key", nullable = false, length = 64)
     private String eventKey;

@@ -170,7 +170,7 @@ public class ChangeRequestEntityMapper {
                 ? attributeEntityMapper.toShortModel(e.getAttribute())
                 : null;
 
-        // Items (avec personAttribute.id/value/dates/attribute, selon ton mapper)
+        // Items (avec fact.id/value/dates/attribute, selon ton mapper)
         List<ChangeRequestItem> items = (e.getItems() != null)
                 ? e.getItems().stream().map(itemEntityMapper::toModel).toList()
                 : List.of();

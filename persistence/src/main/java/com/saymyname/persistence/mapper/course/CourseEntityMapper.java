@@ -5,8 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.course.Course;
-import com.saymyname.core.model.enums.CourseStatus;
 import com.saymyname.core.model.enums.PopulationScope;
+import com.saymyname.core.model.enums.course.CourseStatus;
 import com.saymyname.persistence.entity.organization.course.CourseEntity;
 import com.saymyname.persistence.mapper.GameModeEntityMapper;
 import com.saymyname.persistence.mapper.UserEntityMapper;

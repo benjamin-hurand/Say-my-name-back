@@ -1,6 +1,5 @@
 package com.saymyname.persistence.entity.organization;
 
-
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -24,14 +23,15 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @SuperBuilder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 @ToString(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "photo_assignments", uniqueConstraints = {
-        @UniqueConstraint(name = "uq_pa_scope", columnNames = {"tenant_id", "person_id", "scope_kind", "workspace_id", "team_id"})
+        @UniqueConstraint(name = "uq_pa_scope", columnNames = { "tenant_id", "person_id", "scope_kind", "workspace_id",
+                "team_id" })
 }, indexes = {
         @Index(name = "idx_pa_tenant_person", columnList = "tenant_id,person_id"),
         @Index(name = "idx_pa_workspace", columnList = "workspace_id"),

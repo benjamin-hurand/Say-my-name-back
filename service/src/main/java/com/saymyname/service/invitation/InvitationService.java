@@ -200,7 +200,7 @@ public class InvitationService {
         InvitationEntity parent = invitationRepo.findById(inv.getId())
                 .orElseThrow(() -> new IllegalStateException("Invitation introuvable"));
 
-        Long orgId = parent.getOrganizationId();
+        Long orgId = parent.getTenantId();
         if (orgId == null) {
             throw new IllegalStateException("Invitation sans organization_id");
         }

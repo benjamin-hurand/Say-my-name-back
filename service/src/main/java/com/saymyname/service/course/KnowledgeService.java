@@ -25,7 +25,7 @@ import com.saymyname.core.model.enums.SrsAlgorithm;
 import com.saymyname.core.model.leaderboard.XpAward;
 import com.saymyname.core.model.people.Person;
 import com.saymyname.core.model.quiz.options.GameMode;
-import com.saymyname.persistence.dao.PersonAttributeDao;
+import com.saymyname.persistence.dao.FactDao;
 import com.saymyname.persistence.dao.course.KnowledgeDao;
 import com.saymyname.service.course.scheduler.SchedulerStrategy;
 import com.saymyname.service.leaderboard.LeaderboardService;
@@ -53,7 +53,7 @@ public class KnowledgeService {
             KnowledgeDao knowledgeDao,
             Map<SrsAlgorithm, SchedulerStrategy> strategies,
             @Value("${quiz.reviewAlgorithm:SM2}") SrsAlgorithm defaultAlgorithm,
-            PersonAttributeDao personAttributeDao,
+            FactDao factDao,
             LeaderboardService leaderboardService) {
         this.knowledgeDao = Objects.requireNonNull(knowledgeDao, "knowledgeDao");
         this.strategies = Objects.requireNonNull(strategies, "strategies");
