@@ -6,7 +6,7 @@ public class AttributeValueView {
     private Long attributeId;
     private String value;
     private Integer displayOrder;
-    private Boolean primaryField;
+    private Boolean identitySource;
 
     public AttributeValueView() {
     }
@@ -15,7 +15,7 @@ public class AttributeValueView {
         this.attributeId = b.attributeId;
         this.value = b.value;
         this.displayOrder = b.displayOrder;
-        this.primaryField = b.primaryField;
+        this.identitySource = b.identitySource;
     }
 
     public Long getAttributeId() {
@@ -30,8 +30,8 @@ public class AttributeValueView {
         return displayOrder;
     }
 
-    public Boolean getPrimaryField() {
-        return primaryField;
+    public Boolean getIdentitySource() {
+        return identitySource;
     }
 
     public void setAttributeId(Long attributeId) {
@@ -46,15 +46,15 @@ public class AttributeValueView {
         this.displayOrder = displayOrder;
     }
 
-    public void setPrimaryField(Boolean primaryField) {
-        this.primaryField = primaryField;
+    public void setIdentitySource(Boolean identitySource) {
+        this.identitySource = identitySource;
     }
 
     public static class Builder {
         private Long attributeId;
         private String value;
         private Integer displayOrder;
-        private Boolean primaryField;
+        private Boolean identitySource;
 
         public Builder withAttributeId(Long v) {
             this.attributeId = v;
@@ -71,8 +71,8 @@ public class AttributeValueView {
             return this;
         }
 
-        public Builder withPrimaryField(Boolean v) {
-            this.primaryField = v;
+        public Builder withIdentitySource(Boolean v) {
+            this.identitySource = v;
             return this;
         }
 
@@ -90,12 +90,12 @@ public class AttributeValueView {
         return Objects.equals(attributeId, that.attributeId)
                 && Objects.equals(value, that.value)
                 && Objects.equals(displayOrder, that.displayOrder)
-                && Objects.equals(primaryField, that.primaryField);
+                && Objects.equals(identitySource, that.identitySource);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(attributeId, value, displayOrder, primaryField);
+        return Objects.hash(attributeId, value, displayOrder, identitySource);
     }
 
     @Override
@@ -103,6 +103,6 @@ public class AttributeValueView {
         return "AttributeValueView{attributeId=" + attributeId +
                 ", value='" + value + '\'' +
                 ", displayOrder=" + displayOrder +
-                ", primaryField=" + primaryField + '}';
+                ", identitySource=" + identitySource + '}';
     }
 }

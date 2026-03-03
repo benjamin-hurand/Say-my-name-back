@@ -10,7 +10,7 @@ public class CourseStatsDtoMapper {
         public CourseStatsDto toDto(CourseStats s) {
                 return new CourseStatsDto(
                                 s.getCourseId(),
-                                s.getGameModeId(),
+                                s.getTargetAttributeId(),
                                 s.getTotalCandidates(),
                                 s.getUniverseEligible(),
                                 s.getUnknown(),

@@ -1,11 +1,14 @@
 package com.saymyname.webapp.mapper;
 
+import java.time.LocalDateTime;
+import java.util.Objects;
+
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.enums.OrgRole;
+import com.saymyname.core.model.people.Fact;
 import com.saymyname.core.model.people.Person;
 import com.saymyname.service.attribute.AttributeMetaCache;
-import com.saymyname.service.person.PersonDisplayNameBuilder;
 import com.saymyname.service.photo.PhotoUrlResolver;
 import com.saymyname.webapp.dto.PersonDto;
 import com.saymyname.webapp.dto.changerequest.PersonSummaryDto;
@@ -16,14 +19,11 @@ public class PersonDtoMapper {
         private final FactDtoMapper factDtoMapper;
         private final PhotoDtoMapper photoDtoMapper;
         private final PhotoUrlResolver photoUrlResolver;
-        // TODO: Soit remettre soit supprimer completement METACACHE
         private final AttributeMetaCache attributeMetaCache;
-        private final PersonDisplayNameBuilder displayNameBuilder;
 
         public PersonDtoMapper(FactDtoMapper factDtoMapper,
                         PhotoDtoMapper photoDtoMapper, PhotoUrlResolver photoUrlResolver,
-                        AttributeMetaCache attributeMetaCache, PersonDisplayNameBuilder displayNameBuilder) {
-                this.displayNameBuilder = displayNameBuilder;
+                        AttributeMetaCache attributeMetaCache) {
                 this.factDtoMapper = factDtoMapper;
                 this.photoUrlResolver = photoUrlResolver;
                 this.photoDtoMapper = photoDtoMapper;
@@ -60,12 +60,36 @@ public class PersonDtoMapper {
                                                 : null);
         }
 
-        /** Résumé léger (displayName actuel + photo approved si dispo). */
         public PersonSummaryDto toSummaryDto(Person person) {
-                String displayName = displayNameBuilder.build(person);
-                String photoUrl = person.getApprovedPhoto()
+                Long derivedAttrId = attributeMetaCache.getDerivedIdentityAttributeId();
+                LocalDateTime now = LocalDateTime.now();
+                String displayName = "";
+                if (derivedAttrId != null && person != null && person.getFacts() != null) {
+                        displayName = person.getFacts().stream()
+                                        .filter(f -> f.getAttribute() != null
+                                                        && Objects.equals(f.getAttribute().getId(), derivedAttrId))
+                                        .filter(f -> isActiveAt(f, now))
+                                        .map(Fact::getValue)
+                                        .filter(v -> v != null && !v.isBlank())
+                                        .findFirst()
+                                        .orElse("");
+                }
+                String photoUrl = person != null ? person.getApprovedPhoto()
                                 .map(p -> photoUrlResolver.smallUrl(p.getStorageKey()))
-                                .orElse(null);
+                                .orElse(null) : null;
                 return new PersonSummaryDto(displayName, photoUrl);
         }
+
+        private static boolean isActiveAt(Fact a, LocalDateTime at) {
+                if (a == null || a.isDeleted())
+                        return false;
+                var from = a.getValidFrom();
+                var to = a.getValidTo();
+                if (from != null && at.isBefore(from))
+                        return false;
+                if (to != null && !at.isBefore(to))
+                        return false;
+                return true;
+        }
+
 }

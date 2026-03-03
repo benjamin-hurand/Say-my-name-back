@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.saymyname.core.model.enums.InvitationType;
-import com.saymyname.core.multitenancy.OrgContext;
+import com.saymyname.core.multitenancy.TenantContext;
 import com.saymyname.core.model.invitation.Invitation;
 import com.saymyname.persistence.entity.organization.invitation.InvitationEntity;
 import com.saymyname.persistence.mapper.invitation.InvitationEntityMapper;
@@ -33,7 +33,7 @@ public class InvitationDao {
     @Transactional
     public Invitation save(Invitation model) {
         InvitationEntity e = mapper.toEntity(model);
-        e.setTenantId(OrgContext.get());
+        e.setTenantId(TenantContext.get());
         normalizeBeforePersist(e);
         InvitationEntity saved = repo.save(e);
         return mapper.toModel(saved);
@@ -69,7 +69,7 @@ public class InvitationDao {
     @Transactional
     public Invitation update(Invitation model) {
         InvitationEntity e = mapper.toEntity(model);
-        e.setTenantId(OrgContext.get());
+        e.setTenantId(TenantContext.get());
         normalizeBeforePersist(e);
         InvitationEntity saved = repo.save(e);
         return mapper.toModel(saved);

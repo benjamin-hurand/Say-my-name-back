@@ -46,7 +46,7 @@ public class AttributeDtoMapper {
                 m.getId(),
                 m.getName(),
                 m.getDisplayOrder(),
-                m.isPrimaryField(),
+                m.isIdentitySource(),
                 m.isCategory(),
                 m.getMaxValues(),
                 m.isFilter(),
@@ -126,7 +126,7 @@ public class AttributeDtoMapper {
                 .withId(dto.id())
                 .withName(dto.name())
                 .withDisplayOrder(dto.displayOrder() != null ? dto.displayOrder() : 100)
-                .withPrimaryField(Boolean.TRUE.equals(dto.primaryField()))
+                .withIdentitySource(Boolean.TRUE.equals(dto.identitySource()))
                 .withCategory(Boolean.TRUE.equals(dto.category()))
                 .withMaxValues(dto.maxValues() != null ? dto.maxValues() : 1)
                 .withFilter(Boolean.TRUE.equals(dto.filter()))

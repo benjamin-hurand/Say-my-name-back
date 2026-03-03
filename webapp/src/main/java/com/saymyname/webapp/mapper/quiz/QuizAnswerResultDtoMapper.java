@@ -7,32 +7,30 @@ import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.quiz.QuizAnswerItemResult;
 import com.saymyname.core.model.quiz.QuizAnswerResult;
-import com.saymyname.core.model.quiz.QuizAnswerResult;
 import com.saymyname.core.model.quiz.snapshot.HangmanSnapshotState;
 import com.saymyname.core.model.quiz.snapshot.MultiStepState;
 import com.saymyname.core.model.quiz.snapshot.WordPuzzleSnapshotState;
 import com.saymyname.webapp.dto.quiz.MultiStepStateDto;
 import com.saymyname.webapp.dto.quiz.QuizAnswerItemResultDto;
 import com.saymyname.webapp.dto.quiz.QuizAnswerResultDto;
-import com.saymyname.webapp.dto.quiz.ResultAttributeDto;
 import com.saymyname.webapp.mapper.leaderboard.XpAwardDtoMapper;
 
 @Component
 public class QuizAnswerResultDtoMapper {
 
-        private final ResultAttributeDtoMapper resultAttributeDtoMapper;
+        private final TargetAnswerResultDtoMapper targetAnswerResultDtoMapper;
         private final QuizQuestionDtoMapper quizQuestionDtoMapper;
         private final HangmanStateDtoMapper hangmanStateDtoMapper;
         private final WordPuzzleStateDtoMapper wordPuzzleStateDtoMapper;
         private final XpAwardDtoMapper xpAwardDtoMapper;
 
         public QuizAnswerResultDtoMapper(
-                        ResultAttributeDtoMapper resultAttributeDtoMapper,
+                        TargetAnswerResultDtoMapper targetAnswerResultDtoMapper,
                         QuizQuestionDtoMapper quizQuestionDtoMapper,
                         HangmanStateDtoMapper hangmanStateDtoMapper,
                         WordPuzzleStateDtoMapper wordPuzzleStateDtoMapper,
                         XpAwardDtoMapper xpAwardDtoMapper) {
-                this.resultAttributeDtoMapper = resultAttributeDtoMapper;
+                this.targetAnswerResultDtoMapper = targetAnswerResultDtoMapper;
                 this.quizQuestionDtoMapper = quizQuestionDtoMapper;
                 this.hangmanStateDtoMapper = hangmanStateDtoMapper;
                 this.wordPuzzleStateDtoMapper = wordPuzzleStateDtoMapper;
@@ -82,10 +80,6 @@ public class QuizAnswerResultDtoMapper {
                         return null;
                 }
 
-                List<ResultAttributeDto> attrs = r.getResultAttributes() == null
-                                ? List.of()
-                                : r.getResultAttributes().stream().map(resultAttributeDtoMapper::toDto).toList();
-
                 return new QuizAnswerItemResultDto(
                                 r.getPosition(),
                                 r.getRole(),
@@ -94,6 +88,6 @@ public class QuizAnswerResultDtoMapper {
                                 r.isCorrect(),
                                 r.getUserAnswerNormalized(),
                                 r.getCorrectAnswer(),
-                                attrs);
+                                targetAnswerResultDtoMapper.toDto(r.getTargetAnswerResult()));
         }
 }

@@ -11,7 +11,7 @@ public record QuizResultDto(
 
         String feedbackMessage,
 
-        List<ResultAttributeDto> resultAttributes,
+        List<TargetAnswerResultDto> targetAnswerResult,
 
         // multi-item formats
         List<ItemResultDto> itemResults,

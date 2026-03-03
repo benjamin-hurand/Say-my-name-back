@@ -48,7 +48,7 @@ public class UserOrganizationEntity {
     @EqualsAndHashCode.Include
     @ToString.Include
     @EmbeddedId
-    private UserOrganizationId id;
+    private UserTenantId id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @MapsId("tenantId")

@@ -17,9 +17,10 @@ public final class QuizQuestionSnapshotMapper {
         return new QuizQuestion.Builder()
                 .withPersonId(s.getPersonId())
                 .withStorageKey(s.getStorageKey())
-                .withGameModeId(s.getGameModeId())
-                .withTargetAttributeIds(s.getTargetAttributeIds())
-                .withOperator(s.getOperator())
+
+                // ✅ auditable spec (mono-attribute)
+                .withTargetAttributeId(s.getTargetAttributeId())
+
                 .withContext(s.getContext())
                 .withFormat(s.getFormat())
                 .withPayload(s.getPayload())
@@ -28,13 +29,14 @@ public final class QuizQuestionSnapshotMapper {
                 .withFollowUp(s.getFollowUp())
                 .withReasonCode(s.getReasonCode())
                 .withReasonDetailsJson(s.getReasonDetailsJson())
-                // ✅ NEW: inject runtime multi-step state into QuizQuestion
+
+                // ✅ runtime multi-step state (safe: snapshot state must NOT contain truth)
                 .withMultiStepState(extractMultiStepState(s))
                 .build();
     }
 
     private static MultiStepState extractMultiStepState(QuizQuestionSnapshot s) {
-        QuizFormat fmt = s.getFormat();
+        QuizFormat fmt = (s != null) ? s.getFormat() : null;
         if (fmt == null) {
             return null;
         }

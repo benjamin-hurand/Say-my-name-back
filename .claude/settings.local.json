@@ -16,7 +16,8 @@
       "Bash(mvn -Ptests test -q)",
       "Bash(mvn:*)",
       "Bash(tee:*)",
-      "Bash(timeout 30 mvn:*)"
+      "Bash(timeout 30 mvn:*)",
+      "Bash(xargs:*)"
     ]
   }
 }

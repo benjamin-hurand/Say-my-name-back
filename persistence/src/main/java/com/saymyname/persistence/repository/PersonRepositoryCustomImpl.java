@@ -72,8 +72,8 @@ public class PersonRepositoryCustomImpl implements PersonRepositoryCustom {
             Predicate validToPredicate = cb.or(
                     cb.isNull(attrJoin.get("validTo")),
                     cb.greaterThanOrEqualTo(attrJoin.get("validTo"), cb.currentTimestamp()));
-            Predicate notPendingDelete = cb.isFalse(attrJoin.get("pendingDelete"));
-            Predicate validPredicate = cb.and(validFromPredicate, validToPredicate, notPendingDelete);
+            Predicate notDeleted = cb.isFalse(attrJoin.get("deleted"));
+            Predicate validPredicate = cb.and(validFromPredicate, validToPredicate, notDeleted);
 
             // Combinaison pour ce filtre
             filterPredicates.add(cb.and(attributeMatch, valueMatch, validPredicate));

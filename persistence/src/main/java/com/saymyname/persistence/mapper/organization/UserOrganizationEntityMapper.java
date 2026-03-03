@@ -9,7 +9,7 @@ import com.saymyname.persistence.entity.UserEntity;
 import com.saymyname.persistence.entity.organization.TenantOrgEntity;
 import com.saymyname.persistence.entity.organization.PersonEntity;
 import com.saymyname.persistence.entity.organization.UserOrganizationEntity;
-import com.saymyname.persistence.entity.organization.UserOrganizationId;
+import com.saymyname.persistence.entity.organization.UserTenantId;
 
 @Component
 public class UserOrganizationEntityMapper {
@@ -32,14 +32,14 @@ public class UserOrganizationEntityMapper {
         Long userId = (entity.getUser() != null ? entity.getUser().getId()
                 : (entity.getId() != null ? entity.getId().getUserId() : null));
 
-        Long orgId = (entity.getOrganization() != null ? entity.getOrganization().getId()
-                : (entity.getId() != null ? entity.getId().getOrganizationId() : null));
+        Long tenantId = (entity.getOrganization() != null ? entity.getOrganization().getId()
+                : (entity.getId() != null ? entity.getId().getTenantId() : null));
 
         Long personId = (entity.getPerson() != null ? entity.getPerson().getId() : null);
 
         return UserOrganization.builder()
                 .userId(userId)
-                .organizationId(orgId)
+                .tenantId(tenantId)
                 .personId(personId)
                 .role(entity.getRole())
                 .createdAt(entity.getCreatedAt())
@@ -68,14 +68,14 @@ public class UserOrganizationEntityMapper {
         Long userId = (entity.getUser() != null ? entity.getUser().getId()
                 : (entity.getId() != null ? entity.getId().getUserId() : null));
 
-        Long orgId = (entity.getOrganization() != null ? entity.getOrganization().getId()
-                : (entity.getId() != null ? entity.getId().getOrganizationId() : null));
+        Long tenantId = (entity.getOrganization() != null ? entity.getOrganization().getId()
+                : (entity.getId() != null ? entity.getId().getTenantId() : null));
 
         Long personId = (entity.getPerson() != null ? entity.getPerson().getId() : null);
 
         return UserOrganization.builder()
                 .userId(userId)
-                .organizationId(orgId)
+                .tenantId(tenantId)
                 .personId(personId)
                 .role(entity.getRole())
                 .createdAt(entity.getCreatedAt())
@@ -102,7 +102,7 @@ public class UserOrganizationEntityMapper {
         UserOrganizationEntity e = new UserOrganizationEntity();
 
         // EmbeddedId (PK composite)
-        UserOrganizationId id = new UserOrganizationId(model.getUserId(), model.getOrganizationId());
+        UserTenantId id = new UserTenantId(model.getUserId(), model.getTenantId());
         e.setId(id);
 
         // Champs simples

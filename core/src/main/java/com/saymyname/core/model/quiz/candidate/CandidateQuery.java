@@ -1,8 +1,8 @@
 // core/model/quiz/candidate/CandidateQuery.java
 package com.saymyname.core.model.quiz.candidate;
 
-import java.util.List;
 import java.util.Objects;
+
 import com.saymyname.core.model.enums.FollowFilter;
 
 public class CandidateQuery {
@@ -20,10 +20,14 @@ public class CandidateQuery {
     private Integer limit; // pool size
     private Long seed; // optionnel si tu veux random stable
 
-    // NEW: GameMode attribute filtering
-    private Long gameModeId; // pour filtrer par attributs gameMode
-    private List<Long> gameModeAttributeIds; // attributs requis par gameMode
-    private String attributeOperator; // "AND" | "OR" (default "AND")
+    /**
+     * Attribute constraints for candidate eligibility.
+     * Interpreted as "person must have this attributeId"
+     * (i.e., presence constraint), typically used for IDENTITY or a single target
+     * attribute.
+     */
+    private Long attributeId; // nullable/empty => no attribute eligibility constraint
+
     private boolean countOnly; // hint optimisation (pas d'ORDER BY)
 
     public Long getUserId() {
@@ -62,16 +66,8 @@ public class CandidateQuery {
         return seed;
     }
 
-    public Long getGameModeId() {
-        return gameModeId;
-    }
-
-    public List<Long> getGameModeAttributeIds() {
-        return gameModeAttributeIds;
-    }
-
-    public String getAttributeOperator() {
-        return attributeOperator;
+    public Long getAttributeId() {
+        return attributeId;
     }
 
     public boolean isCountOnly() {
@@ -122,18 +118,8 @@ public class CandidateQuery {
             return this;
         }
 
-        public Builder withGameModeId(Long v) {
-            q.gameModeId = v;
-            return this;
-        }
-
-        public Builder withGameModeAttributeIds(List<Long> v) {
-            q.gameModeAttributeIds = v;
-            return this;
-        }
-
-        public Builder withAttributeOperator(String v) {
-            q.attributeOperator = v;
+        public Builder withAttributeId(Long v) {
+            q.attributeId = v;
             return this;
         }
 
@@ -144,8 +130,9 @@ public class CandidateQuery {
 
         public CandidateQuery build() {
             // validations minimales
-            if (q.populationScope == null)
+            if (q.populationScope == null) {
                 q.populationScope = FollowFilter.ALL;
+            }
             if ((q.populationScope == FollowFilter.FOLLOWED || q.populationScope == FollowFilter.UNFOLLOWED)
                     && q.userId == null) {
                 throw new IllegalArgumentException("userId is required for FOLLOWED/UNFOLLOWED");
@@ -153,13 +140,10 @@ public class CandidateQuery {
             if (q.categoryAttributeId != null) {
                 Objects.requireNonNull(q.categoryValue, "categoryValue");
             }
-            if (q.limit == null || q.limit <= 0)
+            if (q.limit == null || q.limit <= 0) {
                 q.limit = 200;
-            // Default operator to AND if gameModeAttributeIds is set
-            if (q.gameModeAttributeIds != null && !q.gameModeAttributeIds.isEmpty()
-                    && q.attributeOperator == null) {
-                q.attributeOperator = "AND";
             }
+
             return q;
         }
     }

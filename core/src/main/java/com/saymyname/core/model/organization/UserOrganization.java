@@ -11,7 +11,7 @@ import com.saymyname.core.model.people.Person;
 public class UserOrganization {
 
     private Long userId;
-    private Long organizationId;
+    private Long tenantId;
     private OrgRole role;
     private LocalDateTime createdAt;
 
@@ -50,7 +50,7 @@ public class UserOrganization {
 
     private UserOrganization(Builder builder) {
         this.userId = builder.userId;
-        this.organizationId = builder.organizationId;
+        this.tenantId = builder.tenantId;
         this.role = builder.role;
         this.createdAt = builder.createdAt;
 
@@ -72,8 +72,8 @@ public class UserOrganization {
         return userId;
     }
 
-    public Long getOrganizationId() {
-        return organizationId;
+    public Long getTenantId() {
+        return tenantId;
     }
 
     public OrgRole getRole() {
@@ -134,7 +134,7 @@ public class UserOrganization {
 
     public static class Builder {
         private Long userId;
-        private Long organizationId;
+        private Long tenantId;
         private OrgRole role;
         private LocalDateTime createdAt;
 
@@ -156,8 +156,8 @@ public class UserOrganization {
             return this;
         }
 
-        public Builder organizationId(Long organizationId) {
-            this.organizationId = organizationId;
+        public Builder tenantId(Long tenantId) {
+            this.tenantId = tenantId;
             return this;
         }
 
@@ -228,19 +228,19 @@ public class UserOrganization {
         if (!(o instanceof UserOrganization that))
             return false;
         return Objects.equals(userId, that.userId) &&
-                Objects.equals(organizationId, that.organizationId);
+                Objects.equals(tenantId, that.tenantId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(userId, organizationId);
+        return Objects.hash(userId, tenantId);
     }
 
     @Override
     public String toString() {
         return "UserOrganization{" +
                 "userId=" + userId +
-                ", organizationId=" + organizationId +
+                ", tenantId=" + tenantId +
                 ", role=" + role +
                 ", createdAt=" + createdAt +
                 ", status=" + status +

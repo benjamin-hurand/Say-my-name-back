@@ -44,8 +44,7 @@ public class WordPuzzlePlugin implements QuizQuestionPlugin {
     @Override
     public QuizQuestion build(QuizQuestionSpec spec) {
 
-        var key = answerKeyService.compute(spec.getPersonId(), spec.getTargetAttributeIds(), spec.getOperator());
-        String solution = key.correctAnswerJoined();
+        String solution = answerKeyService.compute(spec.getPersonId(), spec.getTargetAttributeId());
 
         // Note: Using maxErrorsOverride as proxy for maxAttempts until QuizQuestionSpec
         // is extended

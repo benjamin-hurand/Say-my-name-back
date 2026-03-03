@@ -4,9 +4,9 @@ package com.saymyname.core.model.people;
 import java.util.Map;
 import java.util.Objects;
 
+import com.saymyname.core.model.enums.CasingStrategy;
 import com.saymyname.core.model.enums.ConstraintKind;
 import com.saymyname.core.model.enums.EditPolicy;
-import com.saymyname.core.model.enums.CasingStrategy;
 
 public class Attribute {
 
@@ -14,7 +14,10 @@ public class Attribute {
     private String name;
 
     private int displayOrder = 100;
-    private boolean primaryField;
+
+    private boolean identitySource;
+
+    /** true si cet attribut est une catégorie. */
     private boolean category;
 
     private int maxValues;
@@ -26,6 +29,9 @@ public class Attribute {
     private boolean required;
     private AttributeType type;
     private EditPolicy editPolicy = EditPolicy.FREE;
+
+    /** NEW: attribut dérivé (non éditable, calculé). Ex: Identité composite. */
+    private boolean derived;
 
     // NEW: stratégie de casse
     private CasingStrategy casingStrategy = CasingStrategy.NONE;
@@ -42,7 +48,7 @@ public class Attribute {
         this.id = b.id;
         this.name = b.name;
         this.displayOrder = b.displayOrder;
-        this.primaryField = b.primaryField;
+        this.identitySource = b.identitySource;
         this.category = b.category;
         this.maxValues = b.maxValues;
         this.filter = b.filter;
@@ -53,12 +59,14 @@ public class Attribute {
         this.required = b.required;
         this.type = b.type;
         this.editPolicy = b.editPolicy != null ? b.editPolicy : EditPolicy.FREE;
+        this.derived = b.derived;
         this.casingStrategy = b.casingStrategy != null ? b.casingStrategy : CasingStrategy.NONE;
         this.constraintKind = b.constraintKind != null ? b.constraintKind : ConstraintKind.NONE;
         this.constraintPayload = b.constraintPayload;
     }
 
-    // Getters
+    // ---- Getters
+
     public Long getId() {
         return id;
     }
@@ -71,8 +79,8 @@ public class Attribute {
         return displayOrder;
     }
 
-    public boolean isPrimaryField() {
-        return primaryField;
+    public boolean isIdentitySource() {
+        return identitySource;
     }
 
     public boolean isCategory() {
@@ -115,6 +123,10 @@ public class Attribute {
         return editPolicy;
     }
 
+    public boolean isDerived() {
+        return derived;
+    }
+
     public CasingStrategy getCasingStrategy() {
         return casingStrategy;
     }
@@ -127,7 +139,8 @@ public class Attribute {
         return constraintPayload;
     }
 
-    // Setters
+    // ---- Setters
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -140,8 +153,8 @@ public class Attribute {
         this.displayOrder = displayOrder;
     }
 
-    public void setPrimaryField(boolean primaryField) {
-        this.primaryField = primaryField;
+    public void setIdentitySource(boolean identitySource) {
+        this.identitySource = identitySource;
     }
 
     public void setCategory(boolean category) {
@@ -176,6 +189,10 @@ public class Attribute {
         this.editPolicy = editPolicy;
     }
 
+    public void setDerived(boolean derived) {
+        this.derived = derived;
+    }
+
     public void setCasingStrategy(CasingStrategy casingStrategy) {
         this.casingStrategy = casingStrategy;
     }
@@ -188,12 +205,13 @@ public class Attribute {
         this.constraintPayload = constraintPayload;
     }
 
-    // Builder
+    // ---- Builder
+
     public static class Builder {
         private Long id;
         private String name;
         private int displayOrder = 100;
-        private boolean primaryField;
+        private boolean identitySource;
         private boolean category;
         private int maxValues;
         private boolean filter;
@@ -204,6 +222,7 @@ public class Attribute {
         private boolean required;
         private AttributeType type;
         private EditPolicy editPolicy;
+        private boolean derived;
         private CasingStrategy casingStrategy = CasingStrategy.NONE;
         private ConstraintKind constraintKind = ConstraintKind.NONE;
         private Map<String, Object> constraintPayload;
@@ -223,8 +242,8 @@ public class Attribute {
             return this;
         }
 
-        public Builder withPrimaryField(boolean primaryField) {
-            this.primaryField = primaryField;
+        public Builder withIdentitySource(boolean identitySource) {
+            this.identitySource = identitySource;
             return this;
         }
 
@@ -278,6 +297,11 @@ public class Attribute {
             return this;
         }
 
+        public Builder withDerived(boolean derived) {
+            this.derived = derived;
+            return this;
+        }
+
         public Builder withCasingStrategy(CasingStrategy strategy) {
             this.casingStrategy = strategy;
             return this;
@@ -306,7 +330,8 @@ public class Attribute {
             return false;
         Attribute that = (Attribute) o;
         return displayOrder == that.displayOrder &&
-                primaryField == that.primaryField &&
+                identitySource == that.identitySource &&
+                derived == that.derived &&
                 category == that.category &&
                 maxValues == that.maxValues &&
                 filter == that.filter &&
@@ -326,7 +351,7 @@ public class Attribute {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, displayOrder, primaryField, category, maxValues, filter, sort,
+        return Objects.hash(id, name, displayOrder, identitySource, derived, category, maxValues, filter, sort,
                 initializable, required, type, editPolicy, casingStrategy, constraintKind,
                 constraintPayload, minValue, maxValue);
     }
@@ -337,7 +362,8 @@ public class Attribute {
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", displayOrder=" + displayOrder +
-                ", primaryField=" + primaryField +
+                ", identitySource=" + identitySource +
+                ", derived=" + derived +
                 ", category=" + category +
                 ", maxValues=" + maxValues +
                 ", filter=" + filter +

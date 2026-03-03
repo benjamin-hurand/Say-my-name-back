@@ -18,13 +18,13 @@ import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.course.Course;
 import com.saymyname.core.model.course.CourseQuestionAttempt;
 import com.saymyname.core.model.course.Knowledge;
+import com.saymyname.core.model.course.KnowledgeCandidate;
 import com.saymyname.core.model.course.KnowledgeResultEvent;
 import com.saymyname.core.model.enums.KnowledgeStatus;
 import com.saymyname.core.model.enums.PopulationScope;
 import com.saymyname.core.model.enums.SrsAlgorithm;
 import com.saymyname.core.model.leaderboard.XpAward;
-import com.saymyname.core.model.people.Person;
-import com.saymyname.core.model.quiz.options.GameMode;
+import com.saymyname.core.model.people.Fact;
 import com.saymyname.persistence.dao.FactDao;
 import com.saymyname.persistence.dao.course.KnowledgeDao;
 import com.saymyname.service.course.scheduler.SchedulerStrategy;
@@ -37,7 +37,6 @@ public class KnowledgeService {
     private static final double INITIAL_DIFF = 1.0;
     private static final double INITIAL_STABILITY = 1.0;
 
-    // --- Event keys (stables) ---
     private static final String EK_STREAK_5 = "KNOWLEDGE_STREAK_MILESTONE_5";
     private static final String EK_STREAK_10 = "KNOWLEDGE_STREAK_MILESTONE_10";
     private static final String EK_STREAK_20 = "KNOWLEDGE_STREAK_MILESTONE_20";
@@ -47,6 +46,7 @@ public class KnowledgeService {
     private final KnowledgeDao knowledgeDao;
     private final Map<SrsAlgorithm, SchedulerStrategy> strategies;
     private final SrsAlgorithm defaultAlgorithm;
+    private final FactDao factDao;
     private final LeaderboardService leaderboardService;
 
     public KnowledgeService(
@@ -58,6 +58,7 @@ public class KnowledgeService {
         this.knowledgeDao = Objects.requireNonNull(knowledgeDao, "knowledgeDao");
         this.strategies = Objects.requireNonNull(strategies, "strategies");
         this.defaultAlgorithm = Objects.requireNonNull(defaultAlgorithm, "defaultAlgorithm");
+        this.factDao = Objects.requireNonNull(factDao, "factDao");
         this.leaderboardService = Objects.requireNonNull(leaderboardService, "leaderboardService");
     }
 
@@ -69,10 +70,6 @@ public class KnowledgeService {
         return knowledgeDao.insertNextKnowledges(course, limit);
     }
 
-    /**
-     * Lazy seed for course knowledge pool.
-     * Returns how many new UNKNOWN knowledges were inserted.
-     */
     public int ensureSeed(Course course, int limit) {
         if (course == null || limit <= 0) {
             return 0;
@@ -88,15 +85,8 @@ public class KnowledgeService {
         return knowledgeDao.countByCourseAndStatus(course, status);
     }
 
-    public Knowledge findByUserGameModeAndPerson(Long userId, Long gameModeId, Long personId) {
-        if (userId == null || gameModeId == null || personId == null) {
-            return null;
-        }
-        return knowledgeDao.findByUserGameModeAndPerson(userId, gameModeId, personId).orElse(null);
-    }
-
     // ---------------------------------------------------------------------
-    // ✅ NEW: Validation pure, basée sur la vérité figée dans le snapshot
+    // ✅ Validation pure, basée sur snapshot
     // ---------------------------------------------------------------------
 
     @Transactional
@@ -108,10 +98,6 @@ public class KnowledgeService {
             List<KnowledgeResultEvent> events) {
         return recordBatchResults(user, events);
     }
-
-    // ---------------------------------------------------------------------
-    // RecordBatchResults inchangé (SRS/XP)
-    // ---------------------------------------------------------------------
 
     @Transactional
     public XpAward recordBatchResults(User user, List<KnowledgeResultEvent> events) {
@@ -169,13 +155,14 @@ public class KnowledgeService {
                 }
             }
 
-            // Persist knowledge first (unchanged behavior)
+            // Persist knowledge first
             knowledgeDao.upsertKnowledge(knowledge);
 
-            Long refPersonId = resolvePersonIdForXp(key, knowledge, groupEvents);
+            // XP attribution : tu dois donner un ref “personId” au leaderboard.
+            // Ici, on prend ce qui est fourni par l’event (snapshot), sinon null.
+            Long refPersonId = resolvePersonIdForXpFromFact(knowledge, groupEvents);
             LocalDateTime at = LocalDateTime.now();
 
-            // --- XP for answer batch (unchanged write behavior) ---
             if (totalAnswerXp > 0 && refPersonId != null) {
                 int delta = safeLongToInt(totalAnswerXp);
                 totalDeltaXp += delta;
@@ -192,7 +179,6 @@ public class KnowledgeService {
                         !hasAnyCountedAnswer);
             }
 
-            // --- XP for streak bonuses (unchanged write behavior) ---
             for (StreakMilestoneHit hit : streakHits) {
                 if (refPersonId == null) {
                     continue;
@@ -221,17 +207,18 @@ public class KnowledgeService {
         return new XpAward(safeLongToInt(totalDeltaXp), List.copyOf(eventKeys));
     }
 
+    // ---------------------------------------------------------------------
+    // EventKey = knowledgeId (hot) sinon factId (fallback stable)
+    // ---------------------------------------------------------------------
+
     private static EventKey toEventKey(KnowledgeResultEvent ev) {
         if (ev.getKnowledgeId() != null) {
             return new KnowledgeIdKey(ev.getKnowledgeId());
         }
-        Long gm = ev.getGameModeId();
-        Long pid = ev.getPersonId();
-        if (gm == null || pid == null) {
-            throw new IllegalArgumentException(
-                    "KnowledgeResultEvent missing both knowledgeId and (gameModeId, personId)");
+        if (ev.getFactId() != null) {
+            return new FactIdKey(ev.getFactId());
         }
-        return new ModePersonKey(gm, pid);
+        throw new IllegalArgumentException("KnowledgeResultEvent missing both knowledgeId and factId");
     }
 
     private Knowledge loadKnowledgeForKey(
@@ -239,6 +226,7 @@ public class KnowledgeService {
             EventKey key,
             List<KnowledgeResultEvent> groupEvents,
             Map<Long, Knowledge> knowledgeById) {
+
         if (key instanceof KnowledgeIdKey kid) {
             Knowledge knowledge = knowledgeById != null ? knowledgeById.get(kid.knowledgeId()) : null;
             if (knowledge == null) {
@@ -246,20 +234,19 @@ public class KnowledgeService {
             }
             if (knowledge == null) {
                 throw new IllegalArgumentException(
-                        "Knowledge not found for user/org by knowledgeId=" + kid.knowledgeId()
+                        "Knowledge not found for user/tenant by knowledgeId=" + kid.knowledgeId()
                                 + ", userId=" + user.getId());
             }
             return knowledge;
         }
 
-        ModePersonKey mp = (ModePersonKey) key;
+        FactIdKey fk = (FactIdKey) key;
 
         return knowledgeDao
-                .findByUserGameModeAndPerson(user.getId(), mp.gameModeId(), mp.personId())
+                .findByUserAndFact(user.getId(), fk.factId())
                 .orElseGet(() -> new Knowledge.Builder()
                         .withUser(user)
-                        .withGameMode(new GameMode.Builder().withId(mp.gameModeId()).build())
-                        .withPerson(new Person.Builder().withId(mp.personId()).build())
+                        .withFactId(fk.factId())
                         .withStatus(KnowledgeStatus.DISCOVERED)
                         .withNextReviewDate(LocalDateTime.now())
                         .withLastReviewDate(LocalDateTime.now())
@@ -271,6 +258,8 @@ public class KnowledgeService {
                         .withEaseFactor(INITIAL_EF)
                         .withDifficulty(INITIAL_DIFF)
                         .withStability(INITIAL_STABILITY)
+                        .withPendingRevalidation(false)
+                        .withRevalidationReason(null)
                         .build());
     }
 
@@ -293,28 +282,35 @@ public class KnowledgeService {
                 .collect(Collectors.toMap(Knowledge::getId, k -> k, (a, b) -> a));
     }
 
-    private static Long resolvePersonIdForXp(EventKey key, Knowledge knowledge,
-            List<KnowledgeResultEvent> groupEvents) {
-        if (key instanceof ModePersonKey mp) {
-            return mp.personId();
+    private Long resolvePersonIdForXpFromFact(Knowledge knowledge, List<KnowledgeResultEvent> groupEvents) {
+        // 1) knowledge.factId (best)
+        Long factId = (knowledge != null) ? knowledge.getFactId() : null;
+
+        // 2) fallback: event.factId
+        if (factId == null && groupEvents != null && !groupEvents.isEmpty()) {
+            for (KnowledgeResultEvent ev : groupEvents) {
+                if (ev != null && ev.getFactId() != null) {
+                    factId = ev.getFactId();
+                    break;
+                }
+            }
         }
-        if (knowledge != null && knowledge.getPerson() != null && knowledge.getPerson().getId() != null) {
-            return knowledge.getPerson().getId();
-        }
-        if (groupEvents != null && !groupEvents.isEmpty()) {
-            KnowledgeResultEvent first = groupEvents.get(0);
-            return first.getPersonId();
-        }
-        return null;
+
+        if (factId == null)
+            return null;
+
+        return factDao.findById(factId)
+                .map(Fact::getPersonId)
+                .orElse(null);
     }
 
-    private sealed interface EventKey permits KnowledgeIdKey, ModePersonKey {
+    private sealed interface EventKey permits KnowledgeIdKey, FactIdKey {
     }
 
     private record KnowledgeIdKey(Long knowledgeId) implements EventKey {
     }
 
-    private record ModePersonKey(Long gameModeId, Long personId) implements EventKey {
+    private record FactIdKey(Long factId) implements EventKey {
     }
 
     private static int safeLongToInt(long value) {
@@ -384,28 +380,31 @@ public class KnowledgeService {
         k.setLastReviewDate(now);
     }
 
-    // POOLS (inchangé)
-    public Knowledge findFirstNew(Course course, Long lastPersonId, boolean allowRepeat) {
-        return knowledgeDao.findFirstNew(course, lastPersonId, allowRepeat);
+    // ---------------------------------------------------------------------
+    // POOLS (Candidates) => pour l'orchestration / build question
+    // ---------------------------------------------------------------------
+
+    public KnowledgeCandidate findFirstNewCandidate(Course course, Long lastPersonId, boolean allowRepeat) {
+        return knowledgeDao.findFirstNewCandidate(course, lastPersonId, allowRepeat);
     }
 
-    public Knowledge findFirstDiscovered(Course course, Long lastPersonId, boolean allowRepeat) {
-        return knowledgeDao.findFirstDiscovered(course, lastPersonId, allowRepeat);
+    public KnowledgeCandidate findFirstDiscoveredCandidate(Course course, Long lastPersonId, boolean allowRepeat) {
+        return knowledgeDao.findFirstDiscoveredCandidate(course, lastPersonId, allowRepeat);
     }
 
-    public Knowledge findFirstRecentError(Course course, Long lastPersonId, boolean allowRepeat) {
-        return knowledgeDao.findFirstRecentError(course, lastPersonId, allowRepeat);
+    public KnowledgeCandidate findFirstRecentErrorCandidate(Course course, Long lastPersonId, boolean allowRepeat) {
+        return knowledgeDao.findFirstRecentErrorCandidate(course, lastPersonId, allowRepeat);
     }
 
-    public Knowledge findFirstSRS(Course course, Long lastPersonId, boolean allowRepeat) {
-        return knowledgeDao.findFirstSRS(course, lastPersonId, allowRepeat);
+    public KnowledgeCandidate findFirstSRSCandidate(Course course, Long lastPersonId, boolean allowRepeat) {
+        return knowledgeDao.findFirstSRSCandidate(course, lastPersonId, allowRepeat);
     }
 
-    public Knowledge findRevision(Course course, Long lastPersonId, boolean allowRepeat) {
-        return knowledgeDao.findRevision(course, lastPersonId, allowRepeat);
+    public KnowledgeCandidate findRevisionCandidate(Course course, Long lastPersonId, boolean allowRepeat) {
+        return knowledgeDao.findRevisionCandidate(course, lastPersonId, allowRepeat);
     }
 
-    public List<Knowledge> findNextDueMulti(
+    public List<KnowledgeCandidate> findNextDueMultiCandidates(
             Course course,
             Long primaryPersonId,
             Long lastPersonId,
@@ -415,7 +414,7 @@ public class KnowledgeService {
             double maxHelpRecent,
             double minAttemptsRecent,
             int fetchFactor) {
-        return knowledgeDao.findNextDueMulti(
+        return knowledgeDao.findNextDueMultiCandidates(
                 course,
                 primaryPersonId,
                 lastPersonId,
@@ -427,6 +426,10 @@ public class KnowledgeService {
                 fetchFactor);
     }
 
+    // ---------------------------------------------------------------------
+    // Rest (unchanged)
+    // ---------------------------------------------------------------------
+
     public long countDueNow(Course course) {
         return knowledgeDao.countDueNow(course);
     }
@@ -437,16 +440,18 @@ public class KnowledgeService {
 
     public int resetForCourseScope(
             long userId,
-            long gameModeId,
+            Long targetAttributeId,
             PopulationScope popScope,
             double baselineEase,
             double baselineDiff,
             double baselineStability) {
-        return knowledgeDao.resetForCourseScope(userId, gameModeId, popScope, baselineEase, baselineDiff,
+        return knowledgeDao.resetForCourseScope(userId, targetAttributeId, popScope, baselineEase,
+                baselineDiff,
                 baselineStability);
     }
 
-    public long countToResetForCourseScope(long userId, long gameModeId, PopulationScope popScope) {
-        return knowledgeDao.countToResetForCourseScope(userId, gameModeId, popScope);
+    public long countToResetForCourseScope(long userId, Long targetAttributeId,
+            PopulationScope popScope) {
+        return knowledgeDao.countToResetForCourseScope(userId, targetAttributeId, popScope);
     }
 }

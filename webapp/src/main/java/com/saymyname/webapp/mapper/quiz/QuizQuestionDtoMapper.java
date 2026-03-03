@@ -44,7 +44,7 @@ public class QuizQuestionDtoMapper {
 
         return new QuizQuestionDto(
                 q.getQuestionHandle(),
-                q.getGameModeId(),
+                q.getTargetAttributeId(),
                 ctxDto,
                 q.getFormat(),
                 payloadDto,

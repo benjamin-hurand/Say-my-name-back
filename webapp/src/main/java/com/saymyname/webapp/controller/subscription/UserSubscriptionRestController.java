@@ -69,7 +69,7 @@ public class UserSubscriptionRestController {
     public ResponseEntity<Void> subscribeOne(@PathVariable("personId") Long personId, Principal principal) {
         Long uid = currentUserId(principal);
         boolean inserted = subscriptionService.subscribe(
-                new UserSubscription.Builder().withUserId(uid).withPersonId(personId).build());
+                UserSubscription.builder().userId(uid).personId(personId).build());
         return inserted ? ResponseEntity.status(HttpStatus.CREATED).build()
                 : ResponseEntity.noContent().build();
     }

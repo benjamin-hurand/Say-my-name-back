@@ -5,12 +5,6 @@ import java.util.Objects;
 
 public class QuizTruthRules {
 
-    /**
-     * Exemple: "AND", "OR" si tu veux garder trace du gameMode operator,
-     * ou un profil de matching textuel.
-     */
-    private String operator;
-
     /** Text matching flags (si utile) */
     private boolean ignoreCase = true;
     private boolean ignoreDiacritics = true;
@@ -20,7 +14,6 @@ public class QuizTruthRules {
     }
 
     private QuizTruthRules(Builder b) {
-        this.operator = b.operator;
         this.ignoreCase = b.ignoreCase;
         this.ignoreDiacritics = b.ignoreDiacritics;
         this.trim = b.trim;
@@ -29,10 +22,6 @@ public class QuizTruthRules {
 
     public void validateInvariants() {
         // operator peut être null si format non-textuel
-    }
-
-    public String getOperator() {
-        return operator;
     }
 
     public boolean isIgnoreCase() {
@@ -48,15 +37,9 @@ public class QuizTruthRules {
     }
 
     public static class Builder {
-        private String operator;
         private boolean ignoreCase = true;
         private boolean ignoreDiacritics = true;
         private boolean trim = true;
-
-        public Builder withOperator(String v) {
-            this.operator = v;
-            return this;
-        }
 
         public Builder withIgnoreCase(boolean v) {
             this.ignoreCase = v;
@@ -87,12 +70,11 @@ public class QuizTruthRules {
         QuizTruthRules that = (QuizTruthRules) o;
         return ignoreCase == that.ignoreCase
                 && ignoreDiacritics == that.ignoreDiacritics
-                && trim == that.trim
-                && Objects.equals(operator, that.operator);
+                && trim == that.trim;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(operator, ignoreCase, ignoreDiacritics, trim);
+        return Objects.hash(ignoreCase, ignoreDiacritics, trim);
     }
 }

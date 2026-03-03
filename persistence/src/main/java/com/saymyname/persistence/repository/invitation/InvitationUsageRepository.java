@@ -9,8 +9,8 @@ import com.saymyname.persistence.entity.organization.invitation.InvitationUsageE
 
 public interface InvitationUsageRepository extends JpaRepository<InvitationUsageEntity, Long> {
 
-    List<InvitationUsageEntity> findAllByOrganizationIdAndInvitationIdOrderByUsedAtDesc(Long organizationId,
+    List<InvitationUsageEntity> findAllByTenantIdAndInvitationIdOrderByUsedAtDesc(Long tenantId,
             Long invitationId);
 
-    long countByOrganizationIdAndInvitationId(Long organizationId, Long invitationId);
+    long countByTenantIdAndInvitationId(Long tenantId, Long invitationId);
 }

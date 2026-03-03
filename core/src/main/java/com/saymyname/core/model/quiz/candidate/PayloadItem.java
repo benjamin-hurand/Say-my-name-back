@@ -11,7 +11,7 @@ import java.util.Objects;
  * Contains only:
  * - personId (required)
  * - photoStorageKey (nullable if no approved photo)
- * - attributeValues (gameMode attributes only, keyed by attributeId)
+ * - attributeValues (target attributes only, keyed by attributeId)
  */
 public record PayloadItem(
         Long personId,

@@ -15,8 +15,7 @@ public class KnowledgeResultDtoMapper {
 
         return new KnowledgeResultEvent.Builder()
                 .withKnowledgeId(dto.knowledgeId())
-                .withGameModeId(dto.gameModeId())
-                .withPersonId(dto.personId())
+                .withFactId(dto.factId())
                 .withCorrect(dto.isCorrect())
                 .withHelpUsed(dto.helpUsed())
                 .withCourseId(dto.courseId())

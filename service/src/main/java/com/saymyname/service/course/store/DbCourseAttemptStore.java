@@ -1,4 +1,3 @@
-// src/main/java/com/saymyname/service/course/store/DbCourseAttemptStore.java
 package com.saymyname.service.course.store;
 
 import java.time.Instant;
@@ -28,8 +27,9 @@ import com.saymyname.core.model.quiz.QuizPayloadItem;
 import com.saymyname.core.model.quiz.QuizQuestionContext;
 import com.saymyname.core.model.quiz.QuizQuestionPayload;
 import com.saymyname.core.model.quiz.snapshot.QuizQuestionSnapshot;
+import com.saymyname.persistence.dao.FactDao;
 import com.saymyname.persistence.dao.course.CourseDao;
-import com.saymyname.persistence.dao.course.KnowledgeDao; // ✅ ADAPTER AU NOM RÉEL
+import com.saymyname.persistence.dao.course.KnowledgeDao;
 import com.saymyname.service.course.CourseQuestionAttemptService;
 import com.saymyname.service.quiz.store.QuizAttemptStore;
 
@@ -38,13 +38,17 @@ public class DbCourseAttemptStore implements CourseAttemptStore, QuizAttemptStor
 
     private final CourseQuestionAttemptService attemptService;
     private final CourseDao courseDao;
-    private final KnowledgeDao knowledgeDao; // ✅
+    private final KnowledgeDao knowledgeDao;
+    private final FactDao factDao;
 
-    public DbCourseAttemptStore(CourseQuestionAttemptService attemptService, CourseDao courseDao,
-            KnowledgeDao knowledgeDao) {
+    public DbCourseAttemptStore(CourseQuestionAttemptService attemptService,
+            CourseDao courseDao,
+            KnowledgeDao knowledgeDao,
+            FactDao factDao) {
         this.attemptService = attemptService;
         this.courseDao = courseDao;
         this.knowledgeDao = knowledgeDao;
+        this.factDao = factDao;
     }
 
     // -----------------------
@@ -121,21 +125,18 @@ public class DbCourseAttemptStore implements CourseAttemptStore, QuizAttemptStor
         CourseQuestionAttempt attempt = attemptService.findById(attemptId);
         if (attempt == null)
             return Optional.empty();
-        if (attempt.getAnsweredAt() != null) {
+        if (attempt.getAnsweredAt() != null)
             return Optional.empty();
-        }
 
         Long ownerId = (attempt.getCourse() != null && attempt.getCourse().getUser() != null)
                 ? attempt.getCourse().getUser().getId()
                 : null;
-        if (ownerId == null || !ownerId.equals(userId)) {
+        if (ownerId == null || !ownerId.equals(userId))
             return Optional.empty();
-        }
 
         QuizQuestionSnapshot snapshot = attempt.getSnapshot();
-        if (snapshot == null) {
+        if (snapshot == null)
             return Optional.empty();
-        }
 
         long askedAtEpochMs = QuizAttemptStore.toEpochMs(attempt.getAskedAt());
         return Optional.of(new StoredAttempt(
@@ -175,9 +176,8 @@ public class DbCourseAttemptStore implements CourseAttemptStore, QuizAttemptStor
             throw new IllegalArgumentException("snapshot is required");
 
         QuizQuestionContext ctx = snapshot.getContext();
-        if (ctx == null) {
+        if (ctx == null)
             throw new IllegalStateException("snapshot.context is required for COURSE");
-        }
 
         Long courseId = ctx.getCourseId();
         if (courseId == null || courseId <= 0) {
@@ -197,8 +197,17 @@ public class DbCourseAttemptStore implements CourseAttemptStore, QuizAttemptStor
             throw new IllegalStateException("Forbidden: course does not belong to userId=" + userId);
         }
 
-        Knowledge knowledge = knowledgeDao.findById(knowledgeId)
+        Knowledge knowledge = knowledgeDao.findByIdForUser(userId, knowledgeId)
                 .orElseThrow(() -> new IllegalStateException("Knowledge not found: id=" + knowledgeId));
+
+        if (knowledge.getFactId() == null) {
+            throw new IllegalStateException("Knowledge missing factId: knowledgeId=" + knowledgeId);
+        }
+
+        // Resolve personId via Fact
+        Fact fact = factDao.findById(knowledge.getFactId())
+                .orElseThrow(() -> new IllegalStateException("Fact not found: id=" + knowledge.getFactId()));
+        Long targetPersonId = fact.getPersonId();
 
         int round = (ctx.getQuestionRound() != null) ? ctx.getQuestionRound().intValue() : 0;
         PoolType poolType = (ctx.getPoolType() != null) ? ctx.getPoolType() : PoolType.NEW;
@@ -206,9 +215,6 @@ public class DbCourseAttemptStore implements CourseAttemptStore, QuizAttemptStor
         LocalDateTime askedAt = LocalDateTime.ofInstant(
                 Instant.ofEpochMilli(askedAtEpochMs),
                 ZoneId.systemDefault());
-
-        // ✅ Item TARGET valide
-        Long targetPersonId = (knowledge.getPerson() != null) ? knowledge.getPerson().getId() : null;
 
         List<CourseQuestionItem> items = new ArrayList<>();
 
@@ -225,12 +231,11 @@ public class DbCourseAttemptStore implements CourseAttemptStore, QuizAttemptStor
         List<Long> payloadPersonIds = extractPayloadPersonIds(snapshot);
         int position = 1;
         for (Long personId : payloadPersonIds) {
-            if (personId == null) {
+            if (personId == null)
                 continue;
-            }
-            if (targetPersonId != null && targetPersonId.equals(personId)) {
+            if (targetPersonId != null && targetPersonId.equals(personId))
                 continue;
-            }
+
             items.add(new CourseQuestionItem.Builder()
                     .withPosition(position++)
                     .withRole(QuizQuestionItemRole.DISTRACTOR)
@@ -280,9 +285,8 @@ public class DbCourseAttemptStore implements CourseAttemptStore, QuizAttemptStor
         Long ownerId = (attempt.getCourse() != null && attempt.getCourse().getUser() != null)
                 ? attempt.getCourse().getUser().getId()
                 : null;
-        if (ownerId == null || !ownerId.equals(userId)) {
+        if (ownerId == null || !ownerId.equals(userId))
             return false;
-        }
 
         String raw = rawSubmission != null ? rawSubmission : attempt.getRawSubmission();
         String normalized = normalizedAudit != null ? normalizedAudit : attempt.getNormalizedAudit();
@@ -321,30 +325,25 @@ public class DbCourseAttemptStore implements CourseAttemptStore, QuizAttemptStor
         Long attemptId = dh.value();
 
         CourseQuestionAttempt attempt = attemptService.findById(attemptId);
-        if (attempt == null) {
+        if (attempt == null)
             return Optional.empty();
-        }
 
         Long ownerId = (attempt.getCourse() != null && attempt.getCourse().getUser() != null)
                 ? attempt.getCourse().getUser().getId()
                 : null;
-        if (ownerId == null || !ownerId.equals(userId)) {
+        if (ownerId == null || !ownerId.equals(userId))
             return Optional.empty();
-        }
 
-        if (attempt.getAnsweredAt() != null) {
+        if (attempt.getAnsweredAt() != null)
             return Optional.empty();
-        }
 
         QuizQuestionSnapshot snapshot = attempt.getSnapshot();
-        if (snapshot == null) {
+        if (snapshot == null)
             return Optional.empty();
-        }
 
         boolean marked = attemptService.markAnsweredAtIfNull(attemptId, LocalDateTime.now());
-        if (!marked) {
+        if (!marked)
             return Optional.empty();
-        }
 
         long askedAtEpochMs = QuizAttemptStore.toEpochMs(attempt.getAskedAt());
         return Optional.of(new StoredAttempt(
@@ -373,7 +372,6 @@ public class DbCourseAttemptStore implements CourseAttemptStore, QuizAttemptStor
     @Override
     public boolean updateAttempt(QuizQuestionSource source, AttemptHandle handle, Long userId,
             QuizQuestionSnapshot updatedSnapshot, String rawSubmission, String normalizedAudit) {
-
         if (source == null)
             throw new IllegalArgumentException("source is required");
         if (source != QuizQuestionSource.COURSE) {
@@ -388,13 +386,11 @@ public class DbCourseAttemptStore implements CourseAttemptStore, QuizAttemptStor
     }
 
     private static List<Long> extractPayloadPersonIds(QuizQuestionSnapshot snapshot) {
-        if (snapshot == null) {
+        if (snapshot == null)
             return List.of();
-        }
         QuizQuestionPayload payload = snapshot.getPayload();
-        if (payload == null) {
+        if (payload == null)
             return List.of();
-        }
 
         Set<Long> ids = new LinkedHashSet<>();
 
@@ -421,9 +417,8 @@ public class DbCourseAttemptStore implements CourseAttemptStore, QuizAttemptStor
             }
         }
 
-        if (ids.isEmpty()) {
+        if (ids.isEmpty())
             return List.of();
-        }
         return List.copyOf(ids);
     }
 }

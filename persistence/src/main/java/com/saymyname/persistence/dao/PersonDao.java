@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -130,14 +131,6 @@ public class PersonDao {
     public Optional<Person> mapManagedToModel(Long personId) {
         Optional<PersonEntity> pOpt = personRepository.findById(personId);
         return pOpt.map(personEntityMapper::toModel);
-    }
-
-    public long countUniverseEligibleAND(Long gameModeId) {
-        return personRepository.countUniverseEligibleAND(gameModeId);
-    }
-
-    public long countUniverseEligibleOR(Long gameModeId) {
-        return personRepository.countUniverseEligibleOR(gameModeId);
     }
 
     /**
@@ -326,8 +319,9 @@ public class PersonDao {
     /** IDs suivis par un utilisateur parmi un sous-ensemble de personnes. */
     @Transactional(readOnly = true)
     public Set<Long> findFollowedIdsForUserAndPersons(Long userId, List<Long> personIds) {
-        if (personIds == null || personIds.isEmpty())
+        if (personIds == null || personIds.isEmpty()) {
             return Set.of();
+        }
 
         Long tenantId = TenantContext.get();
         if (tenantId == null) {
@@ -335,9 +329,8 @@ public class PersonDao {
         }
 
         return userSubscriptionRepository
-                .findByIdTenantIdAndIdUserIdAndIdPersonIdIn(tenantId, userId, personIds)
+                .findPersonIdsByTenantIdAndUserIdAndPersonIdIn(tenantId, userId, personIds)
                 .stream()
-                .map(e -> e.getId().getPersonId())
                 .collect(java.util.stream.Collectors.toSet());
     }
 
@@ -357,17 +350,17 @@ public class PersonDao {
 
         List<Predicate> where = new ArrayList<>();
         where.add(pa.get("person").get("id").in(personIds));
-        where.add(cb.isFalse(pa.get("pendingDelete")));
+        where.add(cb.isFalse(pa.get("deleted")));
         where.add(cb.lessThanOrEqualTo(pa.get("validFrom"), now));
         where.add(cb.or(cb.isNull(pa.get("validTo")), cb.greaterThan(pa.get("validTo"), now)));
-        where.add(cb.isTrue(a.get("primaryField")));
+        where.add(cb.isTrue(a.get("identitySource")));
 
         cq.multiselect(
                 pa.get("person").get("id").alias("personId"),
                 a.get("id").alias("attributeId"),
                 pa.<String>get("value").alias("value"),
                 a.get("displayOrder").alias("displayOrder"),
-                a.get("primaryField").alias("primaryField"))
+                a.get("identitySource").alias("identitySource"))
                 .where(cb.and(where.toArray(new Predicate[0])))
                 .orderBy(
                         cb.asc(pa.get("person").get("id")),
@@ -380,7 +373,7 @@ public class PersonDao {
                         t.get("attributeId", Long.class),
                         t.get("value", String.class),
                         t.get("displayOrder", Integer.class),
-                        t.get("primaryField", Boolean.class)))
+                        t.get("identitySource", Boolean.class)))
                 .toList();
     }
 
@@ -404,10 +397,10 @@ public class PersonDao {
 
         List<Predicate> where = new ArrayList<>();
         where.add(pa.get("person").get("id").in(personIds));
-        where.add(cb.isFalse(pa.get("pendingDelete")));
+        where.add(cb.isFalse(pa.get("deleted")));
         where.add(cb.lessThanOrEqualTo(pa.get("validFrom"), now));
         where.add(cb.or(cb.isNull(pa.get("validTo")), cb.greaterThan(pa.get("validTo"), now)));
-        where.add(cb.isFalse(a.get("primaryField")));
+        where.add(cb.isFalse(a.get("identitySource")));
 
         Predicate byIds = cb.disjunction();
         if (attributeIdsFromRequest != null && !attributeIdsFromRequest.isEmpty()) {
@@ -431,7 +424,7 @@ public class PersonDao {
                 a.get("id").alias("attributeId"),
                 pa.<String>get("value").alias("value"),
                 a.get("displayOrder").alias("displayOrder"),
-                a.get("primaryField").alias("primaryField"))
+                a.get("identitySource").alias("identitySource"))
                 .where(
                         cb.and(where.toArray(new Predicate[0])),
                         cb.or(byIds, byCategory, byFilterSort))
@@ -446,7 +439,7 @@ public class PersonDao {
                         t.get("attributeId", Long.class),
                         t.get("value", String.class),
                         t.get("displayOrder", Integer.class),
-                        t.get("primaryField", Boolean.class)))
+                        t.get("identitySource", Boolean.class)))
                 .toList();
     }
 
@@ -518,7 +511,7 @@ public class PersonDao {
                     Join<FactEntity, AttributeEntity> a = pa.join("attribute", JoinType.INNER);
 
                     Predicate attrScope = cb.or(
-                            cb.isTrue(a.get("primaryField")),
+                            cb.isTrue(a.get("identitySource")),
                             cb.isTrue(a.get("category")),
                             cb.isTrue(a.get("filter")),
                             cb.isTrue(a.get("sort")));
@@ -654,7 +647,7 @@ public class PersonDao {
                     Join<FactEntity, AttributeEntity> a = pa.join("attribute", JoinType.INNER);
 
                     Predicate attrScope = cb.or(
-                            cb.isTrue(a.get("primaryField")),
+                            cb.isTrue(a.get("identitySource")),
                             cb.isTrue(a.get("category")),
                             cb.isTrue(a.get("filter")),
                             cb.isTrue(a.get("sort")));
@@ -750,4 +743,38 @@ public class PersonDao {
         cq.orderBy(orders);
     }
 
+    // Dans PersonDao (ajout)
+    @Transactional(readOnly = true)
+    public long countUniverseEligibleOneAttribute(Long attributeId) {
+        if (attributeId == null) {
+            return 0L;
+        }
+
+        Long tenantId = TenantContext.get();
+        if (tenantId == null) {
+            throw new IllegalStateException("TenantContext is null");
+        }
+
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+
+        String sql = """
+                SELECT COUNT(DISTINCT f.person_id)
+                FROM facts f
+                WHERE f.tenant_id = :tenantId
+                  AND f.deleted = 0
+                  AND f.value IS NOT NULL
+                  AND TRIM(f.value) <> ''
+                  AND f.valid_from <= :now
+                  AND (f.valid_to IS NULL OR f.valid_to > :now)
+                  AND f.attribute_id = :attrId
+                """;
+
+        Object single = em.createNativeQuery(sql)
+                .setParameter("tenantId", tenantId)
+                .setParameter("now", now)
+                .setParameter("attrId", attributeId)
+                .getSingleResult();
+
+        return ((Number) single).longValue();
+    }
 }

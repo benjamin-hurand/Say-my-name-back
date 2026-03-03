@@ -1,3 +1,4 @@
+// src/main/java/com/saymyname/persistence/mapper/course/KnowledgeEntityMapper.java
 package com.saymyname.persistence.mapper.course;
 
 import com.saymyname.core.model.course.Knowledge;
@@ -16,6 +17,7 @@ public class KnowledgeEntityMapper {
         this.userMapper = userMapper;
     }
 
+    // --- Entity ⇐ Model
     public KnowledgeEntity toEntity(Knowledge model) {
         if (model == null)
             return null;
@@ -24,6 +26,7 @@ public class KnowledgeEntityMapper {
         e.setId(model.getId());
         e.setUser(userMapper.toRefEntity(model.getUser()));
 
+        // Source de vérité
         e.setFactId(model.getFactId());
 
         e.setStatus(model.getStatus());
@@ -46,6 +49,7 @@ public class KnowledgeEntityMapper {
         return e;
     }
 
+    // --- Model ⇐ Entity
     public Knowledge toModel(KnowledgeEntity e) {
         if (e == null)
             return null;
@@ -53,23 +57,18 @@ public class KnowledgeEntityMapper {
         return new Knowledge.Builder()
                 .withId(e.getId())
                 .withUser(userMapper.toShortModel(e.getUser()))
-
                 .withFactId(e.getFactId())
-
                 .withStatus(e.getStatus())
                 .withNextReviewDate(e.getNextReviewDate())
                 .withLastReviewDate(e.getLastReviewDate())
-
                 .withTotalRepetitionCount(e.getTotalRepetitionCount())
                 .withFailureCount(e.getFailureCount())
                 .withSuccessCount(e.getSuccessCount())
                 .withSrsStreak(e.getSrsStreak())
                 .withGlobalStreak(e.getGlobalStreak())
-
                 .withEaseFactor(e.getEaseFactor())
                 .withDifficulty(e.getDifficulty())
                 .withStability(e.getStability())
-
                 .withPendingRevalidation(e.isPendingRevalidation())
                 .withRevalidationReason(e.getRevalidationReason())
                 .build();

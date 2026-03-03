@@ -15,18 +15,18 @@ public class AttributeValueRow {
     private Long attributeId;
     private String value;
     private Integer displayOrder;
-    private Boolean primaryField;
+    private Boolean identitySource;
 
     public AttributeValueRow() {
     }
 
     public AttributeValueRow(Long personId, Long attributeId, String value, Integer displayOrder,
-            Boolean primaryField) {
+            Boolean identitySource) {
         this.personId = personId;
         this.attributeId = attributeId;
         this.value = value;
         this.displayOrder = displayOrder;
-        this.primaryField = primaryField;
+        this.identitySource = identitySource;
     }
 
     public Long getPersonId() {
@@ -61,12 +61,12 @@ public class AttributeValueRow {
         this.displayOrder = displayOrder;
     }
 
-    public Boolean getPrimaryField() {
-        return primaryField;
+    public Boolean getIdentitySource() {
+        return identitySource;
     }
 
-    public void setPrimaryField(Boolean primaryField) {
-        this.primaryField = primaryField;
+    public void setIdentitySource(Boolean identitySource) {
+        this.identitySource = identitySource;
     }
 
     @Override
@@ -79,17 +79,17 @@ public class AttributeValueRow {
                 && Objects.equals(attributeId, that.attributeId)
                 && Objects.equals(value, that.value)
                 && Objects.equals(displayOrder, that.displayOrder)
-                && Objects.equals(primaryField, that.primaryField);
+                && Objects.equals(identitySource, that.identitySource);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(personId, attributeId, value, displayOrder, primaryField);
+        return Objects.hash(personId, attributeId, value, displayOrder, identitySource);
     }
 
     @Override
     public String toString() {
         return "AttributeValueRow{personId=" + personId + ", attributeId=" + attributeId +
-                ", value='" + value + "', displayOrder=" + displayOrder + ", primaryField=" + primaryField + '}';
+                ", value='" + value + "', displayOrder=" + displayOrder + ", identitySource=" + identitySource + '}';
     }
 }

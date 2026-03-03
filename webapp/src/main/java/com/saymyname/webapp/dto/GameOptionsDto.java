@@ -4,9 +4,8 @@ import java.util.List;
 
 public record GameOptionsDto(
         Long id,
-        GameModeDto gameMode,
+        Long targetAttributeId,
         List<GameAttributeFilterDto> filters,
         List<GameAttributeSortDto> sortBy,
-        Boolean initialGiven
-) {
+        Boolean initialGiven) {
 }

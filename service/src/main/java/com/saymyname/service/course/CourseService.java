@@ -96,9 +96,9 @@ public class CourseService {
         if (proto.getStatus() == null)
             proto.setStatus(CourseStatus.IN_PROGRESS);
 
-        var existing = courseDao.findFirstByUserModeScopeAndStatus(
+        var existing = courseDao.findFirstByUserScopeAndStatus(
                 me.getId(),
-                proto.getGameMode().getId(),
+                proto.getTargetAttributeId(),
                 proto.getPopulationScope(),
                 CourseStatus.IN_PROGRESS);
 
@@ -118,9 +118,9 @@ public class CourseService {
         if (proto.getStatus() == null)
             proto.setStatus(CourseStatus.IN_PROGRESS);
 
-        var existing = courseDao.findFirstByUserModeScopeAndStatus(
+        var existing = courseDao.findFirstByUserScopeAndStatus(
                 me.getId(),
-                proto.getGameMode().getId(),
+                proto.getTargetAttributeId(),
                 proto.getPopulationScope(),
                 CourseStatus.IN_PROGRESS);
 
@@ -147,7 +147,7 @@ public class CourseService {
 
         knowledgeService.resetForCourseScope(
                 userId,
-                course.getGameMode().getId(),
+                course.getTargetAttributeId(),
                 scope,
                 BASELINE_EASE, BASELINE_DIFF, BASELINE_STAB);
 

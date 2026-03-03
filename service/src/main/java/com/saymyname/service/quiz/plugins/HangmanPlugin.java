@@ -41,8 +41,8 @@ public class HangmanPlugin implements QuizQuestionPlugin {
     @Override
     public QuizQuestion build(QuizQuestionSpec spec) {
 
-        var key = answerKeyService.compute(spec.getPersonId(), spec.getTargetAttributeIds(), spec.getOperator());
-        String mask = PluginSupport.maskifyAlphaNum(key.correctAnswerJoined());
+        String value = answerKeyService.compute(spec.getPersonId(), spec.getTargetAttributeId());
+        String mask = PluginSupport.maskifyAlphaNum(value);
 
         int maxErrors = spec.getMaxErrorsOverride() != null
                 ? Math.max(1, spec.getMaxErrorsOverride())

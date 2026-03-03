@@ -6,7 +6,7 @@ import java.util.Objects;
 
 import org.springframework.stereotype.Component;
 
-import com.saymyname.core.model.course.ResultAttribute;
+import com.saymyname.core.model.course.TargetAnswerResult;
 import com.saymyname.core.model.enums.quiz.QuizFormat;
 import com.saymyname.core.model.enums.quiz.QuizPayloadType;
 import com.saymyname.core.model.quiz.QuizAnswerSubmission;
@@ -87,15 +87,14 @@ public class AssociationPlugin implements QuizQuestionPlugin {
                 String correctDisplay = snapshot.getTruth() == null ? null
                                 : snapshot.getTruth().getCorrectAnswerDisplay();
 
-                Long attrId = QuizSnapshotGuards.requireSingleTargetAttributeId(snapshot, QuizFormat.ASSOCIATION);
+                Long attrId = QuizSnapshotGuards.requireTargetAttributeId(snapshot, QuizFormat.ASSOCIATION);
 
-                List<ResultAttribute> attrs = List.of(
-                                PluginSupport.resultAttr(attrId, na.auditString(), correct, true));
+                TargetAnswerResult attribute = PluginSupport.result(attrId, na.auditString(), correct, true);
 
                 return new QuizValidationResult.Builder()
                                 .withCorrect(correct)
                                 .withCorrectAnswerDisplay(correctDisplay)
-                                .withResultAttributes(attrs)
+                                .withTargetAnswerResult(attribute)
                                 .build();
         }
 }

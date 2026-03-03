@@ -71,7 +71,7 @@ public class PersonCard {
     @JsonProperty("primaryAttributes")
     public List<AttributeValueView> getPrimaryAttributes() {
         return attributes.stream()
-                .filter(a -> Boolean.TRUE.equals(a.getPrimaryField()))
+                .filter(a -> Boolean.TRUE.equals(a.getIdentitySource()))
                 .sorted(ordering())
                 .collect(Collectors.toList());
     }
@@ -79,7 +79,7 @@ public class PersonCard {
     @JsonProperty("extraAttributes")
     public List<AttributeValueView> getExtraAttributes() {
         return attributes.stream()
-                .filter(a -> !Boolean.TRUE.equals(a.getPrimaryField()))
+                .filter(a -> !Boolean.TRUE.equals(a.getIdentitySource()))
                 .sorted(ordering())
                 .collect(Collectors.toList());
     }
@@ -138,8 +138,8 @@ public class PersonCard {
         public Builder withPrimaryAttributes(List<AttributeValueView> primaries) {
             if (primaries != null)
                 primaries.forEach(p -> {
-                    if (p.getPrimaryField() == null || !p.getPrimaryField())
-                        p.setPrimaryField(true);
+                    if (p.getIdentitySource() == null || !p.getIdentitySource())
+                        p.setIdentitySource(true);
                 });
             this.attributes.addAll(primaries == null ? List.of() : primaries);
             return this;
@@ -148,8 +148,8 @@ public class PersonCard {
         public Builder withExtraAttributes(List<AttributeValueView> extras) {
             if (extras != null)
                 extras.forEach(e -> {
-                    if (e.getPrimaryField() == null || e.getPrimaryField())
-                        e.setPrimaryField(false);
+                    if (e.getIdentitySource() == null || e.getIdentitySource())
+                        e.setIdentitySource(false);
                 });
             this.attributes.addAll(extras == null ? List.of() : extras);
             return this;

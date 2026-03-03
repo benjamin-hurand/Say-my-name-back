@@ -18,6 +18,6 @@ public interface TenantOrgRepository extends JpaRepository<TenantOrgEntity, Long
     @Query("select o.id from TenantOrgEntity o where o.active = true")
     List<Long> findActiveTenantOrgIds();
 
-    @Query("select o.key from TenantOrgEntity o where o.id = :orgId")
-    Optional<String> findKeyById(@Param("orgId") Long orgId);
+    @Query("select o.key from TenantOrgEntity o where o.id = :tenantId")
+    Optional<String> findKeyById(@Param("tenantId") Long tenantId);
 }

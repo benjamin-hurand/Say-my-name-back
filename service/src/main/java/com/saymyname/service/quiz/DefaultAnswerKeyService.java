@@ -2,7 +2,7 @@
 package com.saymyname.service.quiz;
 
 import java.util.List;
-import java.util.Locale;
+import java.util.Objects;
 
 import org.springframework.stereotype.Service;
 
@@ -15,22 +15,35 @@ public class DefaultAnswerKeyService implements AnswerKeyService {
     private final FactDao factDao;
 
     public DefaultAnswerKeyService(FactDao factDao) {
-        this.factDao = factDao;
+        this.factDao = Objects.requireNonNull(factDao, "factDao");
     }
 
     @Override
-    public AnswerKey compute(Long personId, List<Long> targetAttributeIds, String operator) {
-        List<Fact> attrs = factDao.findAttributesByPersonId(personId);
+    public String compute(Long personId, Long targetAttributeId) {
+        if (personId == null || personId <= 0) {
+            throw new IllegalArgumentException("personId is required");
+        }
+        if (targetAttributeId == null || targetAttributeId <= 0) {
+            throw new IllegalArgumentException("targetAttributeId is required");
+        }
 
-        List<String> correctValues = attrs.stream()
-                .filter(pa -> targetAttributeIds.contains(pa.getAttribute().getId()))
-                .map(pa -> pa.getValue() == null ? "" : pa.getValue())
-                .toList();
+        List<Fact> facts = factDao.findAttributesByPersonId(personId);
+        if (facts == null || facts.isEmpty()) {
+            return "";
+        }
 
-        boolean and = operator == null || operator.isBlank()
-                || operator.trim().toUpperCase(Locale.ROOT).equals("AND");
+        // Mono-attribute: on prend la première valeur non vide correspondante.
+        // Si plusieurs Facts existent (legacy), on choisit la première rencontrée
+        // (stable si DAO stable).
+        String value = facts.stream()
+                .filter(f -> f != null
+                        && f.getAttribute() != null
+                        && Objects.equals(f.getAttribute().getId(), targetAttributeId))
+                .map(f -> f.getValue() == null ? "" : f.getValue().trim())
+                .filter(v -> !v.isEmpty())
+                .findFirst()
+                .orElse(null);
 
-        String joined = String.join(" ", correctValues).trim();
-        return new AnswerKey(and, correctValues, joined);
+        return value;
     }
 }

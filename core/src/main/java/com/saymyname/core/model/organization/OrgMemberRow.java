@@ -13,7 +13,7 @@ import com.saymyname.core.model.enums.OrgRole;
 public class OrgMemberRow {
 
     private Long userId;
-    private Long organizationId;
+    private Long tenantId;
     private String displayName;
     private String email;
     private OrgRole role;
@@ -24,7 +24,7 @@ public class OrgMemberRow {
 
     private OrgMemberRow(Builder builder) {
         this.userId = builder.userId;
-        this.organizationId = builder.organizationId;
+        this.tenantId = builder.tenantId;
         this.displayName = builder.displayName;
         this.email = builder.email;
         this.role = builder.role;
@@ -38,8 +38,8 @@ public class OrgMemberRow {
         return userId;
     }
 
-    public Long getOrganizationId() {
-        return organizationId;
+    public Long getTenantId() {
+        return tenantId;
     }
 
     public String getDisplayName() {
@@ -76,7 +76,7 @@ public class OrgMemberRow {
 
     public static final class Builder {
         private Long userId;
-        private Long organizationId;
+        private Long tenantId;
         private String displayName;
         private String email;
         private OrgRole role;
@@ -90,8 +90,8 @@ public class OrgMemberRow {
             return this;
         }
 
-        public Builder organizationId(Long organizationId) {
-            this.organizationId = organizationId;
+        public Builder tenantId(Long tenantId) {
+            this.tenantId = tenantId;
             return this;
         }
 
@@ -142,19 +142,19 @@ public class OrgMemberRow {
         if (!(o instanceof OrgMemberRow that))
             return false;
         return Objects.equals(userId, that.userId)
-                && Objects.equals(organizationId, that.organizationId);
+                && Objects.equals(tenantId, that.tenantId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(userId, organizationId);
+        return Objects.hash(userId, tenantId);
     }
 
     @Override
     public String toString() {
         return "OrgMemberRow{" +
                 "userId=" + userId +
-                ", organizationId=" + organizationId +
+                ", tenantId=" + tenantId +
                 ", displayName='" + displayName + '\'' +
                 ", email='" + email + '\'' +
                 ", role=" + role +

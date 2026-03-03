@@ -19,7 +19,7 @@ import org.springframework.stereotype.Repository;
 
 import com.saymyname.core.model.enums.ChangeAction;
 import com.saymyname.core.model.people.ChangeRequestListQuery;
-import com.saymyname.core.multitenancy.OrgContext;
+import com.saymyname.core.multitenancy.TenantContext;
 import com.saymyname.persistence.entity.organization.ChangeRequestEntity;
 import com.saymyname.persistence.entity.organization.ChangeRequestItemEntity;
 import com.saymyname.persistence.entity.organization.PersonEntity;
@@ -32,7 +32,7 @@ public class ChangeRequestRepositoryImpl implements ChangeRequestRepositoryCusto
 
     @Override
     public Page<ChangeRequestEntity> searchAdmin(ChangeRequestListQuery q, Pageable pageable) {
-        Long orgId = OrgContext.get();
+        Long tenantId = TenantContext.get();
 
         var cb = em.getCriteriaBuilder();
 
@@ -41,7 +41,7 @@ public class ChangeRequestRepositoryImpl implements ChangeRequestRepositoryCusto
         Root<ChangeRequestEntity> root = idCq.from(ChangeRequestEntity.class);
 
         List<Predicate> predicates = new ArrayList<>();
-        predicates.add(cb.equal(root.get("organizationId"), orgId));
+        predicates.add(cb.equal(root.get("tenantId"), tenantId));
 
         // --- Filtre: liste de statuts ---
         if (q.statuses() != null && !q.statuses().isEmpty()) {
@@ -67,7 +67,7 @@ public class ChangeRequestRepositoryImpl implements ChangeRequestRepositoryCusto
             sq.select(i.get("id"));
             sq.where(
                     cb.equal(i.get("changeRequest").get("id"), root.get("id")),
-                    cb.equal(i.get("organizationId"), orgId),
+                    cb.equal(i.get("tenantId"), tenantId),
                     cb.equal(i.get("action"), ChangeAction.valueOf(q.action())));
             predicates.add(cb.exists(sq));
         }
@@ -103,7 +103,7 @@ public class ChangeRequestRepositoryImpl implements ChangeRequestRepositoryCusto
                 sq.select(i.get("id"));
                 sq.where(
                         cb.equal(i.get("changeRequest").get("id"), root.get("id")),
-                        cb.equal(i.get("organizationId"), orgId),
+                        cb.equal(i.get("tenantId"), tenantId),
                         cb.or(onProp, onPaVal));
 
                 predicates.add(cb.or(onAttr, onRequester, cb.exists(sq)));
@@ -127,7 +127,7 @@ public class ChangeRequestRepositoryImpl implements ChangeRequestRepositoryCusto
         CriteriaQuery<Long> countCq = cb.createQuery(Long.class);
         Root<ChangeRequestEntity> countRoot = countCq.from(ChangeRequestEntity.class);
         List<Predicate> countPreds = new ArrayList<>();
-        countPreds.add(cb.equal(countRoot.get("organizationId"), orgId));
+        countPreds.add(cb.equal(countRoot.get("tenantId"), tenantId));
 
         // --- Filtre: liste de statuts (count) ---
         if (q.statuses() != null && !q.statuses().isEmpty()) {
@@ -152,7 +152,7 @@ public class ChangeRequestRepositoryImpl implements ChangeRequestRepositoryCusto
             sq.select(i.get("id"));
             sq.where(
                     cb.equal(i.get("changeRequest").get("id"), countRoot.get("id")),
-                    cb.equal(i.get("organizationId"), orgId),
+                    cb.equal(i.get("tenantId"), tenantId),
                     cb.equal(i.get("action"), ChangeAction.valueOf(q.action())));
             countPreds.add(cb.exists(sq));
         }
@@ -183,7 +183,7 @@ public class ChangeRequestRepositoryImpl implements ChangeRequestRepositoryCusto
                 sq.select(i.get("id"));
                 sq.where(
                         cb.equal(i.get("changeRequest").get("id"), countRoot.get("id")),
-                        cb.equal(i.get("organizationId"), orgId),
+                        cb.equal(i.get("tenantId"), tenantId),
                         cb.or(onProp, onPaVal));
                 countPreds.add(cb.or(onAttr, onRequester, cb.exists(sq)));
             }
@@ -205,7 +205,7 @@ public class ChangeRequestRepositoryImpl implements ChangeRequestRepositoryCusto
         deepCq.select(deepRoot).distinct(true)
                 .where(
                         deepRoot.get("id").in(ids),
-                        cb.equal(deepRoot.get("organizationId"), orgId));
+                        cb.equal(deepRoot.get("tenantId"), tenantId));
 
         List<ChangeRequestEntity> deepList = em.createQuery(deepCq).getResultList();
         // préserver l’ordre de la page
@@ -213,13 +213,13 @@ public class ChangeRequestRepositoryImpl implements ChangeRequestRepositoryCusto
 
         // -------- 4) Initialiser person.attributes (+ attribute) et person.photos en 2
         // requêtes --------
-        initializePersonCollections(deepList, orgId);
+        initializePersonCollections(deepList, tenantId);
 
         return new PageImpl<>(deepList, pageable, total);
     }
 
     // Initialise les collections lazy de Person sans "multiple bag fetch".
-    private void initializePersonCollections(List<ChangeRequestEntity> deepList, Long orgId) {
+    private void initializePersonCollections(List<ChangeRequestEntity> deepList, Long tenantId) {
         List<Long> personIds = deepList.stream()
                 .map(ChangeRequestEntity::getPerson)
                 .filter(Objects::nonNull)
@@ -237,9 +237,9 @@ public class ChangeRequestRepositoryImpl implements ChangeRequestRepositoryCusto
                         "from PersonEntity p " +
                         "left join fetch p.attributes pa " +
                         "left join fetch pa.attribute a " +
-                        "where p.organizationId = :orgId and p.id in :ids",
+                        "where p.tenantId = :tenantId and p.id in :ids",
                 PersonEntity.class);
-        qAttr.setParameter("orgId", orgId);
+        qAttr.setParameter("tenantId", tenantId);
         qAttr.setParameter("ids", personIds);
         qAttr.getResultList(); // init p.attributes
 
@@ -248,9 +248,9 @@ public class ChangeRequestRepositoryImpl implements ChangeRequestRepositoryCusto
                 "select distinct p " +
                         "from PersonEntity p " +
                         "left join fetch p.photos ph " +
-                        "where p.organizationId = :orgId and p.id in :ids",
+                        "where p.tenantId = :tenantId and p.id in :ids",
                 PersonEntity.class);
-        qPhoto.setParameter("orgId", orgId);
+        qPhoto.setParameter("tenantId", tenantId);
         qPhoto.setParameter("ids", personIds);
         qPhoto.getResultList(); // init p.photos
     }

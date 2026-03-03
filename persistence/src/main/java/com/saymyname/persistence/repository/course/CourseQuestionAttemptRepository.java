@@ -23,7 +23,7 @@ public interface CourseQuestionAttemptRepository extends JpaRepository<CourseQue
   @Query("""
           DELETE FROM CourseQuestionAttemptEntity c
            WHERE c.course.id = :courseId
-             AND c.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+             AND c.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
       """)
   void deleteByCourseId(@Param("courseId") Long courseId);
 
@@ -33,7 +33,7 @@ public interface CourseQuestionAttemptRepository extends JpaRepository<CourseQue
           SELECT c
             FROM CourseQuestionAttemptEntity c
            WHERE c.id = :id
-             AND c.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+             AND c.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
       """)
   Optional<CourseQuestionAttemptEntity> findByIdWithItems(@Param("id") Long id);
 
@@ -42,7 +42,7 @@ public interface CourseQuestionAttemptRepository extends JpaRepository<CourseQue
           SELECT COUNT(c)
             FROM CourseQuestionAttemptEntity c
            WHERE c.course.id = :courseId
-             AND c.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+             AND c.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
       """)
   long countByCourseIdTenant(@Param("courseId") Long courseId);
 
@@ -53,7 +53,7 @@ public interface CourseQuestionAttemptRepository extends JpaRepository<CourseQue
                  c.rawSubmission = :rawSubmission,
                  c.normalizedAudit = :normalizedAudit
            WHERE c.id = :id
-             AND c.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+             AND c.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
       """)
   int updateStepStateAndAudit(
       @Param("id") Long id,
@@ -67,7 +67,7 @@ public interface CourseQuestionAttemptRepository extends JpaRepository<CourseQue
             FROM CourseQuestionAttemptEntity c
            WHERE c.course.id = :courseId
              AND c.answeredAt > :after
-             AND c.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+             AND c.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
       """)
   long countByCourseIdAndAnsweredAtAfterTenant(@Param("courseId") Long courseId, @Param("after") LocalDateTime after);
 
@@ -76,12 +76,13 @@ public interface CourseQuestionAttemptRepository extends JpaRepository<CourseQue
           select max(c.answeredAt)
             from CourseQuestionAttemptEntity c
            where c.course.id = :courseId
-             and c.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+             and c.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
       """)
   LocalDateTime findLastAnsweredAt(@Param("courseId") Long courseId);
 
   interface RecentAnswerRow {
     boolean isGlobalCorrect();
+
     LocalDateTime getAnsweredAt();
   }
 
@@ -90,7 +91,7 @@ public interface CourseQuestionAttemptRepository extends JpaRepository<CourseQue
             FROM CourseQuestionAttemptEntity c
            WHERE c.course.id = :courseId
              AND c.answeredAt IS NOT NULL
-             AND c.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+             AND c.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
            ORDER BY c.answeredAt DESC
       """)
   List<RecentAnswerRow> findRecentAnsweredRows(@Param("courseId") Long courseId, Pageable pageable);
@@ -100,7 +101,7 @@ public interface CourseQuestionAttemptRepository extends JpaRepository<CourseQue
         UPDATE CourseQuestionAttemptEntity c
            SET c.helpUsed = true
          WHERE c.id = :id
-           AND c.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+           AND c.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
       """)
   int markHelpUsed(@Param("id") Long id);
 
@@ -113,7 +114,7 @@ public interface CourseQuestionAttemptRepository extends JpaRepository<CourseQue
                c.normalizedAudit = :norm,
                c.globalCorrect = :globalCorrect
          WHERE c.id = :id
-           AND c.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+           AND c.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
       """)
   int updateAnswerMeta(
       @Param("id") Long id,
@@ -129,7 +130,7 @@ public interface CourseQuestionAttemptRepository extends JpaRepository<CourseQue
            SET c.answeredAt = :answeredAt
          WHERE c.id = :id
            AND c.answeredAt IS NULL
-           AND c.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+           AND c.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
       """)
   int markAnsweredAtIfNull(
       @Param("id") Long id,

@@ -11,29 +11,27 @@ import org.springframework.transaction.annotation.Transactional;
 import com.saymyname.core.exception.quiz.QuizUnprocessableException;
 import com.saymyname.core.model.course.Course;
 import com.saymyname.core.model.course.CourseRecentStats;
-import com.saymyname.core.model.course.Knowledge;
+import com.saymyname.core.model.course.KnowledgeCandidate;
 import com.saymyname.core.model.enums.FollowFilter;
 import com.saymyname.core.model.enums.KnowledgeStatus;
-import com.saymyname.core.model.enums.PopulationScope;
 import com.saymyname.core.model.enums.PoolType;
+import com.saymyname.core.model.enums.PopulationScope;
 import com.saymyname.core.model.enums.quiz.FormatMode;
 import com.saymyname.core.model.enums.quiz.QuizQuestionSource;
+import com.saymyname.core.model.quiz.QuizPayloadItem;
 import com.saymyname.core.model.quiz.QuizQuestionContext;
 import com.saymyname.core.model.quiz.QuizQuestionSpec;
-import com.saymyname.core.model.quiz.QuizPayloadItem;
 import com.saymyname.core.model.quiz.candidate.CandidateQuery;
 import com.saymyname.core.model.quiz.candidate.CandidateSample;
 import com.saymyname.core.model.quiz.candidate.EligibilityStats;
 import com.saymyname.core.model.quiz.candidate.PayloadItem;
 import com.saymyname.core.model.quiz.options.CategorySelection;
-import com.saymyname.core.model.quiz.options.GameMode;
-import com.saymyname.core.model.quiz.options.GameModeAttribute;
 import com.saymyname.core.model.quiz.options.TrainingOptions;
 import com.saymyname.core.model.quiz.planning.PlanningDecision;
 import com.saymyname.core.model.quiz.planning.PlanningRequest;
 import com.saymyname.core.model.quiz.planning.PreparedEmit;
 import com.saymyname.persistence.dao.course.CourseDao;
-import com.saymyname.service.GameModeService;
+import com.saymyname.service.UserOrganizationService;
 import com.saymyname.service.course.CourseRecentStatsService;
 import com.saymyname.service.course.KnowledgeSelectionService;
 import com.saymyname.service.course.KnowledgeSelectionService.SelectionResult;
@@ -43,26 +41,25 @@ import com.saymyname.service.quiz.planning.FormatPlanner;
 @Service
 public class QuizOrchestrationService {
 
-        private final GameModeService gameModeService;
         private final CourseDao courseDao;
         private final KnowledgeSelectionService knowledgeSelectionService;
         private final CandidateAccessor candidateAccessor;
         private final FormatPlanner formatPlanner;
         private final CourseRecentStatsService courseRecentStatsService;
+        private final UserOrganizationService userOrganizationService;
 
         // D3: Stress thresholds for timed gating
         private static final int STRESS_ERROR_STREAK_THRESHOLD = 2;
         private static final double STRESS_AVG_RT_THRESHOLD_MS = 8000.0;
 
         public QuizOrchestrationService(
-                        GameModeService gameModeService,
                         CourseDao courseDao,
                         KnowledgeSelectionService knowledgeSelectionService,
                         CandidateAccessor candidateAccessor,
                         FormatPlanner formatPlanner,
-                        CourseRecentStatsService courseRecentStatsService) {
+                        CourseRecentStatsService courseRecentStatsService,
+                        UserOrganizationService userOrganizationService) {
 
-                this.gameModeService = Objects.requireNonNull(gameModeService, "gameModeService");
                 this.courseDao = Objects.requireNonNull(courseDao, "courseDao");
                 this.knowledgeSelectionService = Objects.requireNonNull(knowledgeSelectionService,
                                 "knowledgeSelectionService");
@@ -70,6 +67,8 @@ public class QuizOrchestrationService {
                 this.formatPlanner = Objects.requireNonNull(formatPlanner, "formatPlanner");
                 this.courseRecentStatsService = Objects.requireNonNull(courseRecentStatsService,
                                 "courseRecentStatsService");
+                this.userOrganizationService = Objects.requireNonNull(userOrganizationService,
+                                "userOrganizationService");
         }
 
         // ------------------------------------------------------------------
@@ -87,12 +86,7 @@ public class QuizOrchestrationService {
 
                 Objects.requireNonNull(userId, "userId");
                 Objects.requireNonNull(options, "options");
-                Objects.requireNonNull(options.getGameModeId(), "options.gameModeId");
                 Objects.requireNonNull(formatMode, "formatMode");
-
-                GameMode gameMode = gameModeService.findByIdOrThrow(options.getGameModeId());
-                List<Long> targetAttributeIds = extractTargetAttributeIds(gameMode);
-                String operator = resolveOperator(gameMode);
 
                 FollowFilter scope = options.getPopulationScope();
 
@@ -100,9 +94,7 @@ public class QuizOrchestrationService {
                                 userId,
                                 scope,
                                 options.getCategory(),
-                                gameMode.getId(),
-                                targetAttributeIds,
-                                operator,
+                                options.getTargetAttributeId(),
                                 true,
                                 false,
                                 null);
@@ -110,8 +102,9 @@ public class QuizOrchestrationService {
                 EligibilityStats stats = candidateAccessor.countEligibility(countQuery);
 
                 PlanningRequest planningRequest = (formatMode == FormatMode.FORCED)
-                                ? PlanningRequest.forced(forcedFormat, stats, gameMode, timed, timeLimitMs)
-                                : PlanningRequest.auto(stats, gameMode, timed, timeLimitMs);
+                                ? PlanningRequest.forced(forcedFormat, stats, options.getTargetAttributeId(), timed,
+                                                timeLimitMs)
+                                : PlanningRequest.auto(stats, options.getTargetAttributeId(), timed, timeLimitMs);
 
                 PlanningDecision decision = formatPlanner.plan(planningRequest);
 
@@ -119,9 +112,7 @@ public class QuizOrchestrationService {
                                 userId,
                                 scope,
                                 options.getCategory(),
-                                gameMode.getId(),
-                                targetAttributeIds,
-                                operator,
+                                options.getTargetAttributeId(),
                                 false,
                                 decision.requiresPhoto(),
                                 decision.sampleSize());
@@ -129,13 +120,13 @@ public class QuizOrchestrationService {
                 CandidateSample sample = candidateAccessor.sample(sampleQuery, decision.sampleSize());
 
                 QuizQuestionContext context = buildTrainingContext(options);
+
+                // Training: pas de gating D3 ici (c'est course-centric dans ton code).
                 QuizQuestionSpec spec = buildSpec(
                                 QuizQuestionSource.TRAINING,
                                 sample.targetPersonId(),
                                 sample.targetStorageKey(),
-                                gameMode.getId(),
-                                targetAttributeIds,
-                                operator,
+                                options.getTargetAttributeId(),
                                 context,
                                 sample,
                                 timed,
@@ -155,17 +146,13 @@ public class QuizOrchestrationService {
                         Boolean timed,
                         Integer timeLimitMs,
                         Long ttlSeconds) {
+
                 Objects.requireNonNull(userId, "userId");
                 Objects.requireNonNull(courseId, "courseId");
 
                 Course course = courseDao.findById(courseId)
                                 .orElseThrow(() -> new IllegalArgumentException("Course not found: id=" + courseId));
 
-                Long gameModeId = course.getGameMode() != null ? course.getGameMode().getId() : null;
-                GameMode gameMode = gameModeService.findByIdOrThrow(gameModeId);
-
-                List<Long> targetAttributeIds = extractTargetAttributeIds(gameMode);
-                String operator = resolveOperator(gameMode);
                 FollowFilter scope = toFollowFilter(course.getPopulationScope());
 
                 SelectionResult selection = knowledgeSelectionService.findNextDueSingleTarget(
@@ -174,10 +161,8 @@ public class QuizOrchestrationService {
                                 false,
                                 null);
 
-                Knowledge knowledge = selection == null ? null : selection.knowledge();
-                Long targetPersonId = (knowledge != null && knowledge.getPerson() != null)
-                                ? knowledge.getPerson().getId()
-                                : null;
+                KnowledgeCandidate candidate = (selection != null) ? selection.candidate() : null;
+                Long targetPersonId = (candidate != null) ? candidate.personId() : null;
 
                 if (targetPersonId == null) {
                         throw new QuizUnprocessableException(
@@ -189,45 +174,47 @@ public class QuizOrchestrationService {
                                 userId,
                                 scope,
                                 null,
-                                gameMode.getId(),
-                                targetAttributeIds,
-                                operator,
+                                course.getTargetAttributeId(),
                                 true,
                                 false,
                                 null));
 
-                // D1: Pass knowledge status for ladder-based format selection
-                KnowledgeStatus knowledgeStatus = (knowledge != null) ? knowledge.getStatus() : null;
+                KnowledgeStatus knowledgeStatus = (candidate != null) ? candidate.status() : null;
 
-                // D3: Timed gating - block timed mode when user is stressed
+                // ✅ D3 gating
                 Boolean effectiveTimed = applyTimedGating(courseId, timed);
 
-                PlanningDecision decision = formatPlanner
-                                .plan(PlanningRequest.courseAuto(stats, gameMode, knowledgeStatus, effectiveTimed, timeLimitMs));
+                PlanningDecision decision = formatPlanner.plan(
+                                PlanningRequest.courseAuto(
+                                                stats,
+                                                course.getTargetAttributeId(),
+                                                knowledgeStatus,
+                                                effectiveTimed,
+                                                timeLimitMs));
 
-                CandidateSample sample = candidateAccessor.sampleWithTarget(buildCandidateQuery(
-                                userId,
-                                scope,
-                                null,
-                                gameMode.getId(),
-                                targetAttributeIds,
-                                operator,
-                                false,
-                                decision.requiresPhoto(),
-                                decision.sampleSize()), targetPersonId, decision.sampleSize());
+                CandidateSample sample = candidateAccessor.sampleWithTarget(
+                                buildCandidateQuery(
+                                                userId,
+                                                scope,
+                                                null,
+                                                course.getTargetAttributeId(),
+                                                false,
+                                                decision.requiresPhoto(),
+                                                decision.sampleSize()),
+                                targetPersonId,
+                                decision.sampleSize());
 
-                QuizQuestionContext context = buildCourseContext(course, selection, knowledge);
+                QuizQuestionContext context = buildCourseContext(course, selection, candidate);
 
+                // ✅ IMPORTANT: on émet la question avec effectiveTimed (pas timed)
                 QuizQuestionSpec spec = buildSpec(
                                 QuizQuestionSource.COURSE,
                                 sample.targetPersonId(),
                                 sample.targetStorageKey(),
-                                gameMode.getId(),
-                                targetAttributeIds,
-                                operator,
+                                course.getTargetAttributeId(),
                                 context,
                                 sample,
-                                timed,
+                                effectiveTimed,
                                 timeLimitMs,
                                 decision);
 
@@ -238,9 +225,7 @@ public class QuizOrchestrationService {
                         QuizQuestionSource source,
                         Long personId,
                         String storageKey,
-                        Long gameModeId,
-                        List<Long> targetAttributeIds,
-                        String operator,
+                        Long targetAttributeId,
                         QuizQuestionContext context,
                         CandidateSample sample,
                         Boolean timed,
@@ -251,15 +236,10 @@ public class QuizOrchestrationService {
                                 .withSource(source)
                                 .withPersonId(personId)
                                 .withStorageKey(storageKey)
-                                .withGameModeId(gameModeId)
-                                .withTargetAttributeIds(targetAttributeIds)
-                                .withOperator(operator)
+                                .withTargetAttributeId(targetAttributeId)
                                 .withContext(context)
-
-                                // Pool minimal: ids only
                                 .withCandidatePoolPersonIds(sample != null ? sample.personIds() : List.of())
-                                .withCandidatePoolItems(buildCandidatePoolItems(sample, targetAttributeIds))
-
+                                .withCandidatePoolItems(buildCandidatePoolItems(sample, targetAttributeId))
                                 .withTimed(timed)
                                 .withTimeLimitMs(timeLimitMs)
                                 .withReasonCode(decision.reasonCode())
@@ -269,7 +249,7 @@ public class QuizOrchestrationService {
 
         private static List<QuizPayloadItem> buildCandidatePoolItems(
                         CandidateSample sample,
-                        List<Long> targetAttributeIds) {
+                        Long targetAttributeId) {
 
                 if (sample == null || sample.items() == null || sample.items().isEmpty()) {
                         return List.of();
@@ -281,7 +261,7 @@ public class QuizOrchestrationService {
                                 continue;
                         }
 
-                        String label = resolveLabel(item, targetAttributeIds);
+                        String label = resolveLabel(item, targetAttributeId);
                         out.add(new QuizPayloadItem.Builder()
                                         .withPersonId(item.personId())
                                         .withStorageKey(item.photoStorageKey())
@@ -292,19 +272,14 @@ public class QuizOrchestrationService {
                 return out;
         }
 
-        private static String resolveLabel(PayloadItem item, List<Long> targetAttributeIds) {
-                if (item == null || targetAttributeIds == null || targetAttributeIds.isEmpty()) {
+        private static String resolveLabel(PayloadItem item, Long targetAttributeId) {
+                if (item == null || targetAttributeId == null) {
                         return null;
                 }
 
-                for (Long attrId : targetAttributeIds) {
-                        if (attrId == null) {
-                                continue;
-                        }
-                        String value = item.attributeValue(attrId);
-                        if (value != null && !value.isBlank()) {
-                                return value.trim();
-                        }
+                String value = item.attributeValue(targetAttributeId);
+                if (value != null && !value.isBlank()) {
+                        return value.trim();
                 }
 
                 return null;
@@ -314,20 +289,22 @@ public class QuizOrchestrationService {
                         Long userId,
                         FollowFilter scope,
                         CategorySelection category,
-                        Long gameModeId,
-                        List<Long> targetAttributeIds,
-                        String operator,
+                        Long targetAttributeId,
                         boolean countOnly,
                         boolean requireApprovedPhoto,
                         Integer limit) {
 
+                // NOTE: tu pourrais remonter excludePersonId depuis le controller/security
+                // context
+                // pour éviter l'appel à chaque fois. Pour l'instant on garde simple.
+                Long excludePersonId = userOrganizationService.findPersonIdByUserId(userId)
+                                .orElseThrow(() -> new IllegalStateException("No personId for userId=" + userId));
+
                 CandidateQuery.Builder builder = new CandidateQuery.Builder()
                                 .withUserId(userId)
-                                .withExcludePersonId(userId)
+                                .withExcludePersonId(excludePersonId)
                                 .withPopulationScope(scope)
-                                .withGameModeId(gameModeId)
-                                .withGameModeAttributeIds(targetAttributeIds)
-                                .withAttributeOperator(operator)
+                                .withAttributeId(targetAttributeId)
                                 .countOnly(countOnly)
                                 .requireApprovedPhoto(requireApprovedPhoto)
                                 .requireCategoryMatch(category != null);
@@ -342,62 +319,40 @@ public class QuizOrchestrationService {
                 return builder.build();
         }
 
-        private static List<Long> extractTargetAttributeIds(GameMode gameMode) {
-                Objects.requireNonNull(gameMode, "gameMode");
-                List<GameModeAttribute> attrs = gameMode.getGameModeAttributes();
-                if (attrs == null || attrs.isEmpty()) {
-                        throw new IllegalArgumentException("GameMode has no attributes: id=" + gameMode.getId());
-                }
-
-                List<Long> ids = attrs.stream()
-                                .map(GameModeAttribute::getAttribute)
-                                .filter(Objects::nonNull)
-                                .map(a -> a.getId())
-                                .filter(Objects::nonNull)
-                                .distinct()
-                                .toList();
-
-                if (ids.isEmpty()) {
-                        throw new IllegalArgumentException("GameMode has no attribute ids: id=" + gameMode.getId());
-                }
-                return ids;
-        }
-
-        private static String resolveOperator(GameMode gameMode) {
-                String op = gameMode.getOperator();
-                return (op == null || op.isBlank()) ? "AND" : op;
-        }
-
         private static FollowFilter toFollowFilter(PopulationScope scope) {
-                if (scope == null)
+                if (scope == null) {
                         return FollowFilter.ALL;
+                }
                 return switch (scope) {
                         case FOLLOWED -> FollowFilter.FOLLOWED;
                         case ALL -> FollowFilter.ALL;
+                        // Si ton enum PopulationScope a UNFOLLOWED, dé-commente :
+                        // case UNFOLLOWED -> FollowFilter.UNFOLLOWED;
                 };
         }
 
         private QuizQuestionContext buildTrainingContext(TrainingOptions options) {
                 return new QuizQuestionContext.Builder()
-                                .withSource(com.saymyname.core.model.enums.quiz.QuizQuestionSource.TRAINING)
+                                .withSource(QuizQuestionSource.TRAINING)
                                 .withKnowledgeTracking(null)
                                 .build();
         }
 
-        private QuizQuestionContext buildCourseContext(Course course, SelectionResult selection, Knowledge knowledge) {
-                Integer round = course.getCurrentRound();
-                PoolType poolType = null;
-                if (selection != null) {
-                        poolType = selection.poolType();
-                }
+        private QuizQuestionContext buildCourseContext(
+                        Course course,
+                        SelectionResult selection,
+                        KnowledgeCandidate candidate) {
 
-                Long knowledgeId = (knowledge != null) ? knowledge.getId() : null;
+                Integer round = course.getCurrentRound();
+                PoolType poolType = (selection != null) ? selection.poolType() : null;
+
+                Long knowledgeId = (candidate != null) ? candidate.knowledgeId() : null;
 
                 return new QuizQuestionContext.Builder()
-                                .withSource(com.saymyname.core.model.enums.quiz.QuizQuestionSource.COURSE)
+                                .withSource(QuizQuestionSource.COURSE)
                                 .withCourseId(course.getId())
-                                .withKnowledgeId(knowledgeId) // ✅ crucial pour put()
-                                .withQuestionRound(round) // optionnel MVP
+                                .withKnowledgeId(knowledgeId)
+                                .withQuestionRound(round)
                                 .withPoolType(poolType != null ? poolType : PoolType.NEW)
                                 .build();
         }
@@ -405,27 +360,21 @@ public class QuizOrchestrationService {
         /**
          * D3: Timed gating - block timed mode when user is stressed.
          * Stress is detected by high error streak or slow response times.
-         *
-         * @param courseId the course to check stats for
-         * @param requestedTimed the timed mode requested by caller
-         * @return effective timed mode (false if blocked due to stress)
          */
         private Boolean applyTimedGating(Long courseId, Boolean requestedTimed) {
                 if (!Boolean.TRUE.equals(requestedTimed)) {
-                        return requestedTimed; // Not requesting timed, nothing to block
+                        return requestedTimed;
                 }
 
                 CourseRecentStats recentStats = courseRecentStatsService.getStatsForCourse(courseId);
                 if (recentStats == null) {
-                        return requestedTimed; // No stats yet, allow timed
+                        return requestedTimed;
                 }
 
                 boolean isStressed = recentStats.getErrorStreak() >= STRESS_ERROR_STREAK_THRESHOLD
                                 || recentStats.getAvgRtRecent() > STRESS_AVG_RT_THRESHOLD_MS;
 
                 if (isStressed) {
-                        // D3: Block timed mode when user is stressed
-                        // TODO: Log with TIMED_BLOCKED_HIGH_STRESS reason code for analytics
                         return false;
                 }
 

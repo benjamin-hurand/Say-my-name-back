@@ -16,7 +16,7 @@ public interface PersonEmailRepository extends JpaRepository<PersonEmailEntity, 
   @Query("""
       select e
         from PersonEmailEntity e
-       where e.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+       where e.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
          and e.person.id = :personId
        order by e.primary desc, e.createdAt desc
       """)
@@ -25,7 +25,7 @@ public interface PersonEmailRepository extends JpaRepository<PersonEmailEntity, 
   @Query("""
       select e
         from PersonEmailEntity e
-       where e.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+       where e.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
          and e.id = :id
       """)
   Optional<PersonEmailEntity> findByIdInCurrentOrg(@Param("id") Long id);
@@ -33,7 +33,7 @@ public interface PersonEmailRepository extends JpaRepository<PersonEmailEntity, 
   @Query("""
       select e
         from PersonEmailEntity e
-       where e.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+       where e.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
          and e.person.id = :personId
          and e.primary = true
       """)
@@ -42,7 +42,7 @@ public interface PersonEmailRepository extends JpaRepository<PersonEmailEntity, 
   @Query("""
       select case when count(e) > 0 then true else false end
         from PersonEmailEntity e
-       where e.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+       where e.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
          and lower(e.email) = lower(:email)
          and e.active = true
       """)
@@ -51,7 +51,7 @@ public interface PersonEmailRepository extends JpaRepository<PersonEmailEntity, 
   @Query("""
       select e
         from PersonEmailEntity e
-       where e.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+       where e.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
          and lower(e.email) = lower(:email)
          and e.active = true
       """)
@@ -61,7 +61,7 @@ public interface PersonEmailRepository extends JpaRepository<PersonEmailEntity, 
   @Query("""
       update PersonEmailEntity e
          set e.primary = false
-       where e.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+       where e.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
          and e.person.id = :personId
          and e.id <> :keepId
       """)
@@ -71,7 +71,7 @@ public interface PersonEmailRepository extends JpaRepository<PersonEmailEntity, 
   @Query("""
       update PersonEmailEntity e
          set e.primary = false
-       where e.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+       where e.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
          and e.person.id = :personId
       """)
   int clearPrimary(@Param("personId") Long personId);
@@ -79,7 +79,7 @@ public interface PersonEmailRepository extends JpaRepository<PersonEmailEntity, 
   @Modifying
   @Query("""
       delete from PersonEmailEntity e
-       where e.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+       where e.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
          and e.id = :id
       """)
   void deleteByIdInCurrentOrg(@Param("id") Long id);
@@ -101,7 +101,7 @@ public interface PersonEmailRepository extends JpaRepository<PersonEmailEntity, 
                ELSE 0
              END AS status
         FROM person_emails pe
-       WHERE pe.organization_id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+       WHERE pe.tenant_id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
          AND pe.person_id IN (:personIds)
        GROUP BY pe.person_id
       """, nativeQuery = true)

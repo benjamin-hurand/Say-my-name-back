@@ -19,7 +19,7 @@ public class TrainingOptionsDtoMapper {
         CategorySelection category = toCategoryModel(dto.category());
 
         return new TrainingOptions.Builder()
-                .withGameModeId(dto.gameModeId())
+                .withTargetAttributeId(dto.targetAttributeId())
                 .withPopulationScope(dto.populationScope())
                 .withCategory(category)
                 .withTrackKnowledge(dto.trackKnowledge())

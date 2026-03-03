@@ -1,10 +1,9 @@
 // src/main/java/com/saymyname/core/model/quiz/QuizAnswerItemResult.java
 package com.saymyname.core.model.quiz;
 
-import java.util.List;
 import java.util.Objects;
 
-import com.saymyname.core.model.course.ResultAttribute;
+import com.saymyname.core.model.course.TargetAnswerResult;
 import com.saymyname.core.model.enums.course.QuizQuestionItemRole;
 
 public class QuizAnswerItemResult {
@@ -20,7 +19,7 @@ public class QuizAnswerItemResult {
     private String userAnswerNormalized; // nullable
     private String correctAnswer; // nullable (selon format/UX)
 
-    private List<ResultAttribute> resultAttributes; // nullable
+    private TargetAnswerResult targetAnswerResult; // nullable
 
     public QuizAnswerItemResult() {
     }
@@ -33,7 +32,7 @@ public class QuizAnswerItemResult {
         this.correct = b.correct;
         this.userAnswerNormalized = b.userAnswerNormalized;
         this.correctAnswer = b.correctAnswer;
-        this.resultAttributes = b.resultAttributes;
+        this.targetAnswerResult = b.targetAnswerResult;
     }
 
     public int getPosition() {
@@ -64,8 +63,8 @@ public class QuizAnswerItemResult {
         return correctAnswer;
     }
 
-    public List<ResultAttribute> getResultAttributes() {
-        return resultAttributes;
+    public TargetAnswerResult getTargetAnswerResult() {
+        return targetAnswerResult;
     }
 
     public void setPosition(int position) {
@@ -96,8 +95,8 @@ public class QuizAnswerItemResult {
         this.correctAnswer = correctAnswer;
     }
 
-    public void setResultAttributes(List<ResultAttribute> resultAttributes) {
-        this.resultAttributes = resultAttributes;
+    public void setTargetAnswerResult(TargetAnswerResult targetAnswerResult) {
+        this.targetAnswerResult = targetAnswerResult;
     }
 
     public static class Builder {
@@ -108,7 +107,7 @@ public class QuizAnswerItemResult {
         private boolean correct;
         private String userAnswerNormalized;
         private String correctAnswer;
-        private List<ResultAttribute> resultAttributes;
+        private TargetAnswerResult targetAnswerResult;
 
         public Builder withPosition(int v) {
             this.position = v;
@@ -145,8 +144,8 @@ public class QuizAnswerItemResult {
             return this;
         }
 
-        public Builder withResultAttributes(List<ResultAttribute> v) {
-            this.resultAttributes = v;
+        public Builder withTargetAnswerResult(TargetAnswerResult v) {
+            this.targetAnswerResult = v;
             return this;
         }
 
@@ -168,12 +167,12 @@ public class QuizAnswerItemResult {
                 && Objects.equals(personId, that.personId)
                 && Objects.equals(userAnswerNormalized, that.userAnswerNormalized)
                 && Objects.equals(correctAnswer, that.correctAnswer)
-                && Objects.equals(resultAttributes, that.resultAttributes);
+                && Objects.equals(targetAnswerResult, that.targetAnswerResult);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(position, role, knowledgeId, personId, correct, userAnswerNormalized, correctAnswer,
-                resultAttributes);
+                targetAnswerResult);
     }
 }

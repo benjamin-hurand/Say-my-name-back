@@ -44,6 +44,15 @@ public class FactService {
         return factDao.findAttributesByPersonId(personId);
     }
 
+    @Transactional(readOnly = true)
+    public Fact getById(Long factId) {
+        if (factId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "factId manquant");
+        }
+        return factDao.findById(factId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Fact introuvable: " + factId));
+    }
+
     /**
      * Calcule min/max observés pour NUMBER/DATE et renvoie Map<attributeId,
      * ObservedMinMax>.
@@ -107,7 +116,7 @@ public class FactService {
      * elle est ignorée côté modif (et on peut choisir de la nettoyer plus tard).
      *
      * Règles :
-     * - DELETE active => soft-close immédiat (pendingDelete=true, validTo=now)
+     * - DELETE active => soft-close immédiat (deleted=true, validTo=now)
      * - UPDATE active => soft-close immédiat + create immédiat (validFrom=now)
      * - CREATE => create immédiat (validFrom=now)
      *
@@ -350,14 +359,14 @@ public class FactService {
     }
 
     /**
-     * Tu peux garder ce cleanup si tu continues à utiliser pendingDelete + validTo.
-     * Ici on soft-close avec pendingDelete=true, donc c'est toujours utile.
+     * Tu peux garder ce cleanup si tu continues à utiliser deleted + validTo.
+     * Ici on soft-close avec deleted=true, donc c'est toujours utile.
      */
     @Transactional
-    public long hardDeleteExpiredPendingAttributes(LocalDateTime cutoffExclusive) {
+    public long hardDeleteExpiredFacts(LocalDateTime cutoffExclusive) {
         if (cutoffExclusive == null) {
             throw new IllegalArgumentException("cutoffExclusive ne peut pas être null");
         }
-        return factDao.hardDeleteExpiredPendingAttributes(cutoffExclusive);
+        return factDao.hardDeleteExpiredFacts(cutoffExclusive);
     }
 }

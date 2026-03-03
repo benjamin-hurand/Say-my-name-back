@@ -6,11 +6,12 @@ import java.time.LocalDateTime;
 public class CourseStats {
 
     private Long courseId;
-    private Long gameModeId;
 
-    // Éligibles pour CE course (dépend du game mode + scope suivi)
-    private long totalCandidates; // ex. # suivis éligibles pour ce mode
-    private long universeEligible; // ex. # personnes éligibles globalement pour ce mode
+    private Long targetAttributeId;
+
+    // Éligibles pour CE course (dépend du scope + population)
+    private long totalCandidates;
+    private long universeEligible;
 
     // Répartition des knowledges
     private long unknown;
@@ -27,7 +28,7 @@ public class CourseStats {
     private int currentRound;
 
     // Indicateur utile (non dérivable simplement)
-    private long dueNow; // ex. # items SRS “dus” maintenant pour ce course
+    private long dueNow;
 
     public static class Builder {
         private final CourseStats s = new CourseStats();
@@ -37,8 +38,8 @@ public class CourseStats {
             return this;
         }
 
-        public Builder withGameModeId(Long v) {
-            s.gameModeId = v;
+        public Builder withTargetAttributeId(Long v) {
+            s.targetAttributeId = v;
             return this;
         }
 
@@ -106,8 +107,8 @@ public class CourseStats {
         return courseId;
     }
 
-    public Long getGameModeId() {
-        return gameModeId;
+    public Long getTargetAttributeId() {
+        return targetAttributeId;
     }
 
     public long getTotalCandidates() {

@@ -1,3 +1,4 @@
+// src/main/java/com/saymyname/service/course/KnowledgeSelectionService.java
 package com.saymyname.service.course;
 
 import java.util.ArrayList;
@@ -10,13 +11,13 @@ import org.springframework.stereotype.Service;
 
 import com.saymyname.core.exception.course.NoMoreQuestionsException;
 import com.saymyname.core.model.course.Course;
-import com.saymyname.core.model.course.Knowledge;
+import com.saymyname.core.model.course.KnowledgeCandidate;
 import com.saymyname.core.model.enums.PoolType;
 
 @Service
 public class KnowledgeSelectionService {
 
-    public record SelectionResult(Knowledge knowledge, PoolType poolType) {
+    public record SelectionResult(KnowledgeCandidate candidate, PoolType poolType) {
     }
 
     public record MultiTargetConstraints(
@@ -33,6 +34,7 @@ public class KnowledgeSelectionService {
             1.0,
             0.0,
             3);
+
     private static final int LAZY_SEED_BATCH_SIZE = 5;
 
     private final KnowledgeService knowledgeService;
@@ -54,7 +56,7 @@ public class KnowledgeSelectionService {
         // IMPORTANT: weights must be mutable because we remove pools when empty.
         final Map<PoolType, Double> weights = (poolWeights != null && !poolWeights.isEmpty())
                 ? new LinkedHashMap<>(poolWeights)
-                : new LinkedHashMap<>(defaultWeights()); // <-- FIX
+                : new LinkedHashMap<>(defaultWeights());
 
         Random rnd = new Random();
 
@@ -74,16 +76,16 @@ public class KnowledgeSelectionService {
                 selected = weights.keySet().iterator().next();
             }
 
-            Knowledge k = switch (selected) {
-                case ERROR_RECENT -> knowledgeService.findFirstRecentError(course, lastPersonId, allowRepeat);
-                case SRS_DUE -> knowledgeService.findFirstSRS(course, lastPersonId, allowRepeat);
-                case DISCOVERED -> knowledgeService.findFirstDiscovered(course, lastPersonId, allowRepeat);
-                case NEW -> knowledgeService.findFirstNew(course, lastPersonId, allowRepeat);
-                default -> knowledgeService.findRevision(course, lastPersonId, allowRepeat);
+            KnowledgeCandidate c = switch (selected) {
+                case ERROR_RECENT -> knowledgeService.findFirstRecentErrorCandidate(course, lastPersonId, allowRepeat);
+                case SRS_DUE -> knowledgeService.findFirstSRSCandidate(course, lastPersonId, allowRepeat);
+                case DISCOVERED -> knowledgeService.findFirstDiscoveredCandidate(course, lastPersonId, allowRepeat);
+                case NEW -> knowledgeService.findFirstNewCandidate(course, lastPersonId, allowRepeat);
+                default -> knowledgeService.findRevisionCandidate(course, lastPersonId, allowRepeat);
             };
 
-            if (k != null) {
-                return new SelectionResult(k, selected);
+            if (c != null) {
+                return new SelectionResult(c, selected);
             }
 
             // remove this pool and try again with remaining pools
@@ -101,9 +103,9 @@ public class KnowledgeSelectionService {
         throw new NoMoreQuestionsException(course.getId());
     }
 
-    public List<Knowledge> findNextDueMultiTargets(
+    public List<KnowledgeCandidate> findNextDueMultiTargets(
             Course course,
-            Knowledge primary,
+            KnowledgeCandidate primary,
             int targetCount,
             Long lastPersonId,
             MultiTargetConstraints constraints) {
@@ -114,9 +116,9 @@ public class KnowledgeSelectionService {
 
         MultiTargetConstraints c = constraints != null ? constraints : DEFAULT_CONSTRAINTS;
 
-        Long primaryPersonId = primary != null && primary.getPerson() != null ? primary.getPerson().getId() : null;
+        Long primaryPersonId = (primary != null) ? primary.personId() : null;
 
-        List<Knowledge> candidates = knowledgeService.findNextDueMulti(
+        List<KnowledgeCandidate> candidates = knowledgeService.findNextDueMultiCandidates(
                 course,
                 primaryPersonId,
                 lastPersonId,
@@ -127,19 +129,21 @@ public class KnowledgeSelectionService {
                 c.minAttemptsRecent(),
                 c.fetchFactor());
 
-        LinkedHashMap<Long, Knowledge> uniqueByPerson = new LinkedHashMap<>();
-        for (Knowledge k : candidates) {
-            if (k == null || k.getPerson() == null || k.getPerson().getId() == null) {
+        LinkedHashMap<Long, KnowledgeCandidate> uniqueByPerson = new LinkedHashMap<>();
+        for (KnowledgeCandidate kc : candidates) {
+            if (kc == null || kc.personId() == null) {
                 continue;
             }
-            Long personId = k.getPerson().getId();
+            Long personId = kc.personId();
+
             if (primaryPersonId != null && primaryPersonId.equals(personId)) {
                 continue;
             }
             if (lastPersonId != null && lastPersonId.equals(personId)) {
                 continue;
             }
-            uniqueByPerson.putIfAbsent(personId, k);
+
+            uniqueByPerson.putIfAbsent(personId, kc);
             if (uniqueByPerson.size() >= targetCount) {
                 break;
             }

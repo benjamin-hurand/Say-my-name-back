@@ -7,7 +7,7 @@ import java.util.Objects;
 
 import org.springframework.stereotype.Component;
 
-import com.saymyname.core.model.course.ResultAttribute;
+import com.saymyname.core.model.course.TargetAnswerResult;
 import com.saymyname.core.model.enums.quiz.QuizFormat;
 import com.saymyname.core.model.enums.quiz.QuizPayloadType;
 import com.saymyname.core.model.quiz.QuizAnswerSubmission;
@@ -80,8 +80,9 @@ public class TextInputPlugin implements QuizQuestionPlugin {
 
         if (userCanon != null && truths != null && !truths.isEmpty()) {
             for (TruthAttributeValue tav : truths) {
-                if (tav == null)
+                if (tav == null) {
                     continue;
+                }
                 if (PluginSupport.equalsCanon(userCanon, tav.getValue())) {
                     correct = true;
                     break;
@@ -89,23 +90,17 @@ public class TextInputPlugin implements QuizQuestionPlugin {
             }
         }
 
-        List<ResultAttribute> attrs = new ArrayList<>();
-        if (snapshot.getTargetAttributeIds() != null) {
-            for (Long attrId : snapshot.getTargetAttributeIds()) {
-                if (attrId == null)
-                    continue;
-                attrs.add(PluginSupport.resultAttr(
-                        attrId,
-                        nt.raw(),
-                        correct,
-                        true));
-            }
-        }
+        Long targetAttrId = snapshot.getTargetAttributeId();
+        TargetAnswerResult result = PluginSupport.result(
+                targetAttrId,
+                nt.raw(),
+                correct,
+                true);
 
         return new QuizValidationResult.Builder()
                 .withCorrect(correct)
                 .withCorrectAnswerDisplay(correctDisplay)
-                .withResultAttributes(attrs)
+                .withTargetAnswerResult(result)
                 .build();
     }
 }

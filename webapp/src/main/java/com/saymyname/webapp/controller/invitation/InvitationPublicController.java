@@ -42,7 +42,7 @@ public class InvitationPublicController {
     /**
      * Acceptation publique d'une invitation via token (+ PIN optionnel).
      * Requiert un utilisateur authentifié (récupéré via UserService).
-     * L’orgId de traçage est déduit côté service de l’invitation parent.
+     * L’tenantId de traçage est déduit côté service de l’invitation parent.
      */
     @PostMapping("/accept")
     public ResponseEntity<InvitationDto> accept(@RequestBody AcceptInvitationRequest req) {

@@ -60,26 +60,27 @@ public class OrgInterceptor implements HandlerInterceptor {
             return true;
         }
 
-        // 4) Détermine orgId : header prioritaire, sinon fallback "par défaut"
-        Long orgId = null;
+        // 4) Détermine tenantId : header prioritaire, sinon fallback "par défaut"
+        Long tenantId = null;
         String header = req.getHeader("X-Org-Id");
 
         if (header != null && !header.isBlank()) {
             try {
-                orgId = Long.valueOf(header.trim());
-                log.debug("[OrgInterceptor] userId={} path={} → orgId={} (via X-Org-Id)", userId, path, orgId);
+                tenantId = Long.valueOf(header.trim());
+                log.debug("[OrgInterceptor] userId={} path={} → tenantId={} (via X-Org-Id)", userId, path, tenantId);
             } catch (NumberFormatException nfe) {
                 log.warn("[OrgInterceptor] Invalid X-Org-Id='{}' for userId={} path={}", header, userId, path);
                 res.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid X-Org-Id header");
                 return false;
             }
         } else {
-            orgId = defaultOrgResolver.forUser(userId); // peut être null si user sans org
-            log.debug("[OrgInterceptor] userId={} path={} → orgId={} (via DefaultOrgResolver)", userId, path, orgId);
+            tenantId = defaultOrgResolver.forUser(userId); // peut être null si user sans org
+            log.debug("[OrgInterceptor] userId={} path={} → tenantId={} (via DefaultOrgResolver)", userId, path,
+                    tenantId);
         }
 
         // 5) Cas user sans organisation → on bloque les endpoints multi-tenant
-        if (orgId == null) {
+        if (tenantId == null) {
             log.warn("[OrgInterceptor] userId={} path={} → aucune organisation associée", userId, path);
             // 409 = l'état de la ressource requiert une org (conflit d'état)
             res.sendError(HttpServletResponse.SC_CONFLICT, "NO_ORGANIZATION");
@@ -90,15 +91,16 @@ public class OrgInterceptor implements HandlerInterceptor {
         boolean isSuperAdmin = auth.hasGlobalRole("SUPER_ADMIN");
 
         // 7) Vérifie que l'utilisateur a au moins le rôle VIEWER dans cette org
-        if (!isSuperAdmin && !membership.hasAtLeast(userId, orgId, OrgRole.VIEWER)) {
-            log.warn("[OrgInterceptor] Access denied: userId={} path={} orgId={} (no membership)", userId, path, orgId);
+        if (!isSuperAdmin && !membership.hasAtLeast(userId, tenantId, OrgRole.VIEWER)) {
+            log.warn("[OrgInterceptor] Access denied: userId={} path={} tenantId={} (no membership)", userId, path,
+                    tenantId);
             res.sendError(HttpServletResponse.SC_FORBIDDEN, "FORBIDDEN");
             return false;
         }
 
         // 8) Tout est OK → on pose le contexte tenant
-        OrgContext.set(orgId);
-        log.trace("[OrgInterceptor] OrgContext set to orgId={} for userId={} path={}", orgId, userId, path);
+        OrgContext.set(tenantId);
+        log.trace("[OrgInterceptor] OrgContext set to tenantId={} for userId={} path={}", tenantId, userId, path);
         return true;
     }
 

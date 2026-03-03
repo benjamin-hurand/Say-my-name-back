@@ -2,7 +2,6 @@ package com.saymyname.persistence.repository;
 
 import com.saymyname.persistence.entity.organization.subscription.UserSubscriptionEntity;
 import com.saymyname.persistence.entity.organization.subscription.UserSubscriptionKey;
-
 import jakarta.persistence.QueryHint;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,6 +9,7 @@ import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
@@ -19,43 +19,58 @@ import static org.hibernate.jpa.HibernateHints.HINT_READ_ONLY;
 @Repository
 public interface UserSubscriptionRepository extends JpaRepository<UserSubscriptionEntity, UserSubscriptionKey> {
 
-        // --- Exists / Delete / Count (tenant scope assuré par Hibernate Filter)
-        boolean existsByUserIdAndPersonId(Long userId, Long personId);
+        // ---------------------------------------------------------------------
+        // Tenant-scoped derived queries
+        // ---------------------------------------------------------------------
 
-        long deleteByUserIdAndPersonId(Long userId, Long personId);
+        boolean existsByTenantIdAndUserIdAndPersonId(Long tenantId, Long userId, Long personId);
 
-        long countByUserId(Long userId);
+        long deleteByTenantIdAndUserIdAndPersonId(Long tenantId, Long userId, Long personId);
+
+        long countByTenantIdAndUserId(Long tenantId, Long userId);
 
         @QueryHints({
                         @QueryHint(name = HINT_READ_ONLY, value = "true"),
                         @QueryHint(name = HINT_FETCH_SIZE, value = "500")
         })
-        Page<UserSubscriptionEntity> findByUserId(Long userId, Pageable pageable);
+        Page<UserSubscriptionEntity> findByTenantIdAndUserId(Long tenantId, Long userId, Pageable pageable);
 
         @Query("""
                         select e.personId
                           from UserSubscriptionEntity e
-                         where e.userId = :userId
+                         where e.tenantId = :tenantId
+                           and e.userId = :userId
                         """)
         @QueryHints(@QueryHint(name = HINT_READ_ONLY, value = "true"))
-        Page<Long> findPersonIdsPageByUserId(@Param("userId") Long userId, Pageable pageable);
+        Page<Long> findPersonIdsPageByTenantIdAndUserId(@Param("tenantId") Long tenantId,
+                        @Param("userId") Long userId,
+                        Pageable pageable);
 
         @QueryHints(@QueryHint(name = HINT_READ_ONLY, value = "true"))
-        List<UserSubscriptionEntity> findByUserIdAndPersonIdIn(Long userId, Collection<Long> personIds);
+        List<UserSubscriptionEntity> findByTenantIdAndUserIdAndPersonIdIn(Long tenantId, Long userId,
+                        Collection<Long> personIds);
+
+        @Query("""
+                        select e.personId
+                          from UserSubscriptionEntity e
+                         where e.tenantId = :tenantId
+                           and e.userId = :userId
+                           and e.personId in :personIds
+                        """)
+        @QueryHints(@QueryHint(name = HINT_READ_ONLY, value = "true"))
+        List<Long> findPersonIdsByTenantIdAndUserIdAndPersonIdIn(@Param("tenantId") Long tenantId,
+                        @Param("userId") Long userId,
+                        @Param("personIds") Collection<Long> personIds);
 
         @Modifying
         @Query("""
                         delete from UserSubscriptionEntity e
-                         where e.userId = :userId
+                         where e.tenantId = :tenantId
+                           and e.userId = :userId
                            and e.personId in :personIds
                         """)
-        int deleteByUserIdAndPersonIdIn(@Param("userId") Long userId,
+        int deleteByTenantIdAndUserIdAndPersonIdIn(@Param("tenantId") Long tenantId,
+                        @Param("userId") Long userId,
                         @Param("personIds") Collection<Long> personIds);
 
-        // --- Stubs temporaires (tu peux les garder)
-        @Query(value = "select 0", nativeQuery = true)
-        long countFollowedEligibleAND(@Param("userId") Long userId, @Param("gameModeId") Long gameModeId);
-
-        @Query(value = "select 0", nativeQuery = true)
-        long countFollowedEligibleOR(@Param("userId") Long userId, @Param("gameModeId") Long gameModeId);
 }

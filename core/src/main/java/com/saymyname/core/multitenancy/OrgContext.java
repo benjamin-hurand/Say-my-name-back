@@ -18,10 +18,10 @@ public final class OrgContext {
         ORG.remove();
     }
 
-    public static void runWith(Long orgId, Runnable r) {
+    public static void runWith(Long tenantId, Runnable r) {
         Long before = get();
         try {
-            set(orgId);
+            set(tenantId);
             r.run();
         } finally {
             if (before != null)

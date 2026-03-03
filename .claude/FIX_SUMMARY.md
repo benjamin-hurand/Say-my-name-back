@@ -273,7 +273,7 @@ create table person_attributes (
     is_pending_delete bit not null,  -- ✅ Fixed from "tinyint(1)"
     attribute_id bigint not null,
     id bigint not null auto_increment,
-    organization_id bigint not null,
+    tenant_id bigint not null,
     person_id bigint not null,
     valid_from datetime(6) not null,
     valid_to datetime(6),

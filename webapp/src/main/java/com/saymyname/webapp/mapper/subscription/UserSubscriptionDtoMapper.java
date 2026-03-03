@@ -14,10 +14,10 @@ public class UserSubscriptionDtoMapper {
     }
 
     public UserSubscription toModel(UserSubscriptionDto dto) {
-        return new UserSubscription.Builder()
-                .withUserId(dto.userId())
-                .withPersonId(dto.personId())
-                .withCreatedAt(dto.createdAt())
+        return UserSubscription.builder()
+                .userId(dto.userId())
+                .personId(dto.personId())
+                .createdAt(dto.createdAt())
                 .build();
     }
 }

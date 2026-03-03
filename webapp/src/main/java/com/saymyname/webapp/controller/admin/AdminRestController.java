@@ -26,10 +26,8 @@ import com.saymyname.core.model.people.Person;
 import com.saymyname.core.model.people.Fact;
 import com.saymyname.core.model.persondirectory.AdminPersonCard;
 import com.saymyname.core.model.persondirectory.AdminPersonSearchCriteria;
-import com.saymyname.core.model.quiz.options.GameMode;
 import com.saymyname.service.AttributeService;
 import com.saymyname.service.ChangeRequestService;
-import com.saymyname.service.GameModeService;
 import com.saymyname.service.FactService;
 import com.saymyname.service.UserOrganizationService;
 import com.saymyname.service.UserService;
@@ -60,7 +58,6 @@ public class AdminRestController {
 
     private final PersonService personService;
     private final AttributeService attributeService;
-    private final GameModeService gameModeService;
 
     private final PersonDirectoryDtoMapper personDirectoryDtoMapper;
     private final BulkFactDtoMapper bulkFactDtoMapper;
@@ -86,7 +83,6 @@ public class AdminRestController {
     public AdminRestController(
             PersonService personService,
             AttributeService attributeService,
-            GameModeService gameModeService,
             PersonDirectoryDtoMapper personDirectoryDtoMapper,
             BulkFactDtoMapper bulkFactDtoMapper,
             FactService factService,
@@ -102,7 +98,6 @@ public class AdminRestController {
 
         this.personService = personService;
         this.attributeService = attributeService;
-        this.gameModeService = gameModeService;
 
         this.personDirectoryDtoMapper = personDirectoryDtoMapper;
         this.bulkFactDtoMapper = bulkFactDtoMapper;
@@ -217,12 +212,6 @@ public class AdminRestController {
     @GetMapping("/attributes/filterable")
     public List<Attribute> listFilterableAttributes() {
         return attributeService.getFilterableAttributes();
-    }
-
-    // === 4) GameModes ===
-    @GetMapping("/game-modes")
-    public List<GameMode> listGameModes() {
-        return gameModeService.getAllGameModes();
     }
 
     /**

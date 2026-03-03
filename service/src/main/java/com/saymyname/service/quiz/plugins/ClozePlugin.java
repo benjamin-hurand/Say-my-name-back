@@ -7,7 +7,7 @@ import java.util.Objects;
 
 import org.springframework.stereotype.Component;
 
-import com.saymyname.core.model.course.ResultAttribute;
+import com.saymyname.core.model.course.TargetAnswerResult;
 import com.saymyname.core.model.enums.quiz.QuizFormat;
 import com.saymyname.core.model.enums.quiz.QuizPayloadType;
 import com.saymyname.core.model.quiz.QuizAnswerSubmission;
@@ -40,12 +40,7 @@ public class ClozePlugin implements QuizQuestionPlugin {
         public QuizQuestion build(QuizQuestionSpec spec) {
                 Objects.requireNonNull(spec, "spec");
 
-                var key = answerKeyService.compute(spec.getPersonId(), spec.getTargetAttributeIds(),
-                                spec.getOperator());
-                String answer = key == null ? null : key.correctAnswerJoined();
-                if (answer == null) {
-                        answer = "";
-                }
+                String value = answerKeyService.compute(spec.getPersonId(), spec.getTargetAttributeId());
 
                 // Seed déterministe => même question => même masque
                 // (questionRound est toujours défini dans ton flow Course)
@@ -53,7 +48,7 @@ public class ClozePlugin implements QuizQuestionPlugin {
 
                 // Cloze utile: révèle quelques caractères (au minimum 1, souvent 2)
                 // Ex: "Abarna" => "A____a" plutôt que "______"
-                String mask = PluginSupport.clozeMaskRevealSome(answer, seed);
+                String mask = PluginSupport.clozeMaskRevealSome(value, seed);
 
                 QuizQuestionDisplay display = new QuizQuestionDisplay.Builder()
                                 .withPrompt("Complète les trous")
@@ -99,19 +94,18 @@ public class ClozePlugin implements QuizQuestionPlugin {
                                 || PluginSupport.equalsCanon(nt.auditString(), expected);
 
                 // CLOZE = single target attribute (comme TEXT_INPUT/CLOZE)
-                Long attrId = QuizSnapshotGuards.requireSingleTargetAttributeId(snapshot, QuizFormat.CLOZE);
+                Long attrId = QuizSnapshotGuards.requireTargetAttributeId(snapshot, QuizFormat.CLOZE);
 
-                List<ResultAttribute> attrs = new ArrayList<>(1);
-                attrs.add(PluginSupport.resultAttr(
+                TargetAnswerResult result = PluginSupport.result(
                                 attrId,
                                 nt.raw(),
                                 correct,
-                                true));
+                                true);
 
                 return new QuizValidationResult.Builder()
                                 .withCorrect(correct)
                                 .withCorrectAnswerDisplay(expected)
-                                .withResultAttributes(attrs)
+                                .withTargetAnswerResult(result)
                                 .build();
         }
 }

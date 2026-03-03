@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.springframework.stereotype.Component;
 
-import com.saymyname.core.model.course.ResultAttribute;
+import com.saymyname.core.model.course.TargetAnswerResult;
 import com.saymyname.core.model.enums.quiz.QuizFormat;
 import com.saymyname.core.model.enums.quiz.QuizPayloadType;
 import com.saymyname.core.model.quiz.QuizAnswerSubmission;
@@ -72,11 +72,8 @@ public class McqPlugin implements QuizQuestionPlugin, QuizQuestionPluginEnhanced
         Objects.requireNonNull(spec, "spec");
 
         // Compute correct value for target person + attributes
-        String correctValue = answerKeyService
-                .compute(spec.getPersonId(), spec.getTargetAttributeIds(), spec.getOperator())
-                .correctAnswerJoined();
-
-        correctValue = (correctValue == null) ? "" : correctValue;
+        String value = answerKeyService
+                .compute(spec.getPersonId(), spec.getTargetAttributeId());
 
         // Build distractors by scanning a randomized subset of the pool
         List<String> distractors = new ArrayList<>(DEFAULT_CHOICES - 1);
@@ -95,8 +92,7 @@ public class McqPlugin implements QuizQuestionPlugin, QuizQuestionPluginEnhanced
             }
 
             String v = answerKeyService
-                    .compute(pid, spec.getTargetAttributeIds(), spec.getOperator())
-                    .correctAnswerJoined();
+                    .compute(pid, spec.getTargetAttributeId());
 
             if (v == null) {
                 continue;
@@ -107,7 +103,7 @@ public class McqPlugin implements QuizQuestionPlugin, QuizQuestionPluginEnhanced
             }
 
             // exclude the correct value
-            if (!correctValue.isEmpty() && trimmed.equalsIgnoreCase(correctValue)) {
+            if (!value.isEmpty() && trimmed.equalsIgnoreCase(value)) {
                 continue;
             }
 
@@ -133,8 +129,8 @@ public class McqPlugin implements QuizQuestionPlugin, QuizQuestionPluginEnhanced
         // The 'correct' flag is NOT used (it's deprecated and always returns null)
         choices.add(new QuizChoice.Builder()
                 .withId(nextChoiceId())
-                .withLabel(correctValue)
-                .withValue(correctValue)
+                .withLabel(value)
+                .withValue(value)
                 .withPersonId(spec.getPersonId()) // Used by snapshot factory for truth matching
                 .build());
 
@@ -248,20 +244,19 @@ public class McqPlugin implements QuizQuestionPlugin, QuizQuestionPluginEnhanced
             correct = PluginSupport.equalsCanon(nc.selectedValue(), expected);
         }
 
-        Long attrId = QuizSnapshotGuards.requireSingleTargetAttributeId(snapshot, QuizFormat.MCQ);
+        Long attrId = QuizSnapshotGuards.requireTargetAttributeId(snapshot, QuizFormat.MCQ);
 
-        List<ResultAttribute> attrs = new ArrayList<>(1);
-        attrs.add(PluginSupport.resultAttr(
+        TargetAnswerResult result = PluginSupport.result(
                 attrId,
                 nc.selectedValue(),
                 correct,
-                true));
+                true);
 
         return new QuizValidationResult.Builder()
                 .withCorrect(correct)
                 .withCorrectAnswerDisplay(
                         snapshot.getTruth() == null ? null : snapshot.getTruth().getCorrectAnswerDisplay())
-                .withResultAttributes(attrs)
+                .withTargetAnswerResult(result)
                 .build();
     }
 

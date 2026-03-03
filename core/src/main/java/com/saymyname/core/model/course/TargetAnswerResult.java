@@ -1,25 +1,21 @@
 package com.saymyname.core.model.course;
 
-import com.saymyname.core.model.people.Attribute;
-
-public class ResultAttribute {
-    private Attribute attribute;
+public class TargetAnswerResult {
+    private Long attributeId;
     private String value;
     private boolean isCorrect;
-    private boolean isTarget;
 
-    public ResultAttribute() {
+    public TargetAnswerResult() {
     }
 
-    public ResultAttribute(Attribute attribute, String value, boolean isCorrect, boolean isTarget) {
-        this.attribute = attribute;
+    public TargetAnswerResult(Long attributeId, String value, boolean isCorrect, boolean isTarget) {
+        this.attributeId = attributeId;
         this.value = value;
         this.isCorrect = isCorrect;
-        this.isTarget = isTarget;
     }
 
-    public Attribute getAttribute() {
-        return attribute;
+    public Long getAttributeId() {
+        return attributeId;
     }
 
     public String getValue() {
@@ -30,12 +26,8 @@ public class ResultAttribute {
         return isCorrect;
     }
 
-    public boolean isTarget() {
-        return isTarget;
-    }
-
-    public void setAttribute(Attribute attribute) {
-        this.attribute = attribute;
+    public void setAttributeId(Long attribute) {
+        this.attributeId = attribute;
     }
 
     public void setValue(String value) {
@@ -46,18 +38,13 @@ public class ResultAttribute {
         isCorrect = correct;
     }
 
-    public void setTarget(boolean target) {
-        isTarget = target;
-    }
-
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((attribute == null) ? 0 : attribute.hashCode());
+        result = prime * result + ((attributeId == null) ? 0 : attributeId.hashCode());
         result = prime * result + ((value == null) ? 0 : value.hashCode());
         result = prime * result + (isCorrect ? 1231 : 1237);
-        result = prime * result + (isTarget ? 1231 : 1237);
         return result;
     }
 
@@ -69,11 +56,11 @@ public class ResultAttribute {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        ResultAttribute other = (ResultAttribute) obj;
-        if (attribute == null) {
-            if (other.attribute != null)
+        TargetAnswerResult other = (TargetAnswerResult) obj;
+        if (attributeId == null) {
+            if (other.attributeId != null)
                 return false;
-        } else if (!attribute.equals(other.attribute))
+        } else if (!attributeId.equals(other.attributeId))
             return false;
         if (value == null) {
             if (other.value != null)
@@ -82,15 +69,12 @@ public class ResultAttribute {
             return false;
         if (isCorrect != other.isCorrect)
             return false;
-        if (isTarget != other.isTarget)
-            return false;
         return true;
     }
 
     @Override
     public String toString() {
-        return "ResultAttribute [attribute=" + attribute + ", value=" + value + ", isCorrect=" + isCorrect
-                + ", isTarget=" + isTarget + "]";
+        return "TargetAnswerResult [attributeId=" + attributeId + ", value=" + value + ", isCorrect=" + isCorrect + "]";
     }
 
 }

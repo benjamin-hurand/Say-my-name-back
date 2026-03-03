@@ -39,8 +39,9 @@ public class AttributeEntity extends BaseTenantScoped {
         @Column(name = "display_order", nullable = false)
         private int displayOrder;
 
-        @Column(name = "primary_field", nullable = false)
-        private boolean primaryField;
+        /** NEW name in DB: is_identity_source */
+        @Column(name = "is_identity_source", nullable = false)
+        private boolean identitySource;
 
         @Column(name = "is_category", nullable = false)
         private boolean category;
@@ -78,8 +79,10 @@ public class AttributeEntity extends BaseTenantScoped {
 
         /**
          * JSON brut stocké en DB.
-         * (Si Hibernate 6: possible @JdbcTypeCode(SqlTypes.JSON), mais String suffit)
          */
         @Column(name = "constraint_payload", columnDefinition = "json")
         private String constraintPayload;
+
+        @Column(name = "is_derived", nullable = false)
+        private boolean derived;
 }

@@ -7,7 +7,6 @@ import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.course.Course;
 import com.saymyname.core.model.enums.PopulationScope;
 import com.saymyname.core.model.enums.course.CourseStatus;
-import com.saymyname.core.model.quiz.options.GameMode;
 import com.saymyname.webapp.dto.course.CourseDto;
 import com.saymyname.webapp.dto.course.CreateCourseDto;
 import com.saymyname.webapp.mapper.UserDtoMapper;
@@ -26,7 +25,7 @@ public class CourseDtoMapper {
                 return new CourseDto(
                                 course.getId(),
                                 course.getUser().getId(),
-                                course.getGameMode().getId(),
+                                course.getTargetAttributeId(),
                                 course.getStatus(),
                                 course.getCurrentRound());
         }
@@ -36,7 +35,7 @@ public class CourseDtoMapper {
                 return new Course.Builder()
                                 .withId(courseDto.id())
                                 .withUser(new User.Builder().withId(courseDto.userId()).build())
-                                .withGameMode(new GameMode.Builder().withId(courseDto.gameModeId()).build())
+                                .withTargetAttributeId(courseDto.targetAttributeId())
                                 .withStatus(courseDto.status())
                                 .build();
         }
@@ -52,7 +51,7 @@ public class CourseDtoMapper {
         /** CreateCourseDto -> Model pour la création */
         public Course toModel(CreateCourseDto dto) {
                 return new Course.Builder()
-                                .withGameMode(new GameMode.Builder().withId(dto.gameModeId()).build())
+                                .withTargetAttributeId(dto.targetAttributeId())
                                 .withStatus(CourseStatus.IN_PROGRESS)
                                 .withPopulationScope(dto.populationScope() != null ? dto.populationScope()
                                                 : PopulationScope.FOLLOWED)

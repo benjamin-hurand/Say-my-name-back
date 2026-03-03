@@ -46,7 +46,7 @@ public class AttributeDao {
         return attributeRepository.count();
     }
 
-    public List<AttributeMetaRow> findMetaByOrgId(Long orgId) {
-        return attributeRepository.findMetaByOrgId(orgId);
+    public List<AttributeMetaRow> findMetaForCurrentTenant() {
+        return attributeRepository.findMetaForCurrentTenant();
     }
 }

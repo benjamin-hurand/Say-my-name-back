@@ -1,4 +1,4 @@
-// service/src/main/java/com/saymyname/service/OrganizationService.java
+// service/src/main/java/com/saymyname/service/TenantOrgService.java
 package com.saymyname.service;
 
 import com.saymyname.core.model.organization.TenantOrg;

@@ -84,14 +84,22 @@ public class FactDao {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public java.util.Optional<Fact> findById(Long factId) {
+        if (factId == null)
+            return java.util.Optional.empty();
+        return factRepository.findById(factId)
+                .map(factEntityMapper::toFullModel);
+    }
+
     /**
-     * Actifs à une date donnée : now ∈ [validFrom, validTo), hors pendingDelete.
+     * Actifs à une date donnée : now ∈ [validFrom, validTo), hors deleted.
      * (Sans saison, c'est la méthode principale utilisée par le service.)
      */
     @Transactional(readOnly = true)
     public List<Fact> findActiveAtByPersonAndAttribute(Long personId, Long attributeId, LocalDateTime now) {
         return factRepository
-                .findActiveAtByPersonAndAttributeExcludingPending(personId, attributeId, now)
+                .findActiveAtByPersonAndAttributeExcludingDeleted(personId, attributeId, now)
                 .stream()
                 .map(factEntityMapper::toFullModel)
                 .toList();
@@ -137,7 +145,7 @@ public class FactDao {
      * Hard delete en base des PA en attente de suppression et expirés (job de
      * nettoyage).
      */
-    public int hardDeleteExpiredPendingAttributes(LocalDateTime cutoffExclusive) {
-        return factRepository.hardDeleteExpiredPendingAttributes(cutoffExclusive);
+    public int hardDeleteExpiredFacts(LocalDateTime cutoffExclusive) {
+        return factRepository.hardDeleteExpiredDeletedFacts(cutoffExclusive);
     }
 }

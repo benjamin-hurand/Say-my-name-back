@@ -32,8 +32,7 @@ import com.saymyname.persistence.dao.FactDao;
 @Component
 public class QuizQuestionSnapshotFactory {
 
-    // ✅ bump schema version (ajout hangman state/rules)
-    private static final int SNAPSHOT_SCHEMA_VERSION = 5;
+    private static final int SNAPSHOT_SCHEMA_VERSION = 6;
     private static final String GENERATOR_VERSION = "quiz-pipeline-v1";
     private static final String NORMALIZER_VERSION = "normalizer-v1";
 
@@ -45,34 +44,41 @@ public class QuizQuestionSnapshotFactory {
 
     /**
      * Capture les valeurs EAV cibles au moment de l'émission.
+     * Mono-attribute : 1 seul attributeId.
      */
     public List<TruthAttributeValue> freezeTruthForQuestion(QuizQuestion q) {
         Objects.requireNonNull(q, "quizQuestion");
         if (q.getPersonId() == null) {
             throw new IllegalStateException("Cannot freeze truth: question.personId is null");
         }
-        if (q.getTargetAttributeIds() == null || q.getTargetAttributeIds().isEmpty()) {
-            throw new IllegalStateException("Cannot freeze truth: question.targetAttributeIds is empty");
+        if (q.getTargetAttributeId() == null) {
+            throw new IllegalStateException("Cannot freeze truth: question.targetAttributeId is null");
         }
 
-        List<Fact> personAttrs = factDao.findAttributesByPersonId(q.getPersonId());
+        Long attrId = q.getTargetAttributeId();
+        if (attrId <= 0) {
+            throw new IllegalStateException("Cannot freeze truth: question.targetAttributeId is invalid");
+        }
+
+        List<Fact> personFacts = factDao.findAttributesByPersonId(q.getPersonId());
 
         List<TruthAttributeValue> out = new ArrayList<>();
-        for (Long attrId : q.getTargetAttributeIds()) {
-            if (attrId == null)
-                continue;
-
-            List<Fact> matches = personAttrs.stream()
-                    .filter(pa -> pa != null && pa.getAttribute() != null && attrId.equals(pa.getAttribute().getId()))
-                    .toList();
-
-            for (Fact pa : matches) {
-                if (pa.getValue() == null || pa.getValue().isBlank())
+        if (personFacts != null && !personFacts.isEmpty()) {
+            // Multi-valued possible: on conserve toutes les valeurs actives non vides
+            for (Fact f : personFacts) {
+                if (f == null || f.getAttribute() == null) {
                     continue;
+                }
+                if (!attrId.equals(f.getAttribute().getId())) {
+                    continue;
+                }
+                if (f.getValue() == null || f.getValue().isBlank()) {
+                    continue;
+                }
 
                 out.add(new TruthAttributeValue.Builder()
                         .withAttributeId(attrId)
-                        .withValue(pa.getValue())
+                        .withValue(f.getValue())
                         .build());
             }
         }
@@ -80,7 +86,7 @@ public class QuizQuestionSnapshotFactory {
         if (out.isEmpty()) {
             throw new IllegalStateException(
                     "Frozen truth is empty for personId=" + q.getPersonId()
-                            + " targetAttributeIds=" + q.getTargetAttributeIds());
+                            + " targetAttributeId=" + q.getTargetAttributeId());
         }
 
         return out;
@@ -101,12 +107,8 @@ public class QuizQuestionSnapshotFactory {
             throw new IllegalStateException("QuizQuestion.format is required");
         if (q.getContext() == null)
             throw new IllegalStateException("QuizQuestion.context is required");
-        if (q.getGameModeId() == null)
-            throw new IllegalStateException("QuizQuestion.gameModeId is required");
-        if (q.getTargetAttributeIds() == null || q.getTargetAttributeIds().isEmpty())
-            throw new IllegalStateException("QuizQuestion.targetAttributeIds is required");
-        if (q.getOperator() == null || q.getOperator().isBlank())
-            throw new IllegalStateException("QuizQuestion.operator is required");
+        if (q.getTargetAttributeId() == null)
+            throw new IllegalStateException("QuizQuestion.targetAttributeId is required");
         if (q.getPersonId() == null)
             throw new IllegalStateException("QuizQuestion.personId is required (single-target model)");
         if (q.getReasonCode() == null)
@@ -153,21 +155,18 @@ public class QuizQuestionSnapshotFactory {
 
             Integer maxErrors = (payload != null ? payload.getMaxErrors() : null);
             if (maxErrors == null) {
-                // fallback très prudent
                 maxErrors = 6;
             }
 
-            // Règles (tu peux ajuster selon ton produit)
             hangmanRules = new HangmanRules.Builder()
                     .withMaxErrors(maxErrors)
-                    .withNormalized(true) // ignore accents/case (recommandé)
-                    .withCanSolveWholeWord(true) // option UX
+                    .withNormalized(true)
+                    .withCanSolveWholeWord(true)
                     .withAlphabet(List.of(
                             "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
                             "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"))
                     .build();
 
-            // État initial
             hangmanState = new HangmanSnapshotState.Builder()
                     .withMask(mask)
                     .withErrorsCount(0)
@@ -187,17 +186,15 @@ public class QuizQuestionSnapshotFactory {
 
             Integer maxAttempts = (payload != null ? payload.getMaxAttempts() : null);
             if (maxAttempts == null) {
-                maxAttempts = 6; // Default Wordle-style
+                maxAttempts = 6;
             }
 
             Integer wordLength = (payload != null ? payload.getWordLength() : null);
             if (wordLength == null) {
-                // Derive from frozen target values
                 String solution = frozenTargetValues.get(0).getValue();
                 wordLength = solution.length();
             }
 
-            // Rules
             wordPuzzleRules = new WordPuzzleRules.Builder()
                     .withMaxAttempts(maxAttempts)
                     .withWordLength(wordLength)
@@ -205,7 +202,6 @@ public class QuizQuestionSnapshotFactory {
                     .withAllowRepeatedLetters(true)
                     .build();
 
-            // Initial state
             wordPuzzleState = new WordPuzzleSnapshotState.Builder()
                     .withAttempts(new ArrayList<>())
                     .withAttemptsRemaining(maxAttempts)
@@ -223,9 +219,7 @@ public class QuizQuestionSnapshotFactory {
                 .withContext(q.getContext())
 
                 // auditable spec
-                .withGameModeId(q.getGameModeId())
-                .withTargetAttributeIds(new ArrayList<>(q.getTargetAttributeIds()))
-                .withOperator(q.getOperator())
+                .withTargetAttributeId(q.getTargetAttributeId())
                 .withPersonId(q.getPersonId())
                 .withStorageKey(q.getStorageKey())
 
@@ -243,11 +237,11 @@ public class QuizQuestionSnapshotFactory {
                 .withTruth(truth)
                 .withTargetPersonIds(resolvedTargets)
 
-                // ✅ hangman extras
+                // hangman extras
                 .withHangmanRules(hangmanRules)
                 .withHangmanState(hangmanState)
 
-                // ✅ word puzzle extras
+                // word puzzle extras
                 .withWordPuzzleRules(wordPuzzleRules)
                 .withWordPuzzleState(wordPuzzleState)
 
@@ -256,9 +250,7 @@ public class QuizQuestionSnapshotFactory {
 
     private QuizQuestionTruth buildTruth(QuizQuestion q, List<TruthAttributeValue> frozenTargetValues) {
 
-        QuizTruthRules rules = new QuizTruthRules.Builder()
-                .withOperator(q.getOperator())
-                .build();
+        QuizTruthRules rules = new QuizTruthRules.Builder().build();
 
         QuizFormat effectiveFormat = q.getFormat();
         QuizQuestionPayload effectivePayload = q.getPayload();
@@ -273,6 +265,7 @@ public class QuizQuestionSnapshotFactory {
             if (frozenTargetValues == null || frozenTargetValues.isEmpty()) {
                 throw new IllegalStateException("TEXT truth requires frozenTargetValues");
             }
+
             tb.withTargetAttributeValues(new ArrayList<>(frozenTargetValues));
 
             String display = frozenTargetValues.stream()

@@ -6,7 +6,7 @@ import java.util.Objects;
 
 import org.springframework.stereotype.Component;
 
-import com.saymyname.core.model.course.ResultAttribute;
+import com.saymyname.core.model.course.TargetAnswerResult;
 import com.saymyname.core.model.enums.quiz.QuizFormat;
 import com.saymyname.core.model.enums.quiz.QuizPayloadType;
 import com.saymyname.core.model.quiz.QuizAnswerSubmission;
@@ -40,14 +40,13 @@ public class BinarySwipePlugin implements QuizQuestionPlugin {
     public QuizQuestion build(QuizQuestionSpec spec) {
         Objects.requireNonNull(spec, "spec");
 
-        String correct = answerKeyService
-                .compute(spec.getPersonId(), spec.getTargetAttributeIds(), spec.getOperator())
-                .correctAnswerJoined();
+        String value = answerKeyService
+                .compute(spec.getPersonId(), spec.getTargetAttributeId());
 
         QuizChoice proposition = new QuizChoice.Builder()
                 .withId(1L)
-                .withLabel("Ce prénom est " + (correct == null ? "…" : correct) + " ?")
-                .withValue(correct == null ? "" : correct)
+                .withLabel("Ce prénom est " + (value == null ? "…" : value) + " ?")
+                .withValue(value == null ? "" : value)
                 .withPersonId(spec.getPersonId())
                 .build();
 
@@ -109,15 +108,14 @@ public class BinarySwipePlugin implements QuizQuestionPlugin {
         boolean correct = expected != null && nb.swipeRight() != null && expected.equals(nb.swipeRight());
         String expectedDisplay = snapshot.getTruth() == null ? null : snapshot.getTruth().getCorrectAnswerDisplay();
 
-        Long attrId = QuizSnapshotGuards.requireSingleTargetAttributeId(snapshot, QuizFormat.BINARY_SWIPE);
+        Long attrId = QuizSnapshotGuards.requireTargetAttributeId(snapshot, QuizFormat.BINARY_SWIPE);
 
-        List<ResultAttribute> attrs = List.of(
-                PluginSupport.resultAttr(attrId, nb.auditString(), correct, true));
+        TargetAnswerResult result = PluginSupport.result(attrId, nb.auditString(), correct, true);
 
         return new QuizValidationResult.Builder()
                 .withCorrect(correct)
                 .withCorrectAnswerDisplay(expectedDisplay)
-                .withResultAttributes(attrs)
+                .withTargetAnswerResult(result)
                 .build();
     }
 }

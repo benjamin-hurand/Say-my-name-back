@@ -155,8 +155,8 @@ public class QuizRestController {
         if (req.options() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "options is required");
         }
-        if (req.options().gameModeId() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "options.gameModeId is required");
+        if (req.options().targetAttributeId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "options.targetAttributeId is required");
         }
 
         if (req.formatMode() == null) {

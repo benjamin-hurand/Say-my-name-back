@@ -18,8 +18,9 @@ public interface CourseRepository extends JpaRepository<CourseEntity, Long> {
 
     Optional<CourseEntity> findFirstByUserIdAndStatus(Long userId, CourseStatus status);
 
-    Optional<CourseEntity> findFirstByUserIdAndGameModeIdAndPopulationScopeAndStatus(
-            Long userId, Long gameModeId, PopulationScope scope, CourseStatus status);
+    Optional<CourseEntity> findFirstByUserIdAndTargetAttributeIdAndPopulationScopeAndStatus(
+            Long userId, Long targetAttributeId, PopulationScope scope,
+            CourseStatus status);
 
     List<CourseEntity> findByUserId(Long userId);
 
@@ -42,7 +43,7 @@ public interface CourseRepository extends JpaRepository<CourseEntity, Long> {
             UPDATE CourseEntity c
                SET c.lastAccessedAt = :at
              WHERE c.id = :courseId
-               AND c.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+               AND c.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
             """)
     int touchLastAccessed(@Param("courseId") Long courseId, @Param("at") LocalDateTime at);
 

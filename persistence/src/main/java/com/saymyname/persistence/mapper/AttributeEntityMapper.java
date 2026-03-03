@@ -25,34 +25,35 @@ public class AttributeEntityMapper {
     };
 
     public AttributeEntity toEntity(Attribute attribute) {
-        if (attribute == null)
+        if (attribute == null) {
             return null;
+        }
 
         AttributeEntity e = new AttributeEntity();
         e.setId(attribute.getId());
         e.setAttributeName(attribute.getName());
 
-        // nouveaux champs d'affichage
         e.setDisplayOrder(attribute.getDisplayOrder());
-        e.setPrimaryField(attribute.isPrimaryField());
+
+        e.setIdentitySource(attribute.isIdentitySource());
+
         e.setCategory(attribute.isCategory());
 
-        // existants
         e.setMaxValues(attribute.getMaxValues());
         e.setFilter(attribute.isFilter());
         e.setSort(attribute.isSort());
         e.setInitializable(attribute.isInitializable());
         e.setRequired(attribute.isRequired());
 
-        // enums avec défauts
         e.setType(attribute.getType() != null ? attribute.getType() : AttributeType.TEXT);
         e.setEditPolicy(attribute.getEditPolicy() != null ? attribute.getEditPolicy() : EditPolicy.FREE);
         e.setConstraintKind(
                 attribute.getConstraintKind() != null ? attribute.getConstraintKind() : ConstraintKind.NONE);
-
-        // casing strategy
         e.setCasingStrategy(
                 attribute.getCasingStrategy() != null ? attribute.getCasingStrategy() : CasingStrategy.NONE);
+
+        // ✅ NEW: derived flag
+        e.setDerived(attribute.isDerived());
 
         // payload JSON (Map -> String)
         try {
@@ -68,23 +69,22 @@ public class AttributeEntityMapper {
     }
 
     public Attribute toModel(AttributeEntity entity) {
-        if (entity == null)
+        if (entity == null) {
             return null;
+        }
 
-        // enums avec défauts
         AttributeType type = entity.getType() != null ? entity.getType() : AttributeType.TEXT;
         EditPolicy policy = entity.getEditPolicy() != null ? entity.getEditPolicy() : EditPolicy.FREE;
         ConstraintKind cKind = entity.getConstraintKind() != null ? entity.getConstraintKind() : ConstraintKind.NONE;
         CasingStrategy casing = entity.getCasingStrategy() != null ? entity.getCasingStrategy() : CasingStrategy.NONE;
 
-        // payload JSON (String -> Map)
         Map<String, Object> payload;
         try {
             String json = entity.getConstraintPayload();
             if (json != null && !json.isBlank()) {
                 payload = OM.readValue(json, MAP_TYPE);
             } else {
-                payload = null; // conserve null si vide
+                payload = null;
             }
         } catch (Exception ex) {
             log.warn("Failed to parse constraintPayload for attributeEntity id={}, name='{}': {}. Returning empty map.",
@@ -96,7 +96,7 @@ public class AttributeEntityMapper {
                 .withId(entity.getId())
                 .withName(entity.getAttributeName())
                 .withDisplayOrder(entity.getDisplayOrder())
-                .withPrimaryField(entity.isPrimaryField())
+                .withIdentitySource(entity.isIdentitySource())
                 .withCategory(entity.isCategory())
                 .withMaxValues(entity.getMaxValues())
                 .withFilter(entity.isFilter())
@@ -105,6 +105,7 @@ public class AttributeEntityMapper {
                 .withRequired(entity.isRequired())
                 .withType(type)
                 .withEditPolicy(policy)
+                .withDerived(entity.isDerived())
                 .withCasingStrategy(casing)
                 .withConstraintKind(cKind)
                 .withConstraintPayload(payload)
@@ -112,8 +113,9 @@ public class AttributeEntityMapper {
     }
 
     public Attribute toShortModel(AttributeEntity entity) {
-        if (entity == null)
+        if (entity == null) {
             return null;
+        }
         return new Attribute.Builder()
                 .withId(entity.getId())
                 .build();

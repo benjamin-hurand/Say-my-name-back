@@ -4,8 +4,8 @@ package com.saymyname.webapp.dto;
 import com.saymyname.core.model.enums.FollowFilter;
 
 public record TrainingOptionsDto(
-        Long gameModeId,
-        FollowFilter populationScope,
-        TrainingCategorySelectionDto category, // nullable
-        Boolean trackKnowledge) {
+                Long targetAttributeId,
+                FollowFilter populationScope,
+                TrainingCategorySelectionDto category, // nullable
+                Boolean trackKnowledge) {
 }

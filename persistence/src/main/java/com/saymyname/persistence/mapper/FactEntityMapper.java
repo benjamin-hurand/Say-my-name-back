@@ -26,18 +26,23 @@ public class FactEntityMapper {
 
         // Référence PersonEntity minimaliste (id only) pour éviter un fetch
         PersonEntity personRef = null;
+        Long personId = null;
         Person personModel = fact.getPerson();
         if (personModel != null && personModel.getId() != null) {
             personRef = new PersonEntity();
             personRef.setId(personModel.getId());
+            personId = personModel.getId();
         }
 
         AttributeEntity attributeEntity = attributeEntityMapper.toEntity(fact.getAttribute());
+        Long attributeId = attributeEntity != null ? attributeEntity.getId() : null;
 
         FactEntity entity = new FactEntity();
         entity.setId(fact.getId());
         entity.setAttribute(attributeEntity);
+        entity.setAttributeId(attributeId);
         entity.setPerson(personRef);
+        entity.setPersonId(personId);
         entity.setValue(fact.getValue());
         entity.setValidFrom(fact.getValidFrom());
         entity.setValidTo(fact.getValidTo());

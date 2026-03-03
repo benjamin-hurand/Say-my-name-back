@@ -29,13 +29,6 @@ public class CandidateAccessor {
         this.candidateDao = Objects.requireNonNull(candidateDao, "candidateDao");
     }
 
-    /**
-     * Count eligibility stats for format planning.
-     * Enforces excludeSelf constraint.
-     *
-     * @param query the candidate query (excludePersonId should be set to userId)
-     * @return eligibility stats with counts
-     */
     @Transactional(readOnly = true)
     public EligibilityStats countEligibility(CandidateQuery query) {
         Objects.requireNonNull(query, "query");
@@ -43,23 +36,12 @@ public class CandidateAccessor {
         return candidateDao.countEligible(query);
     }
 
-    /**
-     * Sample candidates with minimal payload for question building.
-     * Enforces excludeSelf constraint.
-     *
-     * @param query       the candidate query
-     * @param targetCount how many candidates to sample
-     * @return CandidateSample with first item as target
-     * @throws QuizUnprocessableException if no candidates available
-     */
     @Transactional(readOnly = true)
     public CandidateSample sample(CandidateQuery query, int targetCount) {
         Objects.requireNonNull(query, "query");
         validateExcludeSelf(query);
 
-        // Adjust query limit if needed
-        CandidateQuery adjustedQuery = adjustLimit(query, targetCount);
-
+        CandidateQuery adjustedQuery = withMinLimit(query, Math.max(1, targetCount));
         List<PayloadItem> items = candidateDao.sampleWithPayload(adjustedQuery);
 
         if (items == null || items.isEmpty()) {
@@ -68,21 +50,10 @@ public class CandidateAccessor {
                     "No candidate available for current constraints");
         }
 
-        // First item is the target (random due to shuffle in DAO)
         PayloadItem target = items.get(0);
         return new CandidateSample(items, target.personId(), target.photoStorageKey());
     }
 
-    /**
-     * Sample candidates with a specific target person.
-     * Useful when target is pre-determined (e.g., Course with Knowledge-based selection).
-     *
-     * @param query          the candidate query
-     * @param targetPersonId the designated target person
-     * @param totalCount     total candidates to sample (including target)
-     * @return CandidateSample with specified target
-     * @throws QuizUnprocessableException if no candidates available
-     */
     @Transactional(readOnly = true)
     public CandidateSample sampleWithTarget(CandidateQuery query, Long targetPersonId, int totalCount) {
         Objects.requireNonNull(query, "query");
@@ -99,15 +70,22 @@ public class CandidateAccessor {
                     "Target person " + targetPersonId + " not in eligible candidate pool");
         }
 
-        PayloadItem target = candidateDao.fetchPayloadForPerson(
-                targetPersonId,
-                query.getGameModeAttributeIds());
+        // ✅ single attributeId now
+        PayloadItem target = candidateDao.fetchPayloadForPerson(targetPersonId, query.getAttributeId());
+        if (target == null) {
+            throw new QuizUnprocessableException(
+                    QuizUnprocessableException.ErrorCode.NO_CANDIDATE,
+                    "Target person " + targetPersonId + " payload not available");
+        }
 
         int desired = Math.max(1, totalCount);
-        CandidateQuery adjustedQuery = adjustLimit(query, desired + 1);
+
+        // +1 pour augmenter les chances de récupérer assez de distractors après
+        // filtrage
+        CandidateQuery adjustedQuery = withMinLimit(query, desired + 1);
         List<PayloadItem> items = candidateDao.sampleWithPayload(adjustedQuery);
 
-        List<PayloadItem> distractors = items == null ? List.of()
+        List<PayloadItem> distractors = (items == null) ? List.of()
                 : items.stream()
                         .filter(i -> i != null && !targetPersonId.equals(i.personId()))
                         .toList();
@@ -123,9 +101,6 @@ public class CandidateAccessor {
         return new CandidateSample(combined, target.personId(), target.photoStorageKey());
     }
 
-    /**
-     * Validate that excludeSelf is set (business rule: user cannot be a candidate).
-     */
     private void validateExcludeSelf(CandidateQuery query) {
         if (query.getExcludePersonId() == null) {
             throw new IllegalArgumentException(
@@ -134,13 +109,14 @@ public class CandidateAccessor {
     }
 
     /**
-     * Adjust query limit if targetCount is different from query limit.
+     * Returns a query identical to input, but ensures limit >= minLimit.
      */
-    private CandidateQuery adjustLimit(CandidateQuery query, int targetCount) {
-        if (query.getLimit() != null && query.getLimit() >= targetCount) {
+    private CandidateQuery withMinLimit(CandidateQuery query, int minLimit) {
+        Integer current = query.getLimit();
+        if (current != null && current >= minLimit) {
             return query;
         }
-        // Rebuild query with adjusted limit
+
         return new CandidateQuery.Builder()
                 .withUserId(query.getUserId())
                 .withExcludePersonId(query.getExcludePersonId())
@@ -148,11 +124,9 @@ public class CandidateAccessor {
                 .withCategory(query.getCategoryAttributeId(), query.getCategoryValue())
                 .requireApprovedPhoto(query.isRequireApprovedPhoto())
                 .requireCategoryMatch(query.isRequireCategoryMatch())
-                .withLimit(targetCount)
+                .withLimit(minLimit)
                 .withSeed(query.getSeed())
-                .withGameModeId(query.getGameModeId())
-                .withGameModeAttributeIds(query.getGameModeAttributeIds())
-                .withAttributeOperator(query.getAttributeOperator())
+                .withAttributeId(query.getAttributeId()) // ✅ single attributeId
                 .countOnly(query.isCountOnly())
                 .build();
     }

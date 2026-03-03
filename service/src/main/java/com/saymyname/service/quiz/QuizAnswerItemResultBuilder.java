@@ -24,46 +24,49 @@ import com.saymyname.core.model.quiz.snapshot.WordPuzzleSnapshotState;
  * SPÉCIFICATIONS PAR FORMAT:
  *
  * TEXT_INPUT/CLOZE:
- *   - 1 item
- *   - userAnswerNormalized = texte saisi normalisé (NormalizedText.raw())
- *   - correctAnswer = texte attendu (correctAnswerDisplay)
+ * - 1 item
+ * - userAnswerNormalized = texte saisi normalisé (NormalizedText.raw())
+ * - correctAnswer = texte attendu (correctAnswerDisplay)
  *
  * MCQ (single, allowMultiple=false):
- *   - 1 item
- *   - userAnswerNormalized = label du choix sélectionné
- *   - correctAnswer = label du choix correct
+ * - 1 item
+ * - userAnswerNormalized = label du choix sélectionné
+ * - correctAnswer = label du choix correct
  *
  * MCQ (multiple, allowMultiple=true):
- *   - 1 item
- *   - userAnswerNormalized = "Label1, Label2" (labels sélectionnés, séparés par ", ")
- *   - correctAnswer = "CorrectLabel1, CorrectLabel2" (labels corrects, même format)
+ * - 1 item
+ * - userAnswerNormalized = "Label1, Label2" (labels sélectionnés, séparés par
+ * ", ")
+ * - correctAnswer = "CorrectLabel1, CorrectLabel2" (labels corrects, même
+ * format)
  *
  * BINARY_SWIPE:
- *   - 1 item
- *   - userAnswerNormalized = "Vrai" ou "Faux"
- *   - correctAnswer = valeur attendue ("Vrai" ou "Faux")
+ * - 1 item
+ * - userAnswerNormalized = "Vrai" ou "Faux"
+ * - correctAnswer = valeur attendue ("Vrai" ou "Faux")
  *
  * HANGMAN (multi-step):
- *   - 1 item
- *   - userAnswerNormalized = masque actuel (ex: "T _ f f _ n y")
- *   - correctAnswer = solution complète (ex: "Tiffany")
- *   - Note: état complet (wrongLetters, triedLetters, errorsCount) dans currentState
+ * - 1 item
+ * - userAnswerNormalized = masque actuel (ex: "T _ f f _ n y")
+ * - correctAnswer = solution complète (ex: "Tiffany")
+ * - Note: état complet (wrongLetters, triedLetters, errorsCount) dans
+ * currentState
  *
  * WORD_PUZZLE (multi-step):
- *   - 1 item (dernière tentative uniquement)
- *   - userAnswerNormalized = dernier mot tenté
- *   - correctAnswer = solution
- *   - Note: historique complet des tentatives dans currentState.attempts[]
+ * - 1 item (dernière tentative uniquement)
+ * - userAnswerNormalized = dernier mot tenté
+ * - correctAnswer = solution
+ * - Note: historique complet des tentatives dans currentState.attempts[]
  *
  * ASSOCIATION (futur):
- *   - 1 item global
- *   - userAnswerNormalized = représentation JSON des paires soumises
- *   - correctAnswer = représentation JSON des paires correctes
+ * - 1 item global
+ * - userAnswerNormalized = représentation JSON des paires soumises
+ * - correctAnswer = représentation JSON des paires correctes
  *
  * ORDERING (futur):
- *   - 1 item global
- *   - userAnswerNormalized = représentation de l'ordre soumis
- *   - correctAnswer = représentation de l'ordre correct
+ * - 1 item global
+ * - userAnswerNormalized = représentation de l'ordre soumis
+ * - correctAnswer = représentation de l'ordre correct
  */
 @Service
 public class QuizAnswerItemResultBuilder {
@@ -73,7 +76,8 @@ public class QuizAnswerItemResultBuilder {
      *
      * @param snapshot Le snapshot figé de la question
      * @param eval     Le résultat d'évaluation contenant les données de correction
-     * @return Liste de QuizAnswerItemResult (généralement 1 item, sauf cas spéciaux)
+     * @return Liste de QuizAnswerItemResult (généralement 1 item, sauf cas
+     *         spéciaux)
      */
     public List<QuizAnswerItemResult> build(
             QuizQuestionSnapshot snapshot,
@@ -118,7 +122,7 @@ public class QuizAnswerItemResultBuilder {
                 .withCorrect(eval.correct())
                 .withUserAnswerNormalized(userAnswer)
                 .withCorrectAnswer(eval.correctAnswerDisplay())
-                .withResultAttributes(eval.resultAttributes())
+                .withTargetAnswerResult(eval.targetAnswerResult())
                 .build());
     }
 
@@ -176,7 +180,7 @@ public class QuizAnswerItemResultBuilder {
                 .withCorrect(eval.correct())
                 .withUserAnswerNormalized(userAnswerNormalized)
                 .withCorrectAnswer(correctAnswer)
-                .withResultAttributes(eval.resultAttributes())
+                .withTargetAnswerResult(eval.targetAnswerResult())
                 .build());
     }
 
@@ -205,7 +209,7 @@ public class QuizAnswerItemResultBuilder {
                 .withCorrect(eval.correct())
                 .withUserAnswerNormalized(userAnswer)
                 .withCorrectAnswer(correctAnswer)
-                .withResultAttributes(eval.resultAttributes())
+                .withTargetAnswerResult(eval.targetAnswerResult())
                 .build());
     }
 
@@ -231,7 +235,7 @@ public class QuizAnswerItemResultBuilder {
                 .withCorrect(eval.correct())
                 .withUserAnswerNormalized(mask)
                 .withCorrectAnswer(eval.correctAnswerDisplay())
-                .withResultAttributes(eval.resultAttributes())
+                .withTargetAnswerResult(eval.targetAnswerResult())
                 .build());
     }
 
@@ -266,7 +270,7 @@ public class QuizAnswerItemResultBuilder {
                 .withCorrect(eval.correct())
                 .withUserAnswerNormalized(lastAttempt)
                 .withCorrectAnswer(eval.correctAnswerDisplay())
-                .withResultAttributes(eval.resultAttributes())
+                .withTargetAnswerResult(eval.targetAnswerResult())
                 .build());
     }
 
@@ -285,7 +289,7 @@ public class QuizAnswerItemResultBuilder {
                 .withRole(QuizQuestionItemRole.TARGET)
                 .withCorrect(eval.correct())
                 .withCorrectAnswer(eval.correctAnswerDisplay())
-                .withResultAttributes(eval.resultAttributes())
+                .withTargetAnswerResult(eval.targetAnswerResult())
                 .build());
     }
 
@@ -304,7 +308,7 @@ public class QuizAnswerItemResultBuilder {
                 .withRole(QuizQuestionItemRole.TARGET)
                 .withCorrect(eval.correct())
                 .withCorrectAnswer(eval.correctAnswerDisplay())
-                .withResultAttributes(eval.resultAttributes())
+                .withTargetAnswerResult(eval.targetAnswerResult())
                 .build());
     }
 }

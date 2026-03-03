@@ -7,17 +7,16 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
-import com.saymyname.core.model.course.ResultAttribute;
+import com.saymyname.core.model.course.TargetAnswerResult;
 import com.saymyname.core.model.enums.quiz.QuizFormat;
-import com.saymyname.core.model.people.Attribute;
 import com.saymyname.core.model.quiz.QuizFollowUp;
+import com.saymyname.core.model.quiz.QuizPayloadItem;
 import com.saymyname.core.model.quiz.QuizQuestion;
 import com.saymyname.core.model.quiz.QuizQuestionContext;
 import com.saymyname.core.model.quiz.QuizQuestionDisplay;
 import com.saymyname.core.model.quiz.QuizQuestionHints;
 import com.saymyname.core.model.quiz.QuizQuestionPayload;
 import com.saymyname.core.model.quiz.QuizQuestionSpec;
-import com.saymyname.core.model.quiz.QuizPayloadItem;
 
 final class PluginSupport {
 
@@ -43,18 +42,12 @@ final class PluginSupport {
         return t.isEmpty() ? null : t;
     }
 
-    static ResultAttribute resultAttr(Long attributeId, String value, boolean correct, boolean target) {
+    static TargetAnswerResult result(Long attributeId, String value, boolean correct, boolean target) {
         if (attributeId == null) {
-            throw new IllegalStateException("ResultAttribute.attributeId is required");
+            throw new IllegalStateException("TargetAnswerResult.attributeId is required");
         }
 
-        // Placeholder Attribute (id + name) pour rester compatible DTO sans lookup DB
-        Attribute a = new Attribute.Builder()
-                .withId(attributeId)
-                .withName("attribute#" + attributeId)
-                .build();
-
-        return new ResultAttribute(a, value, correct, target);
+        return new TargetAnswerResult(attributeId, value, correct, target);
     }
 
     static boolean equalsCanon(String a, String b) {
@@ -96,9 +89,9 @@ final class PluginSupport {
         return new QuizQuestion.Builder()
                 .withPersonId(spec.getPersonId())
                 .withStorageKey(spec.getStorageKey())
-                .withGameModeId(spec.getGameModeId())
-                .withTargetAttributeIds(spec.getTargetAttributeIds())
-                .withOperator(spec.getOperator())
+
+                // ✅ new targeting semantics
+                .withTargetAttributeId(spec.getTargetAttributeId())
                 .withContext(ctx)
                 .withFormat(format)
                 .withPayload(payload)
@@ -107,6 +100,8 @@ final class PluginSupport {
                 .withFollowUp(followUp)
                 .withReasonCode(spec.getReasonCode())
                 .withReasonDetailsJson(spec.getReasonDetailsJson())
+
+                // multiStepState set later by plugins that need it
                 .build();
     }
 
@@ -197,8 +192,7 @@ final class PluginSupport {
         var ctx = spec.getContext();
         int round = (ctx != null && ctx.getQuestionRound() != null) ? ctx.getQuestionRound() : 0;
         Long personId = spec.getPersonId();
-        Long gameModeId = spec.getGameModeId();
-        return java.util.Objects.hash(personId, gameModeId, round);
+        return java.util.Objects.hash(personId, round);
     }
 
     /**

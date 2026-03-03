@@ -95,7 +95,7 @@ public class CourseQuestionAttemptService {
                     "Question " + questionId + " does not belong to course " + courseId);
         }
 
-        // 2) Déterminer la personne cible (robuste aux futurs formats)
+        // 2) Déterminer la personne cible (robuste multi-format)
         Long personId = extractTargetPersonId(questionMarked);
 
         return factService.getAttributesByPersonId(personId);
@@ -110,38 +110,58 @@ public class CourseQuestionAttemptService {
             }
         }
 
-        // Fallback legacy : items
         List<CourseQuestionItem> items = attempt.getItems();
         if (items == null || items.isEmpty()) {
             throw new IllegalStateException("No items found for question " + attempt.getId());
         }
 
+        // ✅ Fallback #1 : TARGET -> knowledge.fact (si hydraté)
         Long personId = items.stream()
+                .filter(it -> it.getRole() == QuizQuestionItemRole.TARGET)
+                .map(CourseQuestionItem::getKnowledge)
+                .filter(k -> k != null && k.getFact() != null)
+                .map(k -> k.getFact().getPersonId())
+                .filter(id -> id != null)
+                .findFirst()
+                .orElse(null);
+
+        if (personId != null) {
+            return personId;
+        }
+
+        // ✅ Fallback #2 : TARGET -> knowledge.factId -> fetch Fact -> personId
+        Long factId = items.stream()
+                .filter(it -> it.getRole() == QuizQuestionItemRole.TARGET)
+                .map(CourseQuestionItem::getKnowledge)
+                .map(k -> k != null ? k.getFactId() : null)
+                .filter(id -> id != null && id > 0)
+                .findFirst()
+                .orElse(null);
+
+        if (factId != null) {
+            Fact fact = factService.getById(factId); // ⬅️ à fournir côté FactService
+            Long pid = (fact != null) ? fact.getPersonId() : null;
+            if (pid != null) {
+                return pid;
+            }
+        }
+
+        // (Optionnel legacy) si jamais un format met encore TARGET.person (peu probable
+        // chez toi)
+        personId = items.stream()
                 .filter(it -> it.getRole() == QuizQuestionItemRole.TARGET)
                 .map(it -> it.getPerson() != null ? it.getPerson().getId() : null)
                 .filter(id -> id != null)
                 .findFirst()
                 .orElse(null);
 
-        if (personId != null)
+        if (personId != null) {
             return personId;
-
-        personId = items.stream()
-                .filter(it -> it.getRole() == QuizQuestionItemRole.TARGET)
-                .map(it -> (it.getKnowledge() != null
-                        && it.getKnowledge().getPerson() != null)
-                                ? it.getKnowledge().getPerson().getId()
-                                : null)
-                .filter(id -> id != null)
-                .findFirst()
-                .orElse(null);
-
-        if (personId != null)
-            return personId;
+        }
 
         throw new IllegalStateException(
                 "Unable to resolve TARGET personId for question " + attempt.getId()
-                        + " (snapshot has no targetPersonIds and items don't expose target person)");
+                        + " (snapshot has no targetPersonIds, and knowledge has neither fact nor resolvable factId)");
     }
 
     // ------- Stats activité -------

@@ -1,3 +1,4 @@
+// src/main/java/com/saymyname/persistence/entity/organization/course/KnowledgeEntity.java
 package com.saymyname.persistence.entity.organization.course;
 
 import com.saymyname.core.model.enums.KnowledgeStatus;
@@ -23,7 +24,6 @@ import java.time.LocalDateTime;
                 @UniqueConstraint(name = "uq_k_user_fact", columnNames = { "tenant_id", "user_id", "fact_id" })
 }, indexes = {
                 @Index(name = "idx_k_select", columnList = "tenant_id,user_id,status,next_review_date"),
-                @Index(name = "idx_k_fact", columnList = "fact_id"),
                 @Index(name = "idx_k_reval", columnList = "tenant_id,user_id,pending_revalidation,next_review_date"),
                 @Index(name = "fk_k_fact_tenant", columnList = "tenant_id,fact_id")
 })
@@ -40,15 +40,23 @@ public class KnowledgeEntity extends BaseTenantScoped {
         @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_k_user"))
         private UserEntity user;
 
-        @ManyToOne(fetch = FetchType.LAZY, optional = false)
+        /**
+         * FK hot path.
+         * On garde factId en colonne simple pour éviter de toucher à la relation.
+         */
+        @Column(name = "fact_id", nullable = false)
+        private Long factId;
+
+        /**
+         * Relation read-only (évite les doubles écritures tenantId/factId).
+         * Utile si tu veux hydrater le FactEntity dans certaines queries.
+         */
+        @ManyToOne(fetch = FetchType.LAZY)
         @JoinColumns({
                         @JoinColumn(name = "tenant_id", referencedColumnName = "tenant_id", insertable = false, updatable = false),
                         @JoinColumn(name = "fact_id", referencedColumnName = "id", insertable = false, updatable = false)
         })
         private FactEntity fact;
-
-        @Column(name = "fact_id", nullable = false)
-        private Long factId;
 
         @Enumerated(EnumType.STRING)
         @Column(name = "status", nullable = false, length = 10)

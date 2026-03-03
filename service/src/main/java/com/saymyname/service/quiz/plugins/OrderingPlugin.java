@@ -6,7 +6,7 @@ import java.util.Objects;
 
 import org.springframework.stereotype.Component;
 
-import com.saymyname.core.model.course.ResultAttribute;
+import com.saymyname.core.model.course.TargetAnswerResult;
 import com.saymyname.core.model.enums.quiz.QuizFormat;
 import com.saymyname.core.model.enums.quiz.QuizOrderingRule;
 import com.saymyname.core.model.enums.quiz.QuizPayloadType;
@@ -81,15 +81,14 @@ public class OrderingPlugin implements QuizQuestionPlugin {
                 String correctDisplay = snapshot.getTruth() == null ? null
                                 : snapshot.getTruth().getCorrectAnswerDisplay();
 
-                Long attrId = QuizSnapshotGuards.requireSingleTargetAttributeId(snapshot, QuizFormat.ORDERING);
+                Long attrId = QuizSnapshotGuards.requireTargetAttributeId(snapshot, QuizFormat.ORDERING);
 
-                List<ResultAttribute> attrs = List.of(
-                                PluginSupport.resultAttr(attrId, no.auditString(), correct, true));
+                TargetAnswerResult result = PluginSupport.result(attrId, no.auditString(), correct, true);
 
                 return new QuizValidationResult.Builder()
                                 .withCorrect(correct)
                                 .withCorrectAnswerDisplay(correctDisplay)
-                                .withResultAttributes(attrs)
+                                .withTargetAnswerResult(result)
                                 .build();
         }
 }

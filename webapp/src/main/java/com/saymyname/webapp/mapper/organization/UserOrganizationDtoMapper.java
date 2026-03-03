@@ -19,7 +19,7 @@ public class UserOrganizationDtoMapper {
         if (uo == null)
             return null;
         return new UserOrganizationDto(
-                uo.getOrganizationId(),
+                uo.getTenantId(),
                 uo.getOrganization() != null ? uo.getOrganization().getKey() : null,
                 uo.getOrganization() != null ? uo.getOrganization().getName() : null,
                 uo.getRole(),
@@ -30,9 +30,9 @@ public class UserOrganizationDtoMapper {
         if (dto == null)
             return null;
         return UserOrganization.builder()
-                .organizationId(dto.organizationId())
+                .tenantId(dto.tenantId())
                 .organization(organizationMapper.toModel(
-                        new OrganizationDto(dto.organizationId(), dto.organizationKey(), dto.organizationName())))
+                        new OrganizationDto(dto.tenantId(), dto.organizationKey(), dto.organizationName())))
                 .role(dto.role())
                 .createdAt(dto.createdAt())
                 .build();

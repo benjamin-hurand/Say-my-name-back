@@ -19,7 +19,7 @@ import java.io.Serializable;
 @EqualsAndHashCode
 @ToString
 @Embeddable
-public class UserOrganizationId implements Serializable {
+public class UserTenantId implements Serializable {
 
     @Column(name = "tenant_id", nullable = false)
     private Long tenantId;
@@ -28,11 +28,11 @@ public class UserOrganizationId implements Serializable {
     private Long userId;
 
     // Backward-compatible aliases.
-    public Long getOrganizationId() {
+    public Long getTenantId() {
         return tenantId;
     }
 
-    public void setOrganizationId(Long organizationId) {
-        this.tenantId = organizationId;
+    public void setTenantId(Long tenantId) {
+        this.tenantId = tenantId;
     }
 }

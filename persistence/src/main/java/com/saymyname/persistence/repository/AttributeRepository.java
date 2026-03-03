@@ -1,3 +1,4 @@
+// src/main/java/com/saymyname/persistence/repository/AttributeRepository.java
 package com.saymyname.persistence.repository;
 
 import java.util.List;
@@ -18,27 +19,30 @@ public interface AttributeRepository extends JpaRepository<AttributeEntity, Long
 
     List<AttributeEntity> findBySortTrue();
 
-    // --- NOUVEAU: projection minimale pour le cache (par org) ---
+    // --- projection minimale pour le cache (par tenant) ---
     interface AttributeMetaRow {
         Long getId();
 
-        boolean getPrimaryField(); // alias = primaryField
+        boolean getIdentitySource(); // alias property = identitySource
 
-        int getDisplayOrder(); // alias = displayOrder
+        boolean getDerived(); // alias property = derived
+
+        int getDisplayOrder();
     }
 
     @Query("""
-            select a.id as id, a.primaryField as primaryField, a.displayOrder as displayOrder
-            from AttributeEntity a
-            where a.organizationId = :orgId
+              select a.id as id,
+                     a.identitySource as identitySource,
+                     a.derived as derived,
+                     a.displayOrder as displayOrder
+              from AttributeEntity a
             """)
-    List<AttributeMetaRow> findMetaByOrgId(@Param("orgId") Long orgId);
+    List<AttributeMetaRow> findMetaForCurrentTenant();
 
     @Query("""
-                select a
-                from AttributeEntity a
-                where a.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
-                  and a.id in :ids
+              select a
+              from AttributeEntity a
+              where a.id in :ids
             """)
-    List<AttributeEntity> findAllByIdsInCurrentOrg(@Param("ids") List<Long> ids);
+    List<AttributeEntity> findAllByIdIn(@Param("ids") List<Long> ids);
 }

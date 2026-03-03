@@ -28,7 +28,7 @@ public interface ChangeRequestRepository
        left join fetch cr.items i
        left join fetch i.fact pa
            where cr.id = :id
-             and cr.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+             and cr.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
       """)
   Optional<ChangeRequestEntity> findByIdDeepOrgScoped(@Param("id") Long id);
 
@@ -36,7 +36,7 @@ public interface ChangeRequestRepository
           select cr
             from ChangeRequestEntity cr
            where cr.id = :id
-             and cr.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+             and cr.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
       """)
   Optional<ChangeRequestEntity> findByIdOrgScoped(@Param("id") Long id);
 
@@ -52,7 +52,7 @@ public interface ChangeRequestRepository
              and r.id = :requesterId
              and a.id = :attributeId
              and cr.status in :openStatuses
-             and cr.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+             and cr.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
         order by cr.createdAt desc
       """)
   Optional<ChangeRequestEntity> findFirstOpenByTripletOrgScoped(
@@ -74,7 +74,7 @@ public interface ChangeRequestRepository
        left join fetch i.fact pa
            where r.id = :userId
              and cr.status in :statuses
-             and cr.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+             and cr.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
         order by cr.createdAt desc
       """)
   List<ChangeRequestEntity> findByUserIdAndStatusesDeepOrgScoped(
@@ -92,7 +92,7 @@ public interface ChangeRequestRepository
        left join fetch i.fact pa
            where p.id = :personId
              and cr.status in :statuses
-             and cr.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+             and cr.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
         order by cr.createdAt desc
       """)
   List<ChangeRequestEntity> findByPersonIdAndStatusesDeepOrgScoped(
@@ -110,7 +110,7 @@ public interface ChangeRequestRepository
                  cr.resolutionComment = :comment,
                  cr.updatedAt = :resolvedAt
            where cr.id = :crId
-             and cr.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+             and cr.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
       """)
   int updateResolutionMetaOrgScoped(@Param("crId") Long crId,
       @Param("status") ChangeRequestStatus status,

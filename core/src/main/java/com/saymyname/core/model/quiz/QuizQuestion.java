@@ -1,7 +1,6 @@
 // src/main/java/com/saymyname/core/model/quiz/QuizQuestion.java
 package com.saymyname.core.model.quiz;
 
-import java.util.List;
 import java.util.Objects;
 
 import com.saymyname.core.model.enums.quiz.QuizDecisionReasonCode;
@@ -15,9 +14,7 @@ public class QuizQuestion {
     private Long personId;
     private String storageKey;
 
-    private Long gameModeId;
-    private List<Long> targetAttributeIds;
-    private String operator;
+    private Long targetAttributeId;
 
     private QuizQuestionContext context;
 
@@ -44,9 +41,9 @@ public class QuizQuestion {
         this.questionHandle = b.questionHandle;
         this.personId = b.personId;
         this.storageKey = b.storageKey;
-        this.gameModeId = b.gameModeId;
-        this.targetAttributeIds = b.targetAttributeIds;
-        this.operator = b.operator;
+
+        this.targetAttributeId = b.targetAttributeId;
+
         this.context = b.context;
         this.format = b.format;
         this.payload = b.payload;
@@ -74,16 +71,8 @@ public class QuizQuestion {
         return storageKey;
     }
 
-    public Long getGameModeId() {
-        return gameModeId;
-    }
-
-    public List<Long> getTargetAttributeIds() {
-        return targetAttributeIds;
-    }
-
-    public String getOperator() {
-        return operator;
+    public Long getTargetAttributeId() {
+        return targetAttributeId;
     }
 
     public QuizQuestionContext getContext() {
@@ -130,16 +119,8 @@ public class QuizQuestion {
         this.storageKey = storageKey;
     }
 
-    public void setGameModeId(Long gameModeId) {
-        this.gameModeId = gameModeId;
-    }
-
-    public void setTargetAttributeIds(List<Long> targetAttributeIds) {
-        this.targetAttributeIds = targetAttributeIds;
-    }
-
-    public void setOperator(String operator) {
-        this.operator = operator;
+    public void setTargetAttributeId(Long targetAttributeId) {
+        this.targetAttributeId = targetAttributeId;
     }
 
     public void setContext(QuizQuestionContext context) {
@@ -183,9 +164,9 @@ public class QuizQuestion {
 
         private Long personId;
         private String storageKey;
-        private Long gameModeId;
-        private List<Long> targetAttributeIds;
-        private String operator;
+
+        private Long targetAttributeId;
+
         private QuizQuestionContext context;
         private QuizFormat format;
 
@@ -213,18 +194,8 @@ public class QuizQuestion {
             return this;
         }
 
-        public Builder withGameModeId(Long v) {
-            this.gameModeId = v;
-            return this;
-        }
-
-        public Builder withTargetAttributeIds(List<Long> v) {
-            this.targetAttributeIds = v;
-            return this;
-        }
-
-        public Builder withOperator(String v) {
-            this.operator = v;
+        public Builder withTargetAttributeId(Long v) {
+            this.targetAttributeId = v;
             return this;
         }
 
@@ -288,9 +259,7 @@ public class QuizQuestion {
         return Objects.equals(questionHandle, that.questionHandle)
                 && Objects.equals(personId, that.personId)
                 && Objects.equals(storageKey, that.storageKey)
-                && Objects.equals(gameModeId, that.gameModeId)
-                && Objects.equals(targetAttributeIds, that.targetAttributeIds)
-                && Objects.equals(operator, that.operator)
+                && Objects.equals(targetAttributeId, that.targetAttributeId)
                 && Objects.equals(context, that.context)
                 && format == that.format
                 && Objects.equals(payload, that.payload)
@@ -308,9 +277,7 @@ public class QuizQuestion {
                 questionHandle,
                 personId,
                 storageKey,
-                gameModeId,
-                targetAttributeIds,
-                operator,
+                targetAttributeId,
                 context,
                 format,
                 payload,
@@ -328,9 +295,7 @@ public class QuizQuestion {
                 "questionHandle='" + questionHandle + '\'' +
                 ", personId=" + personId +
                 ", storageKey='" + storageKey + '\'' +
-                ", gameModeId=" + gameModeId +
-                ", targetAttributeIds=" + targetAttributeIds +
-                ", operator='" + operator + '\'' +
+                ", targetAttributeId=" + targetAttributeId +
                 ", context=" + context +
                 ", format=" + format +
                 ", payload=" + payload +

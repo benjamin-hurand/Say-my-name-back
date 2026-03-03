@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 
 public record CourseStatsDto(
         Long courseId,
-        Long gameModeId,
+        Long targetAttributeId,
         long totalCandidates,
         long universeEligible,
         long unknown,

@@ -115,7 +115,7 @@ public class UserOrganizationService {
 
                     return OrgMemberRow.builder()
                             .userId(row.getUserId())
-                            .organizationId(row.getOrganizationId())
+                            .tenantId(row.getTenantId())
                             .displayName(row.getDisplayName())
                             .email(row.getEmail())
                             .role(row.getRole())
@@ -275,14 +275,14 @@ public class UserOrganizationService {
     // --- Existing methods (membership ensure) unchanged ---
 
     @Transactional
-    public void ensureMembership(Long userId, Long orgId, OrgRole invitedRole) {
-        dao.ensureMembership(userId, orgId, invitedRole);
+    public void ensureMembership(Long userId, Long tenantId, OrgRole invitedRole) {
+        dao.ensureMembership(userId, tenantId, invitedRole);
     }
 
     @Transactional
     public void ensureMembershipFromInvitation(
             Long userId,
-            Long orgId,
+            Long tenantId,
             OrgRole role,
             MembershipStatus status,
             Long personId,
@@ -292,7 +292,7 @@ public class UserOrganizationService {
             boolean pickRequiresApproval,
             boolean createRequiresApproval) {
         dao.ensureMembershipFromInvitation(
-                userId, orgId, role, status, personId, personLinkStatus,
+                userId, tenantId, role, status, personId, personLinkStatus,
                 canPickPerson, canCreatePerson, pickRequiresApproval, createRequiresApproval);
     }
 

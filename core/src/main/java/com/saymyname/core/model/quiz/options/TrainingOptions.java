@@ -9,10 +9,7 @@ public class TrainingOptions {
 
     private Long id;
 
-    /**
-     * Backend is source of truth: UI sends only gameModeId.
-     */
-    private Long gameModeId;
+    private Long targetAttributeId;
 
     /**
      * Candidate base population (FOLLOWED / ORG / ALL...).
@@ -33,7 +30,7 @@ public class TrainingOptions {
 
     private TrainingOptions(Builder builder) {
         this.id = builder.id;
-        this.gameModeId = builder.gameModeId;
+        this.targetAttributeId = builder.targetAttributeId;
         this.populationScope = builder.populationScope;
         this.category = builder.category;
         this.initialGiven = builder.initialGiven;
@@ -44,8 +41,8 @@ public class TrainingOptions {
         return id;
     }
 
-    public Long getGameModeId() {
-        return gameModeId;
+    public Long getTargetAttributeId() {
+        return targetAttributeId;
     }
 
     public FollowFilter getPopulationScope() {
@@ -66,7 +63,7 @@ public class TrainingOptions {
 
     public static class Builder {
         private Long id;
-        private Long gameModeId;
+        private Long targetAttributeId;
         private FollowFilter populationScope;
         private CategorySelection category;
         private Boolean initialGiven;
@@ -77,8 +74,8 @@ public class TrainingOptions {
             return this;
         }
 
-        public Builder withGameModeId(Long gameModeId) {
-            this.gameModeId = gameModeId;
+        public Builder withTargetAttributeId(Long targetAttributeId) {
+            this.targetAttributeId = targetAttributeId;
             return this;
         }
 
@@ -103,9 +100,6 @@ public class TrainingOptions {
         }
 
         public TrainingOptions build() {
-            // Keep validation minimal here; controllers/services can enforce stricter
-            // rules.
-            Objects.requireNonNull(gameModeId, "gameModeId");
             return new TrainingOptions(this);
         }
     }
@@ -117,7 +111,7 @@ public class TrainingOptions {
         if (!(o instanceof TrainingOptions that))
             return false;
         return Objects.equals(id, that.id)
-                && Objects.equals(gameModeId, that.gameModeId)
+                && Objects.equals(targetAttributeId, that.targetAttributeId)
                 && Objects.equals(populationScope, that.populationScope)
                 && Objects.equals(category, that.category)
                 && Objects.equals(initialGiven, that.initialGiven)
@@ -126,14 +120,15 @@ public class TrainingOptions {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, gameModeId, populationScope, category, initialGiven, trackKnowledge);
+        return Objects.hash(id, targetAttributeId, populationScope, category, initialGiven,
+                trackKnowledge);
     }
 
     @Override
     public String toString() {
         return "TrainingOptions{" +
                 "id=" + id +
-                ", gameModeId=" + gameModeId +
+                ", targetAttributeId=" + targetAttributeId +
                 ", populationScope=" + populationScope +
                 ", category=" + category +
                 ", initialGiven=" + initialGiven +

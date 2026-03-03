@@ -24,7 +24,7 @@ import com.saymyname.core.model.enums.PersonLinkStatus;
 import com.saymyname.core.model.invitation.Invitation;
 import com.saymyname.core.model.invitation.InvitationUsage;
 import com.saymyname.core.model.people.Person;
-import com.saymyname.core.multitenancy.OrgContext;
+import com.saymyname.core.multitenancy.TenantContext;
 import com.saymyname.persistence.dao.invitation.InvitationDao;
 import com.saymyname.persistence.dao.invitation.InvitationUsageDao;
 import com.saymyname.persistence.entity.organization.invitation.InvitationEntity;
@@ -40,7 +40,8 @@ public class InvitationService {
     private final InvitationCrypto crypto;
     private final ApplicationEventPublisher publisher;
 
-    // Récupérer l’entité parent pour connaître l’orgId (FK) lors de l’append usage
+    // Récupérer l’entité parent pour connaître l’tenantId (FK) lors de l’append
+    // usage
     private final InvitationRepository invitationRepo;
 
     // Service membership
@@ -196,19 +197,19 @@ public class InvitationService {
         // 2) Lire constraintsJson (usage + onboarding)
         UseConstraints constraints = parseUseConstraints(inv.getConstraintsJson());
 
-        // 3) Charger l’entité parent pour orgId (FK)
+        // 3) Charger l’entité parent pour tenantId (FK)
         InvitationEntity parent = invitationRepo.findById(inv.getId())
                 .orElseThrow(() -> new IllegalStateException("Invitation introuvable"));
 
-        Long orgId = parent.getTenantId();
-        if (orgId == null) {
-            throw new IllegalStateException("Invitation sans organization_id");
+        Long tenantId = parent.getTenantId();
+        if (tenantId == null) {
+            throw new IllegalStateException("Invitation sans tenant_id");
         }
 
-        // 4) Poser un OrgContext temporaire basé sur l’orga de l’invitation
-        Long previousOrgId = OrgContext.get();
+        // 4) Poser un TenantContext temporaire basé sur l’orga de l’invitation
+        Long previousOrgId = TenantContext.get();
         try {
-            OrgContext.set(orgId);
+            TenantContext.set(tenantId);
 
             LocalDateTime now = LocalDateTime.now();
 
@@ -280,7 +281,7 @@ public class InvitationService {
             // 7) Assurer membership complète
             userOrganizationService.ensureMembershipFromInvitation(
                     user.getId(),
-                    orgId,
+                    tenantId,
                     invitedRole,
                     MembershipStatus.ACTIVE,
                     effectivePersonId,
@@ -297,7 +298,7 @@ public class InvitationService {
                     .withPerson(personNullable)
                     .withUsedAt(now)
                     .build();
-            usageDao.appendUsage(orgId, usage, parent);
+            usageDao.appendUsage(tenantId, usage, parent);
 
             // 9) Incrément quota + dates invitation
             inv.setUsesCount(inv.getUsesCount() + 1);
@@ -311,9 +312,9 @@ public class InvitationService {
 
         } finally {
             if (previousOrgId != null)
-                OrgContext.set(previousOrgId);
+                TenantContext.set(previousOrgId);
             else
-                OrgContext.clear();
+                TenantContext.clear();
         }
     }
 

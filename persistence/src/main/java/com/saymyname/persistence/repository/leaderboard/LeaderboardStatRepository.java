@@ -19,7 +19,7 @@ public interface LeaderboardStatRepository extends JpaRepository<LeaderboardStat
           from LeaderboardStatEntity ls
           join fetch ls.user u
           where u.id = :userId
-            and ls.organizationId = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+            and ls.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
       """)
   Optional<LeaderboardStatEntity> findByUserId(@Param("userId") Long userId);
 
@@ -34,7 +34,7 @@ public interface LeaderboardStatRepository extends JpaRepository<LeaderboardStat
   @Modifying
   @Query(value = """
           INSERT INTO leaderboard_stats
-            (user_id, xp, total_answers, correct_answers, last_answer_at, updated_at, organization_id)
+            (user_id, xp, total_answers, correct_answers, last_answer_at, updated_at, tenant_id)
           VALUES
             (:userId, :deltaXp, :totalAnswersDelta, :correctAnswersDelta, :eventAt, NOW(),
              :#{T(com.saymyname.core.multitenancy.OrgContext).get()})
@@ -70,7 +70,7 @@ public interface LeaderboardStatRepository extends JpaRepository<LeaderboardStat
             ROW_NUMBER() OVER (ORDER BY ls.xp DESC, ls.last_answer_at DESC, u.id ASC) as rowNum
           FROM leaderboard_stats ls
           JOIN users u ON u.id = ls.user_id
-          WHERE ls.organization_id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+          WHERE ls.tenant_id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
           ORDER BY ls.xp DESC, ls.last_answer_at DESC, u.id ASC
           LIMIT :limit
       """, nativeQuery = true)
@@ -85,8 +85,8 @@ public interface LeaderboardStatRepository extends JpaRepository<LeaderboardStat
           FROM leaderboard_stats other
           JOIN leaderboard_stats me
             ON me.user_id = :userId
-           AND me.organization_id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
-          WHERE other.organization_id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+           AND me.tenant_id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+          WHERE other.tenant_id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
             AND (
                   other.xp > me.xp
                OR (other.xp = me.xp AND COALESCE(other.last_answer_at, '1970-01-01') > COALESCE(me.last_answer_at, '1970-01-01'))

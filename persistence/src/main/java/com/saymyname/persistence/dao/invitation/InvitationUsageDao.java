@@ -24,16 +24,16 @@ public class InvitationUsageDao {
     }
 
     @Transactional
-    public InvitationUsage appendUsage(Long orgId, InvitationUsage model, InvitationEntity parent) {
+    public InvitationUsage appendUsage(Long tenantId, InvitationUsage model, InvitationEntity parent) {
         InvitationUsageEntity e = mapper.toEntity(model, parent);
-        e.setTenantId(orgId);
+        e.setTenantId(tenantId);
         InvitationUsageEntity saved = repo.save(e);
         return mapper.toModel(saved);
     }
 
     @Transactional(readOnly = true)
-    public List<InvitationUsage> listByInvitation(Long orgId, Long invitationId) {
-        return repo.findAllByOrganizationIdAndInvitationIdOrderByUsedAtDesc(orgId, invitationId)
+    public List<InvitationUsage> listByInvitation(Long tenantId, Long invitationId) {
+        return repo.findAllByTenantIdAndInvitationIdOrderByUsedAtDesc(tenantId, invitationId)
                 .stream().map(mapper::toModel).toList();
     }
 }

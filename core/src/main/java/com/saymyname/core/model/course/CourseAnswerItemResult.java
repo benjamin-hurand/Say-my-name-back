@@ -1,6 +1,5 @@
 package com.saymyname.core.model.course;
 
-import java.util.List;
 import java.util.Objects;
 
 import com.saymyname.core.model.enums.course.QuizQuestionItemRole;
@@ -17,7 +16,7 @@ public class CourseAnswerItemResult {
     private String userAnswerNormalized;
 
     private String correctAnswer; // optionnel (souvent utile pour UI)
-    private List<ResultAttribute> resultAttributes; // optionnel (attributs sur lesquels s’appuie la correction)
+    private TargetAnswerResult targetAnswerResult; // optionnel (attributs sur lesquels s’appuie la correction)
 
     public CourseAnswerItemResult() {
     }
@@ -30,7 +29,7 @@ public class CourseAnswerItemResult {
         this.correct = b.correct;
         this.userAnswerNormalized = b.userAnswerNormalized;
         this.correctAnswer = b.correctAnswer;
-        this.resultAttributes = b.resultAttributes;
+        this.targetAnswerResult = b.targetAnswerResult;
     }
 
     public int getPosition() {
@@ -61,8 +60,8 @@ public class CourseAnswerItemResult {
         return correctAnswer;
     }
 
-    public List<ResultAttribute> getResultAttributes() {
-        return resultAttributes;
+    public TargetAnswerResult getTargetAnswerResult() {
+        return targetAnswerResult;
     }
 
     public static class Builder {
@@ -73,7 +72,7 @@ public class CourseAnswerItemResult {
         private boolean correct;
         private String userAnswerNormalized;
         private String correctAnswer;
-        private List<ResultAttribute> resultAttributes;
+        private TargetAnswerResult targetAnswerResult;
 
         public Builder withPosition(int position) {
             this.position = position;
@@ -110,8 +109,8 @@ public class CourseAnswerItemResult {
             return this;
         }
 
-        public Builder withResultAttributes(List<ResultAttribute> v) {
-            this.resultAttributes = v;
+        public Builder withTargetAnswerResult(TargetAnswerResult v) {
+            this.targetAnswerResult = v;
             return this;
         }
 
@@ -134,12 +133,12 @@ public class CourseAnswerItemResult {
                 && Objects.equals(personId, that.personId)
                 && Objects.equals(userAnswerNormalized, that.userAnswerNormalized)
                 && Objects.equals(correctAnswer, that.correctAnswer)
-                && Objects.equals(resultAttributes, that.resultAttributes);
+                && Objects.equals(targetAnswerResult, that.targetAnswerResult);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(position, role, knowledgeId, personId, correct, userAnswerNormalized, correctAnswer,
-                resultAttributes);
+                targetAnswerResult);
     }
 }

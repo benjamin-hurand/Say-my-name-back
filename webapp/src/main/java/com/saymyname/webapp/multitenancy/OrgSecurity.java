@@ -17,13 +17,13 @@ public class OrgSecurity {
         this.auth = auth;
     }
 
-    public boolean hasRole(Long orgId, String requiredRole) {
+    public boolean hasRole(Long tenantId, String requiredRole) {
         Long userId = auth.currentUserId();
         if (userId == null)
             return false;
 
         return membership.hasAtLeast(userId,
-                orgId != null ? orgId : TenantContext.get(),
+                tenantId != null ? tenantId : TenantContext.get(),
                 OrgRole.valueOf(requiredRole));
     }
 }

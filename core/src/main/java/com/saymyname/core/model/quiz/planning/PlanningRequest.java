@@ -7,19 +7,18 @@ import com.saymyname.core.model.enums.KnowledgeStatus;
 import com.saymyname.core.model.enums.quiz.FormatMode;
 import com.saymyname.core.model.enums.quiz.QuizFormat;
 import com.saymyname.core.model.quiz.candidate.EligibilityStats;
-import com.saymyname.core.model.quiz.options.GameMode;
 
 /**
  * Input to FormatPlanner: all info needed to decide format.
  *
  * Contains the formatMode (AUTO/FORCED), eligibility counts,
- * and gameMode context for the planner to make a decision.
+ * and target context (attributeId) for the planner to make a decision.
  */
 public record PlanningRequest(
         FormatMode formatMode,
         QuizFormat forcedFormat,
         EligibilityStats eligibility,
-        GameMode gameMode,
+        Long targetAttributeId,
         KnowledgeStatus knowledgeStatus, // nullable: null for TRAINING mode, set for COURSE mode
         Boolean timed,
         Integer timeLimitMs) {
@@ -27,7 +26,7 @@ public record PlanningRequest(
     public PlanningRequest {
         Objects.requireNonNull(formatMode, "formatMode is required");
         Objects.requireNonNull(eligibility, "eligibility is required");
-        Objects.requireNonNull(gameMode, "gameMode is required");
+        Objects.requireNonNull(targetAttributeId, "targetAttributeId is required");
 
         if (formatMode == FormatMode.FORCED && forcedFormat == null) {
             throw new IllegalArgumentException("forcedFormat is required when formatMode=FORCED");
@@ -43,10 +42,18 @@ public record PlanningRequest(
     public static PlanningRequest forced(
             QuizFormat format,
             EligibilityStats eligibility,
-            GameMode gameMode,
+            Long targetAttributeId,
             Boolean timed,
             Integer timeLimitMs) {
-        return new PlanningRequest(FormatMode.FORCED, format, eligibility, gameMode, null, timed, timeLimitMs);
+
+        return new PlanningRequest(
+                FormatMode.FORCED,
+                format,
+                eligibility,
+                targetAttributeId,
+                null,
+                timed,
+                timeLimitMs);
     }
 
     /**
@@ -54,10 +61,18 @@ public record PlanningRequest(
      */
     public static PlanningRequest auto(
             EligibilityStats eligibility,
-            GameMode gameMode,
+            Long targetAttributeId,
             Boolean timed,
             Integer timeLimitMs) {
-        return new PlanningRequest(FormatMode.AUTO, null, eligibility, gameMode, null, timed, timeLimitMs);
+
+        return new PlanningRequest(
+                FormatMode.AUTO,
+                null,
+                eligibility,
+                targetAttributeId,
+                null,
+                timed,
+                timeLimitMs);
     }
 
     /**
@@ -66,11 +81,19 @@ public record PlanningRequest(
      */
     public static PlanningRequest courseAuto(
             EligibilityStats eligibility,
-            GameMode gameMode,
+            Long targetAttributeId,
             KnowledgeStatus knowledgeStatus,
             Boolean timed,
             Integer timeLimitMs) {
-        return new PlanningRequest(FormatMode.AUTO, null, eligibility, gameMode, knowledgeStatus, timed, timeLimitMs);
+
+        return new PlanningRequest(
+                FormatMode.AUTO,
+                null,
+                eligibility,
+                targetAttributeId,
+                knowledgeStatus,
+                timed,
+                timeLimitMs);
     }
 
     public boolean isForced() {

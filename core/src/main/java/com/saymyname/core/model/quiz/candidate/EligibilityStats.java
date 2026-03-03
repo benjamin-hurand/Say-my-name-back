@@ -11,7 +11,7 @@ package com.saymyname.core.model.quiz.candidate;
 public record EligibilityStats(
         long totalEligible,
         long withApprovedPhoto,
-        long withGameModeAttrs) {
+        long withAttributes) {
 
     public EligibilityStats {
         if (totalEligible < 0) {
@@ -20,8 +20,8 @@ public record EligibilityStats(
         if (withApprovedPhoto < 0) {
             throw new IllegalArgumentException("withApprovedPhoto must be >= 0");
         }
-        if (withGameModeAttrs < 0) {
-            throw new IllegalArgumentException("withGameModeAttrs must be >= 0");
+        if (withAttributes < 0) {
+            throw new IllegalArgumentException("withAttributes must be >= 0");
         }
     }
 

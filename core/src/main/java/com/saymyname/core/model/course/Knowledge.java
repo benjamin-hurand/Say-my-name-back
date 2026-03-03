@@ -1,3 +1,4 @@
+// src/main/java/com/saymyname/core/model/course/Knowledge.java
 package com.saymyname.core.model.course;
 
 import com.saymyname.core.model.auth.User;
@@ -8,15 +9,25 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
+/**
+ * Knowledge = état d'apprentissage SRS sur un Fact atomique.
+ *
+ * NOTE:
+ * - Source de vérité: factId (FK).
+ * - personId / attributeId supprimés : ils sont dérivables via Fact si besoin.
+ */
 public class Knowledge {
 
     private Long id;
     private User user;
 
-    /** FK fonctionnelle (hot path) */
+    /** FK fonctionnelle (hot path). */
     private Long factId;
 
-    /** Optionnel : si tu veux l’embarquer parfois (sinon lazy via service/dao) */
+    /**
+     * Optionnel: parfois chargé pour l'affichage (sinon fetch via service/dao).
+     * Non persisté directement par Knowledge en DB.
+     */
     private Fact fact;
 
     private KnowledgeStatus status;

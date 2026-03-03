@@ -14,9 +14,7 @@ public class QuizQuestionSpec {
     private Long personId;
     private String storageKey;
 
-    private Long gameModeId;
-    private List<Long> targetAttributeIds;
-    private String operator;
+    private Long targetAttributeId;
 
     private QuizQuestionContext context;
 
@@ -38,9 +36,9 @@ public class QuizQuestionSpec {
         this.source = b.source;
         this.personId = b.personId;
         this.storageKey = b.storageKey;
-        this.gameModeId = b.gameModeId;
-        this.targetAttributeIds = b.targetAttributeIds;
-        this.operator = b.operator;
+
+        this.targetAttributeId = b.targetAttributeId;
+
         this.context = b.context;
         this.initials = b.initials;
         this.candidatePoolPersonIds = b.candidatePoolPersonIds;
@@ -64,16 +62,8 @@ public class QuizQuestionSpec {
         return storageKey;
     }
 
-    public Long getGameModeId() {
-        return gameModeId;
-    }
-
-    public List<Long> getTargetAttributeIds() {
-        return targetAttributeIds;
-    }
-
-    public String getOperator() {
-        return operator;
+    public Long getTargetAttributeId() {
+        return targetAttributeId;
     }
 
     public QuizQuestionContext getContext() {
@@ -124,16 +114,8 @@ public class QuizQuestionSpec {
         this.storageKey = storageKey;
     }
 
-    public void setGameModeId(Long gameModeId) {
-        this.gameModeId = gameModeId;
-    }
-
-    public void setTargetAttributeIds(List<Long> targetAttributeIds) {
-        this.targetAttributeIds = targetAttributeIds;
-    }
-
-    public void setOperator(String operator) {
-        this.operator = operator;
+    public void setTargetAttributeId(Long targetAttributeId) {
+        this.targetAttributeId = targetAttributeId;
     }
 
     public void setContext(QuizQuestionContext context) {
@@ -176,10 +158,10 @@ public class QuizQuestionSpec {
         private QuizQuestionSource source;
         private Long personId;
         private String storageKey;
-        private Long gameModeId;
-        private List<Long> targetAttributeIds;
-        private String operator;
+        private Long targetAttributeId;
+
         private QuizQuestionContext context;
+
         private String initials;
         private List<Long> candidatePoolPersonIds;
         private List<QuizPayloadItem> candidatePoolItems;
@@ -204,18 +186,8 @@ public class QuizQuestionSpec {
             return this;
         }
 
-        public Builder withGameModeId(Long v) {
-            this.gameModeId = v;
-            return this;
-        }
-
-        public Builder withTargetAttributeIds(List<Long> v) {
-            this.targetAttributeIds = v;
-            return this;
-        }
-
-        public Builder withOperator(String v) {
-            this.operator = v;
+        public Builder withTargetAttributeId(Long v) {
+            this.targetAttributeId = v;
             return this;
         }
 
@@ -267,10 +239,9 @@ public class QuizQuestionSpec {
         public QuizQuestionSpec build() {
             Objects.requireNonNull(source, "source");
             Objects.requireNonNull(personId, "personId");
-            Objects.requireNonNull(gameModeId, "gameModeId");
-            Objects.requireNonNull(targetAttributeIds, "targetAttributeIds");
-            Objects.requireNonNull(operator, "operator");
+            Objects.requireNonNull(targetAttributeId, "targetAttributeId");
             Objects.requireNonNull(context, "context");
+
             return new QuizQuestionSpec(this);
         }
     }
@@ -285,9 +256,7 @@ public class QuizQuestionSpec {
         return source == that.source
                 && Objects.equals(personId, that.personId)
                 && Objects.equals(storageKey, that.storageKey)
-                && Objects.equals(gameModeId, that.gameModeId)
-                && Objects.equals(targetAttributeIds, that.targetAttributeIds)
-                && Objects.equals(operator, that.operator)
+                && Objects.equals(targetAttributeId, that.targetAttributeId)
                 && Objects.equals(context, that.context)
                 && Objects.equals(initials, that.initials)
                 && Objects.equals(candidatePoolPersonIds, that.candidatePoolPersonIds)
@@ -301,8 +270,19 @@ public class QuizQuestionSpec {
 
     @Override
     public int hashCode() {
-        return Objects.hash(source, personId, storageKey, gameModeId, targetAttributeIds, operator, context, initials,
-                candidatePoolPersonIds, candidatePoolItems, timed, timeLimitMs, maxErrorsOverride, reasonCode,
+        return Objects.hash(
+                source,
+                personId,
+                storageKey,
+                targetAttributeId,
+                context,
+                initials,
+                candidatePoolPersonIds,
+                candidatePoolItems,
+                timed,
+                timeLimitMs,
+                maxErrorsOverride,
+                reasonCode,
                 reasonDetailsJson);
     }
 
@@ -312,9 +292,7 @@ public class QuizQuestionSpec {
                 "source=" + source +
                 ", personId=" + personId +
                 ", storageKey='" + storageKey + '\'' +
-                ", gameModeId=" + gameModeId +
-                ", targetAttributeIds=" + targetAttributeIds +
-                ", operator='" + operator + '\'' +
+                ", targetAttributeId=" + targetAttributeId +
                 ", context=" + context +
                 ", initials='" + initials + '\'' +
                 ", candidatePoolPersonIds=" + candidatePoolPersonIds +

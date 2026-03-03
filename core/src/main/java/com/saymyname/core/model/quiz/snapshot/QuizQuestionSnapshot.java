@@ -32,9 +32,7 @@ public class QuizQuestionSnapshot {
     private QuizQuestionContext context;
 
     // ---- auditable spec (reconstruction sans dépendre de la DB/builder) ----
-    private Long gameModeId;
-    private List<Long> targetAttributeIds = new ArrayList<>();
-    private String operator;
+    private Long targetAttributeId;
 
     /**
      * Person “principal” (utile pour compat legacy / analytics).
@@ -71,26 +69,21 @@ public class QuizQuestionSnapshot {
     // ------------------------------------------------------------------
     // HANGMAN (stateful, snapshot-based)
     // ------------------------------------------------------------------
-    /**
-     * Règles Hangman (paramétrage stable) - requis si format=HANGMAN.
-     */
+    /** Règles Hangman (paramétrage stable) - requis si format=HANGMAN. */
     private HangmanRules hangmanRules;
 
-    /**
-     * État Hangman (mask + erreurs + lettres) - requis si format=HANGMAN.
-     */
+    /** État Hangman (mask + erreurs + lettres) - requis si format=HANGMAN. */
     private HangmanSnapshotState hangmanState;
 
     // ------------------------------------------------------------------
     // WORD_PUZZLE (stateful, snapshot-based)
     // ------------------------------------------------------------------
-    /**
-     * Règles Word Puzzle (paramétrage stable) - requis si format=WORD_PUZZLE.
-     */
+    /** Règles Word Puzzle (paramétrage stable) - requis si format=WORD_PUZZLE. */
     private WordPuzzleRules wordPuzzleRules;
 
     /**
-     * État Word Puzzle (attempts + feedback + status) - requis si format=WORD_PUZZLE.
+     * État Word Puzzle (attempts + feedback + status) - requis si
+     * format=WORD_PUZZLE.
      */
     private WordPuzzleSnapshotState wordPuzzleState;
 
@@ -106,9 +99,8 @@ public class QuizQuestionSnapshot {
         this.format = b.format;
         this.context = b.context;
 
-        this.gameModeId = b.gameModeId;
-        this.targetAttributeIds = b.targetAttributeIds != null ? b.targetAttributeIds : new ArrayList<>();
-        this.operator = b.operator;
+        this.targetAttributeId = b.targetAttributeId;
+
         this.personId = b.personId;
         this.storageKey = b.storageKey;
 
@@ -149,19 +141,9 @@ public class QuizQuestionSnapshot {
         if (context == null)
             throw new IllegalStateException("QuizQuestionSnapshot.context is required");
 
-        // ---- auditable spec ----
-        if (gameModeId == null)
-            throw new IllegalStateException("QuizQuestionSnapshot.gameModeId is required");
-
-        if (targetAttributeIds == null || targetAttributeIds.isEmpty())
+        if (targetAttributeId == null)
             throw new IllegalStateException(
-                    "QuizQuestionSnapshot.targetAttributeIds must contain at least 1 attributeId");
-
-        if (targetAttributeIds.stream().anyMatch(Objects::isNull))
-            throw new IllegalStateException("QuizQuestionSnapshot.targetAttributeIds cannot contain null");
-
-        if (operator == null || operator.isBlank())
-            throw new IllegalStateException("QuizQuestionSnapshot.operator is required");
+                    "QuizQuestionSnapshot.targetAttributeId must contain at least 1 attributeId");
 
         // ---- render + truth ----
         if (payload == null)
@@ -217,15 +199,16 @@ public class QuizQuestionSnapshot {
         // ------------------------------------------------------------------
         if (format == QuizFormat.WORD_PUZZLE) {
             if (wordPuzzleRules == null) {
-                throw new IllegalStateException("QuizQuestionSnapshot.wordPuzzleRules is required when format=WORD_PUZZLE");
+                throw new IllegalStateException(
+                        "QuizQuestionSnapshot.wordPuzzleRules is required when format=WORD_PUZZLE");
             }
             if (wordPuzzleState == null) {
-                throw new IllegalStateException("QuizQuestionSnapshot.wordPuzzleState is required when format=WORD_PUZZLE");
+                throw new IllegalStateException(
+                        "QuizQuestionSnapshot.wordPuzzleState is required when format=WORD_PUZZLE");
             }
             wordPuzzleRules.validateInvariants();
             wordPuzzleState.validateInvariants();
 
-            // Cross-validation: attemptsRemaining should match maxAttempts - attempts.size()
             Integer maxAttempts = wordPuzzleRules.getMaxAttempts();
             Integer attemptsRemaining = wordPuzzleState.getAttemptsRemaining();
             int attemptsMade = wordPuzzleState.getAttempts().size();
@@ -233,7 +216,8 @@ public class QuizQuestionSnapshot {
                 int expected = maxAttempts - attemptsMade;
                 if (attemptsRemaining != expected) {
                     throw new IllegalStateException(
-                            "QuizQuestionSnapshot.wordPuzzleState.attemptsRemaining inconsistent: expected " + expected + ", got " + attemptsRemaining);
+                            "QuizQuestionSnapshot.wordPuzzleState.attemptsRemaining inconsistent: expected " + expected
+                                    + ", got " + attemptsRemaining);
                 }
             }
         }
@@ -280,28 +264,12 @@ public class QuizQuestionSnapshot {
         this.context = context;
     }
 
-    public Long getGameModeId() {
-        return gameModeId;
+    public Long getTargetAttributeId() {
+        return targetAttributeId;
     }
 
-    public void setGameModeId(Long gameModeId) {
-        this.gameModeId = gameModeId;
-    }
-
-    public List<Long> getTargetAttributeIds() {
-        return targetAttributeIds;
-    }
-
-    public void setTargetAttributeIds(List<Long> targetAttributeIds) {
-        this.targetAttributeIds = targetAttributeIds;
-    }
-
-    public String getOperator() {
-        return operator;
-    }
-
-    public void setOperator(String operator) {
-        this.operator = operator;
+    public void setTargetAttributeId(Long targetAttributeId) {
+        this.targetAttributeId = targetAttributeId;
     }
 
     public Long getPersonId() {
@@ -435,7 +403,6 @@ public class QuizQuestionSnapshot {
     }
 
     // ---------------- Builder ----------------
-
     public static class Builder {
         private int snapshotSchemaVersion;
         private String generatorVersion;
@@ -444,9 +411,8 @@ public class QuizQuestionSnapshot {
         private QuizFormat format;
         private QuizQuestionContext context;
 
-        private Long gameModeId;
-        private List<Long> targetAttributeIds;
-        private String operator;
+        private Long targetAttributeId;
+
         private Long personId;
         private String storageKey;
 
@@ -468,21 +434,18 @@ public class QuizQuestionSnapshot {
         private WordPuzzleRules wordPuzzleRules;
         private WordPuzzleSnapshotState wordPuzzleState;
 
-        /**
-         * Copies all fields from an existing snapshot (for efficient cloning).
-         * Useful for updating mutable state while preserving immutable fields.
-         */
         public Builder from(QuizQuestionSnapshot original) {
             this.snapshotSchemaVersion = original.snapshotSchemaVersion;
             this.generatorVersion = original.generatorVersion;
             this.normalizerVersion = original.normalizerVersion;
             this.format = original.format;
             this.context = original.context;
-            this.gameModeId = original.gameModeId;
-            this.targetAttributeIds = original.targetAttributeIds;
-            this.operator = original.operator;
+
+            this.targetAttributeId = original.targetAttributeId;
+
             this.personId = original.personId;
             this.storageKey = original.storageKey;
+
             this.display = original.display;
             this.hints = original.hints;
             this.payload = original.payload;
@@ -491,12 +454,16 @@ public class QuizQuestionSnapshot {
             this.timeLimitMs = original.timeLimitMs;
             this.reasonCode = original.reasonCode;
             this.reasonDetailsJson = original.reasonDetailsJson;
+
             this.truth = original.truth;
             this.targetPersonIds = original.targetPersonIds;
+
             this.hangmanRules = original.hangmanRules;
             this.hangmanState = original.hangmanState;
+
             this.wordPuzzleRules = original.wordPuzzleRules;
             this.wordPuzzleState = original.wordPuzzleState;
+
             return this;
         }
 
@@ -525,18 +492,8 @@ public class QuizQuestionSnapshot {
             return this;
         }
 
-        public Builder withGameModeId(Long v) {
-            this.gameModeId = v;
-            return this;
-        }
-
-        public Builder withTargetAttributeIds(List<Long> v) {
-            this.targetAttributeIds = v;
-            return this;
-        }
-
-        public Builder withOperator(String v) {
-            this.operator = v;
+        public Builder withTargetAttributeId(Long v) {
+            this.targetAttributeId = v;
             return this;
         }
 
@@ -600,7 +557,6 @@ public class QuizQuestionSnapshot {
             return this;
         }
 
-        // Hangman
         public Builder withHangmanRules(HangmanRules v) {
             this.hangmanRules = v;
             return this;
@@ -611,7 +567,6 @@ public class QuizQuestionSnapshot {
             return this;
         }
 
-        // Word Puzzle
         public Builder withWordPuzzleRules(WordPuzzleRules v) {
             this.wordPuzzleRules = v;
             return this;
@@ -628,24 +583,19 @@ public class QuizQuestionSnapshot {
     }
 
     // ---------------- equals/hashCode ----------------
-
     @Override
     public boolean equals(Object o) {
         if (this == o)
             return true;
         if (!(o instanceof QuizQuestionSnapshot))
             return false;
-
         QuizQuestionSnapshot that = (QuizQuestionSnapshot) o;
-
         return snapshotSchemaVersion == that.snapshotSchemaVersion
                 && Objects.equals(generatorVersion, that.generatorVersion)
                 && Objects.equals(normalizerVersion, that.normalizerVersion)
                 && format == that.format
                 && Objects.equals(context, that.context)
-                && Objects.equals(gameModeId, that.gameModeId)
-                && Objects.equals(targetAttributeIds, that.targetAttributeIds)
-                && Objects.equals(operator, that.operator)
+                && Objects.equals(targetAttributeId, that.targetAttributeId)
                 && Objects.equals(personId, that.personId)
                 && Objects.equals(storageKey, that.storageKey)
                 && Objects.equals(display, that.display)
@@ -672,9 +622,7 @@ public class QuizQuestionSnapshot {
                 normalizerVersion,
                 format,
                 context,
-                gameModeId,
-                targetAttributeIds,
-                operator,
+                targetAttributeId,
                 personId,
                 storageKey,
                 display,

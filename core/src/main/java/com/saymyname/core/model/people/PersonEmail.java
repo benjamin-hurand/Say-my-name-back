@@ -9,7 +9,7 @@ import com.saymyname.core.model.enums.EmailSourceKind;
 
 /**
  * Modèle "plat" côté core.
- * - Pas de notion d'organization_id ici (gérée par le scope d'appel).
+ * - Pas de notion d'tenant_id ici (gérée par le scope d'appel).
  * - equals/hashCode basés uniquement sur id.
  */
 public class PersonEmail {

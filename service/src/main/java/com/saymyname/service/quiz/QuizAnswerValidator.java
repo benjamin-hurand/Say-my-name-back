@@ -25,7 +25,8 @@ public class QuizAnswerValidator {
 
     /**
      * Evaluate an answer submission against a snapshot.
-     * Returns a stateless QuizEvaluationResult that can be used by any business service.
+     * Returns a stateless QuizEvaluationResult that can be used by any business
+     * service.
      */
     public QuizEvaluationResult evaluate(
             QuizQuestionSnapshot snapshot,
@@ -61,8 +62,7 @@ public class QuizAnswerValidator {
                 updatedSnapshot,
                 normalized,
                 validation.getCorrectAnswerDisplay(),
-                validation.getResultAttributes()
-        );
+                validation.getTargetAnswerResult());
     }
 
     public QuizValidationResult validateFromSnapshot(

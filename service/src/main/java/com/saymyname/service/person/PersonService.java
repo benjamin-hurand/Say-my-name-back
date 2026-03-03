@@ -27,7 +27,6 @@ import com.saymyname.core.model.persondirectory.AttributeValueView;
 import com.saymyname.core.model.persondirectory.PagePersonRow;
 import com.saymyname.core.model.persondirectory.PersonCard;
 import com.saymyname.core.model.persondirectory.PersonSearchCriteria;
-import com.saymyname.core.model.quiz.options.GameMode;
 import com.saymyname.persistence.dao.PersonDao;
 import com.saymyname.service.FactService;
 import com.saymyname.service.UserOrganizationService;
@@ -40,8 +39,10 @@ public class PersonService {
     private final FactService factService;
     private final UserOrganizationService userOrganizationService;
 
-    public PersonService(PersonDao personDao,
-            FactService factService, UserOrganizationService userOrganizationService) {
+    public PersonService(
+            PersonDao personDao,
+            FactService factService,
+            UserOrganizationService userOrganizationService) {
         this.personDao = personDao;
         this.factService = factService;
         this.userOrganizationService = userOrganizationService;
@@ -55,16 +56,23 @@ public class PersonService {
         return personDao.countAll();
     }
 
+    /**
+     * ✅ Universe eligibility pour un Course.
+     * Nouveau modèle: Course cible toujours UN SEUL attribut (normal ou derived).
+     */
     public long countUniverseEligibleForMode(Course course) {
-        GameMode gameMode = course.getGameMode();
-        Long gameModeId = gameMode.getId();
-        String op = gameMode.getOperator();
-        String operator = (op == null || op.isBlank()) ? "AND" : op.trim();
-        if ("AND".equalsIgnoreCase(operator)) {
-            return personDao.countUniverseEligibleAND(gameModeId);
-        } else {
-            return personDao.countUniverseEligibleOR(gameModeId);
+        if (course == null) {
+            return 0L;
         }
+        Long targetAttributeId = course.getTargetAttributeId();
+        if (targetAttributeId == null) {
+            // En théorie impossible si tu passes courses.target_attribute_id NOT NULL,
+            // mais garde la guardrail.
+            return 0L;
+        }
+
+        // Éligible = la personne possède une fact active (non vide) pour cet attribut.
+        return personDao.countUniverseEligibleOneAttribute(targetAttributeId);
     }
 
     public Optional<Person> findById(Long id) {
@@ -89,14 +97,9 @@ public class PersonService {
 
     /**
      * Recherche “trombi” côté utilisateur (avec notion de suivi).
-     * - Page de personnes (id + photo)
-     * - Attributs primaires + (optionnel) extras “contexte”
-     * - Marquage “followed” sur le batch
-     * - ✅ Désormais on remplit une liste unique `attributes` (avec primaryField).
      */
     @Transactional(readOnly = true)
     public Page<PersonCard> searchPersons(PersonSearchCriteria criteria, Pageable pageable, Long userId) {
-        // 1) Page minimale (id + photo)
         Page<PagePersonRow> page = personDao.findPersonsPage(criteria, pageable, userId);
 
         List<Long> personIds = page.getContent().stream()
@@ -112,16 +115,13 @@ public class PersonService {
                     .build());
         }
 
-        // 2) IDs suivis pour ce batch (si userId fourni)
         final Set<Long> followedIds = (userId == null)
                 ? Set.of()
                 : personDao.findFollowedIdsForUserAndPersons(userId, personIds);
 
-        // 3) Primaires (marqués primaryField=true)
         final Map<Long, List<AttributeValueView>> primaryByPerson = toViewListByPersonWithPrimary(
                 personDao.fetchPrimaryAttributeRows(personIds), true);
 
-        // 4) Extras "contexte" si demandé (marqués primaryField=false)
         final Map<Long, List<AttributeValueView>> extrasByPerson;
         if (criteria != null && criteria.isIncludeContextAttributes()) {
             List<Long> filterIds = (criteria.getFilters() == null) ? List.of()
@@ -156,7 +156,6 @@ public class PersonService {
             extrasByPerson = Map.of();
         }
 
-        // 5) Fusion en une liste unique (primaires + extras)
         final Map<Long, List<AttributeValueView>> allAttributesByPerson = new HashMap<>();
         for (Long id : personIds) {
             List<AttributeValueView> merged = new ArrayList<>();
@@ -165,7 +164,6 @@ public class PersonService {
             allAttributesByPerson.put(id, merged);
         }
 
-        // 6) Assemblage final
         return page.map(p -> new PersonCard.Builder()
                 .withIdPerson(p.getPersonId())
                 .withPhotoStorageKey(p.getPhotoStorageKey())
@@ -176,14 +174,9 @@ public class PersonService {
 
     /**
      * Recherche “trombi” côté admin (pas de notion de suivi).
-     * - Page de personnes (id + photo)
-     * - Attributs primaires + (optionnel) extras “contexte”
-     * - (Optionnel) hasPendingChangeRequests
-     * - ✅ Désormais on remplit une liste unique `attributes` (avec primaryField).
      */
     @Transactional(readOnly = true)
     public Page<AdminPersonCard> searchPersonsForAdmin(AdminPersonSearchCriteria criteria, Pageable pageable) {
-        // 1) Page minimale (id + photo)
         Page<PagePersonRow> page = personDao.findPersonsPageForAdmin(criteria, pageable);
 
         List<Long> personIds = page.getContent().stream()
@@ -199,11 +192,9 @@ public class PersonService {
                     .build());
         }
 
-        // 2) Primaires (primaryField=true)
         final Map<Long, List<AttributeValueView>> primaryByPerson = toViewListByPersonWithPrimary(
                 personDao.fetchPrimaryAttributeRows(personIds), true);
 
-        // 3) Extras "contexte" si demandé (primaryField=false)
         final Map<Long, List<AttributeValueView>> extrasByPerson;
         if (criteria != null && criteria.isIncludeContextAttributes()) {
             List<Long> filterIds = (criteria.getFilters() == null) ? List.of()
@@ -238,10 +229,8 @@ public class PersonService {
             extrasByPerson = Map.of();
         }
 
-        // 4) (Facultatif) personnes avec CR en attente (placeholder)
         final Set<Long> pendingCR = Set.of();
 
-        // 5) Fusion en une liste unique (primaires + extras)
         final Map<Long, List<AttributeValueView>> allAttributesByPerson = new HashMap<>();
         for (Long id : personIds) {
             List<AttributeValueView> merged = new ArrayList<>();
@@ -250,7 +239,6 @@ public class PersonService {
             allAttributesByPerson.put(id, merged);
         }
 
-        // 6) Assemblage final
         return page.map(p -> new AdminPersonCard.Builder()
                 .withIdPerson(p.getPersonId())
                 .withPhotoStorageKey(p.getPhotoStorageKey())
@@ -287,10 +275,6 @@ public class PersonService {
     // Helpers internes
     // -----------------------
 
-    /**
-     * Regroupe des rows (personId, attributeId, value, displayOrder) par personne
-     * et les transforme en AttributeValueView, en posant le flag primaryField.
-     */
     private static Map<Long, List<AttributeValueView>> toViewListByPersonWithPrimary(
             List<AttributeValueRow> rows,
             boolean primaryFlag) {
@@ -305,7 +289,7 @@ public class PersonService {
                                 .withAttributeId(r.getAttributeId())
                                 .withValue(r.getValue())
                                 .withDisplayOrder(r.getDisplayOrder())
-                                .withPrimaryField(primaryFlag) // ⬅️ important
+                                .withIdentitySource(primaryFlag)
                                 .build(),
                         Collectors.toList())));
     }

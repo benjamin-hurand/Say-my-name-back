@@ -7,19 +7,18 @@ import java.util.Objects;
 import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.enums.PopulationScope;
 import com.saymyname.core.model.enums.course.CourseStatus;
-import com.saymyname.core.model.quiz.options.GameMode;
 
 public class Course {
     private Long id;
     private User user;
-    private GameMode gameMode;
+    private Long targetAttributeId;
 
     private CourseStatus status;
     private int currentRound;
 
     private PopulationScope populationScope;
 
-    // Nouveau : métadonnées temporelles
+    // Métadonnées temporelles
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime lastAccessedAt;
@@ -41,12 +40,12 @@ public class Course {
         this.user = user;
     }
 
-    public GameMode getGameMode() {
-        return gameMode;
+    public Long getTargetAttributeId() {
+        return targetAttributeId;
     }
 
-    public void setGameMode(GameMode gameMode) {
-        this.gameMode = gameMode;
+    public void setTargetAttributeId(Long targetAttributeId) {
+        this.targetAttributeId = targetAttributeId;
     }
 
     public CourseStatus getStatus() {
@@ -111,8 +110,8 @@ public class Course {
             return this;
         }
 
-        public Builder withGameMode(GameMode gm) {
-            c.gameMode = gm;
+        public Builder withTargetAttributeId(Long attributeId) {
+            c.targetAttributeId = attributeId;
             return this;
         }
 
@@ -171,7 +170,7 @@ public class Course {
         return "Course{" +
                 "id=" + id +
                 ", user=" + user +
-                ", gameMode=" + gameMode +
+                ", targetAttributeId=" + targetAttributeId +
                 ", status=" + status +
                 ", currentRound=" + currentRound +
                 ", populationScope=" + populationScope +

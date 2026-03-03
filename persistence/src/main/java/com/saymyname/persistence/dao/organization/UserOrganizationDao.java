@@ -7,12 +7,12 @@ import com.saymyname.core.model.enums.MemberStatus;
 import com.saymyname.core.model.enums.MembershipStatus;
 import com.saymyname.core.model.organization.OrgMemberRow;
 import com.saymyname.core.model.organization.UserOrganization;
-import com.saymyname.core.multitenancy.OrgContext;
+import com.saymyname.core.multitenancy.TenantContext;
 import com.saymyname.persistence.entity.UserEntity;
 import com.saymyname.persistence.entity.organization.TenantOrgEntity;
 import com.saymyname.persistence.entity.organization.PersonEntity;
 import com.saymyname.persistence.entity.organization.UserOrganizationEntity;
-import com.saymyname.persistence.entity.organization.UserOrganizationId;
+import com.saymyname.persistence.entity.organization.UserTenantId;
 import com.saymyname.persistence.mapper.organization.UserOrganizationEntityMapper;
 import com.saymyname.persistence.repository.UserOrganizationRepository;
 
@@ -63,7 +63,7 @@ public class UserOrganizationDao {
         return repository.findUserIdForPersonInCurrentOrg(personId);
     }
 
-    /** Rôle de l'utilisateur dans l'orga courante (OrgContext) */
+    /** Rôle de l'utilisateur dans l'orga courante (TenantContext) */
     public Optional<OrgRole> findRoleForCurrentOrg(Long userId) {
         if (userId == null)
             return Optional.empty();
@@ -84,8 +84,8 @@ public class UserOrganizationDao {
      * Utilise une requête dédiée pour éviter d'avoir à relister tous les membres.
      */
     public Optional<OrgMemberRow> findMemberRowForCurrentOrg(Long targetUserId) {
-        Long orgId = OrgContext.get();
-        if (orgId == null || targetUserId == null) {
+        Long tenantId = TenantContext.get();
+        if (tenantId == null || targetUserId == null) {
             return Optional.empty();
         }
 
@@ -94,12 +94,12 @@ public class UserOrganizationDao {
                     from UserOrganizationEntity uo
                     join uo.user u
                     left join uo.person p
-                    where uo.organization.id = :orgId
+                    where uo.organization.id = :tenantId
                       and u.id = :userId
                 """;
 
         List<Object[]> rows = em.createQuery(jpql, Object[].class)
-                .setParameter("orgId", orgId)
+                .setParameter("tenantId", tenantId)
                 .setParameter("userId", targetUserId)
                 .getResultList();
 
@@ -122,7 +122,7 @@ public class UserOrganizationDao {
         return Optional.of(
                 OrgMemberRow.builder()
                         .userId(u.getId())
-                        .organizationId(uo.getOrganization().getId())
+                        .tenantId(uo.getOrganization().getId())
                         .displayName(u.getDisplayName())
                         .email(u.getPrimaryEmailValue())
                         .role(uo.getRole())
@@ -135,11 +135,11 @@ public class UserOrganizationDao {
 
     @Transactional
     public void updateRoleForUserInCurrentOrg(Long targetUserId, OrgRole newRole) {
-        Long orgId = OrgContext.get();
-        if (orgId == null || targetUserId == null) {
-            throw new IllegalStateException("OrgContext or targetUserId missing");
+        Long tenantId = TenantContext.get();
+        if (tenantId == null || targetUserId == null) {
+            throw new IllegalStateException("TenantContext or targetUserId missing");
         }
-        UserOrganizationId id = new UserOrganizationId(targetUserId, orgId);
+        UserTenantId id = new UserTenantId(targetUserId, tenantId);
 
         UserOrganizationEntity entity = repository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Membership not found"));
@@ -150,11 +150,11 @@ public class UserOrganizationDao {
 
     @Transactional
     public void deleteMembershipForUserInCurrentOrg(Long targetUserId) {
-        Long orgId = OrgContext.get();
-        if (orgId == null || targetUserId == null) {
-            throw new IllegalStateException("OrgContext or targetUserId missing");
+        Long tenantId = TenantContext.get();
+        if (tenantId == null || targetUserId == null) {
+            throw new IllegalStateException("TenantContext or targetUserId missing");
         }
-        UserOrganizationId id = new UserOrganizationId(targetUserId, orgId);
+        UserTenantId id = new UserTenantId(targetUserId, tenantId);
 
         if (!repository.existsById(id)) {
             throw new EntityNotFoundException("Membership not found");
@@ -169,15 +169,15 @@ public class UserOrganizationDao {
      */
     @Transactional
     public void transferOwnershipInCurrentOrg(Long oldOwnerUserId, Long newOwnerUserId) {
-        Long orgId = OrgContext.get();
-        if (orgId == null || oldOwnerUserId == null || newOwnerUserId == null) {
-            throw new IllegalStateException("OrgContext or userIds missing");
+        Long tenantId = TenantContext.get();
+        if (tenantId == null || oldOwnerUserId == null || newOwnerUserId == null) {
+            throw new IllegalStateException("TenantContext or userIds missing");
         }
 
-        UserOrganizationEntity oldOwner = repository.findById(new UserOrganizationId(oldOwnerUserId, orgId))
+        UserOrganizationEntity oldOwner = repository.findById(new UserTenantId(oldOwnerUserId, tenantId))
                 .orElseThrow(() -> new EntityNotFoundException("Old owner membership not found"));
 
-        UserOrganizationEntity newOwner = repository.findById(new UserOrganizationId(newOwnerUserId, orgId))
+        UserOrganizationEntity newOwner = repository.findById(new UserTenantId(newOwnerUserId, tenantId))
                 .orElseThrow(() -> new EntityNotFoundException("New owner membership not found"));
 
         // Safety: oldOwner must currently be OWNER
@@ -196,15 +196,15 @@ public class UserOrganizationDao {
     // ----------------
 
     @Transactional
-    public void ensureMembership(Long userId, Long orgId, OrgRole invitedRole) {
-        if (userId == null || orgId == null)
+    public void ensureMembership(Long userId, Long tenantId, OrgRole invitedRole) {
+        if (userId == null || tenantId == null)
             return;
 
         OrgRole effectiveRole = (invitedRole != null) ? invitedRole : OrgRole.VIEWER;
 
-        UserOrganizationId id = new UserOrganizationId();
+        UserTenantId id = new UserTenantId();
         id.setUserId(userId);
-        id.setOrganizationId(orgId);
+        id.setTenantId(tenantId);
 
         repository.findById(id).ifPresentOrElse(existing -> {
             OrgRole current = existing.getRole();
@@ -216,7 +216,7 @@ public class UserOrganizationDao {
             UserOrganizationEntity e = new UserOrganizationEntity();
 
             UserEntity userRef = em.getReference(UserEntity.class, userId);
-            TenantOrgEntity orgRef = em.getReference(TenantOrgEntity.class, orgId);
+            TenantOrgEntity orgRef = em.getReference(TenantOrgEntity.class, tenantId);
 
             e.setUser(userRef);
             e.setOrganization(orgRef);
@@ -229,7 +229,7 @@ public class UserOrganizationDao {
     @Transactional
     public void ensureMembershipFromInvitation(
             Long userId,
-            Long orgId,
+            Long tenantId,
             OrgRole role,
             MembershipStatus status,
             Long personId,
@@ -238,7 +238,7 @@ public class UserOrganizationDao {
             boolean canCreatePerson,
             boolean pickRequiresApproval,
             boolean createRequiresApproval) {
-        if (userId == null || orgId == null) {
+        if (userId == null || tenantId == null) {
             return;
         }
 
@@ -252,7 +252,7 @@ public class UserOrganizationDao {
                 pickRequiresApproval,
                 createRequiresApproval);
 
-        UserOrganizationId id = new UserOrganizationId(userId, orgId);
+        UserTenantId id = new UserTenantId(userId, tenantId);
 
         repository.findById(id).ifPresentOrElse(existing -> {
 
@@ -333,7 +333,7 @@ public class UserOrganizationDao {
             UserOrganizationEntity e = new UserOrganizationEntity();
 
             UserEntity userRef = em.getReference(UserEntity.class, userId);
-            TenantOrgEntity orgRef = em.getReference(TenantOrgEntity.class, orgId);
+            TenantOrgEntity orgRef = em.getReference(TenantOrgEntity.class, tenantId);
 
             e.setUser(userRef);
             e.setOrganization(orgRef);
@@ -378,8 +378,8 @@ public class UserOrganizationDao {
      * Projection "membres" pour l'organisation courante.
      */
     public List<OrgMemberRow> findMembersForCurrentOrg() {
-        Long orgId = OrgContext.get();
-        if (orgId == null)
+        Long tenantId = TenantContext.get();
+        if (tenantId == null)
             return List.of();
 
         String jpql = """
@@ -387,12 +387,12 @@ public class UserOrganizationDao {
                     from UserOrganizationEntity uo
                     join uo.user u
                     left join uo.person p
-                    where uo.organization.id = :orgId
+                    where uo.organization.id = :tenantId
                     order by u.displayName asc
                 """;
 
         List<Object[]> rows = em.createQuery(jpql, Object[].class)
-                .setParameter("orgId", orgId)
+                .setParameter("tenantId", tenantId)
                 .getResultList();
 
         return rows.stream()
@@ -410,7 +410,7 @@ public class UserOrganizationDao {
 
                     return OrgMemberRow.builder()
                             .userId(u.getId())
-                            .organizationId(uo.getOrganization().getId())
+                            .tenantId(uo.getOrganization().getId())
                             .displayName(u.getDisplayName())
                             .email(u.getPrimaryEmailValue())
                             .role(uo.getRole())

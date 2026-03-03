@@ -9,7 +9,6 @@ import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
-import com.saymyname.core.model.enums.course.CourseTargetScope;
 import com.saymyname.core.model.enums.PopulationScope;
 import com.saymyname.core.model.enums.course.CourseStatus;
 import com.saymyname.persistence.entity.UserEntity;
@@ -59,10 +58,6 @@ public class CourseEntity extends BaseTenantScoped {
         @ManyToOne(fetch = FetchType.LAZY, optional = false)
         @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_courses_user"))
         private UserEntity user;
-
-        @Enumerated(EnumType.STRING)
-        @Column(name = "target_scope", nullable = false, length = 32, columnDefinition = "varchar(32) default 'ATTRIBUTE'")
-        private CourseTargetScope targetScope;
 
         @Column(name = "target_attribute_id")
         private Long targetAttributeId;
