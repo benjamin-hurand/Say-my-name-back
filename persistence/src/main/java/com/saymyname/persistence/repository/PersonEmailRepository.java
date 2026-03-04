@@ -17,7 +17,7 @@ public interface PersonEmailRepository extends JpaRepository<PersonEmailEntity, 
       select e
         from PersonEmailEntity e
        where e.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
-         and e.person.id = :personId
+         and e.personId = :personId
        order by e.primary desc, e.createdAt desc
       """)
   List<PersonEmailEntity> findByPerson(@Param("personId") Long personId);
@@ -34,7 +34,7 @@ public interface PersonEmailRepository extends JpaRepository<PersonEmailEntity, 
       select e
         from PersonEmailEntity e
        where e.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
-         and e.person.id = :personId
+         and e.personId = :personId
          and e.primary = true
       """)
   Optional<PersonEmailEntity> findPrimaryForPerson(@Param("personId") Long personId);
@@ -62,7 +62,7 @@ public interface PersonEmailRepository extends JpaRepository<PersonEmailEntity, 
       update PersonEmailEntity e
          set e.primary = false
        where e.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
-         and e.person.id = :personId
+         and e.personId = :personId
          and e.id <> :keepId
       """)
   int clearPrimaryExcept(@Param("personId") Long personId, @Param("keepId") Long keepId);
@@ -72,7 +72,7 @@ public interface PersonEmailRepository extends JpaRepository<PersonEmailEntity, 
       update PersonEmailEntity e
          set e.primary = false
        where e.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
-         and e.person.id = :personId
+         and e.personId = :personId
       """)
   int clearPrimary(@Param("personId") Long personId);
 
@@ -84,8 +84,8 @@ public interface PersonEmailRepository extends JpaRepository<PersonEmailEntity, 
       """)
   void deleteByIdInCurrentOrg(@Param("id") Long id);
 
-  // -------- NEW: agrégation batch du statut e-mail --------
-  // 0 = NONE, 1 = HAS, 2 = PRIMARY, 3 = PRIMARY_VERIFIED
+  // batch status : OK en natif, MAIS attention aux noms de colonnes, voir note
+  // plus bas
   interface PersonEmailStatusRow {
     Long getPersonId();
 
@@ -95,13 +95,13 @@ public interface PersonEmailRepository extends JpaRepository<PersonEmailEntity, 
   @Query(value = """
       SELECT pe.person_id AS personId,
              CASE
-               WHEN MAX(CASE WHEN pe.active=1 AND pe.primary_flag=1 AND pe.verified_at IS NOT NULL THEN 1 ELSE 0 END)=1 THEN 3
-               WHEN MAX(CASE WHEN pe.active=1 AND pe.primary_flag=1 THEN 1 ELSE 0 END)=1 THEN 2
-               WHEN MAX(CASE WHEN pe.active=1 THEN 1 ELSE 0 END)=1 THEN 1
+               WHEN MAX(CASE WHEN pe.is_active=1 AND pe.is_primary=1 AND pe.verified_at IS NOT NULL THEN 1 ELSE 0 END)=1 THEN 3
+               WHEN MAX(CASE WHEN pe.is_active=1 AND pe.is_primary=1 THEN 1 ELSE 0 END)=1 THEN 2
+               WHEN MAX(CASE WHEN pe.is_active=1 THEN 1 ELSE 0 END)=1 THEN 1
                ELSE 0
              END AS status
         FROM person_emails pe
-       WHERE pe.tenant_id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+       WHERE pe.tenant_id = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
          AND pe.person_id IN (:personIds)
        GROUP BY pe.person_id
       """, nativeQuery = true)

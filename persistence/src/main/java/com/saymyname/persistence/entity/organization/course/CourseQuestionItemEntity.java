@@ -32,18 +32,23 @@ public class CourseQuestionItemEntity extends BaseTenantScoped {
         @Column(name = "id", nullable = false)
         private Long id;
 
+        @Column(name = "attempt_id", nullable = false)
+        private Long attemptId;
+
+        @Column(name = "knowledge_id")
+        private Long knowledgeId;
+
+        @Column(name = "person_id")
+        private Long personId;
+
         /**
          * FK DB: (tenant_id, attempt_id) -> course_question_attempts(tenant_id, id)
-         *
-         * IMPORTANT:
-         * - tenant_id is inherited from BaseTenantScoped and is part of the FK
-         * - we set insertable=false/updatable=false on the tenant join column to avoid
-         * duplicate column mapping.
+         * Relation read-only : attemptId est le writer.
          */
         @ManyToOne(fetch = FetchType.LAZY, optional = false)
         @JoinColumns({
                         @JoinColumn(name = "tenant_id", referencedColumnName = "tenant_id", nullable = false, insertable = false, updatable = false),
-                        @JoinColumn(name = "attempt_id", referencedColumnName = "id", nullable = false)
+                        @JoinColumn(name = "attempt_id", referencedColumnName = "id", nullable = false, insertable = false, updatable = false)
         })
         private CourseQuestionAttemptEntity attempt;
 
@@ -55,24 +60,27 @@ public class CourseQuestionItemEntity extends BaseTenantScoped {
         private QuizQuestionItemRole role;
 
         /**
-         * FK DB (après patch): (tenant_id, knowledge_id) -> knowledges(tenant_id, id)
-         * knowledge_id nullable (SET NULL)
+         * FK DB: (tenant_id, knowledge_id) -> knowledges(tenant_id, id)
+         * knowledge_id nullable (SET NULL). Relation read-only : knowledgeId est le writer.
+         * Pas de nullable=false sur tenant_id ici : la relation est optionnelle,
+         * toutes les colonnes du @JoinColumns doivent avoir la même nullabilité.
          */
         @ManyToOne(fetch = FetchType.LAZY)
         @JoinColumns({
-                        @JoinColumn(name = "tenant_id", referencedColumnName = "tenant_id", nullable = false, insertable = false, updatable = false),
-                        @JoinColumn(name = "knowledge_id", referencedColumnName = "id")
+                        @JoinColumn(name = "tenant_id", referencedColumnName = "tenant_id", insertable = false, updatable = false),
+                        @JoinColumn(name = "knowledge_id", referencedColumnName = "id", insertable = false, updatable = false)
         })
         private KnowledgeEntity knowledge;
 
         /**
-         * FK DB (après patch): (tenant_id, person_id) -> persons(tenant_id, id)
-         * person_id nullable
+         * FK DB: (tenant_id, person_id) -> persons(tenant_id, id)
+         * person_id nullable. Relation read-only : personId est le writer.
+         * Même règle : pas de nullable=false, relation optionnelle.
          */
         @ManyToOne(fetch = FetchType.LAZY)
         @JoinColumns({
-                        @JoinColumn(name = "tenant_id", referencedColumnName = "tenant_id", nullable = false, insertable = false, updatable = false),
-                        @JoinColumn(name = "person_id", referencedColumnName = "id")
+                        @JoinColumn(name = "tenant_id", referencedColumnName = "tenant_id", insertable = false, updatable = false),
+                        @JoinColumn(name = "person_id", referencedColumnName = "id", insertable = false, updatable = false)
         })
         private PersonEntity person;
 

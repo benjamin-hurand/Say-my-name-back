@@ -1,4 +1,3 @@
-// src/main/java/com/saymyname/persistence/repository/UserOrganizationRepository.java
 package com.saymyname.persistence.repository;
 
 import com.saymyname.core.model.enums.OrgRole;
@@ -23,32 +22,32 @@ public interface UserOrganizationRepository extends JpaRepository<UserOrganizati
       select uo.role
       from UserOrganizationEntity uo
       where uo.user.id = :userId
-        and uo.organization.id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+        and uo.organization.id = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
       """)
   Optional<OrgRole> findRoleForUserInCurrentOrg(@Param("userId") Long userId);
 
   @Query("""
-          select uo
-          from UserOrganizationEntity uo
-          where uo.user.id = :userId
-            and uo.organization.id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+      select uo
+      from UserOrganizationEntity uo
+      where uo.user.id = :userId
+        and uo.organization.id = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
       """)
   Optional<UserOrganizationEntity> findEntityForUserInCurrentOrg(@Param("userId") Long userId);
 
   @Query("""
-      select uo.person.id
+      select uo.personId
       from UserOrganizationEntity uo
       where uo.user.id = :userId
-        and uo.organization.id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
-        and uo.person is not null
+        and uo.organization.id = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
+        and uo.personId is not null
       """)
   Optional<Long> findPersonIdForUserInCurrentOrg(@Param("userId") Long userId);
 
   @Query("""
       select uo.user.id
       from UserOrganizationEntity uo
-      where uo.person.id = :personId
-        and uo.organization.id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+      where uo.personId = :personId
+        and uo.organization.id = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
       """)
   Optional<Long> findUserIdForPersonInCurrentOrg(@Param("personId") Long personId);
 }

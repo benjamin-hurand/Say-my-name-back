@@ -23,7 +23,6 @@ public class UserSubscriptionEntityMapper {
         if (m == null)
             return null;
 
-        // tenantId rempli par TenantFillListener (BaseTenantScoped)
         return UserSubscriptionEntity.builder()
                 .userId(m.getUserId())
                 .personId(m.getPersonId())

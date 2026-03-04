@@ -24,7 +24,7 @@ public interface PhotoRepository extends JpaRepository<PhotoEntity, Long> {
       DELETE FROM photos
        WHERE person_id       = :personId
          AND status          = :status
-         AND tenant_id = :#{T(com.saymyname.core.multitenancy.OrgContext).get()}
+         AND tenant_id = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
       """, nativeQuery = true)
   long deleteByPersonIdAndStatus(Long personId, PhotoStatus status);
 

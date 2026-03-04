@@ -38,15 +38,18 @@ public class CourseQuestionAttemptEntity extends BaseTenantScoped {
     @Column(name = "id", nullable = false)
     private Long id;
 
+    @Column(name = "course_id", nullable = false)
+    private Long courseId;
+
     /**
      * FK DB: (tenant_id, course_id) -> courses(tenant_id, id)
      * tenant_id est porté par BaseTenantScoped -> join sur tenant_id
-     * non-insertable/updatable.
+     * Relation read-only : courseId est le writer.
      */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumns({
             @JoinColumn(name = "tenant_id", referencedColumnName = "tenant_id", nullable = false, insertable = false, updatable = false),
-            @JoinColumn(name = "course_id", referencedColumnName = "id", nullable = false)
+            @JoinColumn(name = "course_id", referencedColumnName = "id", nullable = false, insertable = false, updatable = false)
     })
     private CourseEntity course;
 
@@ -144,13 +147,13 @@ public class CourseQuestionAttemptEntity extends BaseTenantScoped {
         if (this.items == null)
             this.items = new ArrayList<>();
         this.items.add(item);
-        item.setAttempt(this);
+        item.setAttemptId(this.getId());
     }
 
     public void removeItem(CourseQuestionItemEntity item) {
         if (item == null)
             return;
         this.items.remove(item);
-        item.setAttempt(null);
+        // orphanRemoval=true handles deletion; no need to null attemptId (NOT NULL column)
     }
 }

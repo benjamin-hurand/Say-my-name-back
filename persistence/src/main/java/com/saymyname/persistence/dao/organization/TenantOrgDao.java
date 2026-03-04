@@ -41,7 +41,7 @@ public class TenantOrgDao {
     }
 
     public TenantOrg getByKey(String key) {
-        return mapper.toModel(repo.findByKey(key)
+        return mapper.toModel(repo.findByOrgKey(key)
                 .orElseThrow(() -> new NoSuchElementException("Organization not found: key=" + key)));
     }
 

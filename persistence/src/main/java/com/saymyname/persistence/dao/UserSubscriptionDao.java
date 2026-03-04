@@ -24,20 +24,10 @@ public class UserSubscriptionDao {
     private final UserSubscriptionRepository repository;
     private final UserSubscriptionEntityMapper mapper;
 
-    // optionnel mais très clean pour tests + cohérence
-    private final Clock clock;
-
     public UserSubscriptionDao(UserSubscriptionRepository repository,
             UserSubscriptionEntityMapper mapper) {
-        this(repository, mapper, Clock.systemUTC());
-    }
-
-    public UserSubscriptionDao(UserSubscriptionRepository repository,
-            UserSubscriptionEntityMapper mapper,
-            Clock clock) {
         this.repository = repository;
         this.mapper = mapper;
-        this.clock = clock;
     }
 
     public boolean exists(Long userId, Long personId) {

@@ -1,3 +1,4 @@
+// src/main/java/com/saymyname/persistence/dao/AttributeEnumOptionDao.java
 package com.saymyname.persistence.dao;
 
 import com.saymyname.core.model.people.AttributeEnumOption;
@@ -39,16 +40,21 @@ public class AttributeEnumOptionDao {
     @Transactional(readOnly = true)
     public List<AttributeEnumOption> findActiveOptionsByAttributeId(Long attributeId) {
         List<AttributeEnumOptionEntity> entities = repo
-                .findByAttribute_IdAndActiveTrueOrderByOrderIndexAscLabelAsc(attributeId);
-        return entities.stream().map(mapper::toModel).collect(Collectors.toList());
+                .findByAttributeIdAndActiveTrueOrderByOrderIndexAscLabelAsc(attributeId);
+
+        return entities.stream()
+                .map(mapper::toModel)
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public Map<Long, List<AttributeEnumOption>> findActiveOptionsByAttributeIds(Collection<Long> attributeIds) {
-        if (attributeIds == null || attributeIds.isEmpty())
+        if (attributeIds == null || attributeIds.isEmpty()) {
             return Collections.emptyMap();
+        }
+
         List<AttributeEnumOptionEntity> entities = repo
-                .findByAttribute_IdInAndActiveTrueOrderByAttribute_IdAscOrderIndexAscLabelAsc(attributeIds);
+                .findByAttributeIdInAndActiveTrueOrderByAttributeIdAscOrderIndexAscLabelAsc(attributeIds);
 
         return entities.stream()
                 .map(mapper::toModel)

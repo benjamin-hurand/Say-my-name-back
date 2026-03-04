@@ -180,8 +180,8 @@ public interface KnowledgeRepository extends JpaRepository<KnowledgeEntity, Long
              :followed = false
              or exists (
                select 1 from UserSubscriptionEntity s
-                where s.id.userId = :userId
-                  and s.id.personId = k.fact.personId
+                where s.userId = :userId
+                  and s.personId = k.fact.personId
              )
            )
       """)
@@ -229,7 +229,7 @@ public interface KnowledgeRepository extends JpaRepository<KnowledgeEntity, Long
            and ( :allowRepeat = true or f.personId <> :lastPersonId )
            and exists (
               select 1 from UserSubscriptionEntity s
-               where s.id.userId = :userId and s.id.personId = f.personId
+               where s.userId = :userId and s.personId = f.personId
            )
         order by k.id asc
       """)
@@ -252,7 +252,7 @@ public interface KnowledgeRepository extends JpaRepository<KnowledgeEntity, Long
            and ( :allowRepeat = true or f.personId <> :lastPersonId )
            and exists (
               select 1 from UserSubscriptionEntity s
-               where s.id.userId = :userId and s.id.personId = f.personId
+               where s.userId = :userId and s.personId = f.personId
            )
         order by k.id asc
       """)
@@ -277,7 +277,7 @@ public interface KnowledgeRepository extends JpaRepository<KnowledgeEntity, Long
            and ( :allowRepeat = true or f.personId <> :lastPersonId )
            and exists (
               select 1 from UserSubscriptionEntity s
-               where s.id.userId = :userId and s.id.personId = f.personId
+               where s.userId = :userId and s.personId = f.personId
            )
         order by k.lastReviewDate asc
       """)
@@ -302,7 +302,7 @@ public interface KnowledgeRepository extends JpaRepository<KnowledgeEntity, Long
            and ( :allowRepeat = true or f.personId <> :lastPersonId )
            and exists (
               select 1 from UserSubscriptionEntity s
-               where s.id.userId = :userId and s.id.personId = f.personId
+               where s.userId = :userId and s.personId = f.personId
            )
         order by k.nextReviewDate asc
       """)
@@ -332,7 +332,7 @@ public interface KnowledgeRepository extends JpaRepository<KnowledgeEntity, Long
            and ( :allowRepeat = true or f.personId <> :lastPersonId )
            and exists (
               select 1 from UserSubscriptionEntity s
-               where s.id.userId = :userId and s.id.personId = f.personId
+               where s.userId = :userId and s.personId = f.personId
            )
         order by function('rand')
       """)
@@ -550,8 +550,8 @@ public interface KnowledgeRepository extends JpaRepository<KnowledgeEntity, Long
                :popScope = 'FOLLOWED'
                and exists (
                  select 1 from UserSubscriptionEntity s
-                  where s.id.userId = :userId
-                    and s.id.personId = k.fact.personId
+                  where s.userId = :userId
+                    and s.personId = k.fact.personId
                )
              )
            )
@@ -574,8 +574,8 @@ public interface KnowledgeRepository extends JpaRepository<KnowledgeEntity, Long
                :popScope = 'FOLLOWED'
                and exists (
                  select 1 from UserSubscriptionEntity s
-                  where s.id.userId = :userId
-                    and s.id.personId = k.fact.personId
+                  where s.userId = :userId
+                    and s.personId = k.fact.personId
                )
              )
            )

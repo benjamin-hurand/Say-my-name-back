@@ -97,29 +97,26 @@ public class PersonDao {
     }
 
     /**
-     * Charge une Person par id en préchargeant (1) le graphe d'attributs et (2) les
+     * Charge une Person par id en préchargeant (1) le graphe de facts et (2) les
      * photos,
      * puis mappe vers le modèle domaine.
-     * Renvoie Optional.empty() si l'id n'existe pas (ou est hors org via filtre
-     * multi-tenant).
      */
     @Transactional(readOnly = true)
-    public Optional<Person> loadWithAttributesAndPhotos(Long personId) {
-        if (personId == null)
+    public Optional<Person> loadWithFactsAndPhotos(Long personId) {
+        if (personId == null) {
             return Optional.empty();
+        }
 
-        // 1) Précharges ciblées
-        preloadAttributesGraph(personId);
+        preloadFactsGraph(personId);
         preloadPhotos(personId);
 
-        // 2) Mappe l'entité managée vers le modèle
         return mapManagedToModel(personId);
     }
 
     // Chaque "preload" exige une transaction existante (celle du service)
     @Transactional(propagation = Propagation.MANDATORY, readOnly = true)
-    public void preloadAttributesGraph(Long personId) {
-        personRepository.fetchAttributesGraph(personId);
+    public void preloadFactsGraph(Long personId) {
+        personRepository.fetchFactsGraph(personId);
     }
 
     @Transactional(propagation = Propagation.MANDATORY, readOnly = true)
@@ -136,8 +133,7 @@ public class PersonDao {
     /**
      * Page des personnes filtrée/triée (sur attributs et/ou champs simples).
      * - Filtrage par attributs: EXISTS sur FactEntity
-     * - FollowFilter: EXISTS / NOT EXISTS sur UserSubscriptionEntity (id.userId,
-     * id.personId)
+     * - FollowFilter: EXISTS / NOT EXISTS sur UserSubscriptionEntity
      * - Photo: storageKey de la dernière photo APPROVED (max approvedAt)
      */
     @Transactional(readOnly = true)
@@ -448,7 +444,7 @@ public class PersonDao {
     /**
      * Récupère le statut e-mail agrégé pour un batch de personnes (une requête par
      * page).
-     * 
+     *
      * @return Map personId -> EmailStatus
      */
     @Transactional(readOnly = true)
@@ -574,17 +570,21 @@ public class PersonDao {
     private <T> Predicate existsFollowed(CriteriaBuilder cb, CriteriaQuery<T> cq, Root<PersonEntity> root,
             Long userId) {
 
-        Long tenantId = com.saymyname.core.multitenancy.TenantContext.get();
+        Long tenantId = TenantContext.get();
         if (tenantId == null) {
             throw new IllegalStateException("TenantContext is null");
         }
 
         Subquery<Long> sq = cq.subquery(Long.class);
         Root<UserSubscriptionEntity> us = sq.from(UserSubscriptionEntity.class);
+
+        // ✅ UserSubscriptionEntity: id = Long, tenantId comes from BaseTenantScoped,
+        // and userId/personId are flat columns.
         sq.select(cb.literal(1L)).where(
-                cb.equal(us.get("id").get("tenantId"), tenantId),
-                cb.equal(us.get("id").get("userId"), userId),
-                cb.equal(us.get("id").get("personId"), root.get("id")));
+                cb.equal(us.get("tenantId"), tenantId),
+                cb.equal(us.get("userId"), userId),
+                cb.equal(us.get("personId"), root.get("id")));
+
         return cb.exists(sq);
     }
 

@@ -65,8 +65,8 @@ public class FactEntity extends BaseTenantScoped {
 
         @ManyToOne(fetch = FetchType.LAZY, optional = false)
         @JoinColumns({
-                        @JoinColumn(name = "tenant_id", referencedColumnName = "tenant_id", insertable = false, updatable = false),
-                        @JoinColumn(name = "person_id", referencedColumnName = "id", insertable = false, updatable = false)
+                        @JoinColumn(name = "tenant_id", referencedColumnName = "tenant_id", nullable = false, insertable = false, updatable = false),
+                        @JoinColumn(name = "person_id", referencedColumnName = "id", nullable = false, insertable = false, updatable = false)
         })
         private PersonEntity person;
 
@@ -75,8 +75,8 @@ public class FactEntity extends BaseTenantScoped {
 
         @ManyToOne(fetch = FetchType.LAZY, optional = false)
         @JoinColumns({
-                        @JoinColumn(name = "tenant_id", referencedColumnName = "tenant_id", insertable = false, updatable = false),
-                        @JoinColumn(name = "attribute_id", referencedColumnName = "id", insertable = false, updatable = false)
+                        @JoinColumn(name = "tenant_id", referencedColumnName = "tenant_id", nullable = false, insertable = false, updatable = false),
+                        @JoinColumn(name = "attribute_id", referencedColumnName = "id", nullable = false, insertable = false, updatable = false)
         })
         private AttributeEntity attribute;
 

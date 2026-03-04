@@ -38,8 +38,8 @@ public class KnowledgeStatsEntity extends BaseTenantScoped {
 
         @ManyToOne(fetch = FetchType.LAZY, optional = false)
         @JoinColumns({
-                        @JoinColumn(name = "tenant_id", referencedColumnName = "tenant_id", insertable = false, updatable = false),
-                        @JoinColumn(name = "fact_id", referencedColumnName = "id", insertable = false, updatable = false)
+                        @JoinColumn(name = "tenant_id", referencedColumnName = "tenant_id", nullable = false, insertable = false, updatable = false),
+                        @JoinColumn(name = "fact_id", referencedColumnName = "id", nullable = false, insertable = false, updatable = false)
         })
         private FactEntity fact;
 
@@ -48,8 +48,8 @@ public class KnowledgeStatsEntity extends BaseTenantScoped {
 
         @ManyToOne(fetch = FetchType.LAZY, optional = false)
         @JoinColumns({
-                        @JoinColumn(name = "tenant_id", referencedColumnName = "tenant_id", insertable = false, updatable = false),
-                        @JoinColumn(name = "knowledge_id", referencedColumnName = "id", insertable = false, updatable = false)
+                        @JoinColumn(name = "tenant_id", referencedColumnName = "tenant_id", nullable = false, insertable = false, updatable = false),
+                        @JoinColumn(name = "knowledge_id", referencedColumnName = "id", nullable = false, insertable = false, updatable = false)
         })
         private KnowledgeEntity knowledge;
 

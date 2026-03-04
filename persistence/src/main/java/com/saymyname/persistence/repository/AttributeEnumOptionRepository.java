@@ -1,3 +1,4 @@
+// src/main/java/com/saymyname/persistence/repository/AttributeEnumOptionRepository.java
 package com.saymyname.persistence.repository;
 
 import com.saymyname.persistence.entity.organization.attribute.AttributeEnumOptionEntity;
@@ -13,17 +14,24 @@ import java.util.Set;
 @Repository
 public interface AttributeEnumOptionRepository extends JpaRepository<AttributeEnumOptionEntity, Long> {
 
-        @Query("select o.code from AttributeEnumOptionEntity o " +
-                        "where o.attribute.id = :attributeId and o.active = true")
+        @Query("""
+                        select o.code
+                        from AttributeEnumOptionEntity o
+                        where o.attributeId = :attributeId
+                          and o.active = true
+                        """)
         Set<String> findActiveCodesByAttributeId(@Param("attributeId") Long attributeId);
 
-        @Query("select o.code from AttributeEnumOptionEntity o " +
-                        "where o.attribute.id = :attributeId")
+        @Query("""
+                        select o.code
+                        from AttributeEnumOptionEntity o
+                        where o.attributeId = :attributeId
+                        """)
         Set<String> findAllCodesByAttributeId(@Param("attributeId") Long attributeId);
 
         // utile pour l'UI (liste d’options actives ordonnées)
-        List<AttributeEnumOptionEntity> findByAttribute_IdAndActiveTrueOrderByOrderIndexAscLabelAsc(Long attributeId);
+        List<AttributeEnumOptionEntity> findByAttributeIdAndActiveTrueOrderByOrderIndexAscLabelAsc(Long attributeId);
 
-        List<AttributeEnumOptionEntity> findByAttribute_IdInAndActiveTrueOrderByAttribute_IdAscOrderIndexAscLabelAsc(
+        List<AttributeEnumOptionEntity> findByAttributeIdInAndActiveTrueOrderByAttributeIdAscOrderIndexAscLabelAsc(
                         Collection<Long> attributeIds);
 }

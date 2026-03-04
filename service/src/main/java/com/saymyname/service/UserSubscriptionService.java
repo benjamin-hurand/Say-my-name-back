@@ -1,21 +1,19 @@
 package com.saymyname.service;
 
-import com.saymyname.core.model.course.Course;
-import com.saymyname.core.model.enums.FollowFilter;
-import com.saymyname.core.model.people.SubscriptionBulkResult;
-import com.saymyname.core.model.people.UserSubscription;
-import com.saymyname.core.model.persondirectory.PersonSearchCriteria;
-import com.saymyname.core.model.quiz.candidate.CandidateQuery;
-import com.saymyname.persistence.dao.UserSubscriptionDao;
-import com.saymyname.service.person.PersonService;
+import java.time.Instant;
+import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
-import java.util.List;
+import com.saymyname.core.model.enums.FollowFilter;
+import com.saymyname.core.model.people.SubscriptionBulkResult;
+import com.saymyname.core.model.people.UserSubscription;
+import com.saymyname.core.model.persondirectory.PersonSearchCriteria;
+import com.saymyname.persistence.dao.UserSubscriptionDao;
+import com.saymyname.service.person.PersonService;
 
 @Service
 public class UserSubscriptionService {

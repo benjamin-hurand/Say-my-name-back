@@ -1,3 +1,4 @@
+// src/main/java/com/saymyname/persistence/repository/PersonRepository.java
 package com.saymyname.persistence.repository;
 
 import java.util.Optional;
@@ -12,24 +13,24 @@ import com.saymyname.persistence.entity.organization.PersonEntity;
 @Repository
 public interface PersonRepository extends JpaRepository<PersonEntity, Long>, PersonRepositoryCustom {
 
-  // JPQL → org auto
-  // 1) p.attributes + pa.attribute (ManyToOne)
-  @Query("""
-      select distinct p
-      from PersonEntity p
-      left join fetch p.attributes pa
-      left join fetch pa.attribute attr
-      where p.id = :personId
-      """)
-  Optional<PersonEntity> fetchAttributesGraph(@Param("personId") Long personId);
+    // JPQL → tenant auto via BaseTenantScoped filter
+    // 1) p.facts + f.attribute (ManyToOne)
+    @Query("""
+            select distinct p
+            from PersonEntity p
+            left join fetch p.facts f
+            left join fetch f.attribute attr
+            where p.id = :personId
+            """)
+    Optional<PersonEntity> fetchFactsGraph(@Param("personId") Long personId);
 
-  // JPQL → org auto
-  // 2) p.photos
-  @Query("""
-      select distinct p
-      from PersonEntity p
-      left join fetch p.photos ph
-      where p.id = :personId
-      """)
-  Optional<PersonEntity> fetchPhotos(@Param("personId") Long personId);
+    // JPQL → tenant auto
+    // 2) p.photos
+    @Query("""
+            select distinct p
+            from PersonEntity p
+            left join fetch p.photos ph
+            where p.id = :personId
+            """)
+    Optional<PersonEntity> fetchPhotos(@Param("personId") Long personId);
 }

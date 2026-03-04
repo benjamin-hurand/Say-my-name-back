@@ -83,7 +83,7 @@ public class PersonService {
     public Optional<Person> getPersonByIdWithAllAttributes(Long personId) {
         if (personId == null)
             return Optional.empty();
-        return personDao.loadWithAttributesAndPhotos(personId);
+        return personDao.loadWithFactsAndPhotos(personId);
     }
 
     @Transactional(readOnly = true)
@@ -92,7 +92,7 @@ public class PersonService {
             return Optional.empty();
 
         return userOrganizationService.findPersonIdByUserId(user.getId())
-                .flatMap(personDao::loadWithAttributesAndPhotos);
+                .flatMap(personDao::loadWithFactsAndPhotos);
     }
 
     /**

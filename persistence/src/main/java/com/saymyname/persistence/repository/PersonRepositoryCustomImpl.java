@@ -1,3 +1,4 @@
+// src/main/java/com/saymyname/persistence/repository/PersonRepositoryCustomImpl.java
 package com.saymyname.persistence.repository;
 
 import java.util.ArrayList;
@@ -45,63 +46,57 @@ public class PersonRepositoryCustomImpl implements PersonRepositoryCustom {
         CriteriaQuery<PersonEntity> cq = cb.createQuery(PersonEntity.class);
         Root<PersonEntity> person = cq.from(PersonEntity.class);
 
-        // Récupérer la photo APPROVED
-        person.fetch("photos", JoinType.INNER);
+        // Join photo (APPROVED) — garde INNER pour exiger une photo approved
         Join<PersonEntity, PhotoEntity> photoJoin = person.join("photos", JoinType.INNER);
 
-        // Liste des prédicats de filtrage
         List<Predicate> filterPredicates = new ArrayList<>();
         filterPredicates.add(cb.equal(photoJoin.get("status"), PhotoStatus.APPROVED));
 
         // Filtrage par catégorie (single category selection)
-        CategorySelection category = options.getCategory();
-        if (category != null && category.getAttributeId() != null) {
-            // Join INNER sur les attributs
-            Join<PersonEntity, FactEntity> attrJoin = person.join("attributes", JoinType.INNER);
+        if (options != null) {
+            CategorySelection category = options.getCategory();
+            if (category != null && category.getAttributeId() != null) {
 
-            // Attribut ciblé (par ID)
-            Predicate attributeMatch = cb.equal(
-                    attrJoin.get("attribute").get("id"),
-                    category.getAttributeId());
+                // ✅ Nouveau modèle : PersonEntity.facts
+                Join<PersonEntity, FactEntity> factJoin = person.join("facts", JoinType.INNER);
 
-            // Valeur exacte
-            Predicate valueMatch = cb.equal(attrJoin.get("value"), category.getValue());
+                Predicate attributeMatch = cb.equal(
+                        factJoin.get("attribute").get("id"),
+                        category.getAttributeId());
 
-            // Validité temporelle de l'attribut
-            Predicate validFromPredicate = cb.lessThanOrEqualTo(attrJoin.get("validFrom"), cb.currentTimestamp());
-            Predicate validToPredicate = cb.or(
-                    cb.isNull(attrJoin.get("validTo")),
-                    cb.greaterThanOrEqualTo(attrJoin.get("validTo"), cb.currentTimestamp()));
-            Predicate notDeleted = cb.isFalse(attrJoin.get("deleted"));
-            Predicate validPredicate = cb.and(validFromPredicate, validToPredicate, notDeleted);
+                Predicate valueMatch = cb.equal(factJoin.get("value"), category.getValue());
 
-            // Combinaison pour ce filtre
-            filterPredicates.add(cb.and(attributeMatch, valueMatch, validPredicate));
-        }
+                Predicate validFromPredicate = cb.lessThanOrEqualTo(factJoin.get("validFrom"), cb.currentTimestamp());
+                Predicate validToPredicate = cb.or(
+                        cb.isNull(factJoin.get("validTo")),
+                        cb.greaterThanOrEqualTo(factJoin.get("validTo"), cb.currentTimestamp()));
+                Predicate notDeleted = cb.isFalse(factJoin.get("deleted"));
 
-        // Filtrage par population (FOLLOWED / UNFOLLOWED / ALL) via sous-requête sur
-        // UserSubscriptionEntity
-        FollowFilter scope = options.getPopulationScope();
-        if (scope != null && scope != FollowFilter.ALL) {
-            if (userId == null) {
-                throw new IllegalArgumentException(
-                        "userId est requis lorsque populationScope est FOLLOWED ou UNFOLLOWED");
+                filterPredicates
+                        .add(cb.and(attributeMatch, valueMatch, validFromPredicate, validToPredicate, notDeleted));
             }
 
-            // EXISTS (select 1 from UserSubscriptionEntity us
-            // where us.id.personId = person.id and us.id.userId = :userId)
-            Subquery<UserSubscriptionEntity> sub = cq.subquery(UserSubscriptionEntity.class);
-            Root<UserSubscriptionEntity> us = sub.from(UserSubscriptionEntity.class);
-            sub.select(us); // le contenu importe peu pour EXISTS
+            // Filtrage par population (FOLLOWED / UNFOLLOWED / ALL)
+            FollowFilter scope = options.getPopulationScope();
+            if (scope != null && scope != FollowFilter.ALL) {
+                if (userId == null) {
+                    throw new IllegalArgumentException(
+                            "userId est requis lorsque populationScope est FOLLOWED ou UNFOLLOWED");
+                }
 
-            Predicate personMatch = cb.equal(us.get("id").get("personId"), person.get("id"));
-            Predicate userMatch = cb.equal(us.get("id").get("userId"), userId);
-            sub.where(cb.and(personMatch, userMatch));
+                Subquery<Long> sub = cq.subquery(Long.class);
+                Root<UserSubscriptionEntity> us = sub.from(UserSubscriptionEntity.class);
+                sub.select(cb.literal(1L));
 
-            if (scope == FollowFilter.FOLLOWED) {
-                filterPredicates.add(cb.exists(sub));
-            } else if (scope == FollowFilter.UNFOLLOWED) {
-                filterPredicates.add(cb.not(cb.exists(sub)));
+                Predicate personMatch = cb.equal(us.get("id").get("personId"), person.get("id"));
+                Predicate userMatch = cb.equal(us.get("id").get("userId"), userId);
+                sub.where(cb.and(personMatch, userMatch));
+
+                if (scope == FollowFilter.FOLLOWED) {
+                    filterPredicates.add(cb.exists(sub));
+                } else if (scope == FollowFilter.UNFOLLOWED) {
+                    filterPredicates.add(cb.not(cb.exists(sub)));
+                }
             }
         }
 
@@ -109,9 +104,7 @@ public class PersonRepositoryCustomImpl implements PersonRepositoryCustom {
             cq.where(cb.and(filterPredicates.toArray(new Predicate[0])));
         }
 
-        // DISTINCT pour éviter les doublons dus aux joins
         cq.select(person).distinct(true);
-
         return entityManager.createQuery(cq).getResultList();
     }
 }

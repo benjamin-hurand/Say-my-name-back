@@ -30,7 +30,7 @@ public interface CourseRecentStatsRepository extends JpaRepository<CourseRecentS
         (tenant_id, course_id, error_streak, help_streak, last_format,
          format_streak, avg_rt_recent, last_answer_at)
       VALUES
-        (:#{T(com.saymyname.core.multitenancy.OrgContext).get()}, :courseId,
+        (:#{T(com.saymyname.core.multitenancy.TenantContext).get()}, :courseId,
          :errorStreak, :helpStreak, :lastFormat,
          :formatStreak, :avgRtRecent, :answeredAt)
       ON DUPLICATE KEY UPDATE

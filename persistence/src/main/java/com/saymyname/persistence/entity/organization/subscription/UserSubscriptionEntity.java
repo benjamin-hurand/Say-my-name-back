@@ -19,37 +19,38 @@ import lombok.*;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 @ToString(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "user_subscriptions", indexes = {
+@Table(name = "user_subscriptions", uniqueConstraints = {
+        @UniqueConstraint(name = "uq_us_tenant_user_person", columnNames = { "tenant_id", "user_id", "person_id" })
+}, indexes = {
         @Index(name = "idx_us_tenant_person", columnList = "tenant_id,person_id"),
-        @Index(name = "idx_us_tenant_user", columnList = "tenant_id,user_id"),
         @Index(name = "fk_usn_user", columnList = "user_id")
 })
-@IdClass(UserSubscriptionKey.class)
 public class UserSubscriptionEntity extends BaseTenantScoped {
 
+    // ---------------------------------------------------------------------
+    // PK
+    // ---------------------------------------------------------------------
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @EqualsAndHashCode.Include
     @ToString.Include
-    @Id
+    @Column(name = "id")
+    private Long id;
+
+    // ---------------------------------------------------------------------
+    // FK writer fields
+    // ---------------------------------------------------------------------
+
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @EqualsAndHashCode.Include
-    @ToString.Include
-    @Id
     @Column(name = "person_id", nullable = false)
     private Long personId;
 
-    /**
-     * Pour que @IdClass marche avec BaseTenantScoped :
-     * on “remonte” tenantId comme propriété @Id via l’override du getter.
-     */
-    @EqualsAndHashCode.Include
-    @ToString.Include
-    @Id
-    @Override
-    public Long getTenantId() {
-        return super.getTenantId();
-    }
+    // ---------------------------------------------------------------------
+    // Relations (read-only)
+    // ---------------------------------------------------------------------
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "fk_usn_user"))
@@ -61,6 +62,8 @@ public class UserSubscriptionEntity extends BaseTenantScoped {
             @JoinColumn(name = "person_id", referencedColumnName = "id", insertable = false, updatable = false)
     })
     private PersonEntity person;
+
+    // ---------------------------------------------------------------------
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

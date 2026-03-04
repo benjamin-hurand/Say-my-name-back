@@ -16,6 +16,7 @@ import com.saymyname.persistence.mapper.course.CourseQuestionAttemptEntityMapper
 import com.saymyname.persistence.repository.course.CourseQuestionAttemptRepository;
 import com.saymyname.persistence.repository.course.CourseQuestionItemRepository;
 import com.saymyname.core.model.course.RecentAnswerStat;
+import com.saymyname.core.model.enums.course.QuizQuestionItemRole;
 
 @Repository
 public class CourseQuestionAttemptDao {
@@ -116,7 +117,8 @@ public class CourseQuestionAttemptDao {
         if (attemptId == null) {
             throw new IllegalArgumentException("attemptId cannot be null");
         }
-        int n = itemRepo.updateTargetItemsAnswerMeta(attemptId, answered, correct, normalizedAnswer);
+        int n = itemRepo.updateItemsAnswerMeta(attemptId, answered, correct, normalizedAnswer,
+                QuizQuestionItemRole.TARGET);
         if (expectTargets && n == 0) {
             throw new IllegalStateException("No TARGET items updated for attemptId=" + attemptId);
         }
