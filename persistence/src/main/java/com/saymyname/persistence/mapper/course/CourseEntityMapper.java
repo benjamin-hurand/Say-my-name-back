@@ -20,13 +20,22 @@ public class CourseEntityMapper {
         this.userMapper = userMapper;
     }
 
+    public CourseEntity toRefEntity(Course model) {
+        if (model == null)
+            return null;
+
+        CourseEntity e = new CourseEntity();
+        e.setId(model.getId());
+        return e;
+    }
+
     public CourseEntity toEntity(Course model) {
         if (model == null)
             return null;
 
         CourseEntity e = new CourseEntity();
         e.setId(model.getId());
-        e.setUser(userMapper.toEntity(model.getUser()));
+        e.setUser(userMapper.toRefEntity(model.getUser()));
 
         e.setTargetAttributeId(model.getTargetAttributeId());
 

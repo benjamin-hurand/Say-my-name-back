@@ -76,6 +76,7 @@ public class CourseQuestionAttemptEntityMapper {
         CourseQuestionAttemptEntity entity = new CourseQuestionAttemptEntity();
         entity.setId(model.getId());
         entity.setCourse(courseMapper.toEntity(model.getCourse()));
+        entity.setCourseId(model.getCourse() != null ? model.getCourse().getId() : null);
         entity.setQuestionRound(model.getQuestionRound());
         entity.setAskedAt(model.getAskedAt());
         entity.setAnsweredAt(model.getAnsweredAt());
@@ -106,14 +107,6 @@ public class CourseQuestionAttemptEntityMapper {
         entity.setPlannedParamsJson(plan.getParamsJson());
         entity.setPlannedReasonCode(plan.getReasonCode() != null ? plan.getReasonCode().name() : null);
         entity.setPlannedReasonDetailsJson(plan.getReasonDetailsJson());
-
-        // Items: maintenir relation bidirectionnelle
-        entity.getItems().clear();
-        List<CourseQuestionItem> items = model.getItems() != null ? model.getItems() : List.of();
-        for (CourseQuestionItem it : items) {
-            CourseQuestionItemEntity itEntity = itemMapper.toEntity(it);
-            entity.addItem(itEntity);
-        }
 
         return entity;
     }

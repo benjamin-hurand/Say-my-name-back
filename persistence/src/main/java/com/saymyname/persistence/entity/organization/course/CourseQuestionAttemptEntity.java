@@ -147,13 +147,14 @@ public class CourseQuestionAttemptEntity extends BaseTenantScoped {
         if (this.items == null)
             this.items = new ArrayList<>();
         this.items.add(item);
-        item.setAttemptId(this.getId());
+        item.setAttempt(this);
     }
 
     public void removeItem(CourseQuestionItemEntity item) {
         if (item == null)
             return;
         this.items.remove(item);
-        // orphanRemoval=true handles deletion; no need to null attemptId (NOT NULL column)
+        // orphanRemoval=true handles deletion; no need to null attemptId (NOT NULL
+        // column)
     }
 }

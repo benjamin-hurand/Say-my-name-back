@@ -33,20 +33,22 @@ public class CourseQuestionItemEntityMapper {
         entity.setCorrect(model.getCorrect());
         entity.setNormalizedAnswer(model.getNormalizedAnswer());
 
-        // TARGET
         if (model.getKnowledge() != null) {
             KnowledgeEntity kn = knowledgeMapper.toEntity(model.getKnowledge());
             entity.setKnowledge(kn);
+            entity.setKnowledgeId(model.getKnowledge().getId());
         } else {
             entity.setKnowledge(null);
+            entity.setKnowledgeId(null);
         }
 
-        // DISTRACTOR (et optionnel sur TARGET)
         if (model.getPerson() != null) {
             PersonEntity p = personMapper.toEntity(model.getPerson());
             entity.setPerson(p);
+            entity.setPersonId(model.getPerson().getId());
         } else {
             entity.setPerson(null);
+            entity.setPersonId(null);
         }
 
         return entity;

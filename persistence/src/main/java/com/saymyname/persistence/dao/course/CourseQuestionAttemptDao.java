@@ -13,6 +13,7 @@ import com.saymyname.core.model.course.CourseQuestionAttempt;
 import com.saymyname.core.model.quiz.snapshot.QuizQuestionSnapshot;
 import com.saymyname.persistence.entity.organization.course.CourseQuestionAttemptEntity;
 import com.saymyname.persistence.mapper.course.CourseQuestionAttemptEntityMapper;
+import com.saymyname.persistence.mapper.course.CourseQuestionItemEntityMapper;
 import com.saymyname.persistence.repository.course.CourseQuestionAttemptRepository;
 import com.saymyname.persistence.repository.course.CourseQuestionItemRepository;
 import com.saymyname.core.model.course.RecentAnswerStat;
@@ -24,14 +25,17 @@ public class CourseQuestionAttemptDao {
     private final CourseQuestionAttemptRepository repo;
     private final CourseQuestionItemRepository itemRepo;
     private final CourseQuestionAttemptEntityMapper mapper;
+    private final CourseQuestionItemEntityMapper itemMapper;
 
     public CourseQuestionAttemptDao(
             CourseQuestionAttemptRepository repo,
             CourseQuestionItemRepository itemRepo,
-            CourseQuestionAttemptEntityMapper mapper) {
+            CourseQuestionAttemptEntityMapper mapper,
+            CourseQuestionItemEntityMapper itemMapper) {
         this.repo = repo;
         this.itemRepo = itemRepo;
         this.mapper = mapper;
+        this.itemMapper = itemMapper;
     }
 
     /**
@@ -50,8 +54,20 @@ public class CourseQuestionAttemptDao {
             throw new IllegalStateException("CourseQuestionAttempt.plan is required");
         }
 
+        // 1) Save parent first to get generated ID
         CourseQuestionAttemptEntity entity = mapper.toEntity(attempt);
-        entity = repo.save(entity);
+        entity = repo.saveAndFlush(entity);
+
+        // 2) Attach items now that attempt ID exists
+        if (attempt.getItems() != null && !attempt.getItems().isEmpty()) {
+            for (var modelItem : attempt.getItems()) {
+                var itemEntity = itemMapper.toEntity(modelItem); // voir note plus bas
+                itemEntity.setAttemptId(entity.getId());
+                itemEntity.setAttempt(entity);
+                entity.addItem(itemEntity);
+            }
+            entity = repo.save(entity);
+        }
 
         attempt.setId(entity.getId());
         return attempt;
