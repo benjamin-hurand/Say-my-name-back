@@ -104,8 +104,8 @@ public class CandidateDao {
         Root<UserSubscriptionEntity> us = sq.from(UserSubscriptionEntity.class);
 
         sq.select(cb.literal(1L)).where(
-                cb.equal(us.get("id").get("userId"), userId),
-                cb.equal(us.get("id").get("personId"), person.get("id")));
+                cb.equal(us.get("userId"), userId),
+                cb.equal(us.get("personId"), person.get("id")));
 
         return cb.exists(sq);
     }

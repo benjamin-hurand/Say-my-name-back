@@ -29,6 +29,9 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -73,10 +76,12 @@ public class CourseEntity extends BaseTenantScoped {
         @Column(name = "population_scope", nullable = false, length = 32)
         private PopulationScope populationScope;
 
-        @Column(name = "created_at", nullable = false, columnDefinition = "datetime default current_timestamp")
+        @Column(name = "created_at", nullable = false, updatable = false)
+        @CreationTimestamp
         private LocalDateTime createdAt;
 
-        @Column(name = "updated_at", nullable = false, columnDefinition = "datetime default current_timestamp on update current_timestamp")
+        @Column(name = "updated_at", nullable = false)
+        @UpdateTimestamp
         private LocalDateTime updatedAt;
 
         @Column(name = "last_accessed_at")
