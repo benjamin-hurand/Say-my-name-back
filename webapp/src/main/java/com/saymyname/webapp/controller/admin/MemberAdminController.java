@@ -6,29 +6,29 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import com.saymyname.core.model.organization.OrgMemberRow;
-import com.saymyname.service.UserOrganizationService;
-import com.saymyname.service.UserOrganizationService.TransferOwnershipResult;
+import com.saymyname.core.model.tenant.OrgMemberRow;
 import com.saymyname.service.UserService;
-import com.saymyname.webapp.dto.organization.ChangeRoleRequest;
-import com.saymyname.webapp.dto.organization.OrgMemberRowDto;
-import com.saymyname.webapp.dto.organization.TransferOwnershipRequest;
-import com.saymyname.webapp.dto.organization.TransferOwnershipResponse;
-import com.saymyname.webapp.mapper.organization.OrgMemberRowDtoMapper;
+import com.saymyname.service.tenant.TenantMembershipService;
+import com.saymyname.service.tenant.TenantMembershipService.TransferOwnershipResult;
+import com.saymyname.webapp.dto.tenant.ChangeRoleRequest;
+import com.saymyname.webapp.dto.tenant.OrgMemberRowDto;
+import com.saymyname.webapp.dto.tenant.TransferOwnershipRequest;
+import com.saymyname.webapp.dto.tenant.TransferOwnershipResponse;
+import com.saymyname.webapp.mapper.tenant.OrgMemberRowDtoMapper;
 
 @RestController
 @RequestMapping("/api/admin/members")
 public class MemberAdminController {
 
-    private final UserOrganizationService userOrganizationService;
+    private final TenantMembershipService tenantMembershipService;
     private final OrgMemberRowDtoMapper mapper;
     private final UserService userService;
 
     public MemberAdminController(
-            UserOrganizationService userOrganizationService,
+            TenantMembershipService tenantMembershipService,
             OrgMemberRowDtoMapper mapper,
             UserService userService) {
-        this.userOrganizationService = userOrganizationService;
+        this.tenantMembershipService = tenantMembershipService;
         this.mapper = mapper;
         this.userService = userService;
     }
@@ -43,7 +43,7 @@ public class MemberAdminController {
     public List<OrgMemberRowDto> listMembers(
             @RequestParam(name = "search", required = false) String search) {
 
-        List<OrgMemberRow> rows = userOrganizationService.listMembersForCurrentOrg();
+        List<OrgMemberRow> rows = tenantMembershipService.listMembersForCurrentOrg();
 
         return rows.stream()
                 .filter(row -> {
@@ -85,7 +85,7 @@ public class MemberAdminController {
 
         Long actorUserId = userService.getCurrentIdOrThrow();
 
-        OrgMemberRow updated = userOrganizationService.changeRole(actorUserId, targetUserId, request.role());
+        OrgMemberRow updated = tenantMembershipService.changeRole(actorUserId, targetUserId, request.role());
         return mapper.toDto(updated);
     }
 
@@ -102,7 +102,7 @@ public class MemberAdminController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void removeMember(@PathVariable("targetUserId") Long targetUserId) {
         Long actorUserId = userService.getCurrentIdOrThrow();
-        userOrganizationService.removeMember(actorUserId, targetUserId);
+        tenantMembershipService.removeMember(actorUserId, targetUserId);
     }
 
     /**
@@ -115,7 +115,7 @@ public class MemberAdminController {
     public TransferOwnershipResponse transferOwnership(@RequestBody TransferOwnershipRequest request) {
         Long actorUserId = userService.getCurrentIdOrThrow();
 
-        TransferOwnershipResult result = userOrganizationService.transferOwnership(
+        TransferOwnershipResult result = tenantMembershipService.transferOwnership(
                 actorUserId,
                 request.newOwnerUserId());
 

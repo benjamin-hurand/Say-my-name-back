@@ -17,7 +17,7 @@ public class MembershipService {
     }
 
     public boolean hasAtLeast(Long userId, Long tenantId, OrgRole required) {
-        String sql = "SELECT role FROM user_organizations WHERE user_id=:u AND tenant_id=:t";
+        String sql = "SELECT role FROM tenant_memberships WHERE user_id=:u AND tenant_id=:t";
         List<String> roles = tpl.query(sql, Map.of("u", userId, "t", tenantId), (rs, i) -> rs.getString(1));
         if (roles.isEmpty())
             return false;

@@ -9,22 +9,22 @@ import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.auth.UserEmail;
-import com.saymyname.service.UserOrganizationService;
+import com.saymyname.service.tenant.TenantMembershipService;
 import com.saymyname.webapp.dto.auth.SessionDto;
-import com.saymyname.webapp.dto.organization.UserOrganizationDto;
-import com.saymyname.webapp.mapper.organization.UserOrganizationDtoMapper;
+import com.saymyname.webapp.dto.tenant.TenantMembershipDto;
+import com.saymyname.webapp.mapper.tenant.TenantMembershipDtoMapper;
 
 @Component
 public class SessionDtoAssembler {
 
-    private final UserOrganizationService userOrganizationService;
-    private final UserOrganizationDtoMapper userOrganizationDtoMapper;
+    private final TenantMembershipService tenantMembershipService;
+    private final TenantMembershipDtoMapper tenantMembershipDtoMapper;
 
     public SessionDtoAssembler(
-            UserOrganizationService userOrganizationService,
-            UserOrganizationDtoMapper userOrganizationDtoMapper) {
-        this.userOrganizationService = userOrganizationService;
-        this.userOrganizationDtoMapper = userOrganizationDtoMapper;
+            TenantMembershipService tenantMembershipService,
+            TenantMembershipDtoMapper tenantMembershipDtoMapper) {
+        this.tenantMembershipService = tenantMembershipService;
+        this.tenantMembershipDtoMapper = tenantMembershipDtoMapper;
     }
 
     /**
@@ -45,10 +45,10 @@ public class SessionDtoAssembler {
 
         UUID pubId = user.getPublicId();
 
-        List<UserOrganizationDto> orgDtos = userOrganizationService
-                .getOrganizationsForUser(user.getId())
+        List<TenantMembershipDto> membershipDtos = tenantMembershipService
+                .getMembershipsForUser(user.getId())
                 .stream()
-                .map(userOrganizationDtoMapper::toDto)
+                .map(tenantMembershipDtoMapper::toDto)
                 .toList();
 
         // Emails vérifiés (pour match invitation / UX onboarding)
@@ -68,7 +68,7 @@ public class SessionDtoAssembler {
                 pubId != null ? pubId.toString() : null,
                 user.getDisplayName(),
                 user.isAdmin(),
-                orgDtos,
+                membershipDtos,
                 emails);
     }
 }

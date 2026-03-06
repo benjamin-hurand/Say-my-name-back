@@ -14,7 +14,7 @@ import java.util.Optional;
  * - equals/hashCode basés uniquement sur id.
  *
  * NOTE:
- * Le lien User <-> Person est désormais porté par user_organizations.person_id,
+ * Le lien User <-> Person est désormais porté par tenant_memberships.person_id,
  * donc Person ne contient plus de champ "user".
  */
 public class Person {

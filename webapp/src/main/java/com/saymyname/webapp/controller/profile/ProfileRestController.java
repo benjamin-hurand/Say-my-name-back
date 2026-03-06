@@ -14,11 +14,11 @@ import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.enums.OrgRole;
 import com.saymyname.core.model.people.Person;
 import com.saymyname.service.ChangeRequestService;
-import com.saymyname.service.UserOrganizationService;
 import com.saymyname.service.UserService;
 import com.saymyname.service.leaderboard.LeaderboardService; // ✅
 import com.saymyname.core.model.leaderboard.LeaderboardEntry; // ✅
 import com.saymyname.service.person.PersonService;
+import com.saymyname.service.tenant.TenantMembershipService;
 import com.saymyname.webapp.dto.FactDto;
 import com.saymyname.webapp.dto.PersonDto;
 import com.saymyname.webapp.dto.UserDto;
@@ -49,7 +49,7 @@ public class ProfileRestController {
         private final FactDtoMapper factDtoMapper;
 
         private final UserService userService;
-        private final UserOrganizationService userOrganizationService;
+        private final TenantMembershipService tenantMembershipService;
         private final UserDtoMapper userDtoMapper;
         private final ProfileOnboardingDtoMapper profileOnboardingDtoMapper;
 
@@ -65,7 +65,7 @@ public class ProfileRestController {
                         BulkFactDtoMapper bulkFactDtoMapper,
                         FactDtoMapper factDtoMapper,
                         UserService userService,
-                        UserOrganizationService userOrganizationService,
+                        TenantMembershipService tenantMembershipService,
                         UserDtoMapper userDtoMapper,
                         ProfileOnboardingDtoMapper profileOnboardingDtoMapper,
                         LeaderboardService leaderboardService // ✅
@@ -77,7 +77,7 @@ public class ProfileRestController {
                 this.bulkFactDtoMapper = bulkFactDtoMapper;
                 this.factDtoMapper = factDtoMapper;
                 this.userService = userService;
-                this.userOrganizationService = userOrganizationService;
+                this.tenantMembershipService = tenantMembershipService;
                 this.userDtoMapper = userDtoMapper;
                 this.profileOnboardingDtoMapper = profileOnboardingDtoMapper;
                 this.leaderboardService = leaderboardService; // ✅
@@ -92,7 +92,7 @@ public class ProfileRestController {
                 User me = userService.getCurrentUserOrThrow(principal);
                 User user = userService.findByIdWithEmails(me.getId()).orElse(me);
 
-                OrgRole orgRole = userOrganizationService.findRoleForCurrentOrg(user.getId()).orElse(null);
+                OrgRole orgRole = tenantMembershipService.findRoleForCurrentTenant(user.getId()).orElse(null);
                 UserDto userDto = userDtoMapper.toDto(user, orgRole);
 
                 Optional<Person> optPerson = personService.getPersonByUserWithAllAttributes(user);
@@ -106,7 +106,7 @@ public class ProfileRestController {
 
                 ProfileOnboardingDto onboarding = null;
                 if (optPerson.isEmpty()) {
-                        onboarding = userOrganizationService.findMembershipForCurrentOrg(user.getId())
+                        onboarding = tenantMembershipService.findMembershipForCurrentTenant(user.getId())
                                         .map(profileOnboardingDtoMapper::toDto)
                                         .orElse(null);
                 }

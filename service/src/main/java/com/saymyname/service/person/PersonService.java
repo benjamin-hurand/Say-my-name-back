@@ -29,7 +29,7 @@ import com.saymyname.core.model.persondirectory.PersonCard;
 import com.saymyname.core.model.persondirectory.PersonSearchCriteria;
 import com.saymyname.persistence.dao.PersonDao;
 import com.saymyname.service.FactService;
-import com.saymyname.service.UserOrganizationService;
+import com.saymyname.service.tenant.TenantMembershipService;
 
 @Service
 @Transactional
@@ -37,15 +37,15 @@ public class PersonService {
 
     private final PersonDao personDao;
     private final FactService factService;
-    private final UserOrganizationService userOrganizationService;
+    private final TenantMembershipService tenantMembershipService;
 
     public PersonService(
             PersonDao personDao,
             FactService factService,
-            UserOrganizationService userOrganizationService) {
+            TenantMembershipService tenantMembershipService) {
         this.personDao = personDao;
         this.factService = factService;
-        this.userOrganizationService = userOrganizationService;
+        this.tenantMembershipService = tenantMembershipService;
     }
 
     public List<Person> findAll() {
@@ -91,7 +91,7 @@ public class PersonService {
         if (user == null || user.getId() == null)
             return Optional.empty();
 
-        return userOrganizationService.findPersonIdByUserId(user.getId())
+        return tenantMembershipService.findPersonIdByUserId(user.getId())
                 .flatMap(personDao::loadWithFactsAndPhotos);
     }
 
@@ -263,7 +263,7 @@ public class PersonService {
                     org.springframework.http.HttpStatus.UNAUTHORIZED, "Utilisateur non authentifié");
         }
 
-        Long personId = userOrganizationService.findPersonIdByUserId(user.getId())
+        Long personId = tenantMembershipService.findPersonIdByUserId(user.getId())
                 .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
                         org.springframework.http.HttpStatus.NOT_FOUND, "Profil introuvable"));
 

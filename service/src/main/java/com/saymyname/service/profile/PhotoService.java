@@ -25,8 +25,8 @@ import com.saymyname.persistence.storage.PhotoStorageReadable;
 import com.saymyname.persistence.storage.SmallPhotoStorage;
 import com.saymyname.security.CustomUserDetails;
 import com.saymyname.security.Roles;
-import com.saymyname.service.UserOrganizationService;
 import com.saymyname.service.person.PersonService;
+import com.saymyname.service.tenant.TenantMembershipService;
 
 @Service
 public class PhotoService {
@@ -36,7 +36,7 @@ public class PhotoService {
     private final SmallPhotoStorage smallPhotoStorage;
 
     private final PersonService personService;
-    private final UserOrganizationService userOrganizationService;
+    private final TenantMembershipService tenantMembershipService;
 
     // Si disponible, permet de lire l’original pour régénérer les miniatures
     private final PhotoStorageReadable readableStorage; // peut être null
@@ -52,13 +52,13 @@ public class PhotoService {
             PhotoDao photoDao,
             PhotoStorage photoStorage,
             PersonService personService,
-            UserOrganizationService userOrganizationService,
+            TenantMembershipService tenantMembershipService,
             SmallPhotoStorage smallPhotoStorage) {
 
         this.photoDao = photoDao;
         this.photoStorage = photoStorage;
         this.personService = personService;
-        this.userOrganizationService = userOrganizationService;
+        this.tenantMembershipService = tenantMembershipService;
         this.smallPhotoStorage = smallPhotoStorage;
         this.readableStorage = (photoStorage instanceof PhotoStorageReadable psr) ? psr : null;
     }
@@ -168,8 +168,8 @@ public class PhotoService {
                 .orElseThrow(() -> new NotFoundException("Person introuvable"));
 
         // 2) Le user connecté doit être lié à CE personId via
-        // user_organizations.person_id (orga courante)
-        Long myPersonId = userOrganizationService.findPersonIdByUserId(principal.getId())
+        // tenant_memberships.person_id (orga courante)
+        Long myPersonId = tenantMembershipService.findPersonIdByUserId(principal.getId())
                 .orElseThrow(() -> new ForbiddenException(
                         "Aucun profil (person) n'est lié à votre compte dans cette organisation"));
 

@@ -3,12 +3,12 @@ package com.saymyname.webapp.dto.auth;
 
 import java.util.List;
 
-import com.saymyname.webapp.dto.organization.UserOrganizationDto;
+import com.saymyname.webapp.dto.tenant.TenantMembershipDto;
 
 public record SessionDto(
-        String publicUserId,
-        String displayName,
-        boolean isAdmin,
-        List<UserOrganizationDto> organizations,
-        List<String> emails) {
+                String publicUserId,
+                String displayName,
+                boolean isAdmin,
+                List<TenantMembershipDto> memberships,
+                List<String> emails) {
 }

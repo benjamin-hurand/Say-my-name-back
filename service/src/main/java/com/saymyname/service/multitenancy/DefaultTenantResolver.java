@@ -16,7 +16,7 @@ public class DefaultTenantResolver {
     // TENANT "PUBLIC" OU UN TENANT "PERSONNEL"
     public Long forUser(Long userId) {
         return jdbc.query(
-                "SELECT tenant_id FROM user_organizations WHERE user_id=? ORDER BY created_at LIMIT 1",
+                "SELECT tenant_id FROM tenant_memberships WHERE user_id=? ORDER BY created_at LIMIT 1",
                 ps -> ps.setLong(1, userId),
                 rs -> rs.next() ? rs.getLong(1) : null);
     }

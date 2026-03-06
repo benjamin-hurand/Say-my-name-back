@@ -3,14 +3,14 @@ package com.saymyname.webapp.mapper;
 
 import org.springframework.stereotype.Component;
 
-import com.saymyname.core.model.organization.UserOrganization;
+import com.saymyname.core.model.tenant.TenantMembership;
 import com.saymyname.webapp.dto.profile.PersonLinkActionDto;
 import com.saymyname.webapp.dto.profile.ProfileOnboardingDto;
 
 @Component
 public class ProfileOnboardingDtoMapper {
 
-    public ProfileOnboardingDto toDto(UserOrganization uo) {
+    public ProfileOnboardingDto toDto(TenantMembership uo) {
         if (uo == null) {
             return null;
         }

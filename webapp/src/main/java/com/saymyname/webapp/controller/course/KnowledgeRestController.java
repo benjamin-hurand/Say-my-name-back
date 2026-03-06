@@ -21,50 +21,51 @@ import com.saymyname.webapp.mapper.course.KnowledgeResultDtoMapper;
 @RequestMapping("/api/knowledges")
 public class KnowledgeRestController {
 
-    private static final Logger logger = LoggerFactory.getLogger(KnowledgeRestController.class);
+        private static final Logger logger = LoggerFactory.getLogger(KnowledgeRestController.class);
 
-    private final KnowledgeResultDtoMapper knowledgeResultDtoMapper;
-    private final KnowledgeService knowledgeService;
-    private final UserService userService;
+        private final KnowledgeResultDtoMapper knowledgeResultDtoMapper;
+        private final KnowledgeService knowledgeService;
+        private final UserService userService;
 
-    public KnowledgeRestController(
-            KnowledgeResultDtoMapper knowledgeResultDtoMapper,
-            KnowledgeService knowledgeService,
-            UserService userService) {
-        this.knowledgeResultDtoMapper = knowledgeResultDtoMapper;
-        this.knowledgeService = knowledgeService;
-        this.userService = userService;
-    }
+        public KnowledgeRestController(
+                        KnowledgeResultDtoMapper knowledgeResultDtoMapper,
+                        KnowledgeService knowledgeService,
+                        UserService userService) {
+                this.knowledgeResultDtoMapper = knowledgeResultDtoMapper;
+                this.knowledgeService = knowledgeService;
+                this.userService = userService;
+        }
 
-    /**
-     * Reçoit un batch de résultats et les enregistre pour l'utilisateur
-     * authentifié.
-     * Récupère l'utilisateur le plus efficacement possible :
-     * - priorité à @AuthenticationPrincipal (CustomUserDetails → pas de requête
-     * DB),
-     * - fallback sur UserService.getCurrentAuthenticatedUserOrThrow() si besoin.
-     */
-    @PostMapping("/results")
-    public ResponseEntity<Void> submitResults(
-            @RequestBody List<KnowledgeResultDto> resultsDto,
-            @AuthenticationPrincipal CustomUserDetails current) {
+        // TODO: jamais utilisé en back .. à voir si on garde
+        /**
+         * Reçoit un batch de résultats et les enregistre pour l'utilisateur
+         * authentifié.
+         * Récupère l'utilisateur le plus efficacement possible :
+         * - priorité à @AuthenticationPrincipal (CustomUserDetails → pas de requête
+         * DB),
+         * - fallback sur UserService.getCurrentAuthenticatedUserOrThrow() si besoin.
+         */
+        @PostMapping("/results")
+        public ResponseEntity<Void> submitResults(
+                        @RequestBody List<KnowledgeResultDto> resultsDto,
+                        @AuthenticationPrincipal CustomUserDetails current) {
 
-        // 1) Récupération optimisée de l'utilisateur courant
-        final User user = (current != null && current.getUser() != null)
-                ? current.getUser()
-                : userService.getCurrentAuthenticatedUserOrThrow();
+                // 1) Récupération optimisée de l'utilisateur courant
+                final User user = (current != null && current.getUser() != null)
+                                ? current.getUser()
+                                : userService.getCurrentAuthenticatedUserOrThrow();
 
-        // 2) Mapping DTO -> événements métier
-        List<KnowledgeResultEvent> events = resultsDto.stream()
-                .map(knowledgeResultDtoMapper::toModel)
-                .toList();
+                // 2) Mapping DTO -> événements métier
+                List<KnowledgeResultEvent> events = resultsDto.stream()
+                                .map(knowledgeResultDtoMapper::toModel)
+                                .toList();
 
-        // 3) Enregistrement
-        var xpAward = knowledgeService.recordBatchResults(user, events);
+                // 3) Enregistrement
+                var xpAward = knowledgeService.recordBatchResults(user, events);
 
-        logger.info("Knowledge batch processed | userId={} displayName={} eventsCount={}",
-                user.getId(), user.getDisplayName(), events.size());
+                logger.info("Knowledge batch processed | userId={} displayName={} eventsCount={}",
+                                user.getId(), user.getDisplayName(), events.size());
 
-        return ResponseEntity.ok().build();
-    }
+                return ResponseEntity.ok().build();
+        }
 }

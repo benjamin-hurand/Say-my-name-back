@@ -55,6 +55,7 @@ public class AttributeDtoMapper {
                 m.isRequired(),
                 m.getType() != null ? m.getType().name() : null,
                 m.getEditPolicy() != null ? m.getEditPolicy().name() : "FREE",
+                m.isDerived(),
                 m.getCasingStrategy() != null ? m.getCasingStrategy().name() : null, // NEW
                 m.getConstraintKind() != null ? m.getConstraintKind().name() : "NONE",
                 m.getConstraintPayload(), // ou null si tu veux masquer le brut
@@ -135,6 +136,7 @@ public class AttributeDtoMapper {
                 .withRequired(Boolean.TRUE.equals(dto.required()))
                 .withType(at)
                 .withEditPolicy(policy)
+                .withDerived(Boolean.TRUE.equals(dto.derived()))
                 .withCasingStrategy(cs) // NEW
                 .withConstraintKind(ck)
                 .withConstraintPayload(dto.constraintPayload())

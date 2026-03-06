@@ -29,10 +29,10 @@ import com.saymyname.core.model.persondirectory.AdminPersonSearchCriteria;
 import com.saymyname.service.AttributeService;
 import com.saymyname.service.ChangeRequestService;
 import com.saymyname.service.FactService;
-import com.saymyname.service.UserOrganizationService;
 import com.saymyname.service.UserService;
 import com.saymyname.service.person.PersonEmailService;
 import com.saymyname.service.person.PersonService;
+import com.saymyname.service.tenant.TenantMembershipService;
 import com.saymyname.webapp.dto.FactDto;
 import com.saymyname.webapp.dto.PersonDto;
 import com.saymyname.webapp.dto.UserDto;
@@ -73,7 +73,7 @@ public class AdminRestController {
     private final ChangeRequestService changeRequestService;
     private final ChangeRequestDtoMapper changeRequestDtoMapper;
 
-    private final UserOrganizationService userOrganizationService;
+    private final TenantMembershipService tenantMembershipService;
 
     private final UserService userService;
     private final UserDtoMapper userDtoMapper;
@@ -92,7 +92,7 @@ public class AdminRestController {
             PersonDtoMapper personDtoMapper,
             ChangeRequestService changeRequestService,
             ChangeRequestDtoMapper changeRequestDtoMapper,
-            UserOrganizationService userOrganizationService,
+            TenantMembershipService tenantMembershipService,
             UserService userService,
             UserDtoMapper userDtoMapper) {
 
@@ -113,7 +113,7 @@ public class AdminRestController {
         this.changeRequestService = changeRequestService;
         this.changeRequestDtoMapper = changeRequestDtoMapper;
 
-        this.userOrganizationService = userOrganizationService;
+        this.tenantMembershipService = tenantMembershipService;
 
         this.userService = userService;
         this.userDtoMapper = userDtoMapper;
@@ -159,16 +159,16 @@ public class AdminRestController {
         // 1bis) DTO Person (sans user dedans maintenant)
         PersonDto personDto = personDtoMapper.toDto(person);
 
-        // 1ter) Si une entrée user_organizations existe (org courante) pour cette
+        // 1ter) Si une entrée tenant_memberships existe (org courante) pour cette
         // Person :
         // on récupère le User + emails et on le mappe en UserDto (avec orgRole)
         UserDto userDto = null;
 
-        Optional<Long> linkedUserIdOpt = userOrganizationService.findUserIdByPersonId(personId);
+        Optional<Long> linkedUserIdOpt = tenantMembershipService.findUserIdByPersonId(personId);
         if (linkedUserIdOpt.isPresent()) {
             Long userId = linkedUserIdOpt.get();
 
-            OrgRole orgRole = userOrganizationService.findRoleForCurrentOrg(userId).orElse(null);
+            OrgRole orgRole = tenantMembershipService.findRoleForCurrentTenant(userId).orElse(null);
 
             Optional<User> userOpt = userService.findByIdWithEmails(userId);
             if (userOpt.isPresent()) {

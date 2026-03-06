@@ -31,12 +31,12 @@ import com.saymyname.core.model.quiz.planning.PlanningDecision;
 import com.saymyname.core.model.quiz.planning.PlanningRequest;
 import com.saymyname.core.model.quiz.planning.PreparedEmit;
 import com.saymyname.persistence.dao.course.CourseDao;
-import com.saymyname.service.UserOrganizationService;
 import com.saymyname.service.course.CourseRecentStatsService;
 import com.saymyname.service.course.KnowledgeSelectionService;
 import com.saymyname.service.course.KnowledgeSelectionService.SelectionResult;
 import com.saymyname.service.quiz.candidate.CandidateAccessor;
 import com.saymyname.service.quiz.planning.FormatPlanner;
+import com.saymyname.service.tenant.TenantMembershipService;
 
 @Service
 public class QuizOrchestrationService {
@@ -46,7 +46,7 @@ public class QuizOrchestrationService {
         private final CandidateAccessor candidateAccessor;
         private final FormatPlanner formatPlanner;
         private final CourseRecentStatsService courseRecentStatsService;
-        private final UserOrganizationService userOrganizationService;
+        private final TenantMembershipService tenantMembershipService;
 
         // D3: Stress thresholds for timed gating
         private static final int STRESS_ERROR_STREAK_THRESHOLD = 2;
@@ -58,7 +58,7 @@ public class QuizOrchestrationService {
                         CandidateAccessor candidateAccessor,
                         FormatPlanner formatPlanner,
                         CourseRecentStatsService courseRecentStatsService,
-                        UserOrganizationService userOrganizationService) {
+                        TenantMembershipService tenantMembershipService) {
 
                 this.courseDao = Objects.requireNonNull(courseDao, "courseDao");
                 this.knowledgeSelectionService = Objects.requireNonNull(knowledgeSelectionService,
@@ -67,8 +67,8 @@ public class QuizOrchestrationService {
                 this.formatPlanner = Objects.requireNonNull(formatPlanner, "formatPlanner");
                 this.courseRecentStatsService = Objects.requireNonNull(courseRecentStatsService,
                                 "courseRecentStatsService");
-                this.userOrganizationService = Objects.requireNonNull(userOrganizationService,
-                                "userOrganizationService");
+                this.tenantMembershipService = Objects.requireNonNull(tenantMembershipService,
+                                "TenantMembershipService");
         }
 
         // ------------------------------------------------------------------
@@ -297,7 +297,7 @@ public class QuizOrchestrationService {
                 // NOTE: tu pourrais remonter excludePersonId depuis le controller/security
                 // context
                 // pour éviter l'appel à chaque fois. Pour l'instant on garde simple.
-                Long excludePersonId = userOrganizationService.findPersonIdByUserId(userId)
+                Long excludePersonId = tenantMembershipService.findPersonIdByUserId(userId)
                                 .orElseThrow(() -> new IllegalStateException("No personId for userId=" + userId));
 
                 CandidateQuery.Builder builder = new CandidateQuery.Builder()

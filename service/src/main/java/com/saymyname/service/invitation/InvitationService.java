@@ -29,8 +29,8 @@ import com.saymyname.persistence.dao.invitation.InvitationDao;
 import com.saymyname.persistence.dao.invitation.InvitationUsageDao;
 import com.saymyname.persistence.entity.organization.invitation.InvitationEntity;
 import com.saymyname.persistence.repository.invitation.InvitationRepository;
-import com.saymyname.service.UserOrganizationService;
 import com.saymyname.service.UserService;
+import com.saymyname.service.tenant.TenantMembershipService;
 
 @Service
 public class InvitationService {
@@ -45,7 +45,7 @@ public class InvitationService {
     private final InvitationRepository invitationRepo;
 
     // Service membership
-    private final UserOrganizationService userOrganizationService;
+    private final TenantMembershipService tenantMembershipService;
 
     // ✅ Service user pour vérifier email (verifiedAt != null)
     private final UserService userService;
@@ -59,7 +59,7 @@ public class InvitationService {
             InvitationCrypto crypto,
             InvitationRepository invitationRepo,
             ApplicationEventPublisher publisher,
-            UserOrganizationService userOrganizationService,
+            TenantMembershipService tenantMembershipService,
             UserService userService,
             ObjectMapper objectMapper) {
         this.invitationDao = invitationDao;
@@ -67,7 +67,7 @@ public class InvitationService {
         this.crypto = crypto;
         this.invitationRepo = invitationRepo;
         this.publisher = publisher;
-        this.userOrganizationService = userOrganizationService;
+        this.tenantMembershipService = tenantMembershipService;
         this.userService = userService;
         this.objectMapper = objectMapper;
     }
@@ -279,7 +279,7 @@ public class InvitationService {
             PersonLinkStatus linkStatus = computePersonLinkStatus(effectivePersonId, policy);
 
             // 7) Assurer membership complète
-            userOrganizationService.ensureMembershipFromInvitation(
+            tenantMembershipService.ensureMembershipFromInvitation(
                     user.getId(),
                     tenantId,
                     invitedRole,
