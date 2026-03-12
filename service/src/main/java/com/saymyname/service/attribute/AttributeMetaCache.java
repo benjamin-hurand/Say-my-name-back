@@ -1,27 +1,20 @@
-// src/main/java/com/saymyname/service/attribute/AttributeMetaCache.java
 package com.saymyname.service.attribute;
+
+import com.saymyname.core.model.enums.concept.ConceptPortabilityKind;
+import com.saymyname.core.multitenancy.TenantContext;
+import com.saymyname.persistence.dao.AttributeDao;
+import com.saymyname.persistence.repository.AttributeRepository;
+import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.Comparator;
 
-import org.springframework.stereotype.Component;
-
-import com.saymyname.core.multitenancy.TenantContext;
-import com.saymyname.persistence.dao.AttributeDao;
-import com.saymyname.persistence.repository.AttributeRepository;
-
-/**
- * Cache par tenant des métadonnées d'attributs :
- * - id -> (isIdentitySource, isDerived, displayOrder)
- *
- * Chargé à la demande, avec un TTL simple.
- */
 @Component
 public class AttributeMetaCache {
 
@@ -29,29 +22,41 @@ public class AttributeMetaCache {
     private static final int DEFAULT_DISPLAY_ORDER = 100;
 
     private final AttributeDao attributeDao;
-
-    /** tenantId -> entrée cache */
     private final ConcurrentHashMap<Long, CacheEntry> cache = new ConcurrentHashMap<>();
 
     public AttributeMetaCache(AttributeDao attributeDao) {
         this.attributeDao = attributeDao;
     }
 
-    /** Représente une méta d'attribut. */
     public static final class Meta {
         public final boolean identitySource;
-        public final boolean derived;
         public final int displayOrder;
+        public final Long conceptId;
+        public final String conceptCode;
+        public final boolean conceptDerived;
+        public final ConceptPortabilityKind portabilityKind;
+        public final boolean identityComponentEligible;
 
-        public Meta(boolean identitySource, boolean derived, int displayOrder) {
+        public Meta(
+                boolean identitySource,
+                int displayOrder,
+                Long conceptId,
+                String conceptCode,
+                boolean conceptDerived,
+                ConceptPortabilityKind portabilityKind,
+                boolean identityComponentEligible) {
             this.identitySource = identitySource;
-            this.derived = derived;
             this.displayOrder = displayOrder;
+            this.conceptId = conceptId;
+            this.conceptCode = conceptCode;
+            this.conceptDerived = conceptDerived;
+            this.portabilityKind = portabilityKind;
+            this.identityComponentEligible = identityComponentEligible;
         }
     }
 
     private static final class CacheEntry {
-        final Map<Long, Meta> byId; // id -> meta
+        final Map<Long, Meta> byId;
         final Instant loadedAt;
 
         CacheEntry(Map<Long, Meta> byId, Instant loadedAt) {
@@ -77,46 +82,54 @@ public class AttributeMetaCache {
         if (entry != null && !entry.isExpired()) {
             return entry.byId;
         }
+
         synchronized (cache) {
             entry = cache.get(tenantId);
             if (entry != null && !entry.isExpired()) {
                 return entry.byId;
             }
-            CacheEntry fresh = load();
+            CacheEntry fresh = load(tenantId);
             cache.put(tenantId, fresh);
             return fresh.byId;
         }
     }
 
-    public boolean isIdentitySource(Long attributeId) {
+    public Meta meta(Long attributeId) {
         if (attributeId == null)
-            return false;
-        Meta m = currentTenantMeta().get(attributeId);
+            return null;
+        return currentTenantMeta().get(attributeId);
+    }
+
+    public boolean isIdentitySource(Long attributeId) {
+        Meta m = meta(attributeId);
         return m != null && m.identitySource;
     }
 
     public boolean isDerived(Long attributeId) {
-        if (attributeId == null)
-            return false;
-        Meta m = currentTenantMeta().get(attributeId);
-        return m != null && m.derived;
+        Meta m = meta(attributeId);
+        return m != null && m.conceptDerived;
+    }
+
+    public String conceptCode(Long attributeId) {
+        Meta m = meta(attributeId);
+        return m != null ? m.conceptCode : null;
+    }
+
+    public ConceptPortabilityKind portabilityKind(Long attributeId) {
+        Meta m = meta(attributeId);
+        return m != null ? m.portabilityKind : null;
+    }
+
+    public boolean isIdentityComponentEligible(Long attributeId) {
+        Meta m = meta(attributeId);
+        return m != null && m.identityComponentEligible;
     }
 
     public int displayOrder(Long attributeId) {
-        if (attributeId == null)
-            return DEFAULT_DISPLAY_ORDER;
-        Meta m = currentTenantMeta().get(attributeId);
+        Meta m = meta(attributeId);
         return (m != null) ? m.displayOrder : DEFAULT_DISPLAY_ORDER;
     }
 
-    /**
-     * ✅ Liste des attributeIds qui participent à l'identité
-     * (is_identity_source=true),
-     * triée par displayOrder puis id.
-     *
-     * NB: c'est ce que tu utilisais avant sous le nom "primary identity
-     * attributes".
-     */
     public List<Long> getIdentitySourceAttributeIds() {
         Map<Long, Meta> meta = currentTenantMeta();
         if (meta.isEmpty())
@@ -131,21 +144,28 @@ public class AttributeMetaCache {
                 .toList();
     }
 
-    /**
-     * ✅ Retourne l'attributeId dérivé "Identité composite" (is_derived=true).
-     * Sans contrainte DB, on adopte une stratégie défensive :
-     * - 0 trouvé => null
-     * - 1 trouvé => id
-     * - >1 trouvé => on prend le plus petit displayOrder puis id (déterministe)
-     * mais on te conseille de normaliser.
-     */
+    public List<Long> getIdentityEligibleAttributeIds() {
+        Map<Long, Meta> meta = currentTenantMeta();
+        if (meta.isEmpty())
+            return List.of();
+
+        return meta.entrySet().stream()
+                .filter(e -> e.getKey() != null && e.getValue() != null && e.getValue().identityComponentEligible)
+                .sorted(Comparator
+                        .comparingInt((Map.Entry<Long, Meta> e) -> e.getValue().displayOrder)
+                        .thenComparing(Map.Entry::getKey))
+                .map(Map.Entry::getKey)
+                .toList();
+    }
+
     public Long getDerivedIdentityAttributeId() {
         Map<Long, Meta> meta = currentTenantMeta();
         if (meta.isEmpty())
             return null;
 
         return meta.entrySet().stream()
-                .filter(e -> e.getKey() != null && e.getValue() != null && e.getValue().derived)
+                .filter(e -> e.getKey() != null && e.getValue() != null)
+                .filter(e -> "IDENTITY".equals(e.getValue().conceptCode) || e.getValue().conceptDerived)
                 .sorted(Comparator
                         .comparingInt((Map.Entry<Long, Meta> e) -> e.getValue().displayOrder)
                         .thenComparing(Map.Entry::getKey))
@@ -153,8 +173,6 @@ public class AttributeMetaCache {
                 .findFirst()
                 .orElse(null);
     }
-
-    // ---- Eviction / reload
 
     public void evictCurrentTenant() {
         Long tenantId = TenantContext.get();
@@ -177,25 +195,38 @@ public class AttributeMetaCache {
         Long tenantId = TenantContext.get();
         if (tenantId != null) {
             synchronized (cache) {
-                cache.put(tenantId, load());
+                cache.put(tenantId, load(tenantId));
             }
         }
     }
 
-    // ---- impl
-
-    private CacheEntry load() {
-        List<AttributeRepository.AttributeMetaRow> rows = attributeDao.findMetaForCurrentTenant();
+    private CacheEntry load(Long tenantId) {
+        List<AttributeRepository.AttributeMetaRow> rows = attributeDao.findMetaByTenantId(tenantId);
         Map<Long, Meta> map = new LinkedHashMap<>(rows.size());
+
         for (AttributeRepository.AttributeMetaRow r : rows) {
             Long id = r.getId();
-            boolean identitySource = r.getIdentitySource();
-            boolean derived = r.getDerived();
-            int order = r.getDisplayOrder();
-            if (id != null) {
-                map.put(id, new Meta(identitySource, derived, order));
+            if (id == null)
+                continue;
+
+            ConceptPortabilityKind portabilityKind = null;
+            if (r.getPortabilityKind() != null) {
+                portabilityKind = ConceptPortabilityKind.valueOf(r.getPortabilityKind());
             }
+
+            boolean conceptDerived = r.getConceptDerived() != null && r.getConceptDerived();
+            boolean identityEligible = r.getIdentityComponentEligible() != null && r.getIdentityComponentEligible();
+
+            map.put(id, new Meta(
+                    r.getIdentitySource(),
+                    r.getDisplayOrder(),
+                    r.getConceptId(),
+                    r.getConceptCode(),
+                    conceptDerived,
+                    portabilityKind,
+                    identityEligible));
         }
+
         return new CacheEntry(Collections.unmodifiableMap(map), Instant.now());
     }
 }

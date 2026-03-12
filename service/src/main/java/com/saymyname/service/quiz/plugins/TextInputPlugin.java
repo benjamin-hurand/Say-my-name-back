@@ -1,7 +1,6 @@
 // src/main/java/com/saymyname/service/quiz/plugins/TextInputPlugin.java
 package com.saymyname.service.quiz.plugins;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 

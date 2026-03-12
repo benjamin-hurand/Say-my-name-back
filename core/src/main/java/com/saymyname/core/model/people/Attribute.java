@@ -1,4 +1,3 @@
-// src/main/java/com/saymyname/core/model/people/Attribute.java
 package com.saymyname.core.model.people;
 
 import java.util.Map;
@@ -7,19 +6,26 @@ import java.util.Objects;
 import com.saymyname.core.model.enums.CasingStrategy;
 import com.saymyname.core.model.enums.ConstraintKind;
 import com.saymyname.core.model.enums.EditPolicy;
+import com.saymyname.core.model.enums.concept.ConceptPortabilityKind;
+import com.saymyname.core.model.enums.concept.ConceptValueType;
 
 public class Attribute {
 
     private Long id;
-    private String name;
+    private Long conceptId;
+    private String conceptCode;
+    private ConceptValueType conceptValueType;
+    private Boolean conceptDerived;
+    private ConceptPortabilityKind conceptPortabilityKind;
+    private Boolean identityComponentEligible;
 
+    private String name;
     private int displayOrder = 100;
 
+    /** Policy locale d’identité actuelle. */
     private boolean identitySource;
 
-    /** true si cet attribut est une catégorie. */
     private boolean category;
-
     private int maxValues;
     private boolean filter;
     private String minValue;
@@ -27,18 +33,16 @@ public class Attribute {
     private boolean sort;
     private boolean initializable;
     private boolean required;
+
+    /**
+     * Type local détaillé, plus fin que conceptValueType.
+     */
     private AttributeType type;
+
     private EditPolicy editPolicy = EditPolicy.FREE;
 
-    /** NEW: attribut dérivé (non éditable, calculé). Ex: Identité composite. */
-    private boolean derived;
-
-    // NEW: stratégie de casse
     private CasingStrategy casingStrategy = CasingStrategy.NONE;
-
     private ConstraintKind constraintKind = ConstraintKind.NONE;
-
-    /** Représente le JSON (clé/valeur) stocké en DB. */
     private Map<String, Object> constraintPayload;
 
     public Attribute() {
@@ -46,6 +50,13 @@ public class Attribute {
 
     private Attribute(Builder b) {
         this.id = b.id;
+        this.conceptId = b.conceptId;
+        this.conceptCode = b.conceptCode;
+        this.conceptValueType = b.conceptValueType;
+        this.conceptDerived = b.conceptDerived;
+        this.conceptPortabilityKind = b.conceptPortabilityKind;
+        this.identityComponentEligible = b.identityComponentEligible;
+
         this.name = b.name;
         this.displayOrder = b.displayOrder;
         this.identitySource = b.identitySource;
@@ -59,16 +70,37 @@ public class Attribute {
         this.required = b.required;
         this.type = b.type;
         this.editPolicy = b.editPolicy != null ? b.editPolicy : EditPolicy.FREE;
-        this.derived = b.derived;
         this.casingStrategy = b.casingStrategy != null ? b.casingStrategy : CasingStrategy.NONE;
         this.constraintKind = b.constraintKind != null ? b.constraintKind : ConstraintKind.NONE;
         this.constraintPayload = b.constraintPayload;
     }
 
-    // ---- Getters
-
     public Long getId() {
         return id;
+    }
+
+    public Long getConceptId() {
+        return conceptId;
+    }
+
+    public String getConceptCode() {
+        return conceptCode;
+    }
+
+    public ConceptValueType getConceptValueType() {
+        return conceptValueType;
+    }
+
+    public Boolean getConceptDerived() {
+        return conceptDerived;
+    }
+
+    public ConceptPortabilityKind getConceptPortabilityKind() {
+        return conceptPortabilityKind;
+    }
+
+    public Boolean getIdentityComponentEligible() {
+        return identityComponentEligible;
     }
 
     public String getName() {
@@ -123,10 +155,6 @@ public class Attribute {
         return editPolicy;
     }
 
-    public boolean isDerived() {
-        return derived;
-    }
-
     public CasingStrategy getCasingStrategy() {
         return casingStrategy;
     }
@@ -139,10 +167,32 @@ public class Attribute {
         return constraintPayload;
     }
 
-    // ---- Setters
-
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public void setConceptId(Long conceptId) {
+        this.conceptId = conceptId;
+    }
+
+    public void setConceptCode(String conceptCode) {
+        this.conceptCode = conceptCode;
+    }
+
+    public void setConceptValueType(ConceptValueType conceptValueType) {
+        this.conceptValueType = conceptValueType;
+    }
+
+    public void setConceptDerived(Boolean conceptDerived) {
+        this.conceptDerived = conceptDerived;
+    }
+
+    public void setConceptPortabilityKind(ConceptPortabilityKind conceptPortabilityKind) {
+        this.conceptPortabilityKind = conceptPortabilityKind;
+    }
+
+    public void setIdentityComponentEligible(Boolean identityComponentEligible) {
+        this.identityComponentEligible = identityComponentEligible;
     }
 
     public void setName(String name) {
@@ -189,10 +239,6 @@ public class Attribute {
         this.editPolicy = editPolicy;
     }
 
-    public void setDerived(boolean derived) {
-        this.derived = derived;
-    }
-
     public void setCasingStrategy(CasingStrategy casingStrategy) {
         this.casingStrategy = casingStrategy;
     }
@@ -205,10 +251,15 @@ public class Attribute {
         this.constraintPayload = constraintPayload;
     }
 
-    // ---- Builder
-
     public static class Builder {
         private Long id;
+        private Long conceptId;
+        private String conceptCode;
+        private ConceptValueType conceptValueType;
+        private Boolean conceptDerived;
+        private ConceptPortabilityKind conceptPortabilityKind;
+        private Boolean identityComponentEligible;
+
         private String name;
         private int displayOrder = 100;
         private boolean identitySource;
@@ -222,13 +273,42 @@ public class Attribute {
         private boolean required;
         private AttributeType type;
         private EditPolicy editPolicy;
-        private boolean derived;
         private CasingStrategy casingStrategy = CasingStrategy.NONE;
         private ConstraintKind constraintKind = ConstraintKind.NONE;
         private Map<String, Object> constraintPayload;
 
         public Builder withId(Long id) {
             this.id = id;
+            return this;
+        }
+
+        public Builder withConceptId(Long conceptId) {
+            this.conceptId = conceptId;
+            return this;
+        }
+
+        public Builder withConceptCode(String conceptCode) {
+            this.conceptCode = conceptCode;
+            return this;
+        }
+
+        public Builder withConceptValueType(ConceptValueType conceptValueType) {
+            this.conceptValueType = conceptValueType;
+            return this;
+        }
+
+        public Builder withConceptDerived(Boolean conceptDerived) {
+            this.conceptDerived = conceptDerived;
+            return this;
+        }
+
+        public Builder withConceptPortabilityKind(ConceptPortabilityKind conceptPortabilityKind) {
+            this.conceptPortabilityKind = conceptPortabilityKind;
+            return this;
+        }
+
+        public Builder withIdentityComponentEligible(Boolean identityComponentEligible) {
+            this.identityComponentEligible = identityComponentEligible;
             return this;
         }
 
@@ -297,11 +377,6 @@ public class Attribute {
             return this;
         }
 
-        public Builder withDerived(boolean derived) {
-            this.derived = derived;
-            return this;
-        }
-
         public Builder withCasingStrategy(CasingStrategy strategy) {
             this.casingStrategy = strategy;
             return this;
@@ -326,44 +401,55 @@ public class Attribute {
     public boolean equals(Object o) {
         if (this == o)
             return true;
-        if (!(o instanceof Attribute))
+        if (!(o instanceof Attribute that))
             return false;
-        Attribute that = (Attribute) o;
-        return displayOrder == that.displayOrder &&
-                identitySource == that.identitySource &&
-                derived == that.derived &&
-                category == that.category &&
-                maxValues == that.maxValues &&
-                filter == that.filter &&
-                sort == that.sort &&
-                initializable == that.initializable &&
-                required == that.required &&
-                Objects.equals(id, that.id) &&
-                Objects.equals(name, that.name) &&
-                type == that.type &&
-                editPolicy == that.editPolicy &&
-                casingStrategy == that.casingStrategy &&
-                constraintKind == that.constraintKind &&
-                Objects.equals(constraintPayload, that.constraintPayload) &&
-                Objects.equals(minValue, that.minValue) &&
-                Objects.equals(maxValue, that.maxValue);
+        return displayOrder == that.displayOrder
+                && identitySource == that.identitySource
+                && category == that.category
+                && maxValues == that.maxValues
+                && filter == that.filter
+                && sort == that.sort
+                && initializable == that.initializable
+                && required == that.required
+                && Objects.equals(id, that.id)
+                && Objects.equals(conceptId, that.conceptId)
+                && Objects.equals(conceptCode, that.conceptCode)
+                && conceptValueType == that.conceptValueType
+                && Objects.equals(conceptDerived, that.conceptDerived)
+                && conceptPortabilityKind == that.conceptPortabilityKind
+                && Objects.equals(identityComponentEligible, that.identityComponentEligible)
+                && Objects.equals(name, that.name)
+                && type == that.type
+                && editPolicy == that.editPolicy
+                && casingStrategy == that.casingStrategy
+                && constraintKind == that.constraintKind
+                && Objects.equals(constraintPayload, that.constraintPayload)
+                && Objects.equals(minValue, that.minValue)
+                && Objects.equals(maxValue, that.maxValue);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, displayOrder, identitySource, derived, category, maxValues, filter, sort,
-                initializable, required, type, editPolicy, casingStrategy, constraintKind,
-                constraintPayload, minValue, maxValue);
+        return Objects.hash(
+                id, conceptId, conceptCode, conceptValueType, conceptDerived, conceptPortabilityKind,
+                identityComponentEligible, name, displayOrder, identitySource, category,
+                maxValues, filter, sort, initializable, required, type, editPolicy,
+                casingStrategy, constraintKind, constraintPayload, minValue, maxValue);
     }
 
     @Override
     public String toString() {
         return "Attribute{" +
                 "id=" + id +
+                ", conceptId=" + conceptId +
+                ", conceptCode='" + conceptCode + '\'' +
+                ", conceptValueType=" + conceptValueType +
+                ", conceptDerived=" + conceptDerived +
+                ", conceptPortabilityKind=" + conceptPortabilityKind +
+                ", identityComponentEligible=" + identityComponentEligible +
                 ", name='" + name + '\'' +
                 ", displayOrder=" + displayOrder +
                 ", identitySource=" + identitySource +
-                ", derived=" + derived +
                 ", category=" + category +
                 ", maxValues=" + maxValues +
                 ", filter=" + filter +

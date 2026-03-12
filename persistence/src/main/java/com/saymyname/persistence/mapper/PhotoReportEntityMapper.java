@@ -4,7 +4,6 @@ import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.people.PhotoReport;
 import com.saymyname.persistence.entity.UserEntity;
-import com.saymyname.persistence.entity.organization.PersonEntity;
 import com.saymyname.persistence.entity.organization.PhotoReportEntity;
 
 @Component

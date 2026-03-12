@@ -5,8 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.saymyname.core.model.enums.CasingStrategy;
 import com.saymyname.core.model.enums.ConstraintKind;
 import com.saymyname.core.model.enums.EditPolicy;
+import com.saymyname.core.model.enums.concept.ConceptValueType;
 import com.saymyname.core.model.people.Attribute;
 import com.saymyname.core.model.people.AttributeType;
+import com.saymyname.persistence.entity.concept.ConceptEntity;
 import com.saymyname.persistence.entity.organization.attribute.AttributeEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,13 +34,9 @@ public class AttributeEntityMapper {
         AttributeEntity e = new AttributeEntity();
         e.setId(attribute.getId());
         e.setAttributeName(attribute.getName());
-
         e.setDisplayOrder(attribute.getDisplayOrder());
-
         e.setIdentitySource(attribute.isIdentitySource());
-
         e.setCategory(attribute.isCategory());
-
         e.setMaxValues(attribute.getMaxValues());
         e.setFilter(attribute.isFilter());
         e.setSort(attribute.isSort());
@@ -52,10 +50,14 @@ public class AttributeEntityMapper {
         e.setCasingStrategy(
                 attribute.getCasingStrategy() != null ? attribute.getCasingStrategy() : CasingStrategy.NONE);
 
-        // ✅ NEW: derived flag
-        e.setDerived(attribute.isDerived());
+        if (attribute.getConceptId() != null) {
+            ConceptEntity concept = new ConceptEntity();
+            concept.setId(attribute.getConceptId());
+            e.setConcept(concept);
+        } else {
+            e.setConcept(null);
+        }
 
-        // payload JSON (Map -> String)
         try {
             Map<String, Object> payload = attribute.getConstraintPayload();
             e.setConstraintPayload((payload == null || payload.isEmpty()) ? null : OM.writeValueAsString(payload));
@@ -73,7 +75,7 @@ public class AttributeEntityMapper {
             return null;
         }
 
-        AttributeType type = entity.getType() != null ? entity.getType() : AttributeType.TEXT;
+        AttributeType type = resolveAttributeType(entity);
         EditPolicy policy = entity.getEditPolicy() != null ? entity.getEditPolicy() : EditPolicy.FREE;
         ConstraintKind cKind = entity.getConstraintKind() != null ? entity.getConstraintKind() : ConstraintKind.NONE;
         CasingStrategy casing = entity.getCasingStrategy() != null ? entity.getCasingStrategy() : CasingStrategy.NONE;
@@ -92,8 +94,17 @@ public class AttributeEntityMapper {
             payload = Collections.emptyMap();
         }
 
+        ConceptEntity concept = entity.getConcept();
+
         return new Attribute.Builder()
                 .withId(entity.getId())
+                .withConceptId(concept != null ? concept.getId() : null)
+                .withConceptCode(concept != null ? concept.getCode() : null)
+                .withConceptValueType(concept != null ? concept.getValueType() : null)
+                .withConceptDerived(concept != null ? concept.isDerived() : null)
+                .withConceptPortabilityKind(concept != null ? concept.getPortabilityKind() : null)
+                .withIdentityComponentEligible(concept != null ? concept.isIdentityComponentEligible() : null)
+
                 .withName(entity.getAttributeName())
                 .withDisplayOrder(entity.getDisplayOrder())
                 .withIdentitySource(entity.isIdentitySource())
@@ -105,7 +116,6 @@ public class AttributeEntityMapper {
                 .withRequired(entity.isRequired())
                 .withType(type)
                 .withEditPolicy(policy)
-                .withDerived(entity.isDerived())
                 .withCasingStrategy(casing)
                 .withConstraintKind(cKind)
                 .withConstraintPayload(payload)
@@ -118,6 +128,33 @@ public class AttributeEntityMapper {
         }
         return new Attribute.Builder()
                 .withId(entity.getId())
+                .withConceptId(entity.getConcept() != null ? entity.getConcept().getId() : null)
+                .withConceptCode(entity.getConcept() != null ? entity.getConcept().getCode() : null)
                 .build();
+    }
+
+    private AttributeType resolveAttributeType(AttributeEntity entity) {
+        if (entity.getType() != null) {
+            return entity.getType();
+        }
+
+        ConceptEntity concept = entity.getConcept();
+        if (concept == null || concept.getValueType() == null) {
+            return AttributeType.TEXT;
+        }
+
+        ConceptValueType cvt = concept.getValueType();
+        try {
+            return AttributeType.valueOf(cvt.name());
+        } catch (IllegalArgumentException ex) {
+            if (cvt == ConceptValueType.DATETIME) {
+                try {
+                    return AttributeType.valueOf("DATE");
+                } catch (IllegalArgumentException ignored) {
+                    // fallback below
+                }
+            }
+            return AttributeType.TEXT;
+        }
     }
 }

@@ -1,7 +1,6 @@
 // src/main/java/com/saymyname/service/quiz/plugins/BinarySwipePlugin.java
 package com.saymyname.service.quiz.plugins;
 
-import java.util.List;
 import java.util.Objects;
 
 import org.springframework.stereotype.Component;
@@ -16,8 +15,8 @@ import com.saymyname.core.model.quiz.QuizQuestionDisplay;
 import com.saymyname.core.model.quiz.QuizQuestionPayload;
 import com.saymyname.core.model.quiz.QuizQuestionSpec;
 import com.saymyname.core.model.quiz.QuizValidationResult;
-import com.saymyname.core.model.quiz.answer.NormalizedBinary;
 import com.saymyname.core.model.quiz.answer.NormalizedAudit;
+import com.saymyname.core.model.quiz.answer.NormalizedBinary;
 import com.saymyname.core.model.quiz.snapshot.QuizQuestionSnapshot;
 import com.saymyname.service.quiz.AnswerKeyService;
 import com.saymyname.service.quiz.QuizSnapshotGuards;

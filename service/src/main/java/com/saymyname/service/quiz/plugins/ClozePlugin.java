@@ -1,8 +1,6 @@
 // src/main/java/com/saymyname/service/quiz/plugins/ClozePlugin.java
 package com.saymyname.service.quiz.plugins;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 import org.springframework.stereotype.Component;

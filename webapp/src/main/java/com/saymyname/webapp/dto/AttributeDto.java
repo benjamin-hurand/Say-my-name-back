@@ -9,6 +9,14 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record AttributeDto(
                 Long id,
+
+                Long conceptId,
+                String conceptCode,
+                String conceptValueType,
+                Boolean conceptDerived,
+                String conceptPortabilityKind,
+                Boolean identityComponentEligible,
+
                 String name,
 
                 Integer displayOrder,
@@ -21,16 +29,14 @@ public record AttributeDto(
                 Boolean initializable,
                 Boolean required,
 
-                String type, // "TEXT","NUMBER","DATE","DATETIME","BOOLEAN","ENUM","URL","EMAIL"
-                String editPolicy, // "FREE" | "RESTRICTED"
-                Boolean derived,
-                String casingStrategy, // "NONE","TITLE_CASE","UPPERCASE","SENTENCE_PRESERVE"
+                String type,
+                String editPolicy,
+                String casingStrategy,
 
-                String constraintKind, // "NONE","ENUM","RANGE","REGEX","SET"
-                Map<String, Object> constraintPayload, // optionnel (debug/transparence)
-                ConstraintDto constraint, // bloc typé pour l'UI
+                String constraintKind,
+                Map<String, Object> constraintPayload,
+                ConstraintDto constraint,
 
-                AttributeStatsDto stats, // null si non demandé (expand=stats)
-                List<AttributeEnumOptionDto> options // null si non demandé (expand=options)
-) {
+                AttributeStatsDto stats,
+                List<AttributeEnumOptionDto> options) {
 }

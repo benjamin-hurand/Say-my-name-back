@@ -8,7 +8,6 @@ import java.util.Map;
 import org.springframework.stereotype.Component;
 
 import com.saymyname.core.model.enums.quiz.QuizFormat;
-import com.saymyname.core.model.enums.quiz.QuizFormat;
 import com.saymyname.core.model.quiz.QuizQuestion;
 import com.saymyname.core.model.quiz.QuizQuestionSpec;
 import com.saymyname.service.quiz.plugins.QuizQuestionPlugin;

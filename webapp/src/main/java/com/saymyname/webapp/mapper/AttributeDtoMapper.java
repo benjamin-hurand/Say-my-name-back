@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.saymyname.core.model.enums.CasingStrategy;
 import com.saymyname.core.model.enums.ConstraintKind;
 import com.saymyname.core.model.enums.EditPolicy;
+import com.saymyname.core.model.enums.concept.ConceptPortabilityKind;
+import com.saymyname.core.model.enums.concept.ConceptValueType;
 import com.saymyname.core.model.people.Attribute;
 import com.saymyname.core.model.people.AttributeType;
 import com.saymyname.core.model.people.ObservedMinMax;
@@ -37,29 +39,40 @@ public class AttributeDtoMapper {
         return toDto(m, null, null);
     }
 
-    /** Mapping avec stats et options éventuelles. */
     public AttributeDto toDto(final Attribute m,
             final AttributeStatsDto stats,
             final List<AttributeEnumOptionDto> options) {
         ConstraintDto constraint = buildConstraintDto(m.getConstraintKind(), m.getConstraintPayload());
         return new AttributeDto(
                 m.getId(),
+
+                m.getConceptId(),
+                m.getConceptCode(),
+                m.getConceptValueType() != null ? m.getConceptValueType().name() : null,
+                m.getConceptDerived(),
+                m.getConceptPortabilityKind() != null ? m.getConceptPortabilityKind().name() : null,
+                m.getIdentityComponentEligible(),
+
                 m.getName(),
+
                 m.getDisplayOrder(),
                 m.isIdentitySource(),
                 m.isCategory(),
+
                 m.getMaxValues(),
                 m.isFilter(),
                 m.isSort(),
                 m.isInitializable(),
                 m.isRequired(),
+
                 m.getType() != null ? m.getType().name() : null,
                 m.getEditPolicy() != null ? m.getEditPolicy().name() : "FREE",
-                m.isDerived(),
-                m.getCasingStrategy() != null ? m.getCasingStrategy().name() : null, // NEW
+                m.getCasingStrategy() != null ? m.getCasingStrategy().name() : null,
+
                 m.getConstraintKind() != null ? m.getConstraintKind().name() : "NONE",
-                m.getConstraintPayload(), // ou null si tu veux masquer le brut
+                m.getConstraintPayload(),
                 constraint,
+
                 stats,
                 options);
     }
@@ -103,28 +116,35 @@ public class AttributeDtoMapper {
                 default -> new ConstraintDto("NONE", null, null, null, null);
             };
         } catch (IllegalArgumentException ex) {
-            // Payload mal formé -> renvoie juste le kind ; le back revalidera
             log.warn("Invalid constraint payload for kind {}. Returning minimal ConstraintDto. Details: {}", kind,
                     ex.getMessage(), ex);
             return new ConstraintDto(kind.name(), null, null, null, null);
         }
     }
 
-    /** DTO -> Model (sans stats/options). */
     public Attribute toModel(final AttributeDto dto) {
         final AttributeType at = dto.type() != null ? AttributeType.valueOf(dto.type()) : AttributeType.TEXT;
         final EditPolicy policy = dto.editPolicy() != null ? EditPolicy.valueOf(dto.editPolicy()) : EditPolicy.FREE;
-        final ConstraintKind ck = dto.constraintKind() != null ? ConstraintKind.valueOf(dto.constraintKind())
+        final ConstraintKind ck = dto.constraintKind() != null
+                ? ConstraintKind.valueOf(dto.constraintKind())
                 : ConstraintKind.NONE;
 
-        // Par défaut : si type TEXT et casingStrategy absent, on met TITLE_CASE
-        // (cohérent avec backfill & ancien comportement)
         final CasingStrategy cs = dto.casingStrategy() != null
                 ? CasingStrategy.valueOf(dto.casingStrategy())
                 : (at == AttributeType.TEXT ? CasingStrategy.TITLE_CASE : CasingStrategy.NONE);
 
         return new Attribute.Builder()
                 .withId(dto.id())
+                .withConceptId(dto.conceptId())
+                .withConceptCode(dto.conceptCode())
+                .withConceptValueType(
+                        dto.conceptValueType() != null ? ConceptValueType.valueOf(dto.conceptValueType()) : null)
+                .withConceptDerived(dto.conceptDerived())
+                .withConceptPortabilityKind(dto.conceptPortabilityKind() != null
+                        ? ConceptPortabilityKind.valueOf(dto.conceptPortabilityKind())
+                        : null)
+                .withIdentityComponentEligible(dto.identityComponentEligible())
+
                 .withName(dto.name())
                 .withDisplayOrder(dto.displayOrder() != null ? dto.displayOrder() : 100)
                 .withIdentitySource(Boolean.TRUE.equals(dto.identitySource()))
@@ -136,8 +156,7 @@ public class AttributeDtoMapper {
                 .withRequired(Boolean.TRUE.equals(dto.required()))
                 .withType(at)
                 .withEditPolicy(policy)
-                .withDerived(Boolean.TRUE.equals(dto.derived()))
-                .withCasingStrategy(cs) // NEW
+                .withCasingStrategy(cs)
                 .withConstraintKind(ck)
                 .withConstraintPayload(dto.constraintPayload())
                 .build();
