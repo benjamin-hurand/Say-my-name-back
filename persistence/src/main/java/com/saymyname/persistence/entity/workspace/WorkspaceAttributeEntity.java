@@ -60,9 +60,6 @@ public class WorkspaceAttributeEntity extends BaseTenantScoped {
     @Column(name = "required_override")
     private Boolean requiredOverride;
 
-    @Column(name = "initializable_override")
-    private Boolean initializableOverride;
-
     @Column(name = "created_at", nullable = false, columnDefinition = "datetime default current_timestamp")
     private LocalDateTime createdAt;
 }

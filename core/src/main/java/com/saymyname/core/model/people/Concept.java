@@ -1,16 +1,20 @@
 package com.saymyname.core.model.people;
 
+import com.saymyname.core.model.enums.CasingStrategy;
 import com.saymyname.core.model.enums.concept.ConceptPortabilityKind;
-import com.saymyname.core.model.enums.concept.ConceptValueType;
+import com.saymyname.core.model.enums.concept.ConceptTenantUsagePolicy;
 
 public class Concept {
 
     private Long id;
     private String code;
-    private ConceptValueType valueType;
+    private String iconKey;
+    private ValueType valueType;
     private boolean derived;
     private ConceptPortabilityKind portabilityKind;
     private boolean identityComponentEligible;
+    private ConceptTenantUsagePolicy tenantUsagePolicy;
+    private CasingStrategy defaultCasingStrategy;
 
     public Concept() {
     }
@@ -18,10 +22,13 @@ public class Concept {
     private Concept(Builder builder) {
         this.id = builder.id;
         this.code = builder.code;
+        this.iconKey = builder.iconKey;
         this.valueType = builder.valueType;
         this.derived = builder.derived;
         this.portabilityKind = builder.portabilityKind;
         this.identityComponentEligible = builder.identityComponentEligible;
+        this.tenantUsagePolicy = builder.tenantUsagePolicy;
+        this.defaultCasingStrategy = builder.defaultCasingStrategy;
     }
 
     public Long getId() {
@@ -32,7 +39,11 @@ public class Concept {
         return code;
     }
 
-    public ConceptValueType getValueType() {
+    public String getIconKey() {
+        return iconKey;
+    }
+
+    public ValueType getValueType() {
         return valueType;
     }
 
@@ -48,13 +59,24 @@ public class Concept {
         return identityComponentEligible;
     }
 
+    public ConceptTenantUsagePolicy getTenantUsagePolicy() {
+        return tenantUsagePolicy;
+    }
+
+    public CasingStrategy getDefaultCasingStrategy() {
+        return defaultCasingStrategy;
+    }
+
     public static class Builder {
         private Long id;
         private String code;
-        private ConceptValueType valueType;
+        private String iconKey;
+        private ValueType valueType;
         private boolean derived;
         private ConceptPortabilityKind portabilityKind;
         private boolean identityComponentEligible;
+        private ConceptTenantUsagePolicy tenantUsagePolicy;
+        private CasingStrategy defaultCasingStrategy;
 
         public Builder withId(Long id) {
             this.id = id;
@@ -66,7 +88,12 @@ public class Concept {
             return this;
         }
 
-        public Builder withValueType(ConceptValueType valueType) {
+        public Builder withIconKey(String iconKey) {
+            this.iconKey = iconKey;
+            return this;
+        }
+
+        public Builder withValueType(ValueType valueType) {
             this.valueType = valueType;
             return this;
         }
@@ -83,6 +110,16 @@ public class Concept {
 
         public Builder withIdentityComponentEligible(boolean identityComponentEligible) {
             this.identityComponentEligible = identityComponentEligible;
+            return this;
+        }
+
+        public Builder withTenantUsagePolicy(ConceptTenantUsagePolicy tenantUsagePolicy) {
+            this.tenantUsagePolicy = tenantUsagePolicy;
+            return this;
+        }
+
+        public Builder withDefaultCasingStrategy(CasingStrategy defaultCasingStrategy) {
+            this.defaultCasingStrategy = defaultCasingStrategy;
             return this;
         }
 

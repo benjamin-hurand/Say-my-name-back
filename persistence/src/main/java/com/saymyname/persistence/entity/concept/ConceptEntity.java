@@ -1,7 +1,9 @@
 package com.saymyname.persistence.entity.concept;
 
+import com.saymyname.core.model.enums.CasingStrategy;
 import com.saymyname.core.model.enums.concept.ConceptPortabilityKind;
-import com.saymyname.core.model.enums.concept.ConceptValueType;
+import com.saymyname.core.model.enums.concept.ConceptTenantUsagePolicy;
+import com.saymyname.core.model.people.ValueType;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -31,9 +33,12 @@ public class ConceptEntity {
     @Column(name = "code", nullable = false, length = 64)
     private String code;
 
+    @Column(name = "icon_key", length = 64)
+    private String iconKey;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "value_type", nullable = false, length = 50)
-    private ConceptValueType valueType;
+    private ValueType valueType;
 
     @Column(name = "is_derived", nullable = false)
     private boolean derived;
@@ -44,4 +49,12 @@ public class ConceptEntity {
 
     @Column(name = "identity_component_eligible", nullable = false)
     private boolean identityComponentEligible;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tenant_usage_policy", nullable = false, length = 20)
+    private ConceptTenantUsagePolicy tenantUsagePolicy;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "default_casing_strategy", length = 32)
+    private CasingStrategy defaultCasingStrategy;
 }

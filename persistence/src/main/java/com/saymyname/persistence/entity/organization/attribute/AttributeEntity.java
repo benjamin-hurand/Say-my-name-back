@@ -3,7 +3,7 @@ package com.saymyname.persistence.entity.organization.attribute;
 import com.saymyname.core.model.enums.CasingStrategy;
 import com.saymyname.core.model.enums.ConstraintKind;
 import com.saymyname.core.model.enums.EditPolicy;
-import com.saymyname.core.model.people.AttributeType;
+import com.saymyname.core.model.people.ValueType;
 import com.saymyname.persistence.entity.concept.ConceptEntity;
 import com.saymyname.persistence.multitenancy.BaseTenantScoped;
 import jakarta.persistence.*;
@@ -63,9 +63,6 @@ public class AttributeEntity extends BaseTenantScoped {
         @Column(name = "sort", nullable = false)
         private boolean sort;
 
-        @Column(name = "initializable", nullable = false)
-        private boolean initializable;
-
         @Column(name = "required", nullable = false)
         private boolean required;
 
@@ -75,7 +72,7 @@ public class AttributeEntity extends BaseTenantScoped {
          */
         @Enumerated(EnumType.STRING)
         @Column(name = "type", nullable = false, length = 50)
-        private AttributeType type;
+        private ValueType type;
 
         @Enumerated(EnumType.STRING)
         @Column(name = "edit_policy", nullable = false, length = 20)

@@ -1,6 +1,5 @@
 package com.saymyname.persistence.dao;
 
-import java.time.Clock;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;

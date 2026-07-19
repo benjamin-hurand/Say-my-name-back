@@ -2,7 +2,7 @@
 package com.saymyname.webapp.controller;
 
 import com.saymyname.core.model.people.Attribute;
-import com.saymyname.core.model.people.AttributeType;
+import com.saymyname.core.model.people.ValueType;
 // ⚠️ Assure-toi d'importer la bonne classe ObservedMinMax (stats vs people)
 // import com.saymyname.core.model.stats.ObservedMinMax;
 import com.saymyname.core.model.people.ObservedMinMax;
@@ -124,7 +124,7 @@ public class AttributeRestController {
 
         private Map<Long, List<AttributeEnumOptionDto>> fetchEnumOptions(List<Attribute> attrs) {
                 final Set<Long> enumIds = attrs.stream()
-                                .filter(a -> a.getType() == AttributeType.ENUM)
+                                .filter(a -> a.getType() == ValueType.ENUM)
                                 .map(Attribute::getId)
                                 .collect(Collectors.toSet());
                 if (enumIds.isEmpty())

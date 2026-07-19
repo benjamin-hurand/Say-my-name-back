@@ -12,7 +12,7 @@ public record AttributeDto(
 
                 Long conceptId,
                 String conceptCode,
-                String conceptValueType,
+                String ValueType,
                 Boolean conceptDerived,
                 String conceptPortabilityKind,
                 Boolean identityComponentEligible,
@@ -26,7 +26,6 @@ public record AttributeDto(
                 Integer maxValues,
                 Boolean filter,
                 Boolean sort,
-                Boolean initializable,
                 Boolean required,
 
                 String type,

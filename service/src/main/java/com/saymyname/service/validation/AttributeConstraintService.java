@@ -16,14 +16,10 @@ public class AttributeConstraintService {
     public AttributeConstraintService(
             NoopConstraintValidator noop,
             RegexConstraintValidator regex,
-            RangeConstraintValidator range,
-            EnumConstraintValidator enumVal,
-            SetConstraintValidator setVal) {
+            RangeConstraintValidator range) {
         registry.put(ConstraintKind.NONE, noop);
         registry.put(ConstraintKind.REGEX, regex);
         registry.put(ConstraintKind.RANGE, range);
-        registry.put(ConstraintKind.ENUM, enumVal);
-        registry.put(ConstraintKind.SET, setVal);
     }
 
     /** Valide et retourne la valeur normalisée à persister. */

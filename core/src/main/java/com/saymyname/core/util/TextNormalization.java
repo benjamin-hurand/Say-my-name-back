@@ -1,7 +1,7 @@
 package com.saymyname.core.util;
 
 import com.saymyname.core.model.enums.CasingStrategy;
-import com.saymyname.core.model.people.AttributeType;
+import com.saymyname.core.model.people.ValueType;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -28,7 +28,7 @@ public final class TextNormalization {
      * nettoie les espaces.
      * - Pour TEXT, on applique la stratégie demandée.
      */
-    public static String normalizeWithStrategy(String raw, AttributeType type, CasingStrategy strategy) {
+    public static String normalizeWithStrategy(String raw, ValueType type, CasingStrategy strategy) {
         if (raw == null)
             return null;
 
@@ -37,7 +37,7 @@ public final class TextNormalization {
             return base;
 
         // Stratégie inactive hors TEXT
-        if (type != AttributeType.TEXT) {
+        if (type != ValueType.TEXT) {
             return base;
         }
 

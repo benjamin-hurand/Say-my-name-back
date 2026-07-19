@@ -15,10 +15,13 @@ public class ConceptDtoMapper {
         return new ConceptDto(
                 model.getId(),
                 model.getCode(),
+                model.getIconKey(),
                 model.getValueType() != null ? model.getValueType().name() : null,
                 model.isDerived(),
                 model.getPortabilityKind() != null ? model.getPortabilityKind().name() : null,
-                model.isIdentityComponentEligible());
+                model.isIdentityComponentEligible(),
+                model.getTenantUsagePolicy() != null ? model.getTenantUsagePolicy().name() : null,
+                model.getDefaultCasingStrategy() != null ? model.getDefaultCasingStrategy().name() : null);
     }
 
     public Concept toModel(ConceptDto dto) {

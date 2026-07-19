@@ -1,7 +1,7 @@
 package com.saymyname.core.util;
 
 import com.saymyname.core.model.enums.CasingStrategy;
-import com.saymyname.core.model.people.AttributeType;
+import com.saymyname.core.model.people.ValueType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -90,28 +90,28 @@ class TextNormalizationTest {
         String input = "  john doe  ";
 
         // TEXT type applies strategy
-        assertThat(TextNormalization.normalizeWithStrategy(input, AttributeType.TEXT, CasingStrategy.TITLE_CASE))
+        assertThat(TextNormalization.normalizeWithStrategy(input, ValueType.TEXT, CasingStrategy.TITLE_CASE))
                 .isEqualTo("John Doe");
 
         // NUMBER type ignores strategy, only normalizes whitespace
-        assertThat(TextNormalization.normalizeWithStrategy(input, AttributeType.NUMBER, CasingStrategy.TITLE_CASE))
+        assertThat(TextNormalization.normalizeWithStrategy(input, ValueType.NUMBER, CasingStrategy.TITLE_CASE))
                 .isEqualTo("john doe");
 
         // DATE type ignores strategy
-        assertThat(TextNormalization.normalizeWithStrategy(input, AttributeType.DATE, CasingStrategy.UPPERCASE))
+        assertThat(TextNormalization.normalizeWithStrategy(input, ValueType.DATE, CasingStrategy.UPPERCASE))
                 .isEqualTo("john doe");
     }
 
     @Test
     void normalizeWithStrategy_handlesNull() {
-        assertThat(TextNormalization.normalizeWithStrategy(null, AttributeType.TEXT, CasingStrategy.TITLE_CASE))
+        assertThat(TextNormalization.normalizeWithStrategy(null, ValueType.TEXT, CasingStrategy.TITLE_CASE))
                 .isNull();
     }
 
     @Test
     void normalizeWithStrategy_handlesBlank() {
         String blank = "   ";
-        assertThat(TextNormalization.normalizeWithStrategy(blank, AttributeType.TEXT, CasingStrategy.TITLE_CASE))
+        assertThat(TextNormalization.normalizeWithStrategy(blank, ValueType.TEXT, CasingStrategy.TITLE_CASE))
                 .isEqualTo("");
     }
 

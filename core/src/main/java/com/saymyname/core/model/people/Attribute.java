@@ -7,14 +7,13 @@ import com.saymyname.core.model.enums.CasingStrategy;
 import com.saymyname.core.model.enums.ConstraintKind;
 import com.saymyname.core.model.enums.EditPolicy;
 import com.saymyname.core.model.enums.concept.ConceptPortabilityKind;
-import com.saymyname.core.model.enums.concept.ConceptValueType;
 
 public class Attribute {
 
     private Long id;
     private Long conceptId;
     private String conceptCode;
-    private ConceptValueType conceptValueType;
+    private ValueType ValueType;
     private Boolean conceptDerived;
     private ConceptPortabilityKind conceptPortabilityKind;
     private Boolean identityComponentEligible;
@@ -31,13 +30,12 @@ public class Attribute {
     private String minValue;
     private String maxValue;
     private boolean sort;
-    private boolean initializable;
     private boolean required;
 
     /**
-     * Type local détaillé, plus fin que conceptValueType.
+     * Type local détaillé, plus fin que ValueType.
      */
-    private AttributeType type;
+    private ValueType type;
 
     private EditPolicy editPolicy = EditPolicy.FREE;
 
@@ -52,7 +50,7 @@ public class Attribute {
         this.id = b.id;
         this.conceptId = b.conceptId;
         this.conceptCode = b.conceptCode;
-        this.conceptValueType = b.conceptValueType;
+        this.ValueType = b.ValueType;
         this.conceptDerived = b.conceptDerived;
         this.conceptPortabilityKind = b.conceptPortabilityKind;
         this.identityComponentEligible = b.identityComponentEligible;
@@ -66,7 +64,6 @@ public class Attribute {
         this.minValue = b.minValue;
         this.maxValue = b.maxValue;
         this.sort = b.sort;
-        this.initializable = b.initializable;
         this.required = b.required;
         this.type = b.type;
         this.editPolicy = b.editPolicy != null ? b.editPolicy : EditPolicy.FREE;
@@ -87,8 +84,8 @@ public class Attribute {
         return conceptCode;
     }
 
-    public ConceptValueType getConceptValueType() {
-        return conceptValueType;
+    public ValueType getValueType() {
+        return ValueType;
     }
 
     public Boolean getConceptDerived() {
@@ -139,15 +136,11 @@ public class Attribute {
         return sort;
     }
 
-    public boolean isInitializable() {
-        return initializable;
-    }
-
     public boolean isRequired() {
         return required;
     }
 
-    public AttributeType getType() {
+    public ValueType getType() {
         return type;
     }
 
@@ -179,8 +172,8 @@ public class Attribute {
         this.conceptCode = conceptCode;
     }
 
-    public void setConceptValueType(ConceptValueType conceptValueType) {
-        this.conceptValueType = conceptValueType;
+    public void setValueType(ValueType ValueType) {
+        this.ValueType = ValueType;
     }
 
     public void setConceptDerived(Boolean conceptDerived) {
@@ -223,15 +216,11 @@ public class Attribute {
         this.sort = sort;
     }
 
-    public void setInitializable(boolean initializable) {
-        this.initializable = initializable;
-    }
-
     public void setRequired(boolean required) {
         this.required = required;
     }
 
-    public void setType(AttributeType type) {
+    public void setType(ValueType type) {
         this.type = type;
     }
 
@@ -255,7 +244,7 @@ public class Attribute {
         private Long id;
         private Long conceptId;
         private String conceptCode;
-        private ConceptValueType conceptValueType;
+        private ValueType ValueType;
         private Boolean conceptDerived;
         private ConceptPortabilityKind conceptPortabilityKind;
         private Boolean identityComponentEligible;
@@ -269,9 +258,8 @@ public class Attribute {
         private String minValue;
         private String maxValue;
         private boolean sort;
-        private boolean initializable;
         private boolean required;
-        private AttributeType type;
+        private ValueType type;
         private EditPolicy editPolicy;
         private CasingStrategy casingStrategy = CasingStrategy.NONE;
         private ConstraintKind constraintKind = ConstraintKind.NONE;
@@ -292,8 +280,8 @@ public class Attribute {
             return this;
         }
 
-        public Builder withConceptValueType(ConceptValueType conceptValueType) {
-            this.conceptValueType = conceptValueType;
+        public Builder withValueType(ValueType ValueType) {
+            this.ValueType = ValueType;
             return this;
         }
 
@@ -357,17 +345,12 @@ public class Attribute {
             return this;
         }
 
-        public Builder withInitializable(boolean initializable) {
-            this.initializable = initializable;
-            return this;
-        }
-
         public Builder withRequired(boolean required) {
             this.required = required;
             return this;
         }
 
-        public Builder withType(AttributeType type) {
+        public Builder withType(ValueType type) {
             this.type = type;
             return this;
         }
@@ -409,12 +392,11 @@ public class Attribute {
                 && maxValues == that.maxValues
                 && filter == that.filter
                 && sort == that.sort
-                && initializable == that.initializable
                 && required == that.required
                 && Objects.equals(id, that.id)
                 && Objects.equals(conceptId, that.conceptId)
                 && Objects.equals(conceptCode, that.conceptCode)
-                && conceptValueType == that.conceptValueType
+                && ValueType == that.ValueType
                 && Objects.equals(conceptDerived, that.conceptDerived)
                 && conceptPortabilityKind == that.conceptPortabilityKind
                 && Objects.equals(identityComponentEligible, that.identityComponentEligible)
@@ -431,9 +413,9 @@ public class Attribute {
     @Override
     public int hashCode() {
         return Objects.hash(
-                id, conceptId, conceptCode, conceptValueType, conceptDerived, conceptPortabilityKind,
+                id, conceptId, conceptCode, ValueType, conceptDerived, conceptPortabilityKind,
                 identityComponentEligible, name, displayOrder, identitySource, category,
-                maxValues, filter, sort, initializable, required, type, editPolicy,
+                maxValues, filter, sort, required, type, editPolicy,
                 casingStrategy, constraintKind, constraintPayload, minValue, maxValue);
     }
 
@@ -443,7 +425,7 @@ public class Attribute {
                 "id=" + id +
                 ", conceptId=" + conceptId +
                 ", conceptCode='" + conceptCode + '\'' +
-                ", conceptValueType=" + conceptValueType +
+                ", ValueType=" + ValueType +
                 ", conceptDerived=" + conceptDerived +
                 ", conceptPortabilityKind=" + conceptPortabilityKind +
                 ", identityComponentEligible=" + identityComponentEligible +
@@ -456,7 +438,6 @@ public class Attribute {
                 ", minValue='" + minValue + '\'' +
                 ", maxValue='" + maxValue + '\'' +
                 ", sort=" + sort +
-                ", initializable=" + initializable +
                 ", required=" + required +
                 ", type=" + type +
                 ", editPolicy=" + editPolicy +

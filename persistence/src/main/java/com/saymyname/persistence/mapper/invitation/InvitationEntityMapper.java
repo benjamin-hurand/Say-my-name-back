@@ -11,7 +11,6 @@ import org.springframework.stereotype.Component;
 import com.saymyname.core.model.invitation.Invitation;
 import com.saymyname.core.model.invitation.InvitationUsage;
 import com.saymyname.persistence.entity.UserEntity;
-import com.saymyname.persistence.entity.organization.PersonEntity;
 import com.saymyname.persistence.entity.organization.invitation.InvitationEntity;
 import com.saymyname.persistence.mapper.PersonEntityMapper;
 import com.saymyname.persistence.mapper.UserEntityMapper;

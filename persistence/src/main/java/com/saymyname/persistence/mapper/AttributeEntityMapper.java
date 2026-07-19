@@ -5,9 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.saymyname.core.model.enums.CasingStrategy;
 import com.saymyname.core.model.enums.ConstraintKind;
 import com.saymyname.core.model.enums.EditPolicy;
-import com.saymyname.core.model.enums.concept.ConceptValueType;
 import com.saymyname.core.model.people.Attribute;
-import com.saymyname.core.model.people.AttributeType;
+import com.saymyname.core.model.people.ValueType;
 import com.saymyname.persistence.entity.concept.ConceptEntity;
 import com.saymyname.persistence.entity.organization.attribute.AttributeEntity;
 import org.slf4j.Logger;
@@ -31,67 +30,33 @@ public class AttributeEntityMapper {
             return null;
         }
 
-        AttributeEntity e = new AttributeEntity();
-        e.setId(attribute.getId());
-        e.setAttributeName(attribute.getName());
-        e.setDisplayOrder(attribute.getDisplayOrder());
-        e.setIdentitySource(attribute.isIdentitySource());
-        e.setCategory(attribute.isCategory());
-        e.setMaxValues(attribute.getMaxValues());
-        e.setFilter(attribute.isFilter());
-        e.setSort(attribute.isSort());
-        e.setInitializable(attribute.isInitializable());
-        e.setRequired(attribute.isRequired());
+        AttributeEntity entity = new AttributeEntity();
+        entity.setId(attribute.getId());
+        entity.setAttributeName(attribute.getName());
+        entity.setDisplayOrder(attribute.getDisplayOrder());
+        entity.setIdentitySource(attribute.isIdentitySource());
+        entity.setCategory(attribute.isCategory());
+        entity.setMaxValues(attribute.getMaxValues());
+        entity.setFilter(attribute.isFilter());
+        entity.setSort(attribute.isSort());
+        entity.setRequired(attribute.isRequired());
 
-        e.setType(attribute.getType() != null ? attribute.getType() : AttributeType.TEXT);
-        e.setEditPolicy(attribute.getEditPolicy() != null ? attribute.getEditPolicy() : EditPolicy.FREE);
-        e.setConstraintKind(
+        entity.setType(attribute.getType());
+        entity.setEditPolicy(attribute.getEditPolicy() != null ? attribute.getEditPolicy() : EditPolicy.FREE);
+        entity.setConstraintKind(
                 attribute.getConstraintKind() != null ? attribute.getConstraintKind() : ConstraintKind.NONE);
-        e.setCasingStrategy(
+        entity.setCasingStrategy(
                 attribute.getCasingStrategy() != null ? attribute.getCasingStrategy() : CasingStrategy.NONE);
 
-        if (attribute.getConceptId() != null) {
-            ConceptEntity concept = new ConceptEntity();
-            concept.setId(attribute.getConceptId());
-            e.setConcept(concept);
-        } else {
-            e.setConcept(null);
-        }
+        entity.setConcept(buildConceptRef(attribute.getConceptId()));
+        entity.setConstraintPayload(serializeConstraintPayload(attribute));
 
-        try {
-            Map<String, Object> payload = attribute.getConstraintPayload();
-            e.setConstraintPayload((payload == null || payload.isEmpty()) ? null : OM.writeValueAsString(payload));
-        } catch (Exception ex) {
-            log.error("Failed to serialize constraintPayload for attribute id={}, name='{}': {}",
-                    attribute.getId(), attribute.getName(), ex.getMessage(), ex);
-            e.setConstraintPayload(null);
-        }
-
-        return e;
+        return entity;
     }
 
     public Attribute toModel(AttributeEntity entity) {
         if (entity == null) {
             return null;
-        }
-
-        AttributeType type = resolveAttributeType(entity);
-        EditPolicy policy = entity.getEditPolicy() != null ? entity.getEditPolicy() : EditPolicy.FREE;
-        ConstraintKind cKind = entity.getConstraintKind() != null ? entity.getConstraintKind() : ConstraintKind.NONE;
-        CasingStrategy casing = entity.getCasingStrategy() != null ? entity.getCasingStrategy() : CasingStrategy.NONE;
-
-        Map<String, Object> payload;
-        try {
-            String json = entity.getConstraintPayload();
-            if (json != null && !json.isBlank()) {
-                payload = OM.readValue(json, MAP_TYPE);
-            } else {
-                payload = null;
-            }
-        } catch (Exception ex) {
-            log.warn("Failed to parse constraintPayload for attributeEntity id={}, name='{}': {}. Returning empty map.",
-                    entity.getId(), entity.getAttributeName(), ex.getMessage(), ex);
-            payload = Collections.emptyMap();
         }
 
         ConceptEntity concept = entity.getConcept();
@@ -100,7 +65,7 @@ public class AttributeEntityMapper {
                 .withId(entity.getId())
                 .withConceptId(concept != null ? concept.getId() : null)
                 .withConceptCode(concept != null ? concept.getCode() : null)
-                .withConceptValueType(concept != null ? concept.getValueType() : null)
+                .withValueType(concept != null ? concept.getValueType() : null)
                 .withConceptDerived(concept != null ? concept.isDerived() : null)
                 .withConceptPortabilityKind(concept != null ? concept.getPortabilityKind() : null)
                 .withIdentityComponentEligible(concept != null ? concept.isIdentityComponentEligible() : null)
@@ -112,13 +77,12 @@ public class AttributeEntityMapper {
                 .withMaxValues(entity.getMaxValues())
                 .withFilter(entity.isFilter())
                 .withSort(entity.isSort())
-                .withInitializable(entity.isInitializable())
                 .withRequired(entity.isRequired())
-                .withType(type)
-                .withEditPolicy(policy)
-                .withCasingStrategy(casing)
-                .withConstraintKind(cKind)
-                .withConstraintPayload(payload)
+                .withType(resolveType(entity))
+                .withEditPolicy(defaultEditPolicy(entity.getEditPolicy()))
+                .withCasingStrategy(defaultCasingStrategy(entity.getCasingStrategy()))
+                .withConstraintKind(defaultConstraintKind(entity.getConstraintKind()))
+                .withConstraintPayload(deserializeConstraintPayload(entity))
                 .build();
     }
 
@@ -126,35 +90,81 @@ public class AttributeEntityMapper {
         if (entity == null) {
             return null;
         }
+
+        ConceptEntity concept = entity.getConcept();
+
         return new Attribute.Builder()
                 .withId(entity.getId())
-                .withConceptId(entity.getConcept() != null ? entity.getConcept().getId() : null)
-                .withConceptCode(entity.getConcept() != null ? entity.getConcept().getCode() : null)
+                .withConceptId(concept != null ? concept.getId() : null)
+                .withConceptCode(concept != null ? concept.getCode() : null)
                 .build();
     }
 
-    private AttributeType resolveAttributeType(AttributeEntity entity) {
+    private ConceptEntity buildConceptRef(Long conceptId) {
+        if (conceptId == null) {
+            return null;
+        }
+
+        ConceptEntity concept = new ConceptEntity();
+        concept.setId(conceptId);
+        return concept;
+    }
+
+    private String serializeConstraintPayload(Attribute attribute) {
+        try {
+            Map<String, Object> payload = attribute.getConstraintPayload();
+            return (payload == null || payload.isEmpty()) ? null : OM.writeValueAsString(payload);
+        } catch (Exception ex) {
+            log.error(
+                    "Failed to serialize constraintPayload for attribute id={}, name='{}': {}",
+                    attribute.getId(),
+                    attribute.getName(),
+                    ex.getMessage(),
+                    ex);
+            return null;
+        }
+    }
+
+    private Map<String, Object> deserializeConstraintPayload(AttributeEntity entity) {
+        try {
+            String json = entity.getConstraintPayload();
+            if (json == null || json.isBlank()) {
+                return null;
+            }
+            return OM.readValue(json, MAP_TYPE);
+        } catch (Exception ex) {
+            log.warn(
+                    "Failed to parse constraintPayload for attributeEntity id={}, name='{}': {}. Returning empty map.",
+                    entity.getId(),
+                    entity.getAttributeName(),
+                    ex.getMessage(),
+                    ex);
+            return Collections.emptyMap();
+        }
+    }
+
+    private ValueType resolveType(AttributeEntity entity) {
         if (entity.getType() != null) {
             return entity.getType();
         }
 
         ConceptEntity concept = entity.getConcept();
-        if (concept == null || concept.getValueType() == null) {
-            return AttributeType.TEXT;
+        if (concept != null && concept.getValueType() != null) {
+            return concept.getValueType();
         }
 
-        ConceptValueType cvt = concept.getValueType();
-        try {
-            return AttributeType.valueOf(cvt.name());
-        } catch (IllegalArgumentException ex) {
-            if (cvt == ConceptValueType.DATETIME) {
-                try {
-                    return AttributeType.valueOf("DATE");
-                } catch (IllegalArgumentException ignored) {
-                    // fallback below
-                }
-            }
-            return AttributeType.TEXT;
-        }
+        return ValueType.TEXT;
+    }
+
+    private EditPolicy defaultEditPolicy(EditPolicy value) {
+        return value != null ? value : EditPolicy.FREE;
+    }
+
+    private ConstraintKind defaultConstraintKind(ConstraintKind value) {
+        return value != null ? value : ConstraintKind.NONE;
+    }
+
+    private CasingStrategy defaultCasingStrategy(CasingStrategy value) {
+        return value != null ? value : CasingStrategy.NONE;
     }
 }

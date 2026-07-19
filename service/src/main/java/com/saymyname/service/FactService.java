@@ -20,7 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.saymyname.core.model.enums.EditPolicy;
 import com.saymyname.core.model.people.Attribute;
-import com.saymyname.core.model.people.AttributeType;
+import com.saymyname.core.model.people.ValueType;
 import com.saymyname.core.model.people.ObservedMinMax;
 import com.saymyname.core.model.people.Fact;
 import com.saymyname.core.util.TextNormalization;
@@ -62,13 +62,13 @@ public class FactService {
             return Collections.emptyMap();
 
         Set<Long> numberIds = attributes.stream()
-                .filter(a -> a.isFilter() && a.getType() == AttributeType.NUMBER)
+                .filter(a -> a.isFilter() && a.getType() == ValueType.NUMBER)
                 .map(Attribute::getId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
         Set<Long> dateIds = attributes.stream()
-                .filter(a -> a.isFilter() && a.getType() == AttributeType.DATE)
+                .filter(a -> a.isFilter() && a.getType() == ValueType.DATE)
                 .map(Attribute::getId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());

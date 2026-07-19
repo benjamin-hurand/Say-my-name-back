@@ -2,5 +2,5 @@
 package com.saymyname.core.model.enums;
 
 public enum ConstraintKind {
-    NONE, ENUM, RANGE, REGEX, SET
+    NONE, RANGE, REGEX
 }

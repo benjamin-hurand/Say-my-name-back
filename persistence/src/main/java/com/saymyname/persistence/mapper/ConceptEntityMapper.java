@@ -15,10 +15,13 @@ public class ConceptEntityMapper {
         return new Concept.Builder()
                 .withId(entity.getId())
                 .withCode(entity.getCode())
+                .withIconKey(entity.getIconKey())
                 .withValueType(entity.getValueType())
                 .withDerived(entity.isDerived())
                 .withPortabilityKind(entity.getPortabilityKind())
                 .withIdentityComponentEligible(entity.isIdentityComponentEligible())
+                .withTenantUsagePolicy(entity.getTenantUsagePolicy())
+                .withDefaultCasingStrategy(entity.getDefaultCasingStrategy())
                 .build();
     }
 
@@ -27,13 +30,16 @@ public class ConceptEntityMapper {
             return null;
         }
 
-        ConceptEntity entity = new ConceptEntity();
-        entity.setId(model.getId());
-        entity.setCode(model.getCode());
-        entity.setValueType(model.getValueType());
-        entity.setDerived(model.isDerived());
-        entity.setPortabilityKind(model.getPortabilityKind());
-        entity.setIdentityComponentEligible(model.isIdentityComponentEligible());
-        return entity;
+        return ConceptEntity.builder()
+                .id(model.getId())
+                .code(model.getCode())
+                .iconKey(model.getIconKey())
+                .valueType(model.getValueType())
+                .derived(model.isDerived())
+                .portabilityKind(model.getPortabilityKind())
+                .identityComponentEligible(model.isIdentityComponentEligible())
+                .tenantUsagePolicy(model.getTenantUsagePolicy())
+                .defaultCasingStrategy(model.getDefaultCasingStrategy())
+                .build();
     }
 }

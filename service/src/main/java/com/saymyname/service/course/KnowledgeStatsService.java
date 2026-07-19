@@ -7,6 +7,7 @@ import com.saymyname.persistence.dao.course.KnowledgeStatsDao;
 @Service
 public class KnowledgeStatsService {
 
+    @SuppressWarnings("unused")
     private final KnowledgeStatsDao dao;
 
     public KnowledgeStatsService(KnowledgeStatsDao dao) {
