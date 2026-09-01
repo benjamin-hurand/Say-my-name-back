@@ -60,6 +60,28 @@ public interface AttributeRepository extends JpaRepository<AttributeEntity, Long
                         """)
         List<AttributeEntity> findAllByIdInWithConcept(@Param("ids") List<Long> ids);
 
+        @Query("""
+                        select (count(a) > 0)
+                        from AttributeEntity a
+                        where a.tenantId = :tenantId
+                          and a.concept.id = :conceptId
+                          and (:attributeId is null or a.id <> :attributeId)
+                        """)
+        boolean existsOtherByTenantIdAndConceptId(
+                        @Param("tenantId") Long tenantId,
+                        @Param("conceptId") Long conceptId,
+                        @Param("attributeId") Long attributeId);
+
+        @Query(value = """
+                        select count(*)
+                        from attributes
+                        where tenant_id = :tenantId
+                          and concept_id = :conceptId
+                        """, nativeQuery = true)
+        long countByTenantIdAndConceptId(
+                        @Param("tenantId") Long tenantId,
+                        @Param("conceptId") Long conceptId);
+
         interface AttributeMetaRow {
                 Long getId();
 
@@ -67,26 +89,15 @@ public interface AttributeRepository extends JpaRepository<AttributeEntity, Long
 
                 int getDisplayOrder();
 
-                Long getConceptId();
-
                 String getConceptCode();
 
-                Boolean getConceptDerived();
-
-                String getPortabilityKind();
-
-                Boolean getIdentityComponentEligible();
         }
 
         @Query("""
                         select a.id as id,
                                a.identitySource as identitySource,
                                a.displayOrder as displayOrder,
-                               c.id as conceptId,
-                               c.code as conceptCode,
-                               c.derived as conceptDerived,
-                               cast(c.portabilityKind as string) as portabilityKind,
-                               c.identityComponentEligible as identityComponentEligible
+                               c.code as conceptCode
                         from AttributeEntity a
                         left join a.concept c
                         where a.tenantId = :tenantId

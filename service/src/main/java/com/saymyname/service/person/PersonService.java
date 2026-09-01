@@ -29,6 +29,7 @@ import com.saymyname.core.model.persondirectory.PersonCard;
 import com.saymyname.core.model.persondirectory.PersonSearchCriteria;
 import com.saymyname.persistence.dao.PersonDao;
 import com.saymyname.service.FactService;
+import com.saymyname.service.attribute.AttributeMetaCache;
 import com.saymyname.service.tenant.TenantMembershipService;
 
 @Service
@@ -38,14 +39,17 @@ public class PersonService {
     private final PersonDao personDao;
     private final FactService factService;
     private final TenantMembershipService tenantMembershipService;
+    private final AttributeMetaCache attributeMetaCache;
 
     public PersonService(
             PersonDao personDao,
             FactService factService,
-            TenantMembershipService tenantMembershipService) {
+            TenantMembershipService tenantMembershipService,
+            AttributeMetaCache attributeMetaCache) {
         this.personDao = personDao;
         this.factService = factService;
         this.tenantMembershipService = tenantMembershipService;
+        this.attributeMetaCache = attributeMetaCache;
     }
 
     public List<Person> findAll() {
@@ -121,6 +125,7 @@ public class PersonService {
 
         final Map<Long, List<AttributeValueView>> primaryByPerson = toViewListByPersonWithPrimary(
                 personDao.fetchPrimaryAttributeRows(personIds), true);
+        final Map<Long, String> displayNamesByPerson = fetchDisplayNames(personIds);
 
         final Map<Long, List<AttributeValueView>> extrasByPerson;
         if (criteria != null && criteria.isIncludeContextAttributes()) {
@@ -148,7 +153,6 @@ public class PersonService {
             List<AttributeValueRow> ctxRows = personDao.fetchContextAttributes(
                     personIds,
                     contextAttrIds,
-                    /* includeCategories */ true,
                     /* includeFilterSortAttributes */ true);
 
             extrasByPerson = toViewListByPersonWithPrimary(ctxRows, false);
@@ -167,6 +171,7 @@ public class PersonService {
         return page.map(p -> new PersonCard.Builder()
                 .withIdPerson(p.getPersonId())
                 .withPhotoStorageKey(p.getPhotoStorageKey())
+                .withDisplayName(displayNamesByPerson.getOrDefault(p.getPersonId(), ""))
                 .withAttributes(allAttributesByPerson.getOrDefault(p.getPersonId(), List.of()))
                 .withFollowed(followedIds.contains(p.getPersonId()))
                 .build());
@@ -194,6 +199,7 @@ public class PersonService {
 
         final Map<Long, List<AttributeValueView>> primaryByPerson = toViewListByPersonWithPrimary(
                 personDao.fetchPrimaryAttributeRows(personIds), true);
+        final Map<Long, String> displayNamesByPerson = fetchDisplayNames(personIds);
 
         final Map<Long, List<AttributeValueView>> extrasByPerson;
         if (criteria != null && criteria.isIncludeContextAttributes()) {
@@ -221,7 +227,6 @@ public class PersonService {
             List<AttributeValueRow> ctxRows = personDao.fetchContextAttributes(
                     personIds,
                     contextAttrIds,
-                    /* includeCategories */ true,
                     /* includeFilterSortAttributes */ true);
 
             extrasByPerson = toViewListByPersonWithPrimary(ctxRows, false);
@@ -242,6 +247,7 @@ public class PersonService {
         return page.map(p -> new AdminPersonCard.Builder()
                 .withIdPerson(p.getPersonId())
                 .withPhotoStorageKey(p.getPhotoStorageKey())
+                .withDisplayName(displayNamesByPerson.getOrDefault(p.getPersonId(), ""))
                 .withAttributes(allAttributesByPerson.getOrDefault(p.getPersonId(), List.of()))
                 .withHasPendingChangeRequests(pendingCR.contains(p.getPersonId()))
                 .build());
@@ -292,5 +298,19 @@ public class PersonService {
                                 .withIdentitySource(primaryFlag)
                                 .build(),
                         Collectors.toList())));
+    }
+
+    private Map<Long, String> fetchDisplayNames(List<Long> personIds) {
+        Long identityAttributeId = attributeMetaCache.getIdentityAttributeId();
+        if (identityAttributeId == null) {
+            return Map.of();
+        }
+
+        return personDao.fetchContextAttributes(personIds, List.of(identityAttributeId), false).stream()
+                .filter(row -> row.getValue() != null && !row.getValue().isBlank())
+                .collect(Collectors.toMap(
+                        AttributeValueRow::getPersonId,
+                        row -> row.getValue().trim(),
+                        (first, ignored) -> first));
     }
 }

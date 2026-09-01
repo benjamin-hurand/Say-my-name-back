@@ -1,6 +1,7 @@
 package com.saymyname.persistence.dao;
 
 import com.saymyname.core.model.people.Attribute;
+import com.saymyname.core.multitenancy.TenantContext;
 import com.saymyname.persistence.mapper.AttributeEntityMapper;
 import com.saymyname.persistence.repository.AttributeRepository;
 import com.saymyname.persistence.repository.AttributeRepository.AttributeMetaRow;
@@ -50,6 +51,33 @@ public class AttributeDao {
 
     public long countAll() {
         return attributeRepository.count();
+    }
+
+    public Attribute save(Attribute attribute) {
+        var saved = saveEntity(attribute, TenantContext.get());
+        return attributeRepository.findByIdWithConcept(saved.getId())
+                .map(attributeEntityMapper::toModel)
+                .orElseThrow(() -> new IllegalStateException("Attribut introuvable après sauvegarde"));
+    }
+
+    public void saveForTenant(Attribute attribute, Long tenantId) {
+        saveEntity(attribute, tenantId);
+    }
+
+    private com.saymyname.persistence.entity.organization.attribute.AttributeEntity saveEntity(
+            Attribute attribute,
+            Long tenantId) {
+        var entity = attributeEntityMapper.toEntity(attribute);
+        entity.setTenantId(tenantId);
+        return attributeRepository.save(entity);
+    }
+
+    public boolean existsOtherByTenantIdAndConceptId(Long tenantId, Long conceptId, Long attributeId) {
+        return attributeRepository.existsOtherByTenantIdAndConceptId(tenantId, conceptId, attributeId);
+    }
+
+    public boolean existsByTenantIdAndConceptId(Long tenantId, Long conceptId) {
+        return attributeRepository.countByTenantIdAndConceptId(tenantId, conceptId) > 0;
     }
 
     public List<AttributeMetaRow> findMetaByTenantId(Long tenantId) {

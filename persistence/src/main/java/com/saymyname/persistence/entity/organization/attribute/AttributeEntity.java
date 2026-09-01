@@ -20,7 +20,8 @@ import lombok.experimental.SuperBuilder;
 @Entity
 @Table(name = "attributes", uniqueConstraints = {
                 @UniqueConstraint(name = "uq_tenant_attr_name", columnNames = { "tenant_id", "attribute_name" }),
-                @UniqueConstraint(name = "uq_attributes_tenant_id", columnNames = { "tenant_id", "id" })
+                @UniqueConstraint(name = "uq_attributes_id_tenant", columnNames = { "id", "tenant_id" }),
+                @UniqueConstraint(name = "uq_attributes_tenant_concept", columnNames = { "tenant_id", "concept_id" })
 }, indexes = {
                 @Index(name = "idx_attr_tenant", columnList = "tenant_id"),
                 @Index(name = "idx_attr_tenant_concept", columnList = "tenant_id,concept_id")
@@ -50,9 +51,6 @@ public class AttributeEntity extends BaseTenantScoped {
          */
         @Column(name = "is_identity_source", nullable = false)
         private boolean identitySource;
-
-        @Column(name = "is_category", nullable = false)
-        private boolean category;
 
         @Column(name = "max_values", nullable = false)
         private int maxValues;

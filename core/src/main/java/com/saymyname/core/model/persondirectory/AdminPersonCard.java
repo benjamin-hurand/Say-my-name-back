@@ -15,6 +15,7 @@ public class AdminPersonCard {
 
     private Long idPerson;
     private String photoStorageKey;
+    private String displayName;
 
     @JsonProperty("attributes")
     private List<AttributeValueView> attributes = new ArrayList<>();
@@ -31,6 +32,7 @@ public class AdminPersonCard {
     private AdminPersonCard(Builder b) {
         this.idPerson = b.idPerson;
         this.photoStorageKey = b.photoStorageKey;
+        this.displayName = b.displayName;
         this.attributes = b.attributes;
         this.hasPendingChangeRequests = b.hasPendingChangeRequests;
         this.emailStatus = b.emailStatus;
@@ -42,6 +44,10 @@ public class AdminPersonCard {
 
     public String getPhotoStorageKey() {
         return photoStorageKey;
+    }
+
+    public String getDisplayName() {
+        return displayName;
     }
 
     public List<AttributeValueView> getAttributes() {
@@ -62,6 +68,10 @@ public class AdminPersonCard {
 
     public void setPhotoStorageKey(String photoStorageKey) {
         this.photoStorageKey = photoStorageKey;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
     public void setAttributes(List<AttributeValueView> attributes) {
@@ -112,6 +122,7 @@ public class AdminPersonCard {
     public static class Builder {
         private Long idPerson;
         private String photoStorageKey;
+        private String displayName = "";
         private List<AttributeValueView> attributes = new ArrayList<>();
         private boolean hasPendingChangeRequests;
         private EmailStatus emailStatus = EmailStatus.NONE;
@@ -123,6 +134,11 @@ public class AdminPersonCard {
 
         public Builder withPhotoStorageKey(String v) {
             this.photoStorageKey = v;
+            return this;
+        }
+
+        public Builder withDisplayName(String v) {
+            this.displayName = v == null ? "" : v;
             return this;
         }
 
@@ -181,13 +197,14 @@ public class AdminPersonCard {
         return hasPendingChangeRequests == that.hasPendingChangeRequests
                 && Objects.equals(idPerson, that.idPerson)
                 && Objects.equals(photoStorageKey, that.photoStorageKey)
+                && Objects.equals(displayName, that.displayName)
                 && Objects.equals(attributes, that.attributes)
                 && emailStatus == that.emailStatus;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(idPerson, photoStorageKey, attributes, hasPendingChangeRequests, emailStatus);
+        return Objects.hash(idPerson, photoStorageKey, displayName, attributes, hasPendingChangeRequests, emailStatus);
     }
 
     @Override
@@ -195,6 +212,7 @@ public class AdminPersonCard {
         return "AdminPersonCard{" +
                 "idPerson=" + idPerson +
                 ", photoStorageKey='" + photoStorageKey + '\'' +
+                ", displayName='" + displayName + '\'' +
                 ", attributes=" + attributes +
                 ", hasPendingChangeRequests=" + hasPendingChangeRequests +
                 ", emailStatus=" + emailStatus +

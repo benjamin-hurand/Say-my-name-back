@@ -27,17 +27,21 @@ import com.saymyname.core.util.TextNormalization;
 import com.saymyname.core.validation.AttributeValueValidator;
 import com.saymyname.persistence.dao.AttributeDao;
 import com.saymyname.persistence.dao.FactDao;
+import com.saymyname.service.identity.IdentityService;
 
 @Service
 public class FactService {
 
     private final FactDao factDao;
     private final AttributeDao attributeDao;
+    private final IdentityService identityService;
 
     public FactService(FactDao factDao,
-            AttributeDao attributeDao) {
+            AttributeDao attributeDao,
+            IdentityService identityService) {
         this.factDao = factDao;
         this.attributeDao = attributeDao;
+        this.identityService = identityService;
     }
 
     public List<Fact> getAttributesByPersonId(Long personId) {
@@ -139,11 +143,19 @@ public class FactService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "personId ou attributeId manquant");
         }
 
+        // First database read in the transaction: serialize every Fact mutation for
+        // this person so maxValues and the derived IDENTITY cannot race.
+        factDao.lockPersonForUpdate(personId);
+
         final LocalDateTime now = LocalDateTime.now();
 
         // 1) Attribut (policy/type/required/maxValues)
         Attribute attr = attributeDao.findById(attributeId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Attribut inconnu"));
+
+        if (attr.getEditPolicy() == EditPolicy.DERIVED) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Attribut dérivé non modifiable directement");
+        }
 
         if (!bypassRestricted && attr.getEditPolicy() == EditPolicy.RESTRICTED) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Modifications soumises à approbation");
@@ -315,6 +327,10 @@ public class FactService {
         // c) CREATE
         if (!createNowValues.isEmpty()) {
             factDao.createAllForPersonAt(personId, attributeId, createNowValues, now);
+        }
+
+        if (attr.isIdentitySource()) {
+            identityService.synchronize(personId, now);
         }
 
         // 7) Retourner la vue "active" (runtime) après modifs

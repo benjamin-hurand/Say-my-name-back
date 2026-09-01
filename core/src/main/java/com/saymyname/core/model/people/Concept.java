@@ -2,7 +2,6 @@ package com.saymyname.core.model.people;
 
 import com.saymyname.core.model.enums.CasingStrategy;
 import com.saymyname.core.model.enums.concept.ConceptPortabilityKind;
-import com.saymyname.core.model.enums.concept.ConceptTenantUsagePolicy;
 
 public class Concept {
 
@@ -13,7 +12,7 @@ public class Concept {
     private boolean derived;
     private ConceptPortabilityKind portabilityKind;
     private boolean identityComponentEligible;
-    private ConceptTenantUsagePolicy tenantUsagePolicy;
+    private Integer requiredMaxValues;
     private CasingStrategy defaultCasingStrategy;
 
     public Concept() {
@@ -27,7 +26,7 @@ public class Concept {
         this.derived = builder.derived;
         this.portabilityKind = builder.portabilityKind;
         this.identityComponentEligible = builder.identityComponentEligible;
-        this.tenantUsagePolicy = builder.tenantUsagePolicy;
+        this.requiredMaxValues = builder.requiredMaxValues;
         this.defaultCasingStrategy = builder.defaultCasingStrategy;
     }
 
@@ -59,8 +58,8 @@ public class Concept {
         return identityComponentEligible;
     }
 
-    public ConceptTenantUsagePolicy getTenantUsagePolicy() {
-        return tenantUsagePolicy;
+    public Integer getRequiredMaxValues() {
+        return requiredMaxValues;
     }
 
     public CasingStrategy getDefaultCasingStrategy() {
@@ -75,7 +74,7 @@ public class Concept {
         private boolean derived;
         private ConceptPortabilityKind portabilityKind;
         private boolean identityComponentEligible;
-        private ConceptTenantUsagePolicy tenantUsagePolicy;
+        private Integer requiredMaxValues;
         private CasingStrategy defaultCasingStrategy;
 
         public Builder withId(Long id) {
@@ -113,8 +112,8 @@ public class Concept {
             return this;
         }
 
-        public Builder withTenantUsagePolicy(ConceptTenantUsagePolicy tenantUsagePolicy) {
-            this.tenantUsagePolicy = tenantUsagePolicy;
+        public Builder withRequiredMaxValues(Integer requiredMaxValues) {
+            this.requiredMaxValues = requiredMaxValues;
             return this;
         }
 

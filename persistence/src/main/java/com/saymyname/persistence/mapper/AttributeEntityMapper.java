@@ -35,7 +35,6 @@ public class AttributeEntityMapper {
         entity.setAttributeName(attribute.getName());
         entity.setDisplayOrder(attribute.getDisplayOrder());
         entity.setIdentitySource(attribute.isIdentitySource());
-        entity.setCategory(attribute.isCategory());
         entity.setMaxValues(attribute.getMaxValues());
         entity.setFilter(attribute.isFilter());
         entity.setSort(attribute.isSort());
@@ -73,7 +72,6 @@ public class AttributeEntityMapper {
                 .withName(entity.getAttributeName())
                 .withDisplayOrder(entity.getDisplayOrder())
                 .withIdentitySource(entity.isIdentitySource())
-                .withCategory(entity.isCategory())
                 .withMaxValues(entity.getMaxValues())
                 .withFilter(entity.isFilter())
                 .withSort(entity.isSort())

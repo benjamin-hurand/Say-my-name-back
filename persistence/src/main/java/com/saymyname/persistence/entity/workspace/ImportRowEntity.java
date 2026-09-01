@@ -18,7 +18,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
@@ -54,8 +53,7 @@ public class ImportRowEntity {
     @Column(name = "status", nullable = false, length = 16, columnDefinition = "enum('NEW','MAPPED','CONFLICT','READY','SKIPPED','ERROR') default 'NEW'")
     private ImportRowStatus status;
 
-    @Lob
-    @Column(name = "error_message")
+    @Column(name = "error_message", columnDefinition = "TEXT")
     private String errorMessage;
 
     public enum ImportRowStatus {

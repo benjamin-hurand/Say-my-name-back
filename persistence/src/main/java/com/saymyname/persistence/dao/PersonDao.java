@@ -376,7 +376,6 @@ public class PersonDao {
     public List<AttributeValueRow> fetchContextAttributes(
             List<Long> personIds,
             List<Long> attributeIdsFromRequest,
-            boolean includeCategories,
             boolean includeFilterSortAttributes) {
 
         if (personIds == null || personIds.isEmpty())
@@ -402,14 +401,11 @@ public class PersonDao {
             byIds = a.get("id").in(attributeIdsFromRequest);
         }
 
-        Predicate byCategory = includeCategories ? cb.isTrue(a.get("category")) : cb.disjunction();
-
         Predicate byFilterSort = includeFilterSortAttributes
                 ? cb.or(cb.isTrue(a.get("filter")), cb.isTrue(a.get("sort")))
                 : cb.disjunction();
 
-        if (!includeCategories
-                && !includeFilterSortAttributes
+        if (!includeFilterSortAttributes
                 && (attributeIdsFromRequest == null || attributeIdsFromRequest.isEmpty())) {
             return List.of();
         }
@@ -422,7 +418,7 @@ public class PersonDao {
                 a.get("identitySource").alias("identitySource"))
                 .where(
                         cb.and(where.toArray(new Predicate[0])),
-                        cb.or(byIds, byCategory, byFilterSort))
+                        cb.or(byIds, byFilterSort))
                 .orderBy(
                         cb.asc(pa.get("person").get("id")),
                         cb.asc(a.get("displayOrder")),
@@ -507,7 +503,6 @@ public class PersonDao {
 
                     Predicate attrScope = cb.or(
                             cb.isTrue(a.get("identitySource")),
-                            cb.isTrue(a.get("category")),
                             cb.isTrue(a.get("filter")),
                             cb.isTrue(a.get("sort")));
 
@@ -647,7 +642,6 @@ public class PersonDao {
 
                     Predicate attrScope = cb.or(
                             cb.isTrue(a.get("identitySource")),
-                            cb.isTrue(a.get("category")),
                             cb.isTrue(a.get("filter")),
                             cb.isTrue(a.get("sort")));
 
@@ -760,7 +754,7 @@ public class PersonDao {
                 SELECT COUNT(DISTINCT f.person_id)
                 FROM facts f
                 WHERE f.tenant_id = :tenantId
-                  AND f.deleted = 0
+                  AND f.is_deleted = 0
                   AND f.value IS NOT NULL
                   AND TRIM(f.value) <> ''
                   AND f.valid_from <= :now

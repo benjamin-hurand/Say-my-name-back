@@ -1,9 +1,6 @@
 // src/main/java/com/saymyname/persistence/repository/FactRepository.java
 package com.saymyname.persistence.repository;
 
-import static org.hibernate.jpa.HibernateHints.HINT_FETCH_SIZE;
-import static org.hibernate.jpa.HibernateHints.HINT_READ_ONLY;
-
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -13,9 +10,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.saymyname.persistence.entity.organization.FactEntity;
-import com.saymyname.persistence.projection.PersonAttrValueProjection;
-
-import jakarta.persistence.QueryHint;
 
 @Repository
 public interface FactRepository extends JpaRepository<FactEntity, Long> {
@@ -64,6 +58,7 @@ public interface FactRepository extends JpaRepository<FactEntity, Long> {
   @Query("""
       SELECT f FROM FactEntity f
       WHERE f.personId = :personId
+        AND f.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
         AND f.deleted = false
         AND f.validFrom <= CURRENT_TIMESTAMP
         AND (f.validTo IS NULL OR f.validTo > CURRENT_TIMESTAMP)
@@ -76,6 +71,7 @@ public interface FactRepository extends JpaRepository<FactEntity, Long> {
       SELECT f FROM FactEntity f
       WHERE f.personId = :personId
         AND f.attributeId = :attributeId
+        AND f.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
         AND f.deleted = false
         AND f.validFrom <= :now
         AND (f.validTo IS NULL OR f.validTo > :now)
@@ -94,6 +90,7 @@ public interface FactRepository extends JpaRepository<FactEntity, Long> {
              f.validTo = :now
        WHERE f.personId = :personId
          AND f.id IN (:ids)
+         AND f.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
          AND f.deleted = false
          AND f.validFrom <= :now
          AND (f.validTo IS NULL OR f.validTo > :now)
@@ -114,26 +111,4 @@ public interface FactRepository extends JpaRepository<FactEntity, Long> {
       """, nativeQuery = true)
   int hardDeleteExpiredDeletedFacts(@Param("cutoff") LocalDateTime cutoff);
 
-  // Valeurs d'attributs primaires pour un batch de personnes
-  @QueryHints({
-      @QueryHint(name = HINT_READ_ONLY, value = "true"),
-      @QueryHint(name = HINT_FETCH_SIZE, value = "500")
-  })
-  @Query("""
-      select
-        f.personId as personId,
-        f.attributeId as attributeId,
-        f.value as value,
-        a.displayOrder as displayOrder
-      from FactEntity f
-        join f.attribute a
-      where f.personId in :personIds
-        and a.identitySource = true
-        and f.deleted = false
-        and f.validFrom <= CURRENT_TIMESTAMP
-        and (f.validTo IS NULL OR f.validTo > CURRENT_TIMESTAMP)
-      order by f.personId asc, a.displayOrder asc, f.id asc
-      """)
-  List<PersonAttrValueProjection> findPrimaryAttributesForPersons(
-      @Param("personIds") Collection<Long> personIds);
 }

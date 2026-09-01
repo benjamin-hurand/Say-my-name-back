@@ -24,7 +24,6 @@ public class Attribute {
     /** Policy locale d’identité actuelle. */
     private boolean identitySource;
 
-    private boolean category;
     private int maxValues;
     private boolean filter;
     private String minValue;
@@ -58,7 +57,6 @@ public class Attribute {
         this.name = b.name;
         this.displayOrder = b.displayOrder;
         this.identitySource = b.identitySource;
-        this.category = b.category;
         this.maxValues = b.maxValues;
         this.filter = b.filter;
         this.minValue = b.minValue;
@@ -110,10 +108,6 @@ public class Attribute {
 
     public boolean isIdentitySource() {
         return identitySource;
-    }
-
-    public boolean isCategory() {
-        return category;
     }
 
     public int getMaxValues() {
@@ -200,10 +194,6 @@ public class Attribute {
         this.identitySource = identitySource;
     }
 
-    public void setCategory(boolean category) {
-        this.category = category;
-    }
-
     public void setMaxValues(int maxValues) {
         this.maxValues = maxValues;
     }
@@ -252,7 +242,6 @@ public class Attribute {
         private String name;
         private int displayOrder = 100;
         private boolean identitySource;
-        private boolean category;
         private int maxValues;
         private boolean filter;
         private String minValue;
@@ -312,11 +301,6 @@ public class Attribute {
 
         public Builder withIdentitySource(boolean identitySource) {
             this.identitySource = identitySource;
-            return this;
-        }
-
-        public Builder withCategory(boolean category) {
-            this.category = category;
             return this;
         }
 
@@ -388,7 +372,6 @@ public class Attribute {
             return false;
         return displayOrder == that.displayOrder
                 && identitySource == that.identitySource
-                && category == that.category
                 && maxValues == that.maxValues
                 && filter == that.filter
                 && sort == that.sort
@@ -414,7 +397,7 @@ public class Attribute {
     public int hashCode() {
         return Objects.hash(
                 id, conceptId, conceptCode, ValueType, conceptDerived, conceptPortabilityKind,
-                identityComponentEligible, name, displayOrder, identitySource, category,
+                identityComponentEligible, name, displayOrder, identitySource,
                 maxValues, filter, sort, required, type, editPolicy,
                 casingStrategy, constraintKind, constraintPayload, minValue, maxValue);
     }
@@ -432,7 +415,6 @@ public class Attribute {
                 ", name='" + name + '\'' +
                 ", displayOrder=" + displayOrder +
                 ", identitySource=" + identitySource +
-                ", category=" + category +
                 ", maxValues=" + maxValues +
                 ", filter=" + filter +
                 ", minValue='" + minValue + '\'' +

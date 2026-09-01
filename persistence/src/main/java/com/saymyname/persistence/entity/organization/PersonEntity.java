@@ -35,7 +35,8 @@ import lombok.experimental.SuperBuilder;
 @ToString(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "persons", uniqueConstraints = {
-                @UniqueConstraint(name = "uq_persons_tenant_id", columnNames = { "tenant_id", "id" })
+                // Hibernate orders inherited composite joins identifier-first: (id, tenant_id).
+                @UniqueConstraint(name = "uq_persons_id_tenant", columnNames = { "id", "tenant_id" })
 }, indexes = {
                 @Index(name = "idx_persons_tenant", columnList = "tenant_id")
 })

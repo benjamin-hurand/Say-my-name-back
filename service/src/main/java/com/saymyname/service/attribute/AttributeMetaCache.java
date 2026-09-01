@@ -1,6 +1,6 @@
 package com.saymyname.service.attribute;
 
-import com.saymyname.core.model.enums.concept.ConceptPortabilityKind;
+import com.saymyname.core.model.people.ConceptCodes;
 import com.saymyname.core.multitenancy.TenantContext;
 import com.saymyname.persistence.dao.AttributeDao;
 import com.saymyname.persistence.repository.AttributeRepository;
@@ -19,8 +19,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class AttributeMetaCache {
 
     private static final Duration TTL = Duration.ofMinutes(10);
-    private static final int DEFAULT_DISPLAY_ORDER = 100;
-
     private final AttributeDao attributeDao;
     private final ConcurrentHashMap<Long, CacheEntry> cache = new ConcurrentHashMap<>();
 
@@ -31,27 +29,15 @@ public class AttributeMetaCache {
     public static final class Meta {
         public final boolean identitySource;
         public final int displayOrder;
-        public final Long conceptId;
         public final String conceptCode;
-        public final boolean conceptDerived;
-        public final ConceptPortabilityKind portabilityKind;
-        public final boolean identityComponentEligible;
 
         public Meta(
                 boolean identitySource,
                 int displayOrder,
-                Long conceptId,
-                String conceptCode,
-                boolean conceptDerived,
-                ConceptPortabilityKind portabilityKind,
-                boolean identityComponentEligible) {
+                String conceptCode) {
             this.identitySource = identitySource;
             this.displayOrder = displayOrder;
-            this.conceptId = conceptId;
             this.conceptCode = conceptCode;
-            this.conceptDerived = conceptDerived;
-            this.portabilityKind = portabilityKind;
-            this.identityComponentEligible = identityComponentEligible;
         }
     }
 
@@ -94,42 +80,6 @@ public class AttributeMetaCache {
         }
     }
 
-    public Meta meta(Long attributeId) {
-        if (attributeId == null)
-            return null;
-        return currentTenantMeta().get(attributeId);
-    }
-
-    public boolean isIdentitySource(Long attributeId) {
-        Meta m = meta(attributeId);
-        return m != null && m.identitySource;
-    }
-
-    public boolean isDerived(Long attributeId) {
-        Meta m = meta(attributeId);
-        return m != null && m.conceptDerived;
-    }
-
-    public String conceptCode(Long attributeId) {
-        Meta m = meta(attributeId);
-        return m != null ? m.conceptCode : null;
-    }
-
-    public ConceptPortabilityKind portabilityKind(Long attributeId) {
-        Meta m = meta(attributeId);
-        return m != null ? m.portabilityKind : null;
-    }
-
-    public boolean isIdentityComponentEligible(Long attributeId) {
-        Meta m = meta(attributeId);
-        return m != null && m.identityComponentEligible;
-    }
-
-    public int displayOrder(Long attributeId) {
-        Meta m = meta(attributeId);
-        return (m != null) ? m.displayOrder : DEFAULT_DISPLAY_ORDER;
-    }
-
     public List<Long> getIdentitySourceAttributeIds() {
         Map<Long, Meta> meta = currentTenantMeta();
         if (meta.isEmpty())
@@ -144,28 +94,14 @@ public class AttributeMetaCache {
                 .toList();
     }
 
-    public List<Long> getIdentityEligibleAttributeIds() {
-        Map<Long, Meta> meta = currentTenantMeta();
-        if (meta.isEmpty())
-            return List.of();
-
-        return meta.entrySet().stream()
-                .filter(e -> e.getKey() != null && e.getValue() != null && e.getValue().identityComponentEligible)
-                .sorted(Comparator
-                        .comparingInt((Map.Entry<Long, Meta> e) -> e.getValue().displayOrder)
-                        .thenComparing(Map.Entry::getKey))
-                .map(Map.Entry::getKey)
-                .toList();
-    }
-
-    public Long getDerivedIdentityAttributeId() {
+    public Long getIdentityAttributeId() {
         Map<Long, Meta> meta = currentTenantMeta();
         if (meta.isEmpty())
             return null;
 
         return meta.entrySet().stream()
                 .filter(e -> e.getKey() != null && e.getValue() != null)
-                .filter(e -> "IDENTITY".equals(e.getValue().conceptCode) || e.getValue().conceptDerived)
+                .filter(e -> ConceptCodes.IDENTITY.equals(e.getValue().conceptCode))
                 .sorted(Comparator
                         .comparingInt((Map.Entry<Long, Meta> e) -> e.getValue().displayOrder)
                         .thenComparing(Map.Entry::getKey))
@@ -209,22 +145,10 @@ public class AttributeMetaCache {
             if (id == null)
                 continue;
 
-            ConceptPortabilityKind portabilityKind = null;
-            if (r.getPortabilityKind() != null) {
-                portabilityKind = ConceptPortabilityKind.valueOf(r.getPortabilityKind());
-            }
-
-            boolean conceptDerived = r.getConceptDerived() != null && r.getConceptDerived();
-            boolean identityEligible = r.getIdentityComponentEligible() != null && r.getIdentityComponentEligible();
-
             map.put(id, new Meta(
                     r.getIdentitySource(),
                     r.getDisplayOrder(),
-                    r.getConceptId(),
-                    r.getConceptCode(),
-                    conceptDerived,
-                    portabilityKind,
-                    identityEligible));
+                    r.getConceptCode()));
         }
 
         return new CacheEntry(Collections.unmodifiableMap(map), Instant.now());

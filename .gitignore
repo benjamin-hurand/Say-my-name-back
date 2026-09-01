@@ -13,6 +13,12 @@ target/
 .springBeans
 .sts4-cache
 
+### Secrets ###
+.secrets.local.ps1
+*.secrets.ps1
+.env
+.env.*
+
 ### IntelliJ IDEA ###
 .idea
 *.iws

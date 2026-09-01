@@ -41,7 +41,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @ToString(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "courses", uniqueConstraints = {
-                @UniqueConstraint(name = "uq_courses_tenant_id", columnNames = { "tenant_id", "id" })
+                @UniqueConstraint(name = "uq_courses_id_tenant", columnNames = { "id", "tenant_id" })
 }, indexes = {
                 @Index(name = "idx_courses_tenant_user", columnList = "tenant_id,user_id"),
                 @Index(name = "idx_courses_tenant_status", columnList = "tenant_id,status"),

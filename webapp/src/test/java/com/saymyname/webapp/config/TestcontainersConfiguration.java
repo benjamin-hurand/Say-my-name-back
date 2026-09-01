@@ -16,7 +16,7 @@ public class TestcontainersConfiguration {
 
     static {
         @SuppressWarnings("resource")
-        MySQLContainer<?> container = new MySQLContainer<>("mysql:8.4")
+        MySQLContainer<?> container = new MySQLContainer<>("mysql:8.0.41")
                 .withDatabaseName("saymyname_test")
                 .withUsername("test")
                 .withPassword("test");
@@ -38,8 +38,8 @@ public class TestcontainersConfiguration {
                     "spring.datasource.url=" + mysql.getJdbcUrl(),
                     "spring.datasource.username=" + mysql.getUsername(),
                     "spring.datasource.password=" + mysql.getPassword(),
-                    "spring.datasource.driver-class-name=" + "com.mysql.cj.jdbc.Driver"
-            ).applyTo(applicationContext.getEnvironment());
+                    "spring.datasource.driver-class-name=" + "com.mysql.cj.jdbc.Driver")
+                    .applyTo(applicationContext.getEnvironment());
         }
     }
 

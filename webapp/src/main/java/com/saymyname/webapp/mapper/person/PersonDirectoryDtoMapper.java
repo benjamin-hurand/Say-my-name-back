@@ -4,7 +4,6 @@ package com.saymyname.webapp.mapper.person;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
@@ -128,14 +127,11 @@ public class PersonDirectoryDtoMapper {
             });
         }
 
-        // displayName construit à partir des primaires
-        String displayName = buildDisplayNameFromPrimary(primaryDtos);
-
         return new PersonCardDto(
                 model.getIdPerson(),
                 photoUrlResolver.smallUrl(model.getPhotoStorageKey()),
                 photoUrlResolver.largeUrl(model.getPhotoStorageKey()),
-                displayName,
+                model.getDisplayName(),
                 primaryDtos,
                 model.isFollowed(),
                 extraDtos);
@@ -167,32 +163,15 @@ public class PersonDirectoryDtoMapper {
             });
         }
 
-        // displayName construit à partir des primaires
-        String displayName = buildDisplayNameFromPrimary(primaryDtos);
-
         return new AdminPersonCardDto(
                 model.getIdPerson(),
                 photoUrlResolver.smallUrl(model.getPhotoStorageKey()),
                 photoUrlResolver.largeUrl(model.getPhotoStorageKey()),
-                displayName,
+                model.getDisplayName(),
                 primaryDtos,
                 extraDtos,
                 model.getEmailStatus(),
                 model.isHasPendingChangeRequests());
     }
 
-    // ---------------------------------------
-    // Helper interne pour le displayName
-    // ---------------------------------------
-    private String buildDisplayNameFromPrimary(List<FactExtraDto> primaryAttributes) {
-        if (primaryAttributes == null || primaryAttributes.isEmpty()) {
-            return "";
-        }
-
-        return primaryAttributes.stream()
-                .map(FactExtraDto::value)
-                .filter(v -> v != null && !v.isBlank())
-                .collect(Collectors.joining(" "))
-                .trim();
-    }
 }

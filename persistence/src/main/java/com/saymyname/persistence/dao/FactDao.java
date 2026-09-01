@@ -13,6 +13,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.saymyname.core.model.people.Fact;
+import com.saymyname.core.model.enums.tenant.ScopeKind;
 import com.saymyname.persistence.entity.organization.FactEntity;
 import com.saymyname.persistence.mapper.FactEntityMapper;
 import com.saymyname.persistence.repository.AttributeRepository;
@@ -93,6 +94,16 @@ public class FactDao {
     }
 
     /**
+     * Serializes all Fact mutations for one tenant/person. This lock must be
+     * acquired before the first consistent read in the surrounding transaction.
+     */
+    @Transactional
+    public void lockPersonForUpdate(Long personId) {
+        personRepository.findByIdForUpdate(personId)
+                .orElseThrow(() -> new IllegalArgumentException("Personne introuvable pour le tenant courant"));
+    }
+
+    /**
      * Actifs à une date donnée : now ∈ [validFrom, validTo), hors deleted.
      * (Sans saison, c'est la méthode principale utilisée par le service.)
      */
@@ -131,7 +142,10 @@ public class FactDao {
         for (String v : values) {
             var e = new FactEntity();
             e.setPerson(personRef);
+            e.setPersonId(personId);
             e.setAttribute(attributeRef);
+            e.setAttributeId(attributeId);
+            e.setScopeKind(ScopeKind.TENANT);
             e.setValue(v);
             e.setValidFrom(validFrom);
             e.setValidTo(null);

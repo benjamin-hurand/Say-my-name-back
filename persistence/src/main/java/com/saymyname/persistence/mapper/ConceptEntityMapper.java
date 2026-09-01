@@ -20,7 +20,7 @@ public class ConceptEntityMapper {
                 .withDerived(entity.isDerived())
                 .withPortabilityKind(entity.getPortabilityKind())
                 .withIdentityComponentEligible(entity.isIdentityComponentEligible())
-                .withTenantUsagePolicy(entity.getTenantUsagePolicy())
+                .withRequiredMaxValues(entity.getRequiredMaxValues())
                 .withDefaultCasingStrategy(entity.getDefaultCasingStrategy())
                 .build();
     }
@@ -38,7 +38,7 @@ public class ConceptEntityMapper {
                 .derived(model.isDerived())
                 .portabilityKind(model.getPortabilityKind())
                 .identityComponentEligible(model.isIdentityComponentEligible())
-                .tenantUsagePolicy(model.getTenantUsagePolicy())
+                .requiredMaxValues(model.getRequiredMaxValues())
                 .defaultCasingStrategy(model.getDefaultCasingStrategy())
                 .build();
     }

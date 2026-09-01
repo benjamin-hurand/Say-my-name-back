@@ -57,6 +57,17 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
+        <!-- DB migration with Flyway -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-mysql</artifactId>
+        </dependency>
+
         <!-- Miscellaneous -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
@@ -166,11 +177,18 @@
                     <mainClass>com.saymyname.webapp.WebappApplication</mainClass>
                 </configuration>
             </plugin>
+            <!-- Flyway -->
+            <plugin>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-maven-plugin</artifactId>
+                <version>10.10.0</version>
+            </plugin>
             <!-- Failsafe plugin for integration tests -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
+                    <classesDirectory>${project.build.outputDirectory}</classesDirectory>
                     <systemPropertyVariables>
                         <DOCKER_HOST>tcp://localhost:2375</DOCKER_HOST>
                         <testcontainers.ryuk.disabled>true</testcontainers.ryuk.disabled>

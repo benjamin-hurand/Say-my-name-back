@@ -14,6 +14,7 @@ public class PersonCard {
 
     private Long idPerson;
     private String photoStorageKey;
+    private String displayName;
 
     @JsonProperty("attributes")
     private List<AttributeValueView> attributes = new ArrayList<>();
@@ -27,6 +28,7 @@ public class PersonCard {
     private PersonCard(Builder b) {
         this.idPerson = b.idPerson;
         this.photoStorageKey = b.photoStorageKey;
+        this.displayName = b.displayName;
         this.attributes = b.attributes;
         this.followed = b.followed;
     }
@@ -37,6 +39,10 @@ public class PersonCard {
 
     public String getPhotoStorageKey() {
         return photoStorageKey;
+    }
+
+    public String getDisplayName() {
+        return displayName;
     }
 
     /** Accès direct à la liste unifiée (si tu veux aussi l’exposer côté JSON). */
@@ -54,6 +60,10 @@ public class PersonCard {
 
     public void setPhotoStorageKey(String photoStorageKey) {
         this.photoStorageKey = photoStorageKey;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
     public void setAttributes(List<AttributeValueView> attributes) {
@@ -105,6 +115,7 @@ public class PersonCard {
     public static class Builder {
         private Long idPerson;
         private String photoStorageKey;
+        private String displayName = "";
         private List<AttributeValueView> attributes = new ArrayList<>();
         private boolean followed;
 
@@ -115,6 +126,11 @@ public class PersonCard {
 
         public Builder withPhotoStorageKey(String v) {
             this.photoStorageKey = v;
+            return this;
+        }
+
+        public Builder withDisplayName(String v) {
+            this.displayName = v == null ? "" : v;
             return this;
         }
 
@@ -169,12 +185,13 @@ public class PersonCard {
         return followed == that.followed
                 && Objects.equals(idPerson, that.idPerson)
                 && Objects.equals(photoStorageKey, that.photoStorageKey)
+                && Objects.equals(displayName, that.displayName)
                 && Objects.equals(attributes, that.attributes);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(idPerson, photoStorageKey, attributes, followed);
+        return Objects.hash(idPerson, photoStorageKey, displayName, attributes, followed);
     }
 
     @Override
@@ -182,6 +199,7 @@ public class PersonCard {
         return "PersonCard{" +
                 "idPerson=" + idPerson +
                 ", photoStorageKey='" + photoStorageKey + '\'' +
+                ", displayName='" + displayName + '\'' +
                 ", attributes=" + attributes +
                 ", followed=" + followed +
                 '}';

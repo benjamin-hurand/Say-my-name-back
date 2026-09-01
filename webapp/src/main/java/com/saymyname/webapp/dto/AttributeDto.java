@@ -21,7 +21,6 @@ public record AttributeDto(
 
                 Integer displayOrder,
                 Boolean identitySource,
-                Boolean category,
 
                 Integer maxValues,
                 Boolean filter,

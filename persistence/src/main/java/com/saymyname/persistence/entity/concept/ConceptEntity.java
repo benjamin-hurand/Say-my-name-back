@@ -2,7 +2,6 @@ package com.saymyname.persistence.entity.concept;
 
 import com.saymyname.core.model.enums.CasingStrategy;
 import com.saymyname.core.model.enums.concept.ConceptPortabilityKind;
-import com.saymyname.core.model.enums.concept.ConceptTenantUsagePolicy;
 import com.saymyname.core.model.people.ValueType;
 
 import jakarta.persistence.*;
@@ -50,9 +49,8 @@ public class ConceptEntity {
     @Column(name = "identity_component_eligible", nullable = false)
     private boolean identityComponentEligible;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "tenant_usage_policy", nullable = false, length = 20)
-    private ConceptTenantUsagePolicy tenantUsagePolicy;
+    @Column(name = "required_max_values")
+    private Integer requiredMaxValues;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "default_casing_strategy", length = 32)

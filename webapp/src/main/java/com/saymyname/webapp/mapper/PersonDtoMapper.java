@@ -61,7 +61,7 @@ public class PersonDtoMapper {
         }
 
         public PersonSummaryDto toSummaryDto(Person person) {
-                Long derivedAttrId = attributeMetaCache.getDerivedIdentityAttributeId();
+                Long derivedAttrId = attributeMetaCache.getIdentityAttributeId();
                 LocalDateTime now = LocalDateTime.now();
                 String displayName = "";
                 if (derivedAttrId != null && person != null && person.getFacts() != null) {

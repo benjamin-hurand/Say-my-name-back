@@ -20,7 +20,7 @@ public class ConceptDtoMapper {
                 model.isDerived(),
                 model.getPortabilityKind() != null ? model.getPortabilityKind().name() : null,
                 model.isIdentityComponentEligible(),
-                model.getTenantUsagePolicy() != null ? model.getTenantUsagePolicy().name() : null,
+                model.getRequiredMaxValues(),
                 model.getDefaultCasingStrategy() != null ? model.getDefaultCasingStrategy().name() : null);
     }
 

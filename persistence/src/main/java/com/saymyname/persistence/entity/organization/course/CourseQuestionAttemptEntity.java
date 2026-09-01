@@ -20,8 +20,8 @@ import java.util.List;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 @ToString(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "course_question_attempts", uniqueConstraints = @UniqueConstraint(name = "uq_cqa_tenant_id", columnNames = {
-        "tenant_id", "id" }), indexes = {
+@Table(name = "course_question_attempts", uniqueConstraints = @UniqueConstraint(name = "uq_cqa_id_tenant", columnNames = {
+        "id", "tenant_id" }), indexes = {
                 @Index(name = "idx_cqh_course_round", columnList = "course_id,question_round"),
                 @Index(name = "idx_cqh_course_answered", columnList = "course_id,answered_at"),
                 @Index(name = "idx_cqh_answered_at", columnList = "answered_at"),

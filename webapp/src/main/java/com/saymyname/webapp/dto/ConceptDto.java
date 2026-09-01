@@ -8,6 +8,6 @@ public record ConceptDto(
                 Boolean derived,
                 String portabilityKind,
                 Boolean identityComponentEligible,
-                String tenantUsagePolicy,
+                Integer requiredMaxValues,
                 String defaultCasingStrategy) {
 }

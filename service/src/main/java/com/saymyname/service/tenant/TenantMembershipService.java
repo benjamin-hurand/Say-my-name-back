@@ -8,6 +8,7 @@ import com.saymyname.core.model.tenant.OrgMemberRow;
 import com.saymyname.core.model.tenant.TenantMembership;
 import com.saymyname.persistence.dao.PersonDao;
 import com.saymyname.persistence.dao.tenant.TenantMembershipDao;
+import com.saymyname.service.attribute.AttributeMetaCache;
 
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -16,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.EntityNotFoundException;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -24,10 +24,15 @@ public class TenantMembershipService {
 
     private final TenantMembershipDao dao;
     private final PersonDao personDao;
+    private final AttributeMetaCache attributeMetaCache;
 
-    public TenantMembershipService(TenantMembershipDao dao, PersonDao personDao) {
+    public TenantMembershipService(
+            TenantMembershipDao dao,
+            PersonDao personDao,
+            AttributeMetaCache attributeMetaCache) {
         this.dao = dao;
         this.personDao = personDao;
+        this.attributeMetaCache = attributeMetaCache;
     }
 
     // --------- Generic tenant membership API ---------
@@ -82,21 +87,14 @@ public class TenantMembershipService {
             return baseRows;
         }
 
-        List<AttributeValueRow> primaryRows = personDao.fetchPrimaryAttributeRows(personIds);
-
-        Map<Long, List<AttributeValueRow>> primariesByPerson = new HashMap<>();
-        for (AttributeValueRow avr : primaryRows) {
-            primariesByPerson
-                    .computeIfAbsent(avr.getPersonId(), k -> new ArrayList<>())
-                    .add(avr);
-        }
-
         Map<Long, String> labelByPersonId = new HashMap<>();
-        for (Map.Entry<Long, List<AttributeValueRow>> entry : primariesByPerson.entrySet()) {
-            Long personId = entry.getKey();
-            String label = buildDisplayNameFromPrimaries(entry.getValue());
-            if (label != null && !label.isBlank()) {
-                labelByPersonId.put(personId, label);
+        Long identityAttributeId = attributeMetaCache.getIdentityAttributeId();
+        if (identityAttributeId != null) {
+            for (AttributeValueRow row : personDao.fetchContextAttributes(
+                    personIds, List.of(identityAttributeId), false)) {
+                if (row.getValue() != null && !row.getValue().isBlank()) {
+                    labelByPersonId.putIfAbsent(row.getPersonId(), row.getValue().trim());
+                }
             }
         }
 
@@ -126,38 +124,6 @@ public class TenantMembershipService {
                             .build();
                 })
                 .toList();
-    }
-
-    private String buildDisplayNameFromPrimaries(List<AttributeValueRow> rows) {
-        if (rows == null || rows.isEmpty()) {
-            return "";
-        }
-
-        List<AttributeValueRow> sorted = new ArrayList<>(rows);
-
-        sorted.sort((a, b) -> {
-            int d1 = a.getDisplayOrder() != null ? a.getDisplayOrder() : Integer.MAX_VALUE;
-            int d2 = b.getDisplayOrder() != null ? b.getDisplayOrder() : Integer.MAX_VALUE;
-            int cmp = Integer.compare(d1, d2);
-            if (cmp != 0)
-                return cmp;
-
-            long id1 = a.getAttributeId() != null ? a.getAttributeId() : Long.MAX_VALUE;
-            long id2 = b.getAttributeId() != null ? b.getAttributeId() : Long.MAX_VALUE;
-            cmp = Long.compare(id1, id2);
-            if (cmp != 0)
-                return cmp;
-
-            String v1 = a.getValue() != null ? a.getValue() : "";
-            String v2 = b.getValue() != null ? b.getValue() : "";
-            return v1.compareTo(v2);
-        });
-
-        return sorted.stream()
-                .map(AttributeValueRow::getValue)
-                .filter(v -> v != null && !v.isBlank())
-                .collect(Collectors.joining(" "))
-                .trim();
     }
 
     @Transactional
