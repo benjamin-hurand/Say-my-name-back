@@ -40,6 +40,9 @@
     <!-- ✅ Testcontainers -->
     <testcontainers.version>1.20.5</testcontainers.version>
 
+    <!-- Build plugins -->
+    <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
+
     <!-- Test plugins -->
     <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
     <maven-failsafe-plugin.version>3.2.5</maven-failsafe-plugin.version>
@@ -223,6 +226,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
+          <version>${maven-compiler-plugin.version}</version>
           <configuration>
             <release>${java.version}</release>
             <annotationProcessorPaths>

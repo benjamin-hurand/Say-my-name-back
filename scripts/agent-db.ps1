@@ -53,21 +53,37 @@ Write-Host "[INFO] Database: $($connection.Database)"
 Write-Host "[INFO] Host: $($connection.Host):$($connection.Port)"
 Write-Host "[INFO] User: $username"
 
-$mysqlArgs = @(
-    "--host=$($connection.Host)",
-    "--port=$($connection.Port)",
-    "--user=$username",
-    "--password=$password",
-    $connection.Database
-)
+$tempDefaultsFile = Join-Path `
+    ([System.IO.Path]::GetTempPath()) `
+    ("saymyname-mysql-" + [System.Guid]::NewGuid().ToString("N") + ".cnf")
 
-if ($Query) {
-    & mysql @mysqlArgs "--execute=$Query"
-}
-else {
-    & mysql @mysqlArgs
-}
+try {
+    @"
+[client]
+host=$($connection.Host)
+port=$($connection.Port)
+user=$username
+password=$password
+"@ | Set-Content -Path $tempDefaultsFile -Encoding ASCII
 
-if ($LASTEXITCODE -ne 0) {
-    throw "MySQL command failed (exit code $LASTEXITCODE)"
+    $mysqlArgs = @(
+        "--defaults-extra-file=$tempDefaultsFile",
+        $connection.Database
+    )
+
+    if ($Query) {
+        & mysql @mysqlArgs "--execute=$Query"
+    }
+    else {
+        & mysql @mysqlArgs
+    }
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "MySQL command failed (exit code $LASTEXITCODE)"
+    }
+}
+finally {
+    if (Test-Path $tempDefaultsFile) {
+        Remove-Item $tempDefaultsFile -Force
+    }
 }
