@@ -57,7 +57,4 @@ public abstract class TenantEntity {
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
-
-    @Column(name = "migration_test_note", length = 255)
-    private String migrationTestNote;
 }

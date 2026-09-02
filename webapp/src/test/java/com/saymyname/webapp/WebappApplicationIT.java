@@ -34,6 +34,19 @@ class WebappApplicationIT {
     }
 
     @Test
+    void removesTemporaryTenantMigrationColumn() {
+        Integer columnCount = jdbcTemplate.queryForObject("""
+                select count(*)
+                  from information_schema.columns
+                 where table_schema = database()
+                   and table_name = 'tenants'
+                   and column_name = 'migration_test_note'
+                """, Integer.class);
+
+        assertThat(columnCount).isZero();
+    }
+
+    @Test
     void createsAllCriticalTenantScopedForeignKeys() {
         List<ForeignKeyShape> foreignKeys = jdbcTemplate.query("""
                 select kcu.table_name,
