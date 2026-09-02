@@ -38,7 +38,12 @@ public class TestcontainersConfiguration {
                     "spring.datasource.url=" + mysql.getJdbcUrl(),
                     "spring.datasource.username=" + mysql.getUsername(),
                     "spring.datasource.password=" + mysql.getPassword(),
-                    "spring.datasource.driver-class-name=" + "com.mysql.cj.jdbc.Driver")
+                    "spring.datasource.driver-class-name=" + "com.mysql.cj.jdbc.Driver",
+                    // Flyway must target the ephemeral container too, never the
+                    // real database resolved from FLYWAY_URL/FLYWAY_USERNAME/FLYWAY_PASSWORD.
+                    "spring.flyway.url=" + mysql.getJdbcUrl(),
+                    "spring.flyway.user=" + mysql.getUsername(),
+                    "spring.flyway.password=" + mysql.getPassword())
                     .applyTo(applicationContext.getEnvironment());
         }
     }

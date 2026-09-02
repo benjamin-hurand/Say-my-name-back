@@ -209,7 +209,6 @@ New migrations must be tested against an ephemeral database before being applied
 
 The expected validation flow is:
 
-```text
 empty MySQL 8.0.41 database
         ↓
 Flyway V1
@@ -223,21 +222,55 @@ Hibernate validate
 Spring context
         ↓
 integration assertions
-```
 
 Use the existing Testcontainers infrastructure.
 
 Current reference database version for Testcontainers:
 
-```text
 MySQL 8.0.41
-```
 
 Agents are allowed to execute Testcontainers-based tests because the database is isolated and ephemeral.
 
 When changing database structure, prefer running the relevant integration test(s), including `WebappApplicationIT` when appropriate.
 
 A successful `flyway:validate` alone is not sufficient proof that a new migration works on a fresh database.
+
+## Test isolation
+
+Integration tests using Testcontainers must ensure that both the application datasource and Flyway target the ephemeral Testcontainers database.
+
+Tests must never inherit or reuse a real local, development, staging, or production database URL.
+
+When modifying Testcontainers or database initialization, verify that all database-related configuration used by the application points to the container, including:
+
+- runtime database URL;
+- runtime database username;
+- runtime database password;
+- `spring.flyway.url`;
+- `spring.flyway.user`;
+- `spring.flyway.password`.
+
+In this project, custom runtime properties such as `db.url`, `db.username`, and `db.password` must also resolve to the Testcontainers database when integration tests run.
+
+A Testcontainers test must never migrate or modify the real local database.
+
+Test code must not rely on environment variables such as `DB_URL` or `FLYWAY_URL` when those variables may point to a real database.
+
+Container connection values must explicitly override any database configuration inherited from:
+
+- `application.properties`;
+- local environment variables;
+- `.secrets.local.ps1`;
+- developer shell configuration;
+- CI/CD environment configuration.
+
+When changing database or Testcontainers configuration, agents should verify isolation before considering the test setup valid.
+
+If there is any doubt that a test may have contacted the real local database, use readonly access to compare the real database state before and after the test, for example by checking `flyway_schema_history`.
+
+Any accidental modification of a real database caused by a test must be reported immediately and must not be silently reverted, hidden, or worked around.
+
+After a migration has been applied to any persistent real database and recorded successfully in `flyway_schema_history`, treat that versioned migration as immutable even if the application was accidental.
 
 ---
 
@@ -265,6 +298,35 @@ Creating a migration file is NOT authorization to execute it.
 Running tests is NOT authorization to execute it.
 
 Running `flyway-validate.ps1` is NOT authorization to execute it.
+
+## Environment protection
+
+`scripts/flyway-migrate.ps1` supports explicit environment selection.
+
+Allowed through this developer-facing script:
+
+- local
+- dev
+
+Forbidden through this script:
+
+- prod
+
+The following command must always fail:
+
+.\scripts\flyway-migrate.ps1 -Environment prod
+
+Production migrations must be executed only through the dedicated CI/CD migration workflow.
+
+Agents MUST NOT:
+
+- remove this protection;
+- weaken this protection;
+- bypass this protection;
+- invoke Flyway Maven directly as a workaround;
+- manually use production migrator credentials.
+
+Unless the user explicitly requests a redesign of the deployment security model, this protection is considered part of the project's security architecture.
 
 When in doubt, do not migrate the real database.
 
@@ -298,11 +360,62 @@ production app identity
 
 Production migrations must eventually be controlled by CI/CD and explicit deployment procedures.
 
+## Environment configuration strategy
+
+SayMyName uses the same environment-variable names across environments.
+
+The scripts and application must not contain separate variables such as:
+
+- FLYWAY_LOCAL_URL
+- FLYWAY_DEV_URL
+- FLYWAY_PROD_URL
+
+Instead, each execution environment provides the appropriate values for the same variables:
+
+- DB_URL
+- DB_USERNAME
+- DB_PASSWORD
+
+- FLYWAY_URL
+- FLYWAY_USERNAME
+- FLYWAY_PASSWORD
+
+- AGENT_DB_USERNAME
+- AGENT_DB_PASSWORD
+
+Examples:
+
+Local developer machine
+→ .secrets.local.ps1
+→ FLYWAY_URL = local MySQL
+
+Development CI/CD environment
+→ CI/CD environment secrets
+→ FLYWAY_URL = development database
+
+Production CI/CD environment
+→ protected production secrets
+→ FLYWAY_URL = production database
+
+Scripts must remain environment-agnostic regarding credentials and connection URLs.
+
+The execution environment is responsible for injecting the correct values.
+
+Production secrets must never be stored in:
+
+- .secrets.local.ps1
+- repository files
+- Maven configuration
+- PowerShell scripts
+- committed .properties files
+
 ---
 
 # 10. Secrets
 
-Local secrets are stored outside version-controlled configuration.
+Secrets are provided through environment variables.
+
+For local development only, `.secrets.local.ps1` is used as a convenience mechanism to populate those environment variables.
 
 Current local convention:
 

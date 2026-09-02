@@ -4,29 +4,70 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-if (-not $env:AGENT_DB_USERNAME) {
-    throw "AGENT_DB_USERNAME is not defined."
+$backendRoot = Split-Path -Parent $PSScriptRoot
+$secretsFile = Join-Path $backendRoot ".secrets.local.ps1"
+
+if (Test-Path $secretsFile) {
+    . $secretsFile
 }
 
-if (-not $env:AGENT_DB_PASSWORD) {
-    throw "AGENT_DB_PASSWORD is not defined."
+function Assert-EnvironmentVariable {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Name
+    )
+
+    $value = [Environment]::GetEnvironmentVariable($Name)
+
+    if ([string]::IsNullOrWhiteSpace($value)) {
+        throw "Variable d'environnement requise absente ou vide : $Name"
+    }
+
+    return $value
 }
 
-$database = "saymyname"
-$hostName = "localhost"
+function Parse-JdbcMySqlUrl {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Url
+    )
+
+    if ($Url -notmatch '^jdbc:mysql://([^/:]+)(?::(\d+))?/([^?]+)') {
+        throw "Format JDBC MySQL non supporte : $Url"
+    }
+
+    return @{
+        Host     = $Matches[1]
+        Port     = if ($Matches[2]) { $Matches[2] } else { "3306" }
+        Database = $Matches[3]
+    }
+}
+
+$url = Assert-EnvironmentVariable "DB_URL"
+$username = Assert-EnvironmentVariable "AGENT_DB_USERNAME"
+$password = Assert-EnvironmentVariable "AGENT_DB_PASSWORD"
+
+$connection = Parse-JdbcMySqlUrl $url
+
+Write-Host "[INFO] Database: $($connection.Database)"
+Write-Host "[INFO] Host: $($connection.Host):$($connection.Port)"
+Write-Host "[INFO] User: $username"
+
+$mysqlArgs = @(
+    "--host=$($connection.Host)",
+    "--port=$($connection.Port)",
+    "--user=$username",
+    "--password=$password",
+    $connection.Database
+)
 
 if ($Query) {
-    mysql `
-        --host=$hostName `
-        --user=$env:AGENT_DB_USERNAME `
-        "--password=$env:AGENT_DB_PASSWORD" `
-        $database `
-        --execute="$Query"
+    & mysql @mysqlArgs "--execute=$Query"
 }
 else {
-    mysql `
-        --host=$hostName `
-        --user=$env:AGENT_DB_USERNAME `
-        "--password=$env:AGENT_DB_PASSWORD" `
-        $database
+    & mysql @mysqlArgs
+}
+
+if ($LASTEXITCODE -ne 0) {
+    throw "MySQL command failed (exit code $LASTEXITCODE)"
 }

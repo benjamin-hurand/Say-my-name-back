@@ -1,22 +1,28 @@
+param(
+    [ValidateSet("local", "dev", "prod")]
+    [string]$Environment = "local"
+)
+
 $ErrorActionPreference = "Stop"
 
-if (-not $env:FLYWAY_USERNAME) {
-    throw "FLYWAY_USERNAME is not defined."
+. (Join-Path $PSScriptRoot "flyway-common.ps1")
+
+if ($Environment -eq "prod") {
+    throw @"
+Production migrations are not allowed from scripts/flyway-migrate.ps1.
+
+Production migrations must be executed through the dedicated CI/CD migration workflow.
+"@
 }
 
-if (-not $env:FLYWAY_PASSWORD) {
-    throw "FLYWAY_PASSWORD is not defined."
-}
+$url = Assert-EnvironmentVariable "FLYWAY_URL"
+$username = Assert-EnvironmentVariable "FLYWAY_USERNAME"
+$password = Assert-EnvironmentVariable "FLYWAY_PASSWORD"
 
-$url = if ($env:FLYWAY_URL) {
-    $env:FLYWAY_URL
-} else {
-    "jdbc:mysql://localhost:3306/saymyname"
-}
+Write-Host "[INFO] Environment: $Environment"
 
-mvn -f .\webapp\pom.xml `
-    flyway:migrate `
-    "-Dflyway.url=$url" `
-    "-Dflyway.user=$env:FLYWAY_USERNAME" `
-    "-Dflyway.password=$env:FLYWAY_PASSWORD" `
-    "-Dflyway.locations=filesystem:webapp/src/main/resources/db/migration"
+Invoke-FlywayMaven `
+    -Command "migrate" `
+    -Url $url `
+    -Username $username `
+    -Password $password
