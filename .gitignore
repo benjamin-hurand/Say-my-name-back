@@ -45,3 +45,5 @@ build/
 # Temporary Claude working directories
 tmpclaude-*-cwd
 tmpclaude-*-cwd/
+**/tmpclaude-*-cwd
+**/tmpclaude-*-cwd/
