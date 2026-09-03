@@ -59,6 +59,8 @@ L'application ne lit aucun secret en dur : toutes les valeurs sensibles viennent
 | `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` | Runtime Spring Boot | Connexion applicative (compte `saymyname_app`) |
 | `FLYWAY_URL`, `FLYWAY_USERNAME`, `FLYWAY_PASSWORD` | Flyway (`scripts/flyway-migrate.ps1`) | Exécution des migrations (compte `saymyname_migrator`) |
 | `AGENT_DB_USERNAME`, `AGENT_DB_PASSWORD` | `scripts/agent-db.ps1`, `scripts/flyway-validate.ps1` | Accès lecture seule (compte `saymyname_readonly`) |
+| `APP_JWT_SECRET_BASE64` | Spring Boot (`app.jwt.secret-base64`) | Secret de signature des JWT, encodé en base64 — **obligatoire**, aucune valeur par défaut, l'application ne démarre pas sans elle |
+| `PHOTOS_STORAGE_ROOT` | Spring Boot (`photos.storage.root`) | Dossier de stockage des photos — optionnel, retombe sur `./webapp/data/photos` (chemin relatif) si absent |
 | `SPRING_PROFILES_ACTIVE` | Spring Boot | Profil actif (`dev` en local, `prod` en production) — ne jamais forcer `dev` dans `application.properties` |
 
 ### `.secrets.local.ps1`
@@ -78,6 +80,9 @@ $env:FLYWAY_PASSWORD = "<mot-de-passe-local>"
 
 $env:AGENT_DB_USERNAME = "saymyname_readonly"
 $env:AGENT_DB_PASSWORD = "<mot-de-passe-local>"
+
+$env:APP_JWT_SECRET_BASE64 = "<secret-jwt-en-base64>"
+# $env:PHOTOS_STORAGE_ROOT = "./webapp/data/photos"  # optionnel, valeur par défaut déjà relative
 ```
 
 Les scripts (`scripts/flyway-common.ps1`, `scripts/agent-db.ps1`) chargent automatiquement `.secrets.local.ps1` s'il existe. Le fichier peut aussi être chargé automatiquement à l'ouverture d'un terminal PowerShell dans le dossier du backend via le profil PowerShell — voir [docs/database-development.md](docs/database-development.md#5-automatic-powershell-secret-loading) pour la configuration exacte.
