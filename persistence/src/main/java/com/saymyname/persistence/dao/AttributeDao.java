@@ -60,6 +60,30 @@ public class AttributeDao {
                 .orElseThrow(() -> new IllegalStateException("Attribut introuvable après sauvegarde"));
     }
 
+    public List<Attribute> findAllByIdsForTenant(Long tenantId, List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        return attributeRepository.findAllByTenantIdAndIdInWithConcept(tenantId, ids).stream()
+                .map(attributeEntityMapper::toModel)
+                .toList();
+    }
+
+    public void saveAll(List<Attribute> attributes) {
+        Long tenantId = TenantContext.get();
+        var entities = attributes.stream()
+                .map(attributeEntityMapper::toEntity)
+                .peek(entity -> entity.setTenantId(tenantId))
+                .toList();
+        attributeRepository.saveAll(entities);
+        attributeRepository.flush();
+    }
+
+    public void delete(Long id) {
+        attributeRepository.deleteById(id);
+        attributeRepository.flush();
+    }
+
     public void saveForTenant(Attribute attribute, Long tenantId) {
         saveEntity(attribute, tenantId);
     }
@@ -78,6 +102,10 @@ public class AttributeDao {
 
     public boolean existsByTenantIdAndConceptId(Long tenantId, Long conceptId) {
         return attributeRepository.countByTenantIdAndConceptId(tenantId, conceptId) > 0;
+    }
+
+    public boolean existsOtherByTenantIdAndAttributeName(Long tenantId, String name, Long attributeId) {
+        return attributeRepository.existsOtherByTenantIdAndAttributeName(tenantId, name, attributeId);
     }
 
     public List<AttributeMetaRow> findMetaByTenantId(Long tenantId) {

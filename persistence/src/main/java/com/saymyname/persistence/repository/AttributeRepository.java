@@ -60,6 +60,17 @@ public interface AttributeRepository extends JpaRepository<AttributeEntity, Long
                         """)
         List<AttributeEntity> findAllByIdInWithConcept(@Param("ids") List<Long> ids);
 
+        @EntityGraph(attributePaths = "concept")
+        @Query("""
+                        select a
+                        from AttributeEntity a
+                        where a.tenantId = :tenantId
+                          and a.id in :ids
+                        """)
+        List<AttributeEntity> findAllByTenantIdAndIdInWithConcept(
+                        @Param("tenantId") Long tenantId,
+                        @Param("ids") List<Long> ids);
+
         @Query("""
                         select (count(a) > 0)
                         from AttributeEntity a
@@ -70,6 +81,18 @@ public interface AttributeRepository extends JpaRepository<AttributeEntity, Long
         boolean existsOtherByTenantIdAndConceptId(
                         @Param("tenantId") Long tenantId,
                         @Param("conceptId") Long conceptId,
+                        @Param("attributeId") Long attributeId);
+
+        @Query("""
+                        select (count(a) > 0)
+                        from AttributeEntity a
+                        where a.tenantId = :tenantId
+                          and a.attributeName = :attributeName
+                          and (:attributeId is null or a.id <> :attributeId)
+                        """)
+        boolean existsOtherByTenantIdAndAttributeName(
+                        @Param("tenantId") Long tenantId,
+                        @Param("attributeName") String attributeName,
                         @Param("attributeId") Long attributeId);
 
         @Query(value = """

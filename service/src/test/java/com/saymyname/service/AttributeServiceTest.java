@@ -8,19 +8,25 @@ import com.saymyname.persistence.dao.AttributeDao;
 import com.saymyname.persistence.dao.ConceptDao;
 import com.saymyname.service.config.BaseServiceTest;
 import com.saymyname.service.attribute.AttributeMetaCache;
+import com.saymyname.service.identity.IdentityService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -34,6 +40,12 @@ class AttributeServiceTest extends BaseServiceTest {
 
     @Mock
     private AttributeMetaCache attributeMetaCache;
+
+    @Mock
+    private AttributeEnumOptionService attributeEnumOptionService;
+
+    @Mock
+    private IdentityService identityService;
 
     @InjectMocks
     private AttributeService service;
@@ -82,6 +94,7 @@ class AttributeServiceTest extends BaseServiceTest {
 
     @Test
     void allowsMultipleCustomAttributesWithoutConcept() {
+        TenantContext.set(10L);
         when(attributeDao.save(any(Attribute.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         assertThatCode(() -> service.create(attribute(null, null))).doesNotThrowAnyException();
@@ -137,6 +150,152 @@ class AttributeServiceTest extends BaseServiceTest {
         verify(attributeDao, never()).save(any(Attribute.class));
     }
 
+    @Test
+    void rejectsManualCreationOfIdentitySystemAttribute() {
+        TenantContext.set(10L);
+        Concept identity = new Concept.Builder()
+                .withId(9L)
+                .withCode("IDENTITY")
+                .withValueType(ValueType.TEXT)
+                .build();
+        when(conceptDao.findById(9L)).thenReturn(Optional.of(identity));
+
+        assertThatThrownBy(() -> service.create(attribute(null, 9L)))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(error -> assertThat(((ResponseStatusException) error).getStatusCode().value())
+                        .isEqualTo(403));
+
+        verify(attributeDao, never()).save(any(Attribute.class));
+    }
+
+    @Test
+    void updatesNormalAttributeAndItsEnumOptions() {
+        TenantContext.set(10L);
+        Attribute current = attribute(42L, null);
+        Attribute updated = attribute(42L, null);
+        updated.setType(ValueType.ENUM);
+        when(attributeDao.findById(42L)).thenReturn(Optional.of(current));
+        when(attributeDao.save(updated)).thenReturn(updated);
+
+        assertThat(service.update(updated, List.of("Marketing", "Produit"))).isSameAs(updated);
+
+        verify(attributeEnumOptionService).replaceActiveOptions(42L, List.of("Marketing", "Produit"));
+        verify(attributeMetaCache).evictCurrentTenant();
+    }
+
+    @Test
+    void identitySourceToggleRecomposesAllIdentities() {
+        TenantContext.set(10L);
+        Attribute current = attribute(42L, null);
+        Attribute updated = attribute(42L, null);
+        updated.setIdentitySource(true);
+        when(attributeDao.findById(42L)).thenReturn(Optional.of(current));
+        when(attributeDao.save(updated)).thenReturn(updated);
+
+        service.update(updated);
+
+        verify(identityService).synchronizeAllCurrentTenant(any());
+    }
+
+    @Test
+    void disablingIdentitySourceRecomposesAllIdentities() {
+        TenantContext.set(10L);
+        Attribute current = attribute(42L, null);
+        current.setIdentitySource(true);
+        Attribute updated = attribute(42L, null);
+        when(attributeDao.findById(42L)).thenReturn(Optional.of(current));
+        when(attributeDao.save(updated)).thenReturn(updated);
+
+        service.update(updated);
+
+        verify(identityService).synchronizeAllCurrentTenant(any());
+    }
+
+    @Test
+    void deletesNormalAttributeAndEvictsCache() {
+        Attribute current = attribute(42L, null);
+        when(attributeDao.findById(42L)).thenReturn(Optional.of(current));
+
+        service.delete(42L);
+
+        verify(attributeDao).delete(42L);
+        verify(attributeMetaCache).evictCurrentTenant();
+    }
+
+    @Test
+    void rejectsDeletionWhenAttributeIsStillReferenced() {
+        Attribute current = attribute(42L, null);
+        when(attributeDao.findById(42L)).thenReturn(Optional.of(current));
+        doThrow(new DataIntegrityViolationException("referenced"))
+                .when(attributeDao).delete(42L);
+
+        assertThatThrownBy(() -> service.delete(42L))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(error -> assertThat(((ResponseStatusException) error).getStatusCode().value())
+                        .isEqualTo(409));
+
+        verify(attributeMetaCache, never()).evictCurrentTenant();
+    }
+
+    @Test
+    void deletingIdentitySourceRecomposesAllIdentities() {
+        Attribute current = attribute(42L, null);
+        current.setIdentitySource(true);
+        when(attributeDao.findById(42L)).thenReturn(Optional.of(current));
+
+        service.delete(42L);
+
+        verify(identityService).synchronizeAllCurrentTenant(any());
+    }
+
+    @Test
+    void rejectsDeletionOfIdentitySystemAttribute() {
+        Attribute current = attribute(42L, 9L);
+        current.setConceptCode("IDENTITY");
+        when(attributeDao.findById(42L)).thenReturn(Optional.of(current));
+
+        assertThatThrownBy(() -> service.delete(42L))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(error -> assertThat(((ResponseStatusException) error).getStatusCode().value())
+                        .isEqualTo(403));
+
+        verify(attributeDao, never()).delete(42L);
+    }
+
+    @Test
+    void reordersAttributesAndRecomposesIdentityWhenSourceOrderChanges() {
+        TenantContext.set(10L);
+        Attribute first = attribute(11L, null);
+        first.setIdentitySource(true);
+        first.setDisplayOrder(10);
+        Attribute second = attribute(12L, null);
+        second.setDisplayOrder(20);
+        when(attributeDao.findAllByIdsForTenant(eq(10L), anyList()))
+                .thenReturn(List.of(first, second));
+
+        service.reorder(List.of(
+                new AttributeService.OrderUpdate(11L, 20),
+                new AttributeService.OrderUpdate(12L, 10)));
+
+        assertThat(first.getDisplayOrder()).isEqualTo(20);
+        assertThat(second.getDisplayOrder()).isEqualTo(10);
+        verify(attributeDao).saveAll(List.of(first, second));
+        verify(attributeMetaCache).evictCurrentTenant();
+        verify(identityService).synchronizeAllCurrentTenant(any());
+    }
+
+    @Test
+    void rejectsDuplicateIdsInReorderPayload() {
+        TenantContext.set(10L);
+
+        assertThatThrownBy(() -> service.reorder(List.of(
+                new AttributeService.OrderUpdate(11L, 10),
+                new AttributeService.OrderUpdate(11L, 20))))
+                .isInstanceOf(com.saymyname.core.exception.common.ValidationException.class);
+
+        verify(attributeDao, never()).saveAll(anyList());
+    }
+
     private void stubConcept(Long conceptId) {
         Concept concept = new Concept.Builder()
                 .withId(conceptId)
@@ -149,6 +308,7 @@ class AttributeServiceTest extends BaseServiceTest {
         return new Attribute.Builder()
                 .withId(id)
                 .withConceptId(conceptId)
+                .withName("Field" + (id == null ? "" : " " + id))
                 .withType(ValueType.TEXT)
                 .withMaxValues(1)
                 .build();

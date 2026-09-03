@@ -84,6 +84,11 @@ public class PersonDao {
         return personRepository.count();
     }
 
+    @Transactional(readOnly = true)
+    public List<Long> findAllIds() {
+        return personRepository.findAllIdsInCurrentTenant();
+    }
+
     @Transactional
     public Optional<Person> findById(Long id) {
         Optional<PersonEntity> personEntity = personRepository.findById(id);

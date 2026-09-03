@@ -1,7 +1,6 @@
 package com.saymyname.webapp.mapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -14,10 +13,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.saymyname.core.model.people.Attribute;
 import com.saymyname.core.model.people.Fact;
 import com.saymyname.core.model.people.Person;
+import com.saymyname.core.model.invitation.Invitation;
 import com.saymyname.core.model.persondirectory.AttributeValueView;
 import com.saymyname.core.model.persondirectory.PersonCard;
-import com.saymyname.service.attribute.AttributeMetaCache;
 import com.saymyname.service.photo.PhotoUrlResolver;
+import com.saymyname.webapp.mapper.invitation.InvitationDtoMapper;
 import com.saymyname.webapp.mapper.person.PersonDirectoryDtoMapper;
 
 @ExtendWith(MockitoExtension.class)
@@ -29,15 +29,12 @@ class IdentityDisplayNameMapperTest {
     private PhotoDtoMapper photoDtoMapper;
     @Mock
     private PhotoUrlResolver photoUrlResolver;
-    @Mock
-    private AttributeMetaCache attributeMetaCache;
-
     @Test
     void personMappersExposeTheSameMaterializedIdentity() {
-        Long identityAttributeId = 13L;
-        when(attributeMetaCache.getIdentityAttributeId()).thenReturn(identityAttributeId);
-
-        Attribute identityAttribute = new Attribute.Builder().withId(identityAttributeId).build();
+        Attribute identityAttribute = new Attribute.Builder()
+                .withId(13L)
+                .withConceptCode("IDENTITY")
+                .build();
         Fact identityFact = new Fact.Builder()
                 .withId(30L)
                 .withAttribute(identityAttribute)
@@ -50,7 +47,7 @@ class IdentityDisplayNameMapperTest {
                 .build();
 
         PersonDtoMapper personMapper = new PersonDtoMapper(
-                factDtoMapper, photoDtoMapper, photoUrlResolver, attributeMetaCache);
+                factDtoMapper, photoDtoMapper, photoUrlResolver);
         PersonDirectoryDtoMapper directoryMapper = new PersonDirectoryDtoMapper(photoUrlResolver);
         PersonCard card = new PersonCard.Builder()
                 .withIdPerson(7L)
@@ -61,6 +58,32 @@ class IdentityDisplayNameMapperTest {
 
         assertThat(personMapper.toSummaryDto(person).displayName())
                 .isEqualTo(directoryMapper.toDto(card).displayName())
+                .isEqualTo("Jean DUPONT");
+        assertThat(personMapper.toDto(person).displayName()).isEqualTo("Jean DUPONT");
+    }
+
+    @Test
+    void invitationPreviewNaturallyContainsPersonDisplayName() {
+        Attribute identityAttribute = new Attribute.Builder()
+                .withId(13L)
+                .withConceptCode("IDENTITY")
+                .build();
+        Fact identityFact = new Fact.Builder()
+                .withId(30L)
+                .withAttribute(identityAttribute)
+                .withValue("Jean DUPONT")
+                .withValidFrom(LocalDateTime.now().minusDays(1))
+                .build();
+        Person person = new Person.Builder()
+                .withId(7L)
+                .withFacts(List.of(identityFact))
+                .build();
+        PersonDtoMapper personMapper = new PersonDtoMapper(
+                factDtoMapper, photoDtoMapper, photoUrlResolver);
+        InvitationDtoMapper invitationMapper = new InvitationDtoMapper(personMapper);
+        Invitation invitation = new Invitation.Builder().withPerson(person).build();
+
+        assertThat(invitationMapper.toPreview(invitation).person().displayName())
                 .isEqualTo("Jean DUPONT");
     }
 }

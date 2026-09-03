@@ -34,4 +34,6 @@ public interface AttributeEnumOptionRepository extends JpaRepository<AttributeEn
 
         List<AttributeEnumOptionEntity> findByAttributeIdInAndActiveTrueOrderByAttributeIdAscOrderIndexAscLabelAsc(
                         Collection<Long> attributeIds);
+
+        List<AttributeEnumOptionEntity> findByAttributeIdOrderByOrderIndexAscIdAsc(Long attributeId);
 }

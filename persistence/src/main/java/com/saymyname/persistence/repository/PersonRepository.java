@@ -1,6 +1,7 @@
 // src/main/java/com/saymyname/persistence/repository/PersonRepository.java
 package com.saymyname.persistence.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,6 +16,14 @@ import jakarta.persistence.LockModeType;
 
 @Repository
 public interface PersonRepository extends JpaRepository<PersonEntity, Long>, PersonRepositoryCustom {
+
+    @Query("""
+            select p.id
+            from PersonEntity p
+            where p.tenantId = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
+            order by p.id
+            """)
+    List<Long> findAllIdsInCurrentTenant();
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""

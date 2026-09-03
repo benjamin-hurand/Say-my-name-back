@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.saymyname.core.identity.IdentityResolver;
 import com.saymyname.core.model.people.Fact;
 import com.saymyname.persistence.dao.FactDao;
+import com.saymyname.persistence.dao.PersonDao;
 import com.saymyname.service.attribute.AttributeMetaCache;
 
 @Service
@@ -19,14 +20,27 @@ public class IdentityService {
     private final AttributeMetaCache attributeMetaCache;
     private final FactDao factDao;
     private final IdentityResolver identityResolver;
+    private final PersonDao personDao;
 
     public IdentityService(
             AttributeMetaCache attributeMetaCache,
             FactDao factDao,
-            IdentityResolver identityResolver) {
+            IdentityResolver identityResolver,
+            PersonDao personDao) {
         this.attributeMetaCache = attributeMetaCache;
         this.factDao = factDao;
         this.identityResolver = identityResolver;
+        this.personDao = personDao;
+    }
+
+    @Transactional
+    public void synchronizeAllCurrentTenant(LocalDateTime now) {
+        if (now == null) {
+            throw new IllegalArgumentException("now est requis");
+        }
+        for (Long personId : personDao.findAllIds()) {
+            synchronize(personId, now);
+        }
     }
 
     @Transactional

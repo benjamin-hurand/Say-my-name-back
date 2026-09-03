@@ -27,8 +27,11 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
     private static final String ATTRIBUTE_TENANT_CONCEPT_CONSTRAINT = "uq_attributes_tenant_concept";
+    private static final String ATTRIBUTE_TENANT_NAME_CONSTRAINT = "uq_tenant_attr_name";
     private static final String ATTRIBUTE_CONCEPT_CONFLICT_MESSAGE =
             "Ce concept est déjà utilisé par un attribut de ce tenant";
+    private static final String ATTRIBUTE_NAME_CONFLICT_MESSAGE =
+            "Ce nom est déjà utilisé par un attribut de ce tenant";
 
     private ProblemDetail problem(HttpStatus status, String title, String detail, HttpServletRequest req) {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(status, detail);
@@ -134,6 +137,14 @@ public class GlobalExceptionHandler {
                     ATTRIBUTE_CONCEPT_CONFLICT_MESSAGE,
                     req);
         }
+        if (hasConstraint(ex, ATTRIBUTE_TENANT_NAME_CONSTRAINT)) {
+            log.warn("Attribute name conflict on {} {}", req.getMethod(), req.getRequestURI());
+            return problem(
+                    HttpStatus.CONFLICT,
+                    "Conflict",
+                    ATTRIBUTE_NAME_CONFLICT_MESSAGE,
+                    req);
+        }
 
         log.error("Unexpected data integrity violation on {} {}",
                 req.getMethod(),
@@ -146,25 +157,18 @@ public class GlobalExceptionHandler {
                 req);
     }
 
-    /**
-     * Hibernate exposes the constraint name when the JDBC driver supports it.
-     * The message-chain fallback covers drivers that only include it in their SQL
-     * exception text, without ever returning that raw text to the client.
-     */
+    /** Hibernate exposes the parsed constraint name on its dedicated exception. */
     private boolean isAttributeTenantConceptConstraint(Throwable throwable) {
+        return hasConstraint(throwable, ATTRIBUTE_TENANT_CONCEPT_CONSTRAINT);
+    }
+
+    private boolean hasConstraint(Throwable throwable, String constraintName) {
         var visited = java.util.Collections.newSetFromMap(
                 new java.util.IdentityHashMap<Throwable, Boolean>());
         Throwable current = throwable;
         while (current != null && visited.add(current)) {
             if (current instanceof org.hibernate.exception.ConstraintViolationException violation
-                    && ATTRIBUTE_TENANT_CONCEPT_CONSTRAINT.equalsIgnoreCase(violation.getConstraintName())) {
-                return true;
-            }
-
-            String message = current.getMessage();
-            if (message != null
-                    && message.toLowerCase(java.util.Locale.ROOT)
-                            .contains(ATTRIBUTE_TENANT_CONCEPT_CONSTRAINT)) {
+                    && constraintName.equalsIgnoreCase(violation.getConstraintName())) {
                 return true;
             }
 

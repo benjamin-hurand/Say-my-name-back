@@ -33,6 +33,23 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void mapsAttributeTenantNameConstraintToConflictWithBusinessMessage() {
+        var sqlException = new SQLException("Duplicate entry");
+        var constraintViolation = new org.hibernate.exception.ConstraintViolationException(
+                "could not execute statement",
+                sqlException,
+                "uq_tenant_attr_name");
+        var exception = new DataIntegrityViolationException("insert failed", constraintViolation);
+
+        var problem = handler.handleDataIntegrityViolation(exception, request());
+
+        assertThat(problem.getStatus()).isEqualTo(HttpStatus.CONFLICT.value());
+        assertThat(problem.getTitle()).isEqualTo("Conflict");
+        assertThat(problem.getDetail())
+                .isEqualTo("Ce nom est déjà utilisé par un attribut de ce tenant");
+    }
+
+    @Test
     void doesNotMisclassifyOtherIntegrityViolationsAsConceptConflicts() {
         var exception = new DataIntegrityViolationException(
                 "could not execute constraint uq_tenant_attr_name",

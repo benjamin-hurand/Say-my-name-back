@@ -60,4 +60,20 @@ public class AttributeEnumOptionDao {
                 .map(mapper::toModel)
                 .collect(Collectors.groupingBy(AttributeEnumOption::getAttributeId, Collectors.toList()));
     }
+
+    @Transactional(readOnly = true)
+    public List<AttributeEnumOption> findAllOptionsByAttributeId(Long attributeId) {
+        return repo.findByAttributeIdOrderByOrderIndexAscIdAsc(attributeId).stream()
+                .map(mapper::toModel)
+                .toList();
+    }
+
+    @Transactional
+    public void saveAll(List<AttributeEnumOption> options) {
+        if (options == null || options.isEmpty()) {
+            return;
+        }
+        repo.saveAll(options.stream().map(mapper::toEntity).toList());
+        repo.flush();
+    }
 }

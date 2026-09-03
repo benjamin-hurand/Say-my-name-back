@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.saymyname.core.model.auth.User;
 import com.saymyname.core.model.enums.OrgRole;
-import com.saymyname.core.model.people.Attribute;
 import com.saymyname.core.model.people.Person;
 import com.saymyname.core.model.people.Fact;
 import com.saymyname.core.model.persondirectory.AdminPersonCard;
@@ -201,17 +200,6 @@ public class AdminRestController {
         return personService.findById(id).orElseThrow(
                 () -> new org.springframework.web.server.ResponseStatusException(
                         org.springframework.http.HttpStatus.NOT_FOUND, "Person not found"));
-    }
-
-    // === 3) Attributes ===
-    @GetMapping("/attributes")
-    public List<Attribute> listAttributes() {
-        return attributeService.findAll();
-    }
-
-    @GetMapping("/attributes/filterable")
-    public List<Attribute> listFilterableAttributes() {
-        return attributeService.getFilterableAttributes();
     }
 
     /**

@@ -20,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.saymyname.core.identity.IdentityResolver;
 import com.saymyname.core.model.people.Fact;
 import com.saymyname.persistence.dao.FactDao;
+import com.saymyname.persistence.dao.PersonDao;
 import com.saymyname.service.attribute.AttributeMetaCache;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,12 +36,14 @@ class IdentityServiceTest {
     private AttributeMetaCache attributeMetaCache;
     @Mock
     private FactDao factDao;
+    @Mock
+    private PersonDao personDao;
 
     private IdentityService service;
 
     @BeforeEach
     void setUp() {
-        service = new IdentityService(attributeMetaCache, factDao, new IdentityResolver());
+        service = new IdentityService(attributeMetaCache, factDao, new IdentityResolver(), personDao);
         when(attributeMetaCache.getIdentityAttributeId()).thenReturn(IDENTITY_ID);
         when(attributeMetaCache.getIdentitySourceAttributeIds()).thenReturn(List.of(FIRST_NAME_ID, LAST_NAME_ID));
     }
@@ -106,8 +109,29 @@ class IdentityServiceTest {
         verify(factDao, never()).createAllForPersonAt(eq(PERSON_ID), eq(IDENTITY_ID), anyList(), eq(NOW));
     }
 
+    @Test
+    void synchronizesEveryPersonInCurrentTenant() {
+        when(personDao.findAllIds()).thenReturn(List.of(7L, 8L));
+        sourceForPerson(7L, FIRST_NAME_ID, fact(1L, "Jean"));
+        sourceForPerson(7L, LAST_NAME_ID);
+        sourceForPerson(7L, IDENTITY_ID);
+        sourceForPerson(8L, FIRST_NAME_ID, fact(2L, "Alice"));
+        sourceForPerson(8L, LAST_NAME_ID);
+        sourceForPerson(8L, IDENTITY_ID);
+
+        service.synchronizeAllCurrentTenant(NOW);
+
+        verify(factDao).createAllForPersonAt(7L, IDENTITY_ID, List.of("Jean"), NOW);
+        verify(factDao).createAllForPersonAt(8L, IDENTITY_ID, List.of("Alice"), NOW);
+    }
+
     private void source(Long attributeId, Fact... facts) {
         when(factDao.findActiveAtByPersonAndAttribute(PERSON_ID, attributeId, NOW))
+                .thenReturn(List.of(facts));
+    }
+
+    private void sourceForPerson(Long personId, Long attributeId, Fact... facts) {
+        when(factDao.findActiveAtByPersonAndAttribute(personId, attributeId, NOW))
                 .thenReturn(List.of(facts));
     }
 
