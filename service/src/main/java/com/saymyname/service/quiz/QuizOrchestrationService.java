@@ -31,6 +31,7 @@ import com.saymyname.core.model.quiz.planning.PlanningDecision;
 import com.saymyname.core.model.quiz.planning.PlanningRequest;
 import com.saymyname.core.model.quiz.planning.PreparedEmit;
 import com.saymyname.persistence.dao.course.CourseDao;
+import com.saymyname.service.attribute.AttributeMetaCache;
 import com.saymyname.service.course.CourseRecentStatsService;
 import com.saymyname.service.course.KnowledgeSelectionService;
 import com.saymyname.service.course.KnowledgeSelectionService.SelectionResult;
@@ -47,6 +48,7 @@ public class QuizOrchestrationService {
         private final FormatPlanner formatPlanner;
         private final CourseRecentStatsService courseRecentStatsService;
         private final TenantMembershipService tenantMembershipService;
+        private final AttributeMetaCache attributeMetaCache;
 
         // D3: Stress thresholds for timed gating
         private static final int STRESS_ERROR_STREAK_THRESHOLD = 2;
@@ -58,7 +60,8 @@ public class QuizOrchestrationService {
                         CandidateAccessor candidateAccessor,
                         FormatPlanner formatPlanner,
                         CourseRecentStatsService courseRecentStatsService,
-                        TenantMembershipService tenantMembershipService) {
+                        TenantMembershipService tenantMembershipService,
+                        AttributeMetaCache attributeMetaCache) {
 
                 this.courseDao = Objects.requireNonNull(courseDao, "courseDao");
                 this.knowledgeSelectionService = Objects.requireNonNull(knowledgeSelectionService,
@@ -69,6 +72,7 @@ public class QuizOrchestrationService {
                                 "courseRecentStatsService");
                 this.tenantMembershipService = Objects.requireNonNull(tenantMembershipService,
                                 "TenantMembershipService");
+                this.attributeMetaCache = Objects.requireNonNull(attributeMetaCache, "attributeMetaCache");
         }
 
         // ------------------------------------------------------------------
@@ -117,7 +121,16 @@ public class QuizOrchestrationService {
                                 decision.requiresPhoto(),
                                 decision.sampleSize());
 
-                CandidateSample sample = candidateAccessor.sample(sampleQuery, decision.sampleSize());
+                // Pick the target the same way as before (random within the eligible
+                // pool), then re-sample distractors preferring the target's GENDER
+                // when one is configured for this tenant and set on the target.
+                CandidateSample targetPick = candidateAccessor.sample(sampleQuery, decision.sampleSize());
+                Long genderAttributeId = attributeMetaCache.getGenderAttributeId();
+                CandidateSample sample = candidateAccessor.sampleWithTargetPreferringAttribute(
+                                sampleQuery,
+                                targetPick.targetPersonId(),
+                                decision.sampleSize(),
+                                genderAttributeId);
 
                 QuizQuestionContext context = buildTrainingContext(options);
 
@@ -192,7 +205,7 @@ public class QuizOrchestrationService {
                                                 effectiveTimed,
                                                 timeLimitMs));
 
-                CandidateSample sample = candidateAccessor.sampleWithTarget(
+                CandidateSample sample = candidateAccessor.sampleWithTargetPreferringAttribute(
                                 buildCandidateQuery(
                                                 userId,
                                                 scope,
@@ -202,7 +215,8 @@ public class QuizOrchestrationService {
                                                 decision.requiresPhoto(),
                                                 decision.sampleSize()),
                                 targetPersonId,
-                                decision.sampleSize());
+                                decision.sampleSize(),
+                                attributeMetaCache.getGenderAttributeId());
 
                 QuizQuestionContext context = buildCourseContext(course, selection, candidate);
 

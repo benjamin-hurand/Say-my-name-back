@@ -5,6 +5,7 @@ import com.saymyname.core.exception.common.ValidationException;
 import com.saymyname.core.model.people.Attribute;
 import com.saymyname.core.model.people.Concept;
 import com.saymyname.core.model.people.ConceptCodes;
+import com.saymyname.core.model.people.GenderOptions;
 import com.saymyname.core.model.people.ValueType;
 import com.saymyname.core.model.enums.CasingStrategy;
 import com.saymyname.core.model.enums.EditPolicy;
@@ -75,9 +76,10 @@ public class AttributeService {
     @Transactional
     public Attribute create(Attribute attribute, List<String> enumOptions) {
         rejectIdentitySystemAttribute(attribute);
-        validateForPersistence(attribute, null);
+        applyIdentitySourcePolicy(attribute);
+        Concept concept = validateForPersistence(attribute, null);
         Attribute saved = attributeDao.save(attribute);
-        synchronizeEnumOptions(saved, enumOptions);
+        synchronizeEnumOptions(saved, concept, enumOptions);
         attributeMetaCache.evictCurrentTenant();
         if (saved.isIdentitySource()) {
             identityService.synchronizeAllCurrentTenant(LocalDateTime.now());
@@ -101,9 +103,10 @@ public class AttributeService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "L'attribut système IDENTITY ne peut pas être modifié");
         }
         rejectIdentitySystemAttribute(attribute);
-        validateForPersistence(attribute, attribute != null ? attribute.getId() : null);
+        applyIdentitySourcePolicy(attribute);
+        Concept concept = validateForPersistence(attribute, attribute != null ? attribute.getId() : null);
         Attribute saved = attributeDao.save(attribute);
-        synchronizeEnumOptions(saved, enumOptions);
+        synchronizeEnumOptions(saved, concept, enumOptions);
         attributeMetaCache.evictCurrentTenant();
         if (identityDefinitionChanged(current, saved)) {
             identityService.synchronizeAllCurrentTenant(LocalDateTime.now());
@@ -157,20 +160,15 @@ public class AttributeService {
 
         Map<Long, Attribute> byId = attributes.stream()
                 .collect(Collectors.toMap(Attribute::getId, Function.identity()));
-        boolean identityOrderChanged = false;
         for (OrderUpdate update : updates) {
             Attribute attribute = byId.get(update.id());
-            if (attribute.getDisplayOrder() != update.displayOrder()) {
-                identityOrderChanged |= attribute.isIdentitySource();
-                attribute.setDisplayOrder(update.displayOrder());
-            }
+            attribute.setDisplayOrder(update.displayOrder());
         }
 
         attributeDao.saveAll(attributes);
         attributeMetaCache.evictCurrentTenant();
-        if (identityOrderChanged) {
-            identityService.synchronizeAllCurrentTenant(LocalDateTime.now());
-        }
+        // Identity composition order is semantic (FIRST_NAME then LAST_NAME), not
+        // driven by displayOrder — reordering attributes never recomposes IDENTITY.
     }
 
     public record OrderUpdate(Long id, Integer displayOrder) {
@@ -205,6 +203,21 @@ public class AttributeService {
         attributeMetaCache.evictTenant(tenantId);
     }
 
+    /**
+     * MVP : l'admin ne choisit plus identitySource. Il est dérivé automatiquement
+     * du concept — vrai uniquement pour FIRST_NAME/LAST_NAME (concepts éligibles) —
+     * et toute valeur envoyée par le client est ignorée.
+     */
+    private void applyIdentitySourcePolicy(Attribute attribute) {
+        if (attribute == null) {
+            return;
+        }
+        Concept concept = attribute.getConceptId() != null
+                ? conceptDao.findById(attribute.getConceptId()).orElse(null)
+                : null;
+        attribute.setIdentitySource(concept != null && concept.isIdentityComponentEligible());
+    }
+
     private void rejectIdentitySystemAttribute(Attribute attribute) {
         if (attribute != null && attribute.getConceptId() != null) {
             conceptDao.findById(attribute.getConceptId())
@@ -217,7 +230,7 @@ public class AttributeService {
         }
     }
 
-    private void validateForPersistence(Attribute attribute, Long attributeIdToExclude) {
+    private Concept validateForPersistence(Attribute attribute, Long attributeIdToExclude) {
         if (attribute == null) {
             throw new ValidationException("L'attribut est requis");
         }
@@ -243,7 +256,7 @@ public class AttributeService {
         AttributeDefinitionValidator.validate(attribute, concept);
 
         if (concept == null) {
-            return;
+            return null;
         }
 
         if (attributeDao.existsOtherByTenantIdAndConceptId(
@@ -254,9 +267,21 @@ public class AttributeService {
                     HttpStatus.CONFLICT,
                     "Ce concept est déjà utilisé par un attribut de ce tenant");
         }
+
+        return concept;
     }
 
-    private void synchronizeEnumOptions(Attribute attribute, List<String> enumOptions) {
+    /**
+     * For GENDER, options are backend-owned (see {@link GenderOptions}): the
+     * client-supplied enumOptions payload is ignored and the attribute's options
+     * are always reconciled to the system set, by code. Every other ENUM
+     * attribute keeps the existing free-form, label-driven contract.
+     */
+    private void synchronizeEnumOptions(Attribute attribute, Concept concept, List<String> enumOptions) {
+        if (concept != null && ConceptCodes.GENDER.equals(concept.getCode())) {
+            attributeEnumOptionService.synchronizeSystemOptions(attribute.getId(), GenderOptions.SYSTEM_OPTIONS);
+            return;
+        }
         if (enumOptions == null) {
             return;
         }
@@ -266,10 +291,12 @@ public class AttributeService {
         attributeEnumOptionService.replaceActiveOptions(attribute.getId(), enumOptions);
     }
 
+    /**
+     * displayOrder is purely administrable presentation and must never trigger
+     * a recomposition — only an actual FIRST_NAME/LAST_NAME source gain or loss does.
+     */
     private static boolean identityDefinitionChanged(Attribute before, Attribute after) {
-        return before.isIdentitySource() != after.isIdentitySource()
-                || ((before.isIdentitySource() || after.isIdentitySource())
-                        && before.getDisplayOrder() != after.getDisplayOrder());
+        return before.isIdentitySource() != after.isIdentitySource();
     }
 
     private static Long requireTenantId() {

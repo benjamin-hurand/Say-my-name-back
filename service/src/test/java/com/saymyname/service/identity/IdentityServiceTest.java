@@ -98,6 +98,17 @@ class IdentityServiceTest {
     }
 
     @Test
+    void composesIdentityFromLastNameAlone() {
+        source(FIRST_NAME_ID);
+        source(LAST_NAME_ID, fact(2L, "DUPONT"));
+        source(IDENTITY_ID);
+
+        service.synchronize(PERSON_ID, NOW);
+
+        verify(factDao).createAllForPersonAt(PERSON_ID, IDENTITY_ID, List.of("DUPONT"), NOW);
+    }
+
+    @Test
     void closesIdentityWithoutCreatingBlankFactWhenAllSourcesAreRemoved() {
         source(FIRST_NAME_ID);
         source(LAST_NAME_ID);

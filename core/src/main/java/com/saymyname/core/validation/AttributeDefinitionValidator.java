@@ -23,7 +23,7 @@ public final class AttributeDefinitionValidator {
         }
 
         if (attribute.isIdentitySource()) {
-            validateIdentitySource(attribute, concept);
+            validateIdentitySource(concept);
         }
 
         if (concept == null) {
@@ -45,13 +45,13 @@ public final class AttributeDefinitionValidator {
         }
     }
 
-    private static void validateIdentitySource(Attribute attribute, Concept concept) {
-        if (concept != null && !concept.isIdentityComponentEligible()) {
+    /**
+     * MVP: seuls les concepts éligibles (FIRST_NAME, LAST_NAME) peuvent composer IDENTITY.
+     * Un attribut custom (sans concept) ne peut plus être une source d'identité.
+     */
+    private static void validateIdentitySource(Concept concept) {
+        if (concept == null || !concept.isIdentityComponentEligible()) {
             throw new ValidationException("Ce concept ne peut pas servir de source d'identité");
-        }
-        if (concept == null
-                && (attribute.getType() != ValueType.TEXT || attribute.getMaxValues() != 1)) {
-            throw new ValidationException("Une source d'identité custom doit être de type TEXT avec maxValues=1");
         }
     }
 

@@ -80,18 +80,37 @@ public class AttributeMetaCache {
         }
     }
 
+    /**
+     * MVP identity rule: composition is driven only by the FIRST_NAME/LAST_NAME
+     * concepts, looked up directly by conceptCode — never by the legacy
+     * identitySource flag (which an admin could set on any attribute under the
+     * old, now-removed, "choose your identity sources" behavior, and which may
+     * still hold stale values for existing rows). Order is semantic (FIRST_NAME
+     * then LAST_NAME) and never driven by displayOrder.
+     */
     public List<Long> getIdentitySourceAttributeIds() {
         Map<Long, Meta> meta = currentTenantMeta();
         if (meta.isEmpty())
             return List.of();
 
         return meta.entrySet().stream()
-                .filter(e -> e.getKey() != null && e.getValue() != null && e.getValue().identitySource)
+                .filter(e -> e.getKey() != null && e.getValue() != null)
+                .filter(e -> identitySourceRank(e.getValue().conceptCode) < 2)
                 .sorted(Comparator
-                        .comparingInt((Map.Entry<Long, Meta> e) -> e.getValue().displayOrder)
+                        .comparingInt((Map.Entry<Long, Meta> e) -> identitySourceRank(e.getValue().conceptCode))
                         .thenComparing(Map.Entry::getKey))
                 .map(Map.Entry::getKey)
                 .toList();
+    }
+
+    private static int identitySourceRank(String conceptCode) {
+        if (ConceptCodes.FIRST_NAME.equals(conceptCode)) {
+            return 0;
+        }
+        if (ConceptCodes.LAST_NAME.equals(conceptCode)) {
+            return 1;
+        }
+        return 2;
     }
 
     public Long getIdentityAttributeId() {
@@ -102,6 +121,28 @@ public class AttributeMetaCache {
         return meta.entrySet().stream()
                 .filter(e -> e.getKey() != null && e.getValue() != null)
                 .filter(e -> ConceptCodes.IDENTITY.equals(e.getValue().conceptCode))
+                .sorted(Comparator
+                        .comparingInt((Map.Entry<Long, Meta> e) -> e.getValue().displayOrder)
+                        .thenComparing(Map.Entry::getKey))
+                .map(Map.Entry::getKey)
+                .findFirst()
+                .orElse(null);
+    }
+
+    /**
+     * Resolves the current tenant's attribute backing the GENDER concept, if
+     * one is configured. Used as an opportunistic distractor-preference signal
+     * for the quiz engine — never a hard requirement, since a tenant may not
+     * configure GENDER at all.
+     */
+    public Long getGenderAttributeId() {
+        Map<Long, Meta> meta = currentTenantMeta();
+        if (meta.isEmpty())
+            return null;
+
+        return meta.entrySet().stream()
+                .filter(e -> e.getKey() != null && e.getValue() != null)
+                .filter(e -> ConceptCodes.GENDER.equals(e.getValue().conceptCode))
                 .sorted(Comparator
                         .comparingInt((Map.Entry<Long, Meta> e) -> e.getValue().displayOrder)
                         .thenComparing(Map.Entry::getKey))

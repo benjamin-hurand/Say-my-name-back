@@ -91,11 +91,15 @@ class AttributeDefinitionValidatorTest {
     }
 
     @Test
-    void acceptsSingleTextCustomIdentitySource() {
+    void rejectsCustomAttributeAsIdentitySource() {
+        // MVP: custom attributes (no concept) can no longer be identity sources,
+        // even a single-value TEXT attribute that was allowed under the old rule.
         Attribute attribute = attribute(ValueType.TEXT, 1);
         attribute.setIdentitySource(true);
 
-        assertThatCode(() -> AttributeDefinitionValidator.validate(attribute, null)).doesNotThrowAnyException();
+        assertThatThrownBy(() -> AttributeDefinitionValidator.validate(attribute, null))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("source d'identité");
     }
 
     @Test

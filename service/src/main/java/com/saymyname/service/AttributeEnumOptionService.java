@@ -33,6 +33,46 @@ public class AttributeEnumOptionService {
         return dao.findActiveOptionsByAttributeId(attributeId);
     }
 
+    public Set<String> getActiveCodesByAttributeId(Long attributeId) {
+        return dao.findActiveCodesByAttributeId(attributeId);
+    }
+
+    /**
+     * Reconciles an attribute's options against a fixed, backend-owned set
+     * (currently used for GENDER). Unlike {@link #replaceActiveOptions}, matching
+     * is done by stable code rather than label, so relabeling a system option
+     * never creates a duplicate, and any option whose code isn't in
+     * {@code systemOptions} is deactivated — the admin cannot append custom
+     * values to a system-managed enum.
+     */
+    public void synchronizeSystemOptions(Long attributeId, List<AttributeEnumOption> systemOptions) {
+        if (attributeId == null || systemOptions == null) {
+            return;
+        }
+
+        List<AttributeEnumOption> existing = dao.findAllOptionsByAttributeId(attributeId);
+        Map<String, AttributeEnumOption> existingByCode = new HashMap<>();
+        for (AttributeEnumOption option : existing) {
+            existingByCode.put(option.getCode(), option);
+            option.setActive(false);
+        }
+
+        List<AttributeEnumOption> toSave = new ArrayList<>(existing);
+        for (AttributeEnumOption system : systemOptions) {
+            AttributeEnumOption option = existingByCode.get(system.getCode());
+            if (option == null) {
+                toSave.add(new AttributeEnumOption(null, attributeId, system.getCode(), system.getLabel(),
+                        system.getOrderIndex(), true));
+            } else {
+                option.setLabel(system.getLabel());
+                option.setOrderIndex(system.getOrderIndex());
+                option.setActive(true);
+            }
+        }
+
+        dao.saveAll(toSave);
+    }
+
     public void replaceActiveOptions(Long attributeId, List<String> requestedLabels) {
         if (attributeId == null || requestedLabels == null) {
             return;

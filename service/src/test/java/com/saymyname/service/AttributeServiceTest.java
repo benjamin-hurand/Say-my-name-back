@@ -2,6 +2,8 @@ package com.saymyname.service;
 
 import com.saymyname.core.model.people.Attribute;
 import com.saymyname.core.model.people.Concept;
+import com.saymyname.core.model.people.ConceptCodes;
+import com.saymyname.core.model.people.GenderOptions;
 import com.saymyname.core.model.people.ValueType;
 import com.saymyname.core.multitenancy.TenantContext;
 import com.saymyname.persistence.dao.AttributeDao;
@@ -184,31 +186,78 @@ class AttributeServiceTest extends BaseServiceTest {
     }
 
     @Test
-    void identitySourceToggleRecomposesAllIdentities() {
+    void gendersConceptAttributeIgnoresClientEnumOptionsAndUsesSystemSet() {
+        TenantContext.set(10L);
+        Attribute created = attribute(null, 5L);
+        created.setType(ValueType.ENUM);
+        stubGenderConcept(5L);
+        when(attributeDao.save(any(Attribute.class))).thenReturn(created);
+
+        service.create(created, List.of("Bleu", "Vert", "Rouge"));
+
+        verify(attributeEnumOptionService).synchronizeSystemOptions(created.getId(), GenderOptions.SYSTEM_OPTIONS);
+        verify(attributeEnumOptionService, never()).replaceActiveOptions(any(), anyList());
+    }
+
+    @Test
+    void gendersConceptAttributeSynchronizesSystemOptionsEvenWithoutClientPayload() {
+        TenantContext.set(10L);
+        Attribute created = attribute(null, 5L);
+        created.setType(ValueType.ENUM);
+        stubGenderConcept(5L);
+        when(attributeDao.save(any(Attribute.class))).thenReturn(created);
+
+        service.create(created, null);
+
+        verify(attributeEnumOptionService).synchronizeSystemOptions(created.getId(), GenderOptions.SYSTEM_OPTIONS);
+    }
+
+    @Test
+    void assigningFirstNameConceptForcesIdentitySourceAndRecomposesAllIdentities() {
+        TenantContext.set(10L);
+        Attribute current = attribute(42L, null);
+        Attribute updated = attribute(42L, 5L);
+        stubConcept(5L, ConceptCodes.FIRST_NAME, true);
+        when(attributeDao.findById(42L)).thenReturn(Optional.of(current));
+        when(attributeDao.existsOtherByTenantIdAndConceptId(10L, 5L, 42L)).thenReturn(false);
+        when(attributeDao.save(any(Attribute.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Attribute saved = service.update(updated);
+
+        assertThat(saved.isIdentitySource()).isTrue();
+        verify(identityService).synchronizeAllCurrentTenant(any());
+    }
+
+    @Test
+    void removingFirstNameConceptForcesIdentitySourceOffAndRecomposesAllIdentities() {
+        TenantContext.set(10L);
+        Attribute current = attribute(42L, 5L);
+        current.setIdentitySource(true);
+        Attribute updated = attribute(42L, null);
+        when(attributeDao.findById(42L)).thenReturn(Optional.of(current));
+        when(attributeDao.save(any(Attribute.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Attribute saved = service.update(updated);
+
+        assertThat(saved.isIdentitySource()).isFalse();
+        verify(identityService).synchronizeAllCurrentTenant(any());
+    }
+
+    @Test
+    void ignoresClientSuppliedIdentitySourceOnCustomAttribute() {
+        // MVP: the admin no longer chooses identitySource — the client value is
+        // never honored, even for a custom attribute that historically had it set.
         TenantContext.set(10L);
         Attribute current = attribute(42L, null);
         Attribute updated = attribute(42L, null);
         updated.setIdentitySource(true);
         when(attributeDao.findById(42L)).thenReturn(Optional.of(current));
-        when(attributeDao.save(updated)).thenReturn(updated);
+        when(attributeDao.save(any(Attribute.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        service.update(updated);
+        Attribute saved = service.update(updated);
 
-        verify(identityService).synchronizeAllCurrentTenant(any());
-    }
-
-    @Test
-    void disablingIdentitySourceRecomposesAllIdentities() {
-        TenantContext.set(10L);
-        Attribute current = attribute(42L, null);
-        current.setIdentitySource(true);
-        Attribute updated = attribute(42L, null);
-        when(attributeDao.findById(42L)).thenReturn(Optional.of(current));
-        when(attributeDao.save(updated)).thenReturn(updated);
-
-        service.update(updated);
-
-        verify(identityService).synchronizeAllCurrentTenant(any());
+        assertThat(saved.isIdentitySource()).isFalse();
+        verify(identityService, never()).synchronizeAllCurrentTenant(any());
     }
 
     @Test
@@ -263,7 +312,10 @@ class AttributeServiceTest extends BaseServiceTest {
     }
 
     @Test
-    void reordersAttributesAndRecomposesIdentityWhenSourceOrderChanges() {
+    void reorderingIdentitySourceAttributesNeverRecomposesIdentity() {
+        // MVP: displayOrder is purely administrable presentation. Composition order
+        // is semantic (FIRST_NAME then LAST_NAME) and reordering must never trigger
+        // a resynchronization, even when identity-source attributes are involved.
         TenantContext.set(10L);
         Attribute first = attribute(11L, null);
         first.setIdentitySource(true);
@@ -281,7 +333,7 @@ class AttributeServiceTest extends BaseServiceTest {
         assertThat(second.getDisplayOrder()).isEqualTo(10);
         verify(attributeDao).saveAll(List.of(first, second));
         verify(attributeMetaCache).evictCurrentTenant();
-        verify(identityService).synchronizeAllCurrentTenant(any());
+        verify(identityService, never()).synchronizeAllCurrentTenant(any());
     }
 
     @Test
@@ -300,6 +352,27 @@ class AttributeServiceTest extends BaseServiceTest {
         Concept concept = new Concept.Builder()
                 .withId(conceptId)
                 .withValueType(ValueType.TEXT)
+                .build();
+        when(conceptDao.findById(conceptId)).thenReturn(Optional.of(concept));
+    }
+
+    private void stubGenderConcept(Long conceptId) {
+        Concept concept = new Concept.Builder()
+                .withId(conceptId)
+                .withCode(ConceptCodes.GENDER)
+                .withValueType(ValueType.ENUM)
+                .withIdentityComponentEligible(false)
+                .withRequiredMaxValues(1)
+                .build();
+        when(conceptDao.findById(conceptId)).thenReturn(Optional.of(concept));
+    }
+
+    private void stubConcept(Long conceptId, String code, boolean identityComponentEligible) {
+        Concept concept = new Concept.Builder()
+                .withId(conceptId)
+                .withCode(code)
+                .withValueType(ValueType.TEXT)
+                .withIdentityComponentEligible(identityComponentEligible)
                 .build();
         when(conceptDao.findById(conceptId)).thenReturn(Optional.of(concept));
     }

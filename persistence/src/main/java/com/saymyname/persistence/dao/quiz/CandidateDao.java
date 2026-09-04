@@ -366,6 +366,20 @@ public class CandidateDao {
     }
 
     /**
+     * Fetch a single person's active value for one attribute, or null if absent.
+     * Used to read an opportunistic preference signal (e.g. GENDER) for a
+     * known target person, without pulling in the full payload-fetch machinery.
+     */
+    @Transactional(readOnly = true)
+    public String fetchSingleAttributeValue(Long personId, Long attributeId) {
+        if (personId == null || attributeId == null) {
+            return null;
+        }
+        Map<Long, String> attrs = fetchAttributeValues(List.of(personId), attributeId).get(personId);
+        return attrs == null ? null : attrs.get(attributeId);
+    }
+
+    /**
      * Fetch values for ONE attributeId, returned as:
      * personId -> map(attributeId -> value)
      * (kept for backward compatibility with PayloadItem signature).

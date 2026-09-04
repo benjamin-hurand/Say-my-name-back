@@ -35,13 +35,16 @@ public class FactService {
     private final FactDao factDao;
     private final AttributeDao attributeDao;
     private final IdentityService identityService;
+    private final AttributeEnumOptionService attributeEnumOptionService;
 
     public FactService(FactDao factDao,
             AttributeDao attributeDao,
-            IdentityService identityService) {
+            IdentityService identityService,
+            AttributeEnumOptionService attributeEnumOptionService) {
         this.factDao = factDao;
         this.attributeDao = attributeDao;
         this.identityService = identityService;
+        this.attributeEnumOptionService = attributeEnumOptionService;
     }
 
     public List<Fact> getAttributesByPersonId(Long personId) {
@@ -161,6 +164,13 @@ public class FactService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Modifications soumises à approbation");
         }
 
+        // For ENUM attributes, a Fact value must match one of the attribute's own
+        // active option codes (not free text) — fetched once up front since it's
+        // shared by every create/update entry below.
+        Set<String> enumActiveCodes = attr.getType() == ValueType.ENUM
+                ? attributeEnumOptionService.getActiveCodesByAttributeId(attributeId)
+                : null;
+
         // 2) Charger les PA ACTIVES à NOW uniquement (on ignore le futur)
         List<Fact> activeNow = factDao.findActiveAtByPersonAndAttribute(personId, attributeId,
                 now);
@@ -207,6 +217,10 @@ public class FactService {
                 if (!AttributeValueValidator.isValid(normalized, attr.getType())) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                             "Valeur invalide pour le type " + attr.getType());
+                }
+                if (enumActiveCodes != null && !enumActiveCodes.contains(normalized)) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "Valeur ENUM invalide pour cet attribut: " + normalized);
                 }
 
                 String currNorm = TextNormalization.normalizeWithStrategy(
@@ -255,6 +269,10 @@ public class FactService {
                 if (!AttributeValueValidator.isValid(normalized, attr.getType())) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                             "Valeur invalide pour le type " + attr.getType());
+                }
+                if (enumActiveCodes != null && !enumActiveCodes.contains(normalized)) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "Valeur ENUM invalide pour cet attribut: " + normalized);
                 }
                 createNowValues.add(normalized);
             }
