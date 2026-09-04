@@ -13,6 +13,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.saymyname.core.model.enums.CasingStrategy;
@@ -35,6 +36,7 @@ import com.saymyname.webapp.config.TestcontainersConfiguration;
 @SpringBootTest(classes = WebappApplication.class)
 @ActiveProfiles("test")
 @ContextConfiguration(initializers = TestcontainersConfiguration.Initializer.class)
+@Transactional
 class GenderCanonicalIT {
 
     @Autowired
