@@ -57,6 +57,15 @@ public class FactDao {
         return toMinMaxMap(rows);
     }
 
+    /** Retourne Map<attributeId, [min, max]> pour les attributs DATETIME (précision heure conservée). */
+    @Transactional(readOnly = true)
+    public Map<Long, String[]> findDatetimeMinMaxByAttributeIds(Collection<Long> attributeIds) {
+        if (attributeIds == null || attributeIds.isEmpty())
+            return Collections.emptyMap();
+        List<Object[]> rows = factRepository.findDatetimeMinMaxByAttributeIds(attributeIds);
+        return toMinMaxMap(rows);
+    }
+
     private Map<Long, String[]> toMinMaxMap(List<Object[]> rows) {
         if (rows == null || rows.isEmpty())
             return Collections.emptyMap();
@@ -67,6 +76,25 @@ public class FactDao {
             String max = r[2] != null ? String.valueOf(r[2]) : null;
             if (id != null)
                 map.put(id, new String[] { min, max });
+        }
+        return map;
+    }
+
+    /** Retourne Map<attributeId, [factCount, personCount]> pour l'impact de suppression. */
+    @Transactional(readOnly = true)
+    public Map<Long, long[]> countFactsAndPersonsByAttributeIds(Collection<Long> attributeIds) {
+        if (attributeIds == null || attributeIds.isEmpty())
+            return Collections.emptyMap();
+        List<Object[]> rows = factRepository.countFactsAndPersonsByAttributeIds(attributeIds);
+        if (rows == null || rows.isEmpty())
+            return Collections.emptyMap();
+        Map<Long, long[]> map = new HashMap<>(rows.size());
+        for (Object[] r : rows) {
+            Long id = r[0] != null ? ((Number) r[0]).longValue() : null;
+            long factCount = r[1] != null ? ((Number) r[1]).longValue() : 0L;
+            long personCount = r[2] != null ? ((Number) r[2]).longValue() : 0L;
+            if (id != null)
+                map.put(id, new long[] { factCount, personCount });
         }
         return map;
     }

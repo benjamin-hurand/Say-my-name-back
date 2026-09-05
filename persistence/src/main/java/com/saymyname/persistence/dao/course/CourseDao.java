@@ -2,7 +2,10 @@ package com.saymyname.persistence.dao.course;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.stereotype.Repository;
@@ -71,6 +74,24 @@ public class CourseDao {
     public Optional<Course> findLastAccessedFirstActive(Long userId, Collection<CourseStatus> statuses) {
         return courseRepo.findFirstByUserIdAndStatusInOrderByLastAccessedAtDesc(userId, statuses)
                 .map(courseEntityMapper::toShortModel);
+    }
+
+    /** Retourne Map<targetAttributeId, courseCount> pour l'impact de suppression. */
+    @Transactional(readOnly = true)
+    public Map<Long, Long> countByTargetAttributeIds(Collection<Long> attributeIds) {
+        if (attributeIds == null || attributeIds.isEmpty())
+            return Collections.emptyMap();
+        List<Object[]> rows = courseRepo.countByTargetAttributeIds(attributeIds);
+        if (rows == null || rows.isEmpty())
+            return Collections.emptyMap();
+        Map<Long, Long> map = new HashMap<>(rows.size());
+        for (Object[] r : rows) {
+            Long id = r[0] != null ? ((Number) r[0]).longValue() : null;
+            Long count = r[1] != null ? ((Number) r[1]).longValue() : 0L;
+            if (id != null)
+                map.put(id, count);
+        }
+        return map;
     }
 
     public Optional<Course> findFirstByUserScopeAndStatus(Long userId,

@@ -189,14 +189,22 @@
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
                     <classesDirectory>${project.build.outputDirectory}</classesDirectory>
+                    <!--
+                        No DOCKER_HOST here: Testcontainers' default client-provider
+                        strategy chain already auto-detects Docker Desktop on Windows
+                        (named pipe) and the standard Unix socket on Linux/Mac/CI
+                        without any configuration. Forcing tcp://localhost:2375
+                        required enabling Docker Desktop's unauthenticated TCP daemon
+                        exposure, which we don't want to depend on. A CI environment
+                        that genuinely needs a custom DOCKER_HOST can still set it as
+                        a real environment variable before invoking Maven — Surefire/
+                        Failsafe forks inherit the process environment by default, so
+                        nothing needs to be hardcoded here for that to work.
+                    -->
                     <systemPropertyVariables>
-                        <DOCKER_HOST>tcp://localhost:2375</DOCKER_HOST>
                         <testcontainers.ryuk.disabled>true</testcontainers.ryuk.disabled>
                         <TESTCONTAINERS_CHECKS_DISABLE>true</TESTCONTAINERS_CHECKS_DISABLE>
                     </systemPropertyVariables>
-                    <environmentVariables>
-                        <DOCKER_HOST>tcp://localhost:2375</DOCKER_HOST>
-                    </environmentVariables>
                 </configuration>
             </plugin>
         </plugins>

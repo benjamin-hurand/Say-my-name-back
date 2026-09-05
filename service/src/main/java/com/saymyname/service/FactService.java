@@ -20,6 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.saymyname.core.model.enums.EditPolicy;
 import com.saymyname.core.model.people.Attribute;
+import com.saymyname.core.model.people.AttributeCapabilities;
 import com.saymyname.core.model.people.ValueType;
 import com.saymyname.core.model.people.ObservedMinMax;
 import com.saymyname.core.model.people.Fact;
@@ -61,31 +62,40 @@ public class FactService {
     }
 
     /**
-     * Calcule min/max observés pour NUMBER/DATE et renvoie Map<attributeId,
-     * ObservedMinMax>.
+     * Calcule min/max observés pour NUMBER/DATE/DATETIME et renvoie
+     * Map<attributeId, ObservedMinMax>. Filtrable est dérivé du type
+     * ({@link AttributeCapabilities}), pas de la colonne {@code filter}.
      */
     public Map<Long, ObservedMinMax> computeObservedMinMaxByAttributes(List<Attribute> attributes) {
         if (attributes == null || attributes.isEmpty())
             return Collections.emptyMap();
 
         Set<Long> numberIds = attributes.stream()
-                .filter(a -> a.isFilter() && a.getType() == ValueType.NUMBER)
+                .filter(a -> AttributeCapabilities.isFilterable(a) && a.getType() == ValueType.NUMBER)
                 .map(Attribute::getId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
         Set<Long> dateIds = attributes.stream()
-                .filter(a -> a.isFilter() && a.getType() == ValueType.DATE)
+                .filter(a -> AttributeCapabilities.isFilterable(a) && a.getType() == ValueType.DATE)
+                .map(Attribute::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        Set<Long> datetimeIds = attributes.stream()
+                .filter(a -> AttributeCapabilities.isFilterable(a) && a.getType() == ValueType.DATETIME)
                 .map(Attribute::getId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
         var numberMinMax = factDao.findNumberMinMaxByAttributeIds(numberIds); // Map<Long, String[]>
         var dateMinMax = factDao.findDateMinMaxByAttributeIds(dateIds); // Map<Long, String[]>
+        var datetimeMinMax = factDao.findDatetimeMinMaxByAttributeIds(datetimeIds); // Map<Long, String[]>
 
         Map<Long, ObservedMinMax> out = new HashMap<>();
         numberMinMax.forEach((id, arr) -> out.put(id, new ObservedMinMax(arr[0], arr[1])));
         dateMinMax.forEach((id, arr) -> out.put(id, new ObservedMinMax(arr[0], arr[1])));
+        datetimeMinMax.forEach((id, arr) -> out.put(id, new ObservedMinMax(arr[0], arr[1])));
         return out;
     }
 

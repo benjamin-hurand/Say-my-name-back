@@ -99,6 +99,18 @@ public interface ChangeRequestRepository
       @Param("personId") Long personId,
       @Param("statuses") Collection<ChangeRequestStatus> statuses);
 
+  /** Impact de suppression : nb de change requests PENDING par attribut. */
+  @Query(value = """
+          SELECT cr.attribute_id AS attributeId,
+                 COUNT(*) AS pendingCount
+            FROM change_requests cr
+           WHERE cr.attribute_id IN (:attributeIds)
+             AND cr.tenant_id = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
+             AND cr.status = 'PENDING'
+           GROUP BY cr.attribute_id
+      """, nativeQuery = true)
+  List<Object[]> countPendingByAttributeIds(@Param("attributeIds") Collection<Long> attributeIds);
+
   /* =================== Bulk update header (org-scoped) =================== */
 
   @Modifying(clearAutomatically = true, flushAutomatically = true)

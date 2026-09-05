@@ -3,7 +3,10 @@ package com.saymyname.persistence.dao;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -46,6 +49,24 @@ public class ChangeRequestDao {
     }
 
     /* ---------- Queries ---------- */
+
+    /** Retourne Map<attributeId, pendingCount> pour l'impact de suppression. */
+    @Transactional(readOnly = true)
+    public Map<Long, Long> countPendingByAttributeIds(Collection<Long> attributeIds) {
+        if (attributeIds == null || attributeIds.isEmpty())
+            return Collections.emptyMap();
+        List<Object[]> rows = crRepo.countPendingByAttributeIds(attributeIds);
+        if (rows == null || rows.isEmpty())
+            return Collections.emptyMap();
+        Map<Long, Long> map = new HashMap<>(rows.size());
+        for (Object[] r : rows) {
+            Long id = r[0] != null ? ((Number) r[0]).longValue() : null;
+            Long count = r[1] != null ? ((Number) r[1]).longValue() : 0L;
+            if (id != null)
+                map.put(id, count);
+        }
+        return map;
+    }
 
     @Transactional(readOnly = true)
     public ChangeRequest findOpenByTriplet(Long personId, Long requesterId, Long attributeId,

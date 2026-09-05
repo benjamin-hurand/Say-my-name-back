@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.saymyname.core.model.people.Attribute;
+import com.saymyname.core.model.people.AttributeDeletionImpact;
 import com.saymyname.core.model.people.AttributeEnumOption;
 import com.saymyname.service.AttributeEnumOptionService;
 import com.saymyname.service.AttributeService;
@@ -63,6 +64,11 @@ public class AdminAttributeController {
         return toDtos(attributeService.getFilterableAttributes());
     }
 
+    @GetMapping("/sortable")
+    public List<AttributeDto> listSortable() {
+        return toDtos(attributeService.findAllSorts());
+    }
+
     @PostMapping
     public ResponseEntity<AttributeDto> create(@RequestBody AdminAttributeMutationDto request) {
         Attribute saved = attributeService.create(
@@ -100,11 +106,13 @@ public class AdminAttributeController {
     private List<AttributeDto> toDtos(List<Attribute> attributes) {
         Map<Long, List<AttributeEnumOption>> optionsByAttribute = optionService
                 .getActiveOptionsByAttributeIds(attributes.stream().map(Attribute::getId).toList());
+        Map<Long, AttributeDeletionImpact> impactByAttribute = attributeService.getDeletionImpact(attributes);
         return attributes.stream()
                 .map(attribute -> attributeMapper.toDto(
                         attribute,
                         null,
-                        toOptionDtos(optionsByAttribute.get(attribute.getId()))))
+                        toOptionDtos(optionsByAttribute.get(attribute.getId())),
+                        attributeMapper.toDeletionImpactDto(impactByAttribute.get(attribute.getId()))))
                 .toList();
     }
 

@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -14,6 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,6 +28,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import com.saymyname.core.model.people.Attribute;
+import com.saymyname.core.model.people.AttributeDeletionImpact;
 import com.saymyname.core.model.people.ValueType;
 import com.saymyname.service.AttributeEnumOptionService;
 import com.saymyname.service.AttributeService;
@@ -109,6 +112,25 @@ class AdminAttributeControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(42))
                 .andExpect(jsonPath("$.name").value("Bureau"));
+    }
+
+    @Test
+    void listExposesDeletionImpactPerAttribute() throws Exception {
+        Attribute attribute = new Attribute.Builder()
+                .withId(42L)
+                .withName("Département")
+                .withType(ValueType.ENUM)
+                .build();
+        when(attributeService.findAll()).thenReturn(List.of(attribute));
+        when(optionService.getActiveOptionsByAttributeIds(List.of(42L))).thenReturn(Map.of());
+        when(attributeService.getDeletionImpact(List.of(attribute)))
+                .thenReturn(Map.of(42L, new AttributeDeletionImpact(3L, 2L, 0L, 0L, false)));
+
+        mockMvc.perform(get("/api/admin/attributes"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].deletionImpact.factCount").value(3))
+                .andExpect(jsonPath("$[0].deletionImpact.personCount").value(2))
+                .andExpect(jsonPath("$[0].deletionImpact.canDelete").value(false));
     }
 
     @Test

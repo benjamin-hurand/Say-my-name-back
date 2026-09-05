@@ -40,16 +40,19 @@ public class PersonService {
     private final FactService factService;
     private final TenantMembershipService tenantMembershipService;
     private final AttributeMetaCache attributeMetaCache;
+    private final PersonSearchAttributeGuard searchAttributeGuard;
 
     public PersonService(
             PersonDao personDao,
             FactService factService,
             TenantMembershipService tenantMembershipService,
-            AttributeMetaCache attributeMetaCache) {
+            AttributeMetaCache attributeMetaCache,
+            PersonSearchAttributeGuard searchAttributeGuard) {
         this.personDao = personDao;
         this.factService = factService;
         this.tenantMembershipService = tenantMembershipService;
         this.attributeMetaCache = attributeMetaCache;
+        this.searchAttributeGuard = searchAttributeGuard;
     }
 
     public List<Person> findAll() {
@@ -104,6 +107,7 @@ public class PersonService {
      */
     @Transactional(readOnly = true)
     public Page<PersonCard> searchPersons(PersonSearchCriteria criteria, Pageable pageable, Long userId) {
+        searchAttributeGuard.validate(criteria);
         Page<PagePersonRow> page = personDao.findPersonsPage(criteria, pageable, userId);
 
         List<Long> personIds = page.getContent().stream()
@@ -182,6 +186,7 @@ public class PersonService {
      */
     @Transactional(readOnly = true)
     public Page<AdminPersonCard> searchPersonsForAdmin(AdminPersonSearchCriteria criteria, Pageable pageable) {
+        searchAttributeGuard.validateAdmin(criteria);
         Page<PagePersonRow> page = personDao.findPersonsPageForAdmin(criteria, pageable);
 
         List<Long> personIds = page.getContent().stream()
@@ -254,6 +259,7 @@ public class PersonService {
     }
 
     public List<Long> findPersonIds(PersonSearchCriteria criteria, Long userId) {
+        searchAttributeGuard.validate(criteria);
         return personDao.findPersonIds(criteria, userId);
     }
 

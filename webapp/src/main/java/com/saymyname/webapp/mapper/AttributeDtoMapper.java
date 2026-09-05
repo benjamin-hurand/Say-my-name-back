@@ -13,10 +13,12 @@ import com.saymyname.core.model.enums.ConstraintKind;
 import com.saymyname.core.model.enums.EditPolicy;
 import com.saymyname.core.model.enums.concept.ConceptPortabilityKind;
 import com.saymyname.core.model.people.Attribute;
+import com.saymyname.core.model.people.AttributeDeletionImpact;
 import com.saymyname.core.model.people.ObservedMinMax;
 import com.saymyname.core.model.people.ValueType;
 import com.saymyname.core.model.rules.RangeRules;
 import com.saymyname.core.model.rules.RegexRules;
+import com.saymyname.webapp.dto.AttributeDeletionImpactDto;
 import com.saymyname.webapp.dto.AttributeDto;
 import com.saymyname.webapp.dto.AttributeEnumOptionDto;
 import com.saymyname.webapp.dto.AttributeStatsDto;
@@ -32,12 +34,19 @@ public class AttributeDtoMapper {
     private static final ObjectMapper OM = new ObjectMapper();
 
     public AttributeDto toDto(final Attribute m) {
-        return toDto(m, null, null);
+        return toDto(m, null, null, null);
     }
 
     public AttributeDto toDto(final Attribute m,
             final AttributeStatsDto stats,
             final List<AttributeEnumOptionDto> options) {
+        return toDto(m, stats, options, null);
+    }
+
+    public AttributeDto toDto(final Attribute m,
+            final AttributeStatsDto stats,
+            final List<AttributeEnumOptionDto> options,
+            final AttributeDeletionImpactDto deletionImpact) {
         ConstraintDto constraint = buildConstraintDto(m.getConstraintKind(), m.getConstraintPayload());
         return new AttributeDto(
                 m.getId(),
@@ -68,7 +77,17 @@ public class AttributeDtoMapper {
                 constraint,
 
                 stats,
-                options);
+                options,
+                deletionImpact);
+    }
+
+    public AttributeDeletionImpactDto toDeletionImpactDto(final AttributeDeletionImpact impact) {
+        return impact == null ? null : new AttributeDeletionImpactDto(
+                impact.factCount(),
+                impact.personCount(),
+                impact.courseCount(),
+                impact.pendingChangeRequestCount(),
+                impact.canDelete());
     }
 
     private ConstraintDto buildConstraintDto(ConstraintKind kind, Map<String, Object> payload) {

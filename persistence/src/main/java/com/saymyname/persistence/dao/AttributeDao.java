@@ -37,18 +37,6 @@ public class AttributeDao {
                 .map(attributeEntityMapper::toModel);
     }
 
-    public List<Attribute> getFilterableAttributes() {
-        return attributeRepository.findByFilterTrueWithConcept().stream()
-                .map(attributeEntityMapper::toModel)
-                .toList();
-    }
-
-    public List<Attribute> findAllSorts() {
-        return attributeRepository.findBySortTrueWithConcept().stream()
-                .map(attributeEntityMapper::toModel)
-                .toList();
-    }
-
     public long countAll() {
         return attributeRepository.count();
     }

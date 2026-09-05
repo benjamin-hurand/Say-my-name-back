@@ -40,6 +40,32 @@ public interface FactRepository extends JpaRepository<FactEntity, Long> {
       """, nativeQuery = true)
   List<Object[]> findDateMinMaxByAttributeIds(@Param("attributeIds") Collection<Long> attributeIds);
 
+  // MIN/MAX pour attributs datetime (format ISO 'YYYY-MM-DDTHH:mm:ss' dans value)
+  @Query(value = """
+      SELECT f.attribute_id AS attributeId,
+             REPLACE(DATE_FORMAT(MIN(STR_TO_DATE(REPLACE(f.value, 'T', ' '), '%Y-%m-%d %H:%i:%s')), '%Y-%m-%d %H:%i:%s'), ' ', 'T') AS minVal,
+             REPLACE(DATE_FORMAT(MAX(STR_TO_DATE(REPLACE(f.value, 'T', ' '), '%Y-%m-%d %H:%i:%s')), '%Y-%m-%d %H:%i:%s'), ' ', 'T') AS maxVal
+        FROM facts f
+       WHERE f.attribute_id IN (:attributeIds)
+         AND f.tenant_id = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
+         AND f.is_deleted = 0
+       GROUP BY f.attribute_id
+      """, nativeQuery = true)
+  List<Object[]> findDatetimeMinMaxByAttributeIds(@Param("attributeIds") Collection<Long> attributeIds);
+
+  // Impact de suppression : nb de facts + nb de personnes distinctes par attribut
+  @Query(value = """
+      SELECT f.attribute_id AS attributeId,
+             COUNT(*) AS factCount,
+             COUNT(DISTINCT f.person_id) AS personCount
+        FROM facts f
+       WHERE f.attribute_id IN (:attributeIds)
+         AND f.tenant_id = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
+         AND f.is_deleted = 0
+       GROUP BY f.attribute_id
+      """, nativeQuery = true)
+  List<Object[]> countFactsAndPersonsByAttributeIds(@Param("attributeIds") Collection<Long> attributeIds);
+
   // Comptage par intervalle + validité
   @Query(value = """
       SELECT COUNT(DISTINCT f.person_id)

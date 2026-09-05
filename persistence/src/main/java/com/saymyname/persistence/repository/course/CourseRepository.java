@@ -56,4 +56,15 @@ public interface CourseRepository extends JpaRepository<CourseEntity, Long> {
             """)
     List<CourseEntity> findAllActiveWithLastAccess(@Param("userId") Long userId,
             @Param("statuses") Collection<CourseStatus> statuses);
+
+    /** Impact de suppression : nb de cours ciblant chaque attribut. */
+    @Query(value = """
+            SELECT c.target_attribute_id AS attributeId,
+                   COUNT(*) AS courseCount
+              FROM courses c
+             WHERE c.target_attribute_id IN (:attributeIds)
+               AND c.tenant_id = :#{T(com.saymyname.core.multitenancy.TenantContext).get()}
+             GROUP BY c.target_attribute_id
+            """, nativeQuery = true)
+    List<Object[]> countByTargetAttributeIds(@Param("attributeIds") Collection<Long> attributeIds);
 }

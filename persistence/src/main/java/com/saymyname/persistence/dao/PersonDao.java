@@ -1,24 +1,34 @@
 package com.saymyname.persistence.dao;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import org.hibernate.query.criteria.HibernateCriteriaBuilder;
+import org.hibernate.query.criteria.JpaExpression;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.saymyname.core.model.enums.EmailStatus;
 import com.saymyname.core.model.enums.PhotoStatus;
+import com.saymyname.core.model.people.Attribute;
 import com.saymyname.core.model.people.Person;
+import com.saymyname.core.model.people.ValueType;
 import com.saymyname.core.model.persondirectory.AdminPersonSearchCriteria;
 import com.saymyname.core.model.persondirectory.AttributeValueRow;
 import com.saymyname.core.model.persondirectory.PagePersonRow;
@@ -29,6 +39,7 @@ import com.saymyname.persistence.entity.organization.FactEntity;
 import com.saymyname.persistence.entity.organization.PersonEntity;
 import com.saymyname.persistence.entity.organization.PhotoEntity;
 import com.saymyname.persistence.entity.organization.attribute.AttributeEntity;
+import com.saymyname.persistence.entity.organization.attribute.AttributeEnumOptionEntity;
 import com.saymyname.persistence.entity.organization.subscription.UserSubscriptionEntity;
 import com.saymyname.persistence.mapper.PersonEntityMapper;
 import com.saymyname.persistence.repository.PersonEmailRepository;
@@ -42,9 +53,11 @@ import jakarta.persistence.Tuple;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Order;
+import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
@@ -59,6 +72,7 @@ public class PersonDao {
     private final PersonEntityMapper personEntityMapper;
     private final UserSubscriptionRepository userSubscriptionRepository;
     private final PersonEmailRepository personEmailRepository;
+    private final AttributeDao attributeDao;
 
     @PersistenceContext
     private EntityManager em;
@@ -66,11 +80,13 @@ public class PersonDao {
     public PersonDao(PersonRepository personRepository,
             PersonEntityMapper personEntityMapper,
             UserSubscriptionRepository userSubscriptionRepository,
-            PersonEmailRepository personEmailRepository) {
+            PersonEmailRepository personEmailRepository,
+            AttributeDao attributeDao) {
         this.personRepository = personRepository;
         this.personEntityMapper = personEntityMapper;
         this.userSubscriptionRepository = userSubscriptionRepository;
         this.personEmailRepository = personEmailRepository;
+        this.attributeDao = attributeDao;
     }
 
     // ==================== Méthodes existantes ====================
@@ -143,12 +159,13 @@ public class PersonDao {
     @Transactional(readOnly = true)
     public Page<PagePersonRow> findPersonsPage(PersonSearchCriteria criteria, Pageable pageable, Long userId) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
+        Map<Long, ValueType> typesById = loadAttributeTypes(collectAttributeIds(criteria));
 
         // -------- COUNT --------
         CriteriaQuery<Long> cqCount = cb.createQuery(Long.class);
         Root<PersonEntity> rootC = cqCount.from(PersonEntity.class);
 
-        List<Predicate> whereCount = buildAttributeFilters(criteria, cb, cqCount, rootC);
+        List<Predicate> whereCount = buildAttributeFilters(criteria, cb, cqCount, rootC, typesById);
 
         // FollowFilter tri-état
         if (criteria != null && criteria.getFollowFilter() != null) {
@@ -170,7 +187,7 @@ public class PersonDao {
         CriteriaQuery<Tuple> cq = cb.createTupleQuery();
         Root<PersonEntity> root = cq.from(PersonEntity.class);
 
-        List<Predicate> where = buildAttributeFilters(criteria, cb, cq, root);
+        List<Predicate> where = buildAttributeFilters(criteria, cb, cq, root, typesById);
 
         if (criteria != null && criteria.getFollowFilter() != null) {
             switch (criteria.getFollowFilter()) {
@@ -204,7 +221,7 @@ public class PersonDao {
                 .where(where.toArray(new Predicate[0]))
                 .distinct(true);
 
-        applySort(criteria, cb, cq, root);
+        applySort(criteria, cb, cq, root, typesById);
 
         TypedQuery<Tuple> q = em.createQuery(cq);
         q.setFirstResult((int) pageable.getOffset());
@@ -222,12 +239,13 @@ public class PersonDao {
     @Transactional(readOnly = true)
     public Page<PagePersonRow> findPersonsPageForAdmin(AdminPersonSearchCriteria criteria, Pageable pageable) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
+        Map<Long, ValueType> typesById = loadAttributeTypes(collectAttributeIds(criteria));
 
         // -------- COUNT --------
         CriteriaQuery<Long> cqCount = cb.createQuery(Long.class);
         Root<PersonEntity> rootC = cqCount.from(PersonEntity.class);
 
-        List<Predicate> whereCount = buildAttributeFiltersForAdmin(criteria, cb, cqCount, rootC);
+        List<Predicate> whereCount = buildAttributeFiltersForAdmin(criteria, cb, cqCount, rootC, typesById);
 
         cqCount.select(cb.countDistinct(rootC)).where(whereCount.toArray(new Predicate[0]));
         long total = em.createQuery(cqCount).getSingleResult();
@@ -239,7 +257,7 @@ public class PersonDao {
         CriteriaQuery<Tuple> cq = cb.createTupleQuery();
         Root<PersonEntity> root = cq.from(PersonEntity.class);
 
-        List<Predicate> where = buildAttributeFiltersForAdmin(criteria, cb, cq, root);
+        List<Predicate> where = buildAttributeFiltersForAdmin(criteria, cb, cq, root, typesById);
 
         // Sous-requête: max(approvedAt) pour status=APPROVED
         Subquery<LocalDateTime> maxApprovedAt = cq.subquery(LocalDateTime.class);
@@ -264,7 +282,7 @@ public class PersonDao {
                 .where(where.toArray(new Predicate[0]))
                 .distinct(true);
 
-        applySortForAdmin(criteria, cb, cq, root);
+        applySortForAdmin(criteria, cb, cq, root, typesById);
 
         TypedQuery<Tuple> q = em.createQuery(cq);
         q.setFirstResult((int) pageable.getOffset());
@@ -283,12 +301,13 @@ public class PersonDao {
     @Transactional(readOnly = true)
     public List<Long> findPersonIds(PersonSearchCriteria criteria, Long userId) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
+        Map<Long, ValueType> typesById = loadAttributeTypes(collectAttributeIds(criteria));
 
         CriteriaQuery<Long> cq = cb.createQuery(Long.class);
         Root<PersonEntity> root = cq.from(PersonEntity.class);
 
         // Filtres attributaires (y compris LIKE global)
-        List<Predicate> where = buildAttributeFilters(criteria, cb, cq, root);
+        List<Predicate> where = buildAttributeFilters(criteria, cb, cq, root, typesById);
 
         // FollowFilter tri-état
         if (criteria != null && criteria.getFollowFilter() != null) {
@@ -311,7 +330,7 @@ public class PersonDao {
         cq.select(root.get("id")).distinct(true)
                 .where(where.toArray(new Predicate[0]));
 
-        applySort(criteria, cb, cq, root);
+        applySort(criteria, cb, cq, root, typesById);
 
         return em.createQuery(cq).getResultList();
     }
@@ -483,11 +502,111 @@ public class PersonDao {
         return "%" + raw + "%";
     }
 
+    // ---- Type-aware value comparison (NUMBER/DATETIME need a real cast; DATE's
+    // fixed-width ISO string already sorts/compares correctly lexicographically) ----
+
+    private Set<Long> collectAttributeIds(PersonSearchCriteria criteria) {
+        Set<Long> ids = new HashSet<>();
+        if (criteria == null) {
+            return ids;
+        }
+        if (criteria.getFilters() != null) {
+            for (var f : criteria.getFilters()) {
+                if (f.getAttributeId() != null && f.getAttributeId() != GLOBAL_TEXT_ATTR_ID) {
+                    ids.add(f.getAttributeId());
+                }
+            }
+        }
+        if (criteria.getSort() != null) {
+            for (var s : criteria.getSort()) {
+                if ("ATTRIBUTE".equalsIgnoreCase(s.getKind()) && s.getAttributeId() != null) {
+                    ids.add(s.getAttributeId());
+                }
+            }
+        }
+        return ids;
+    }
+
+    private Set<Long> collectAttributeIds(AdminPersonSearchCriteria criteria) {
+        Set<Long> ids = new HashSet<>();
+        if (criteria == null) {
+            return ids;
+        }
+        if (criteria.getFilters() != null) {
+            for (var f : criteria.getFilters()) {
+                if (f.getAttributeId() != null && f.getAttributeId() != GLOBAL_TEXT_ATTR_ID) {
+                    ids.add(f.getAttributeId());
+                }
+            }
+        }
+        if (criteria.getSort() != null) {
+            for (var s : criteria.getSort()) {
+                if ("ATTRIBUTE".equalsIgnoreCase(s.getKind()) && s.getAttributeId() != null) {
+                    ids.add(s.getAttributeId());
+                }
+            }
+        }
+        return ids;
+    }
+
+    private Map<Long, ValueType> loadAttributeTypes(Collection<Long> attributeIds) {
+        if (attributeIds == null || attributeIds.isEmpty()) {
+            return Map.of();
+        }
+        Long tenantId = TenantContext.get();
+        return attributeDao.findAllByIdsForTenant(tenantId, List.copyOf(attributeIds)).stream()
+                .collect(Collectors.toMap(Attribute::getId, Attribute::getType));
+    }
+
+    private static Expression<BigDecimal> castToNumber(CriteriaBuilder cb, Path<String> valuePath) {
+        HibernateCriteriaBuilder hcb = (HibernateCriteriaBuilder) cb;
+        return hcb.cast((JpaExpression<?>) valuePath, BigDecimal.class);
+    }
+
+    private static BigDecimal parseRangeNumber(String raw) {
+        try {
+            return new BigDecimal(raw.trim());
+        } catch (NumberFormatException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Valeur numérique invalide: " + raw);
+        }
+    }
+
+    /**
+     * RANGE predicate on a fact value, type-aware: NUMBER needs a real numeric
+     * cast (its ASCII digit strings do not compare correctly lexically, e.g.
+     * "10" &lt; "2"). TEXT/ENUM/BOOLEAN/DATE/DATETIME store fixed-width,
+     * zero-padded canonical forms (ISO 8601 for dates, "true"/"false" for
+     * booleans) that already compare correctly as plain strings.
+     */
+    private Predicate buildRangePredicate(
+            CriteriaBuilder cb, Path<String> valuePath, ValueType type, String min, String max) {
+        boolean hasMin = min != null && !min.isBlank();
+        boolean hasMax = max != null && !max.isBlank();
+
+        if (type == ValueType.NUMBER) {
+            Expression<BigDecimal> numeric = castToNumber(cb, valuePath);
+            Predicate p = cb.conjunction();
+            if (hasMin)
+                p = cb.and(p, cb.greaterThanOrEqualTo(numeric, parseRangeNumber(min)));
+            if (hasMax)
+                p = cb.and(p, cb.lessThanOrEqualTo(numeric, parseRangeNumber(max)));
+            return p;
+        }
+
+        Predicate p = cb.conjunction();
+        if (hasMin)
+            p = cb.and(p, cb.greaterThanOrEqualTo(valuePath, min));
+        if (hasMax)
+            p = cb.and(p, cb.lessThanOrEqualTo(valuePath, max));
+        return p;
+    }
+
     private <T> List<Predicate> buildAttributeFilters(
             PersonSearchCriteria criteria,
             CriteriaBuilder cb,
             CriteriaQuery<T> cq,
-            Root<PersonEntity> root) {
+            Root<PersonEntity> root,
+            Map<Long, ValueType> typesById) {
 
         List<Predicate> predicates = new ArrayList<>();
         if (criteria == null || criteria.getFilters() == null)
@@ -545,10 +664,8 @@ public class PersonDao {
                 case "RANGE" -> {
                     String min = vals.size() > 0 ? vals.get(0) : null;
                     String max = vals.size() > 1 ? vals.get(1) : null;
-                    if (min != null && !min.isBlank())
-                        valuePred = cb.and(valuePred, cb.greaterThanOrEqualTo(pa.<String>get("value"), min));
-                    if (max != null && !max.isBlank())
-                        valuePred = cb.and(valuePred, cb.lessThanOrEqualTo(pa.<String>get("value"), max));
+                    ValueType type = typesById.get(attrId);
+                    valuePred = buildRangePredicate(cb, pa.<String>get("value"), type, min, max);
                 }
                 default -> {
                     if (!vals.isEmpty()) {
@@ -587,8 +704,53 @@ public class PersonDao {
         return cb.exists(sq);
     }
 
+    /**
+     * Builds the correlated subquery used as an ORDER BY key for one ATTRIBUTE
+     * sort directive, type-aware:
+     * - ENUM: MIN(order_index) via the matching attribute_enum_options row —
+     *   admin-configured order (system order for GENDER), not alphabetical code.
+     * - NUMBER: MIN() over a numeric cast (proper numeric order, not lexical).
+     * - TEXT/DATE/DATETIME/BOOLEAN: MIN() over the raw string — their stored
+     *   canonical forms (ISO 8601, "true"/"false") already order correctly as
+     *   fixed-width, zero-padded strings.
+     */
+    private <T> Subquery<?> buildAttributeSortSubquery(
+            CriteriaQuery<T> cq, CriteriaBuilder cb, Root<PersonEntity> root, Long attrId, ValueType type) {
+
+        if (type == ValueType.ENUM) {
+            Subquery<Integer> sub = cq.subquery(Integer.class);
+            Root<FactEntity> pa = sub.from(FactEntity.class);
+            Root<AttributeEnumOptionEntity> opt = sub.from(AttributeEnumOptionEntity.class);
+            sub.select(cb.least(opt.<Integer>get("orderIndex")));
+            sub.where(
+                    cb.equal(pa.get("person").get("id"), root.get("id")),
+                    cb.equal(pa.get("attribute").get("id"), attrId),
+                    cb.equal(opt.get("attributeId"), attrId),
+                    cb.equal(opt.<String>get("code"), pa.<String>get("value")));
+            return sub;
+        }
+
+        if (type == ValueType.NUMBER) {
+            Subquery<BigDecimal> sub = cq.subquery(BigDecimal.class);
+            Root<FactEntity> pa = sub.from(FactEntity.class);
+            sub.select(cb.least(castToNumber(cb, pa.<String>get("value"))));
+            sub.where(
+                    cb.equal(pa.get("person").get("id"), root.get("id")),
+                    cb.equal(pa.get("attribute").get("id"), attrId));
+            return sub;
+        }
+
+        Subquery<String> sub = cq.subquery(String.class);
+        Root<FactEntity> pa = sub.from(FactEntity.class);
+        sub.select(cb.least(pa.<String>get("value")));
+        sub.where(
+                cb.equal(pa.get("person").get("id"), root.get("id")),
+                cb.equal(pa.get("attribute").get("id"), attrId));
+        return sub;
+    }
+
     private <T> void applySort(PersonSearchCriteria criteria, CriteriaBuilder cb, CriteriaQuery<T> cq,
-            Root<PersonEntity> root) {
+            Root<PersonEntity> root, Map<Long, ValueType> typesById) {
         if (criteria == null || criteria.getSort() == null || criteria.getSort().isEmpty()) {
             cq.orderBy(cb.asc(root.get("id")));
             return;
@@ -599,12 +761,8 @@ public class PersonDao {
             String dir = (s.getDirection() == null ? "ASC" : s.getDirection().toUpperCase());
 
             if ("ATTRIBUTE".equalsIgnoreCase(s.getKind()) && s.getAttributeId() != null) {
-                Subquery<String> sub = cq.subquery(String.class);
-                Root<FactEntity> pa = sub.from(FactEntity.class);
-                sub.select(cb.least(pa.<String>get("value")));
-                sub.where(
-                        cb.equal(pa.get("person").get("id"), root.get("id")),
-                        cb.equal(pa.get("attribute").get("id"), s.getAttributeId()));
+                Subquery<?> sub = buildAttributeSortSubquery(cq, cb, root, s.getAttributeId(),
+                        typesById.get(s.getAttributeId()));
                 orders.add("DESC".equals(dir) ? cb.desc(sub) : cb.asc(sub));
             } else if ("FIELD".equalsIgnoreCase(s.getKind()) && s.getField() != null) {
                 switch (s.getField()) {
@@ -625,7 +783,8 @@ public class PersonDao {
             AdminPersonSearchCriteria criteria,
             CriteriaBuilder cb,
             CriteriaQuery<T> cq,
-            Root<PersonEntity> root) {
+            Root<PersonEntity> root,
+            Map<Long, ValueType> typesById) {
 
         List<Predicate> predicates = new ArrayList<>();
         if (criteria == null || criteria.getFilters() == null)
@@ -683,10 +842,8 @@ public class PersonDao {
                 case "RANGE" -> {
                     String min = vals.size() > 0 ? vals.get(0) : null;
                     String max = vals.size() > 1 ? vals.get(1) : null;
-                    if (min != null && !min.isBlank())
-                        valuePred = cb.and(valuePred, cb.greaterThanOrEqualTo(pa.<String>get("value"), min));
-                    if (max != null && !max.isBlank())
-                        valuePred = cb.and(valuePred, cb.lessThanOrEqualTo(pa.<String>get("value"), max));
+                    ValueType type = typesById.get(attrId);
+                    valuePred = buildRangePredicate(cb, pa.<String>get("value"), type, min, max);
                 }
                 default -> {
                     if (!vals.isEmpty()) {
@@ -707,7 +864,8 @@ public class PersonDao {
     private <T> void applySortForAdmin(AdminPersonSearchCriteria criteria,
             CriteriaBuilder cb,
             CriteriaQuery<T> cq,
-            Root<PersonEntity> root) {
+            Root<PersonEntity> root,
+            Map<Long, ValueType> typesById) {
         if (criteria == null || criteria.getSort() == null || criteria.getSort().isEmpty()) {
             cq.orderBy(cb.asc(root.get("id")));
             return;
@@ -718,12 +876,8 @@ public class PersonDao {
             String dir = (s.getDirection() == null ? "ASC" : s.getDirection().toUpperCase());
 
             if ("ATTRIBUTE".equalsIgnoreCase(s.getKind()) && s.getAttributeId() != null) {
-                Subquery<String> sub = cq.subquery(String.class);
-                Root<FactEntity> pa = sub.from(FactEntity.class);
-                sub.select(cb.least(pa.<String>get("value")));
-                sub.where(
-                        cb.equal(pa.get("person").get("id"), root.get("id")),
-                        cb.equal(pa.get("attribute").get("id"), s.getAttributeId()));
+                Subquery<?> sub = buildAttributeSortSubquery(cq, cb, root, s.getAttributeId(),
+                        typesById.get(s.getAttributeId()));
                 orders.add("DESC".equals(dir) ? cb.desc(sub) : cb.asc(sub));
             } else if ("FIELD".equalsIgnoreCase(s.getKind()) && s.getField() != null) {
                 switch (s.getField()) {

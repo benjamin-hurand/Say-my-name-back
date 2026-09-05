@@ -40,22 +40,6 @@ public interface AttributeRepository extends JpaRepository<AttributeEntity, Long
         @Query("""
                         select a
                         from AttributeEntity a
-                        where a.filter = true
-                        """)
-        List<AttributeEntity> findByFilterTrueWithConcept();
-
-        @EntityGraph(attributePaths = "concept")
-        @Query("""
-                        select a
-                        from AttributeEntity a
-                        where a.sort = true
-                        """)
-        List<AttributeEntity> findBySortTrueWithConcept();
-
-        @EntityGraph(attributePaths = "concept")
-        @Query("""
-                        select a
-                        from AttributeEntity a
                         where a.id in :ids
                         """)
         List<AttributeEntity> findAllByIdInWithConcept(@Param("ids") List<Long> ids);

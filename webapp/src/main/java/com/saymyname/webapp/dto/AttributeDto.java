@@ -36,5 +36,6 @@ public record AttributeDto(
                 ConstraintDto constraint,
 
                 AttributeStatsDto stats,
-                List<AttributeEnumOptionDto> options) {
+                List<AttributeEnumOptionDto> options,
+                AttributeDeletionImpactDto deletionImpact) {
 }

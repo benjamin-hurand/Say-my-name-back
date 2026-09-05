@@ -25,8 +25,6 @@ public class AdminAttributeMutationDtoMapper {
                 .withDisplayOrder(dto.displayOrder() != null ? dto.displayOrder() : 100)
                 .withIdentitySource(Boolean.TRUE.equals(dto.identitySource()))
                 .withMaxValues(dto.maxValues() != null ? dto.maxValues() : 1)
-                .withFilter(Boolean.TRUE.equals(dto.filter()))
-                .withSort(Boolean.TRUE.equals(dto.sort()))
                 .withRequired(Boolean.TRUE.equals(dto.required()))
                 .withType(type)
                 .withEditPolicy(dto.editPolicy() != null ? dto.editPolicy() : EditPolicy.FREE)

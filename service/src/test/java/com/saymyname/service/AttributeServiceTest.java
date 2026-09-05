@@ -1,13 +1,17 @@
 package com.saymyname.service;
 
 import com.saymyname.core.model.people.Attribute;
+import com.saymyname.core.model.people.AttributeDeletionImpact;
 import com.saymyname.core.model.people.Concept;
 import com.saymyname.core.model.people.ConceptCodes;
 import com.saymyname.core.model.people.GenderOptions;
 import com.saymyname.core.model.people.ValueType;
 import com.saymyname.core.multitenancy.TenantContext;
 import com.saymyname.persistence.dao.AttributeDao;
+import com.saymyname.persistence.dao.ChangeRequestDao;
 import com.saymyname.persistence.dao.ConceptDao;
+import com.saymyname.persistence.dao.FactDao;
+import com.saymyname.persistence.dao.course.CourseDao;
 import com.saymyname.service.config.BaseServiceTest;
 import com.saymyname.service.attribute.AttributeMetaCache;
 import com.saymyname.service.identity.IdentityService;
@@ -18,6 +22,7 @@ import org.mockito.Mock;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.List;
 
@@ -48,6 +53,15 @@ class AttributeServiceTest extends BaseServiceTest {
 
     @Mock
     private IdentityService identityService;
+
+    @Mock
+    private FactDao factDao;
+
+    @Mock
+    private CourseDao courseDao;
+
+    @Mock
+    private ChangeRequestDao changeRequestDao;
 
     @InjectMocks
     private AttributeService service;
@@ -312,6 +326,99 @@ class AttributeServiceTest extends BaseServiceTest {
     }
 
     @Test
+    void computesCanDeleteTrueForEmptyCustomAttribute() {
+        Attribute custom = attribute(42L, null);
+        when(factDao.countFactsAndPersonsByAttributeIds(List.of(42L))).thenReturn(Map.of());
+        when(courseDao.countByTargetAttributeIds(List.of(42L))).thenReturn(Map.of());
+        when(changeRequestDao.countPendingByAttributeIds(List.of(42L))).thenReturn(Map.of());
+
+        AttributeDeletionImpact impact = service.getDeletionImpact(List.of(custom)).get(42L);
+
+        assertThat(impact.canDelete()).isTrue();
+        assertThat(impact.factCount()).isZero();
+    }
+
+    @Test
+    void computesCanDeleteFalseWhenFactsExist() {
+        Attribute attr = attribute(42L, null);
+        when(factDao.countFactsAndPersonsByAttributeIds(List.of(42L)))
+                .thenReturn(Map.of(42L, new long[] { 3L, 2L }));
+        when(courseDao.countByTargetAttributeIds(List.of(42L))).thenReturn(Map.of());
+        when(changeRequestDao.countPendingByAttributeIds(List.of(42L))).thenReturn(Map.of());
+
+        AttributeDeletionImpact impact = service.getDeletionImpact(List.of(attr)).get(42L);
+
+        assertThat(impact.canDelete()).isFalse();
+        assertThat(impact.factCount()).isEqualTo(3L);
+        assertThat(impact.personCount()).isEqualTo(2L);
+    }
+
+    @Test
+    void computesCanDeleteFalseWhenCourseTargetsAttribute() {
+        Attribute attr = attribute(42L, null);
+        when(factDao.countFactsAndPersonsByAttributeIds(List.of(42L))).thenReturn(Map.of());
+        when(courseDao.countByTargetAttributeIds(List.of(42L))).thenReturn(Map.of(42L, 1L));
+        when(changeRequestDao.countPendingByAttributeIds(List.of(42L))).thenReturn(Map.of());
+
+        AttributeDeletionImpact impact = service.getDeletionImpact(List.of(attr)).get(42L);
+
+        assertThat(impact.canDelete()).isFalse();
+        assertThat(impact.courseCount()).isEqualTo(1L);
+    }
+
+    @Test
+    void computesCanDeleteFalseWhenPendingChangeRequestExists() {
+        Attribute attr = attribute(42L, null);
+        when(factDao.countFactsAndPersonsByAttributeIds(List.of(42L))).thenReturn(Map.of());
+        when(courseDao.countByTargetAttributeIds(List.of(42L))).thenReturn(Map.of());
+        when(changeRequestDao.countPendingByAttributeIds(List.of(42L))).thenReturn(Map.of(42L, 1L));
+
+        AttributeDeletionImpact impact = service.getDeletionImpact(List.of(attr)).get(42L);
+
+        assertThat(impact.canDelete()).isFalse();
+        assertThat(impact.pendingChangeRequestCount()).isEqualTo(1L);
+    }
+
+    @Test
+    void computesCanDeleteFalseForIdentitySystemAttributeEvenWhenUnused() {
+        Attribute identity = attribute(42L, 9L);
+        identity.setConceptCode(ConceptCodes.IDENTITY);
+        when(factDao.countFactsAndPersonsByAttributeIds(List.of(42L))).thenReturn(Map.of());
+        when(courseDao.countByTargetAttributeIds(List.of(42L))).thenReturn(Map.of());
+        when(changeRequestDao.countPendingByAttributeIds(List.of(42L))).thenReturn(Map.of());
+
+        AttributeDeletionImpact impact = service.getDeletionImpact(List.of(identity)).get(42L);
+
+        assertThat(impact.canDelete()).isFalse();
+    }
+
+    @Test
+    void computesCanDeleteTrueForEmptyFirstNameAttribute() {
+        Attribute firstName = attribute(42L, 5L);
+        firstName.setConceptCode(ConceptCodes.FIRST_NAME);
+        when(factDao.countFactsAndPersonsByAttributeIds(List.of(42L))).thenReturn(Map.of());
+        when(courseDao.countByTargetAttributeIds(List.of(42L))).thenReturn(Map.of());
+        when(changeRequestDao.countPendingByAttributeIds(List.of(42L))).thenReturn(Map.of());
+
+        AttributeDeletionImpact impact = service.getDeletionImpact(List.of(firstName)).get(42L);
+
+        assertThat(impact.canDelete()).isTrue();
+    }
+
+    @Test
+    void computesCanDeleteTrueForEmptyGenderAttribute() {
+        Attribute gender = attribute(42L, 5L);
+        gender.setConceptCode(ConceptCodes.GENDER);
+        when(factDao.countFactsAndPersonsByAttributeIds(List.of(42L))).thenReturn(Map.of());
+        when(courseDao.countByTargetAttributeIds(List.of(42L))).thenReturn(Map.of());
+        when(changeRequestDao.countPendingByAttributeIds(List.of(42L))).thenReturn(Map.of());
+
+        AttributeDeletionImpact impact = service.getDeletionImpact(List.of(gender)).get(42L);
+
+        assertThat(impact.canDelete()).isTrue();
+    }
+
+    @Test
     void reorderingIdentitySourceAttributesNeverRecomposesIdentity() {
         // MVP: displayOrder is purely administrable presentation. Composition order
         // is semantic (FIRST_NAME then LAST_NAME) and reordering must never trigger
@@ -334,6 +441,51 @@ class AttributeServiceTest extends BaseServiceTest {
         verify(attributeDao).saveAll(List.of(first, second));
         verify(attributeMetaCache).evictCurrentTenant();
         verify(identityService, never()).synchronizeAllCurrentTenant(any());
+    }
+
+    @Test
+    void createDerivesFilterAndSortFromTypeIgnoringClientInput() {
+        // The admin no longer chooses filter/sort: whatever the client sends is
+        // discarded and recomputed from the attribute's type (TEXT -> neither).
+        TenantContext.set(10L);
+        Attribute textAttribute = attribute(null, null);
+        textAttribute.setFilter(true);
+        textAttribute.setSort(true);
+        when(attributeDao.save(any(Attribute.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Attribute saved = service.create(textAttribute);
+
+        assertThat(saved.isFilter()).isFalse();
+        assertThat(saved.isSort()).isFalse();
+    }
+
+    @Test
+    void createDerivesFilterAndSortTrueForNonTextTypes() {
+        TenantContext.set(10L);
+        Attribute numberAttribute = attribute(null, null);
+        numberAttribute.setType(ValueType.NUMBER);
+        when(attributeDao.save(any(Attribute.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Attribute saved = service.create(numberAttribute);
+
+        assertThat(saved.isFilter()).isTrue();
+        assertThat(saved.isSort()).isTrue();
+    }
+
+    @Test
+    void updateOverridesClientSuppliedFilterSortWithDerivedValues() {
+        TenantContext.set(10L);
+        Attribute current = attribute(42L, null);
+        Attribute updated = attribute(42L, null);
+        updated.setFilter(true);
+        updated.setSort(true);
+        when(attributeDao.findById(42L)).thenReturn(Optional.of(current));
+        when(attributeDao.save(any(Attribute.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Attribute saved = service.update(updated);
+
+        assertThat(saved.isFilter()).isFalse();
+        assertThat(saved.isSort()).isFalse();
     }
 
     @Test
